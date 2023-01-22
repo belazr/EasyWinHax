@@ -1,5 +1,5 @@
 #pragma once
-#include "undocWinDefs.h"
+#include "undocWinTypes.h"
 #include <TlHelp32.h>
 
 // Functions to retrieve information about of a windows process.

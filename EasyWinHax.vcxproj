@@ -35,7 +35,7 @@
     <ClInclude Include="src\ogl\oglFont.h" />
     <ClInclude Include="src\ogl\oglSetup.h" />
     <ClInclude Include="src\proc.h" />
-    <ClInclude Include="src\undocWinDefs.h" />
+    <ClInclude Include="src\undocWinTypes.h" />
     <ClInclude Include="src\vecmath.h" />
   </ItemGroup>
   <ItemGroup>

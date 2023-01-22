@@ -47,7 +47,7 @@ The library provides a way to setup an EndScene hook and some functions to draw 
 ### OpenGL drawing
 The library provides a way to setup an wglSwapBuffers hook and some functions to draw basic shapes within the hook. It also provides a font class that can be used to draw text to the screen. See the headers in the "ogl" folder for further documentation.
 ### Undocumented windows structures and function types
-The library provides a collection of structures used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinDefs.h" header.
+The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 
 ## References
 https://guidedhacking.com/

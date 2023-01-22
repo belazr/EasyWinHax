@@ -63,7 +63,7 @@
     <ClInclude Include="src\proc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\undocWinDefs.h">
+    <ClInclude Include="src\undocWinTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\vecmath.h">
