@@ -1,5 +1,5 @@
 # EasyWinHax
-EasyWinHax is a C++ library designed to provide basic and low abstraction functionallity for windows process and more specifically game hacking.
+EasyWinHax is a C++ library designed to provide basic and low abstraction functionallity for windows process hacking and more specifically game hacking.
 It is written to learn and help others to learn the ins and outs of windows, the portable executable format and low level concepts of code execution by example. Therefore the code is kept very c-ish (even though it uses some c++ concepts) in the hope of not hiding the essentials behind abstraction. This is not an attempt to write a by-the-books modern C++ library. Most importantly it is about having fun with computers!
 
 ## Requirements
@@ -13,11 +13,12 @@ Build tested with:
 - Windows 11 SDK (10.0.22621)
 
 Usage tested with:
--Windows 10 and Windows 11
+- Windows 10
+- Windows 11
 
 ## Build
 Open the solution file (EasyWinHax.sln) with visual Studio and run the desired builds from there.
-By default a static library is created with the static runtime library linkage (/MT and /MTd).
+By default a static library with static runtime library linkage (/MT and /MTd) is built.
 This way programs linking to this library can be completely portable with no dll dependencies.
 ## Usage with Visual Studio 17
 To create a program linking to this library, create an empty project in visual studio.
@@ -48,6 +49,11 @@ The library provides a way to setup an EndScene hook and some functions to draw 
 The library provides a way to setup an wglSwapBuffers hook and some functions to draw basic shapes within the hook. It also provides a font class that can be used to draw text to the screen. See the headers in the "ogl" folder for further documentation.
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
+
+## TODOs
+- Import by ordinal support for proc::in::getProcAddress and proc::ex::getProcAddress
+- Import address table hook class
+- Fix indentation for api documentation in header files
 
 ## References
 https://guidedhacking.com/
