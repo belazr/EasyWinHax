@@ -19,7 +19,7 @@ Usage tested with:
 - Windows 11 64bit
 
 ## Build
-Open the solution file (EasyWinHax.sln) with visual Studio and run the desired builds from there.
+Open the solution file (EasyWinHax.sln) with Visual Studio and run the desired builds from there.
 By default a static library with static runtime library linkage (/MT and /MTd) is built.
 This way programs linking to this library can be completely portable with no dll dependencies.
 ## Usage with Visual Studio 17
