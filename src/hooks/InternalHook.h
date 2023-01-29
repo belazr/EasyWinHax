@@ -23,40 +23,61 @@ namespace hax {
 
 	public:
 		// Initializes members.
+		// 
 		// Parameters:
-		// [in] origin: Address of the origin function to be hooked within the virtual address space of the target process. At least the first five bytes will be overwritten.
-		// [in] detour: Address of the detour function within the virtual address space of the target process.
-		// [in] size:	Number of bytes that get overwritten by the jump at the beginning of the origin function.
-		//				The overwritten instructions get executed by the gateway right before executing the origin function.
-		//				Has to be at least five! Only complete instructions should be overwritten!
-		//				It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
+		// 
+		// [in] origin:
+		// Address of the origin function to be hooked within the virtual address space of the target process. At least the first five bytes will be overwritten.
+		// 
+		// [in] detour:
+		// Address of the detour function within the virtual address space of the target process.
+		// 
+		// [in] size:
+		// Number of bytes that get overwritten by the jump at the beginning of the origin function.
+		// The overwritten instructions get executed by the gateway right before executing the origin function.
+		// Has to be at least five! Only complete instructions should be overwritten!
+		// It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
 		InternalHook(BYTE* origin, const BYTE* detour, size_t size);
 
 		// Initializes members. Used to hook a function of a dll loaded by the target process by module and export name.
 		// Hooks the beginning of the function, not the import address table, import directory or export directory!
+		// 
 		// Parameters:
-		// [in] exportName:			Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
-		// [in] modName:			Name of the module that exports the function to be hooked.
-		// [in] detour:				Address of the detour function within the virtual address space of the target process.
-		// [in] size:				Number of bytes that get overwritten by the jump at the beginning of the origin function.
-		//							The overwritten instructions get executed by the gateway right before executing the origin function.
-		//							Has to be at least five! Only complete instructions should be overwritten!
-		//							It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
+		// 
+		// [in] exportName:
+		// Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
+		// 
+		// [in] modName:
+		// Name of the module that exports the function to be hooked.
+		// 
+		// [in] detour:
+		// Address of the detour function within the virtual address space of the target process.
+		// 
+		// [in] size:
+		// Number of bytes that get overwritten by the jump at the beginning of the origin function.
+		// The overwritten instructions get executed by the gateway right before executing the origin function.
+		// Has to be at least five! Only complete instructions should be overwritten!
+		// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
 		InternalHook(const char* exportName, const char* modName, const BYTE* detour, size_t size);
 		
 		~InternalHook();
 
 		// Enables the hook. Execution of origin function is redirected after calling this method.
+		// 
 		// Return: True on success, false on failure
 		bool enable();
 
 		// Disables the hook. Execution of origin function is restored after calling this method.
-		// Return: True on success, false on failure. It is possible that the unhooking of the origin function succeeds but the deallocation of the gateway fails.
-		//		   In this case the function will also return false as well as a call to isHooked().
+		// 
+		// Return:
+		// True on success, false on failure. It is possible that the unhooking of the origin function succeeds but the deallocation of the gateway fails.
+		// In this case the function will also return false as well as a call to isHooked.
 		bool disable();
 
 		// Checks if the hook is currently installed.
-		// Return: true if the hook is installed, false if it is not installed.
+		// 
+		// Return:
+		// True if the hook is installed, false if it is not installed.
 		bool isHooked() const;
 		
 		BYTE* getGateway() const;

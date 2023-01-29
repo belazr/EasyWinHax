@@ -16,9 +16,14 @@ namespace hax {
 
 	public:
 		// Initializes members
+		// 
 		// Parameters:
-		// [in] label:	Label for the output. Format: "Average time <label>: <average time in seconds>"
-		// [in] runs:	How many times the code execution is meassured before the average is calculated and printed when calling printAvg.
+		// 
+		// [in] label:
+		// Label for the output. Format: "Average time <label>: <average time in seconds>"
+		// 
+		// [in] runs:
+		// How many times the code execution is meassured before the average is calculated and printed when calling printAvg.
 		Bench(const char* label, size_t runs);
 		
 		~Bench();

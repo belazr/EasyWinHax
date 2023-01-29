@@ -53,7 +53,6 @@ The library provides a collection of structures and function types used by the w
 ## TODOs
 - Import by ordinal support for proc::in::getProcAddress and proc::ex::getProcAddress
 - Import address table hook class
-- Fix indentation for api documentation in header files
 
 ## References
 https://guidedhacking.com/

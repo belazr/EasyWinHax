@@ -18,24 +18,38 @@ namespace dx9 {
 
 	public:
 		// Allocate memory for the character vertex arrays and initializes members.
+		//
 		// Parameters:
-		// [in] pCharset:	Pointer to a charset structure. Different structures can be used for different font sizes.
-		// [in] color:		Color of drawn text. 
+		//
+		// [in] pCharset:
+		// Pointer to a charset structure. Different structures can be used for different font sizes.
+		// 
+		// [in] color:
+		// Color of drawn text. 
 		Font(const Charset* pCharset, D3DCOLOR color);
 		~Font();
 
 		// Draws a text to the screen.
+		//
 		// Parameters:
-		// [in] origin:	Coordinates of the bottom left corner of the first character of the text.
-		// [in] text:	Text to be drawn. 
+		//
+		// [in] origin:
+		// Coordinates of the bottom left corner of the first character of the text.
+		// 
+		// [in] text:
+		// Text to be drawn. 
 		void drawPrimitiveString(const Vector2* origin, const char* text);
 
 		// Gets the width of a character in pixels.
-		// Return: The width of a character in pixels.
+		// 
+		// Return:
+		// The width of a character in pixels.
 		float getCharWidth() const;
 
 		// Gets the height of a character in pixels.
-		// Return: The height of a character in pixels.
+		// 
+		// Return:
+		// The height of a character in pixels.
 		float getCharHeight() const;
 
 		void setCharset(const Charset* pCharset);

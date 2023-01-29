@@ -28,32 +28,62 @@ namespace hax {
 
 	public:
 		// Injects shell code into the target process and initializes members.
+		//
 		// Parameters:
-		// [in] hProc:				Handle to the process that contains the origin function to be hooked.
-		//							Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_READ and PROCESS_VM_WRITE access rights.
-		// [in] origin:				Address of the origin function to be hooked within the virtual address space of the target process. At least the first five bytes will be overwritten.
-		// [in] shell:				Address of the shell code that should be injected and executed on a call of the origin function.
-		// [in] shellSize:			Size of the shell code in bytes .
-		// [in] originCallPattern:	Pattern of the origin function call in the shell code. The pattern has to be of the format: "EF BE DA DE". '?' as wildcards are allowed. Mind the endianness!
-		// [in] size:				Number of bytes that get overwritten by the jump at the beginning of the origin function.
-		//							The overwritten instructions get executed by the gateway right before executing the origin function.
-		//							Has to be at least five! Only complete instructions should be overwritten!
-		//							It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
+		//
+		// [in] hProc:
+		// Handle to the process that contains the origin function to be hooked.
+		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_READ and PROCESS_VM_WRITE access rights.
+		// 
+		// [in] origin:
+		// Address of the origin function to be hooked within the virtual address space of the target process. At least the first five bytes will be overwritten.
+		// 
+		// [in] shell:
+		// Address of the shell code that should be injected and executed on a call of the origin function.
+		// 
+		// [in] shellSize:
+		// Size of the shell code in bytes .
+		// 
+		// [in] originCallPattern:
+		// Pattern of the origin function call in the shell code. The pattern has to be of the format:
+		// "EF BE DA DE". '?' as wildcards are allowed. Mind the endianness!
+		// 
+		// [in] size:
+		// Number of bytes that get overwritten by the jump at the beginning of the origin function.
+		// The overwritten instructions get executed by the gateway right before executing the origin function.
+		// Has to be at least five! Only complete instructions should be overwritten!
+		// It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
 		ExternalHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size);
 
 		// Injects shell code into the target process and initializes members. Used to hook a function of a dll loaded by the target process by module and export name.
 		// Hooks the beginning of the function, not the import address table, import directory or export directory!
+		//
 		// Parameters:
-		// [in] hProc:				Handle to the process that contains the function to be hooked.
-		// [in] exportName:			Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
-		// [in] modName:			Name of the module that exports the function to be hooked.
-		// [in] shell:				Address of the shell code that should be injected and executed on a call of the origin function.
-		// [in] shellSize:			Size of the shell code in bytes.
-		// [in] originCallPattern:	Pattern of the origin function call in the shell code. The pattern has to be of the format: "EF BE DA DE". '??' as wildcards are allowed. Mind the endianness!
-		// [in] size:				Number of bytes that get overwritten by the jump at the beginning of the origin function.
-		//							The overwritten instructions get executed by the gateway right before executing the origin function.
-		//							Has to be at least five! Only complete instructions should be overwritten!
-		//							It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
+		// 
+		// [in] hProc:
+		// Handle to the process that contains the function to be hooked.
+		// 
+		// [in] exportName:
+		// Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
+		// 
+		// [in] modName:
+		// Name of the module that exports the function to be hooked.
+		// 
+		// [in] shell:
+		// Address of the shell code that should be injected and executed on a call of the origin function.
+		// 
+		// [in] shellSize:
+		// Size of the shell code in bytes.
+		// 
+		// [in] originCallPattern:
+		// Pattern of the origin function call in the shell code. The pattern has to be of the format:
+		// "EF BE DA DE". '??' as wildcards are allowed. Mind the endianness!
+		// 
+		// [in] size:
+		// Number of bytes that get overwritten by the jump at the beginning of the origin function.
+		// The overwritten instructions get executed by the gateway right before executing the origin function.
+		// Has to be at least five! Only complete instructions should be overwritten!
+		// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
 		ExternalHook(
 			HANDLE hProc, const char* exportName, const char* modName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
 		);
@@ -61,16 +91,22 @@ namespace hax {
 		~ExternalHook();
 
 		// Enables the hook. Execution of origin function is redirected after calling this method.
-		// Return: True on success, false on failure
+		// 
+		// Return:
+		// True on success, false on failure
 		bool enable();
 
 		// Disables the hook. Execution of origin function is restored after calling this method.
-		// Return: True on success, false on failure. It is possible that the unhooking of the origin function succeeds but the deallocation of the gateway fails.
-		//		   In this case the function will also return false as well as a call to isHooked().
+		// 
+		// Return:
+		// True on success, false on failure. It is possible that the unhooking of the origin function succeeds but the deallocation of the gateway fails.
+		// In this case the function will also return false as well as a call to isHooked().
 		bool disable();
 
 		// Checks if the hook is currently installed.
-		// Return: true if the hook is installed, false if it is not installed.
+		// 
+		// Return:
+		// True if the hook is installed, false if it is not installed.
 		bool isHooked() const;
 
 		BYTE* getGateway() const;
