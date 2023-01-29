@@ -57,8 +57,8 @@ The library provides a collection of structures and function types used by the w
 - Import address table hook class
 
 ## References
-https://guidedhacking.com/
-https://learn.microsoft.com/en-us/windows/win32/api/
-https://www.vergiliusproject.com/
-https://github.com/khalladay/hooking-by-example
-https://www.codeproject.com/tips/139349/getting-the-address-of-a-function-in-a-dll-loaded
+- https://guidedhacking.com/
+- https://learn.microsoft.com/en-us/windows/win32/api/
+- https://www.vergiliusproject.com/
+- https://github.com/khalladay/hooking-by-example
+- https://www.codeproject.com/tips/139349/getting-the-address-of-a-function-in-a-dll-loaded
