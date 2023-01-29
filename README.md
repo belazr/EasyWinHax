@@ -3,18 +3,20 @@ EasyWinHax is a C++ library designed to provide basic and low abstraction functi
 It is written to learn and help others to learn the ins and outs of windows, the portable executable format and low level concepts of code execution by example. Therefore the code is kept very c-ish (even though it uses some c++ concepts) in the hope of not hiding the essentials behind abstraction. This is not an attempt to write a by-the-books modern C++ library. Most importantly it is about having fun with computers!
 
 ## Requirements
+- Windows 10/11 64bit
 - Visual Studio
 - C++ 14 compliant compiler
 - Windows SDK
 
 Build tested with:
+- Windows 11 64bit
 - Visual Studio 17
 - MSVC v143
 - Windows 11 SDK (10.0.22621)
 
 Usage tested with:
-- Windows 10
-- Windows 11
+- Windows 10 64bit
+- Windows 11 64bit
 
 ## Build
 Open the solution file (EasyWinHax.sln) with visual Studio and run the desired builds from there.
