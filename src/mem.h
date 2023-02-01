@@ -216,7 +216,7 @@ namespace mem {
 		// 
 		// [in] signature:
 		// The byte signature base hex that should be looked for as null terminated string.
-		// Bytes have to be two characters and separeted by spaces. ?? can be used as wildcards.
+		// Bytes have to be two characters and separeted by spaces. "??" can be used as wildcards.
 		// Example: "DE AD ?? EF"
 		// 
 		// Return:
@@ -429,7 +429,7 @@ namespace mem {
 		// 
 		// [in] signature:
 		// The byte signature base hex that should be looked for as null terminated string.
-		// Bytes have to be two characters and separeted by spaces. ?? can be used as wildcards.
+		// Bytes have to be two characters and separeted by spaces. "??" can be used as wildcards.
 		// Example: "DE AD ?? EF"
 		// 
 		// Return:
@@ -474,7 +474,7 @@ namespace mem {
 		// 
 		// [in] charSig:
 		// The byte signature base hex that should be looked for as null terminated string.
-		// Bytes have to be two characters and separeted by spaces. ?? can be used as wildcards and will be converted to -1.
+		// Bytes have to be two characters and separeted by spaces. "??" can be used as wildcards and will be converted to -1.
 		// Example: "DE AD ?? EF"
 		// 
 		// [out] intSig:
