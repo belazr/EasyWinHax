@@ -39,13 +39,13 @@ namespace hax {
 		// It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
 		InternalHook(BYTE* origin, const BYTE* detour, size_t size);
 
-		// Initializes members. Used to hook a function of a dll loaded by the target process by module and export name.
+		// Initializes members. Used to hook a exported function of a module of the target process by module name and export name.
 		// Hooks the beginning of the function, not the import address table, import directory or export directory!
 		// 
 		// Parameters:
 		// 
 		// [in] exportName:
-		// Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
+		// Export name of the function to be hooked. The function needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
 		// 
 		// [in] modName:
 		// Name of the module that exports the function to be hooked.

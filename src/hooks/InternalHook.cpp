@@ -9,13 +9,13 @@ namespace hax {
 		_origin(origin), _detour(detour), _size(size), _gateway(nullptr), _hooked(false) {}
 
 	
-	InternalHook::InternalHook(const char* exportName, const char* modName, const BYTE* detour, size_t size):
+	InternalHook::InternalHook(const char* funcName, const char* modName, const BYTE* detour, size_t size):
 		_origin(nullptr), _detour(detour), _size(size), _gateway(nullptr), _hooked(false)
 	{
 		const HMODULE hMod = proc::in::getModuleHandle(modName);
 		
 		if (hMod) {
-			this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, exportName));
+			this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, funcName));
 		}
 
 	}

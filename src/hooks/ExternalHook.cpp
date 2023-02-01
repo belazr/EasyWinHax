@@ -22,13 +22,13 @@ namespace hax {
 
 
 	ExternalHook::ExternalHook(
-		HANDLE hProc, const char* exportName, const char* modName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
+		HANDLE hProc, const char* funcName, const char* modName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
 	) : _hProc(hProc), _origin(nullptr), _detour(nullptr), _detourOriginCall(nullptr), _size(size), _gateway(nullptr), _hooked(false)
 	{
 		HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
 		
 		if (hMod) {
-			this->_origin = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hMod, exportName));
+			this->_origin = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hMod, funcName));
 		}
 
 		_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));

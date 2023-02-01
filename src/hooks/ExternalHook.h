@@ -55,7 +55,7 @@ namespace hax {
 		// It is necessary to look at the disassembly of the origin function to find when the first complete instruction finishes after the first five bytes.
 		ExternalHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size);
 
-		// Injects shell code into the target process and initializes members. Used to hook a function of a dll loaded by the target process by module and export name.
+		// Injects shell code into the target process and initializes members. Used to hook a exported function of a module of the target process by module name and export name.
 		// Hooks the beginning of the function, not the import address table, import directory or export directory!
 		//
 		// Parameters:
@@ -63,8 +63,8 @@ namespace hax {
 		// [in] hProc:
 		// Handle to the process that contains the function to be hooked.
 		// 
-		// [in] exportName:
-		// Export name of the function to be hooked. The fucntion needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
+		// [in] funcName:
+		// Export name of the function to be hooked. The function needs to be exported by a module loaded in the target process. At least the first five bytes will be overwritten.
 		// 
 		// [in] modName:
 		// Name of the module that exports the function to be hooked.
@@ -85,7 +85,7 @@ namespace hax {
 		// Has to be at least five! Only complete instructions should be overwritten!
 		// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
 		ExternalHook(
-			HANDLE hProc, const char* exportName, const char* modName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
+			HANDLE hProc, const char* funcName, const char* modName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
 		);
 		
 		~ExternalHook();
