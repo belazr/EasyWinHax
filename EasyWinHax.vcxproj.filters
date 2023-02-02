@@ -30,12 +30,6 @@
     <ClInclude Include="src\dx9\dx9Setup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\hooks\ExternalHook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hooks\InternalHook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ogl\ogl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,6 +63,15 @@
     <ClInclude Include="src\vecmath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\hooks\IatHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hooks\TrampHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hooks\IHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dx9\dx9Draw.cpp">
@@ -87,12 +90,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\dx9\dx9TinyCharset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hooks\ExternalHook.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hooks\InternalHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ogl\oglDraw.cpp">
@@ -117,6 +114,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vecmath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hooks\IatHook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hooks\TrampHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
