@@ -38,11 +38,13 @@ The library provides functions to interact with the virtual memory of a process.
 ### Vector math
 The library provides basic vector types and functions, as well as world to screen functions for column- and row-major projection matricies. See the "vecmath.h" header for further documentation.
 ### Function hooking
+#### Trampoline hook
 The library provides classes to install a trampoline hook in the beginning of a function.
 The internal TrampHook class hooks functions within the same process it is instantiated in. The function redirected to is usually defined in a DLL injected into the process. In the context of game hacking the class provides an easy way to hook graphics api functions (eg. EndScene or wglSwapBuffer) and draw to screen via dll injection.
 The external TrampHook class hooks functions in an external target process. The function redirected to is shell code the object injects into the process. Due to the limitations of shell code the use cases are limited. Though some fun can be had with it like hooking SystemQueryProcessInformation in a TaskManger process and hiding a process from it.
 The x64 compilation of the external class is able to hook functions of x64 as well as x86 target processes.
 See the "hooks\TrampHook.h" header for further documentation.
+#### Import address table hook
 The library further provides classes to install an import address table hook.
 The internal IatHook class hooks the IAT of a module of the caller process, again execution usually redirected to a function within an injected DLL.
 The external IatHook class hooks the IAT of a module of an external target process, again execution redirected to shell code.
