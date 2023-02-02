@@ -27,8 +27,9 @@
     <ClInclude Include="src\dx9\dx9Setup.h" />
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\hax.h" />
-    <ClInclude Include="src\hooks\ExternalHook.h" />
-    <ClInclude Include="src\hooks\InternalHook.h" />
+    <ClInclude Include="src\hooks\IatHook.h" />
+    <ClInclude Include="src\hooks\TrampHook.h" />
+    <ClInclude Include="src\hooks\IHook.h" />
     <ClInclude Include="src\mem.h" />
     <ClInclude Include="src\ogl\ogl.h" />
     <ClInclude Include="src\ogl\oglDraw.h" />
@@ -47,8 +48,8 @@
     <ClCompile Include="src\dx9\dx9Setup.cpp" />
     <ClCompile Include="src\dx9\dx9TinyCharset.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />
-    <ClCompile Include="src\hooks\ExternalHook.cpp" />
-    <ClCompile Include="src\hooks\InternalHook.cpp" />
+    <ClCompile Include="src\hooks\IatHook.cpp" />
+    <ClCompile Include="src\hooks\TrampHook.cpp" />
     <ClCompile Include="src\mem.cpp" />
     <ClCompile Include="src\ogl\oglDraw.cpp" />
     <ClCompile Include="src\ogl\oglFont.cpp" />
