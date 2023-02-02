@@ -25,8 +25,8 @@
 namespace mem {
 
 	// Functions to interact with the virtual memory of an external process.
-	// Compiled as x64 the external functions are designed to work both on x64 targets as well as x86 targets.
-	// Compiled as x86 interacting with x64 processes is neihter supported nor feasable.
+	// Compiled to x64 the external functions are designed to work both on x64 targets as well as x86 targets.
+	// Compiled to x86 interacting with x64 processes is neihter supported nor feasable.
 	namespace ex {
 
 		// Installs a trampoline hook in an external process. Has to be placed at the beginning of a function defined in the external process.
@@ -48,6 +48,7 @@ namespace mem {
 		// 
 		// [in] originCall:
 		// Address of the call of the origin function call within the detour function. The call should be of the same calling convention as the origin function.
+		// Can be null if there is no call to the origin function in the detour.
 		// 
 		// [in] size:
 		// Number of bytes that get overwritten by the jump at the beginning of the origin function.
@@ -56,7 +57,7 @@ namespace mem {
 		// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
 		// 
 		// Return:
-		// Pointer to the gateway within the virtual address space of the target process.
+		// Pointer to the gateway within the virtual address space of the target process or nullptr on failure (eg because of architecture incompatibility)
 		// This address is called by the detour function at the address given by originCall.
 		// The stolen bytes of the orgin function are located here.
 		BYTE* trampHook(HANDLE hProc, BYTE* origin, const BYTE* detour, BYTE* originCall, size_t size);
@@ -274,6 +275,7 @@ namespace mem {
 		#endif // _WIN64
 
 	}
+
 
 	// Functions to interact with the virtual memory of the caller process interally.
 	namespace in {

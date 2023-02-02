@@ -35,11 +35,8 @@ namespace mem {
 	namespace ex {
 		
 		BYTE* trampHook(HANDLE hProc, BYTE* origin, const BYTE* detour, BYTE* originCall, size_t size) {
-			
-			// allocate memory for the gateway
-			#ifdef _WIN64
-
 			BYTE* gateway = nullptr;
+			size_t targetPtrSize = 0;
 
 			BOOL isWow64 = false;
 			IsWow64Process(hProc, &isWow64);
@@ -48,48 +45,33 @@ namespace mem {
 				// allocate enough memory for the relative jump (gateway to origin)
 				// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
 				gateway = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, size + X86_JUMP_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+				targetPtrSize = sizeof(uint32_t);
 			}
 			else {
+
+				// if the target process is x64 and the function compiled to x86 nothing will be done and the function returns a nullptr
+				#ifdef _WIN64
+
 				// allocate enough memory for the relative jump (gateway to origin) and the absolute relay jump (relay to detour) near the origin (reachable by relative jump)
 				gateway = virtualAllocNear(hProc, origin, size + X86_JUMP_SIZE + X64_JUMP_SIZE);
-			}
-			
-			#else
+				targetPtrSize = sizeof(uint64_t);
 
-			// VirtualAllocEx can be used for x86 compilations since hooking an x64 target from an x86 executable is not supported and in x86 every address is reachable by a relative jump
-			BYTE* gateway = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, size + X86_JUMP_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
-			
-			#endif
+				#endif // _WIN64
+
+			}
 
 			if (!gateway) return nullptr;
 
-			// overwrite the origin call placeholder
-			#ifdef _WIN64
-			
-			if (isWow64) {
+			if (originCall) {
 				
-				if (!WriteProcessMemory(hProc, originCall, &gateway, sizeof(uint32_t), nullptr)) {
-					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
-					
-					return nullptr;
-				}
-
-			}
-			else {
-				
-				if (!WriteProcessMemory(hProc, originCall, &gateway, sizeof(uint64_t), nullptr)) {
+				// overwrite the origin call placeholder
+				if (!WriteProcessMemory(hProc, originCall, &gateway, targetPtrSize, nullptr)) {
 					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 					return nullptr;
 				}
 
 			}
-
-			#else
-
-			if (!WriteProcessMemory(hProc, originCall, &gateway, sizeof(BYTE*), nullptr)) return nullptr;
-
-			#endif // _WIN64
 
 			// write the overwritten bytes of the origin to the gateway
 			BYTE* stolen = new BYTE[size]{};
@@ -117,8 +99,6 @@ namespace mem {
 				return nullptr;
 			}
 
-			#ifdef _WIN64
-
 			if (isWow64) {
 				
 				// relative jump directly from origin to detour (will always be reachable in x86 targets)
@@ -130,6 +110,10 @@ namespace mem {
 
 			}
 			else {
+
+				// only hook x64 process if compiled to x64
+				#ifdef _WIN64
+
 				// in x64 targets an absolute jump is needed to reliably jump from the origin to the detour
 				// instead of patching the origin with a longer absolute jump, a relay is used that can be reached by a relative jump
 				BYTE* const relay = gateway + size + X86_JUMP_SIZE;
@@ -147,19 +131,10 @@ namespace mem {
 
 					return nullptr;
 				}
+
+				#endif
+
 			}
-
-			#else
-
-			// relative jump directly from origin to detour (will always be reachable in x86 targets)
-			// hooking an x64 target from an x86 executable is not supported
-			if (!relJmp(hProc, origin, detour, size)) {
-				VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
-
-				return nullptr;
-			}
-
-			#endif
 
 			return gateway;
 		}
@@ -389,6 +364,7 @@ namespace mem {
 			BYTE* const gateway = virtualAllocNear(origin, size + X86_JUMP_SIZE + X64_JUMP_SIZE);
 			
 			#else
+
 			// allocate enough memory for the relative jump (gateway to origin)
 			// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
 			BYTE* gateway = static_cast<BYTE*>(VirtualAlloc(nullptr, size + X86_JUMP_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
