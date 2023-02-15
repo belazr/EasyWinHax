@@ -121,49 +121,88 @@ namespace proc {
 				return nullptr;
 			}
 
-			FARPROC procAddress = nullptr;
+			DWORD funcRva = 0;
+			// export by ordinal if everything but the lowest word of name param is zero
+			const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) & 0xFFFFFFFFFFFF0000) == 0;
 
-			for (DWORD i = 0; i < numberOfNames; i++) {
-				char curFuncName[MAX_PATH]{};
+			if (byOrdinal) {
+				const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & 0xFFFF) - exportDir.Base);
+				funcRva = exportFunctionTable[index];
+			}
+			else {
 
-				if (!mem::ex::copyRemoteString(hProc, curFuncName, pBase + exportNameTable[i], MAX_PATH)) continue;
+				for (DWORD i = 0; i < exportDir.NumberOfNames; i++) {
+					char curFuncName[MAX_PATH]{};
 
-				if (!_stricmp(funcName, curFuncName)) {
-					// the function rva is in the export table indexed by the ordinal in the ordinal table at the same index as the name in the name table
-					const DWORD curFuncRva = exportFunctionTable[exportOrdinalTable[i]];
-					const bool forwarded = curFuncRva >= dirEntryExport.VirtualAddress && curFuncRva <= dirEntryExport.VirtualAddress + dirEntryExport.Size;
+					if (!mem::ex::copyRemoteString(hProc, curFuncName, pBase + exportNameTable[i], MAX_PATH)) continue;
 
-					if (forwarded) {
-						// forward has the format "module.function"
-						// it is split a the dot and the ".dll" extension is appended to the module name
-						char curForward[MAX_PATH]{};
+					if (!_stricmp(funcName, curFuncName)) {
+						// the function rva is in the export table indexed by the ordinal in the ordinal table at the same index as the name in the name table
+						funcRva = exportFunctionTable[exportOrdinalTable[i]];
 
-						if (!mem::ex::copyRemoteString(hProc, curForward, pBase + curFuncRva, MAX_PATH)) break;
-
-						char* forwardModName = nullptr;
-						char* forwardFuncName = nullptr;
-
-						forwardModName = strtok_s(curForward, ".", &forwardFuncName);
-
-						char forwardModFileName[MAX_PATH]{};
-
-						strcpy_s(forwardModFileName, forwardModName);
-						strcat_s(forwardModFileName, ".dll");
-
-						HMODULE hForwardMod = getModuleHandle(hProc, forwardModFileName);
-
-						if (!hForwardMod) break;;
-
-						// looking for the forwarded funcion in the module it was forwarded to
-						procAddress = getProcAddress(hProc, hForwardMod, forwardFuncName);
-					}
-					else {
-						procAddress = reinterpret_cast<FARPROC>(pBase + curFuncRva);
+						break;
 					}
 
-					break;
 				}
 
+			}
+
+			if (!funcRva) {
+				delete[] exportFunctionTable;
+				delete[] exportNameTable;
+				delete[] exportOrdinalTable;
+
+				return nullptr;
+			}
+
+			FARPROC procAddress = nullptr;
+			const bool forwarded = funcRva >= dirEntryExport.VirtualAddress && funcRva <= dirEntryExport.VirtualAddress + dirEntryExport.Size;
+
+			if (forwarded) {
+				// forward has the format "module.function"
+				// it is split a the dot and the ".dll" extension is appended to the module name
+				char curForward[MAX_PATH]{};
+
+				if (!mem::ex::copyRemoteString(hProc, curForward, pBase + funcRva, MAX_PATH)) {
+					delete[] exportFunctionTable;
+					delete[] exportNameTable;
+					delete[] exportOrdinalTable;
+					
+					return nullptr;
+				}
+
+				char* forwardModName = nullptr;
+				char* forwardFuncName = nullptr;
+
+				forwardModName = strtok_s(curForward, ".", &forwardFuncName);
+
+				char forwardModFileName[MAX_PATH]{};
+
+				strcpy_s(forwardModFileName, forwardModName);
+				strcat_s(forwardModFileName, ".dll");
+
+				HMODULE hForwardMod = getModuleHandle(hProc, forwardModFileName);
+
+				if (!hForwardMod) {
+					delete[] exportFunctionTable;
+					delete[] exportNameTable;
+					delete[] exportOrdinalTable;
+
+					return nullptr;
+				}
+
+				// check if exported by ordinal and looking for the forwarded funcion in the module it was forwarded to
+				if (forwardFuncName[0] == '#') {
+					char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(forwardFuncName++)));
+					procAddress = getProcAddress(hProc, hForwardMod, forwardFuncOrdinal);
+				}
+				else {
+					procAddress = getProcAddress(hProc, hForwardMod, forwardFuncName);
+				}
+
+			}
+			else {
+				procAddress = reinterpret_cast<FARPROC>(pBase + funcRva);
 			}
 
 			delete[] exportFunctionTable;
@@ -573,46 +612,68 @@ namespace proc {
 
 			if (!pExportOrdinalTable) return nullptr;
 
-			FARPROC procAddress = nullptr;
+			
+			DWORD funcRva = 0;
+			// export by ordinal if everything but the lowest word of name param is zero
+			const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) & 0xFFFFFFFFFFFF0000) == 0;
 
-			for (DWORD i = 0; i < pExportDir->NumberOfNames; i++) {
-				const char* const curFuncName = reinterpret_cast<const char*>(pBase + pExportNameTable[i]);
+			if (byOrdinal) {
+				const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & 0xFFFF) - pExportDir->Base);
+				funcRva = pExportFunctionTable[index];
+			}
+			else {
+				
+				for (DWORD i = 0; i < pExportDir->NumberOfNames; i++) {
+					const char* const curFuncName = reinterpret_cast<const char*>(pBase + pExportNameTable[i]);
 
-				if (!_stricmp(funcName, curFuncName)) {
-					// the function rva is in the export table indexed by the ordinal in the ordinal table at the same index as the name in the name table
-					const DWORD curFuncRva = pExportFunctionTable[pExportOrdinalTable[i]];
-					const bool forwarded = curFuncRva >= dirEntryExport.VirtualAddress && curFuncRva <= dirEntryExport.VirtualAddress + dirEntryExport.Size;
+					if (!_stricmp(funcName, curFuncName)) {
+						// the function rva is in the export table indexed by the ordinal in the ordinal table at the same index as the name in the name table
+						funcRva = pExportFunctionTable[pExportOrdinalTable[i]];
 
-					if (forwarded) {
-						// forward has the format "module.function"
-						// it is split a the dot and the ".dll" extension is appended to the module name
-						char curForward[MAX_PATH]{};
-						strcpy_s(curForward, reinterpret_cast<const char*>(pBase + curFuncRva));
-
-						char* forwardModName = nullptr;
-						char* forwardFuncName = nullptr;
-
-						forwardModName = strtok_s(curForward, ".", &forwardFuncName);
-
-						char forwardModFileName[MAX_PATH]{};
-
-						strcpy_s(forwardModFileName, forwardModName);
-						strcat_s(forwardModFileName, ".dll");
-
-						HMODULE hForwardMod = getModuleHandle(forwardModFileName);
-
-						if (!hForwardMod) break;
-
-						// looking for the forwarded funcion in the module it was forwarded to
-						procAddress = getProcAddress(hForwardMod, forwardFuncName);
-					}
-					else {
-						procAddress = reinterpret_cast<FARPROC>(pBase + curFuncRva);
+						break;
 					}
 
-					break;
 				}
 
+			}
+
+			if (!funcRva) return nullptr;
+
+			FARPROC procAddress = nullptr;
+			const bool forwarded = funcRva >= dirEntryExport.VirtualAddress && funcRva <= dirEntryExport.VirtualAddress + dirEntryExport.Size;
+
+			if (forwarded) {
+				// forward has the format "module.function"
+				// it is split a the dot and the ".dll" extension is appended to the module name
+				char curForward[MAX_PATH]{};
+				strcpy_s(curForward, reinterpret_cast<const char*>(pBase + funcRva));
+
+				char* forwardModName = nullptr;
+				char* forwardFuncName = nullptr;
+
+				forwardModName = strtok_s(curForward, ".", &forwardFuncName);
+
+				char forwardModFileName[MAX_PATH]{};
+
+				strcpy_s(forwardModFileName, forwardModName);
+				strcat_s(forwardModFileName, ".dll");
+
+				HMODULE hForwardMod = getModuleHandle(forwardModFileName);
+
+				if (!hForwardMod) return nullptr;
+
+				// check if exported by ordinal and looking for the forwarded funcion in the module it was forwarded to
+				if (forwardFuncName[0] == '#') {
+					char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(forwardFuncName++)));
+					procAddress = getProcAddress(hForwardMod, forwardFuncOrdinal);
+				}
+				else {
+					procAddress = getProcAddress(hForwardMod, forwardFuncName);
+				}
+
+			}
+			else {
+				procAddress = reinterpret_cast<FARPROC>(pBase + funcRva);
 			}
 
 			return procAddress;

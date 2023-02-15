@@ -61,9 +61,6 @@ The library provides a way to setup an wglSwapBuffers hook and some functions to
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 
-## TODOs
-- Import by ordinal support for proc::in::getProcAddress and proc::ex::getProcAddress
-
 ## References
 - https://guidedhacking.com/
 - https://learn.microsoft.com/en-us/windows/win32/api/
