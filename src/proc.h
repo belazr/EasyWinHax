@@ -73,7 +73,7 @@ namespace proc {
 		bool getTlHelpModEntry(HANDLE hProc, const char* modName, MODULEENTRY32* pModEntry);
 
 		// Gets the address of a function/procedure exported by a module of an external target process within the virtual address space this process.
-		// Works like an external version of GetProcAddress of the Win32 API but just for exports by name.
+		// Works like an external version of GetProcAddress of the Win32 API.
 		// Uses only calls to ReadProcessMemory and NtQueryInformationProcess (for forwared functions) of the Win32 API.
 		// Supports function forwarding but NOT FOR VIRTUAL DLLS (e.g. api-ms-win-...dll) using the ApiSetSchema.
 		// 
@@ -87,7 +87,7 @@ namespace proc {
 		// Handle to the module that exports the function.
 		// 
 		// [in] funcName:
-		// Export name of the exported function. Has to be exported by name.
+		// Export name or ordinal of the exported function..
 		// 
 		// Return:
 		// Address of the exported function within the virtual address space of the target process or nullptr on failure or if procedure was not found.
@@ -242,7 +242,7 @@ namespace proc {
 	namespace in {
 
 		// Gets the address of a function/procedure exported by a module of the caller process within the virtual address space of the process.
-		// Works like GetProcAddress of the Win32 API but just for exports by name.
+		// Works like GetProcAddress of the Win32 API.
 		// Uses no calls to functions of the Win32 API.
 		// Supports function forwarding but NOT WITH VIRTUAL DLLS (e.g. api-ms-win-...dll) using the ApiSetSchema.
 		// 
@@ -252,7 +252,7 @@ namespace proc {
 		// Handle to the module that exports the function.
 		// 
 		// [in] funcName:
-		// Export name of the exported function. Has to be exported by name.
+		// Export name or ordinal of the exported function..
 		// 
 		// Return:
 		// Address of the exported function within the virtual address space of the caller process or nullptr on failure or if procedure not found.
