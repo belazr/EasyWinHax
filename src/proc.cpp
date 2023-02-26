@@ -20,23 +20,19 @@ namespace proc {
 
 			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
 
-			PROCESSENTRY32 procEntry{};
-			procEntry.dwSize = sizeof(procEntry);
+			pProcEntry->dwSize = sizeof(PROCESSENTRY32);
 
-			if (!Process32First(hSnap, &procEntry)) return false;
+			if (!Process32First(hSnap, pProcEntry)) return false;
 
 			bool found = false;
 
 			do {
 				
-				if (!_stricmp(procEntry.szExeFile, procName)) {
-					
-					if (memcpy_s(pProcEntry, sizeof(PROCESSENTRY32), &procEntry, sizeof(PROCESSENTRY32))) break;
-
+				if (!_stricmp(pProcEntry->szExeFile, procName)) {
 					found = true;
 				}
 
-			} while (!found && Process32Next(hSnap, &procEntry));
+			} while (!found && Process32Next(hSnap, pProcEntry));
 
 			CloseHandle(hSnap);
 
@@ -49,23 +45,19 @@ namespace proc {
 
 			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
 
-			MODULEENTRY32 modEntry{};
-			modEntry.dwSize = sizeof(modEntry);
+			pModEntry->dwSize = sizeof(MODULEENTRY32);
 
-			if (!Module32First(hSnap, &modEntry)) return false;
+			if (!Module32First(hSnap, pModEntry)) return false;
 
 			bool found = false;
 
 			do {
 
-				if (!_stricmp(modEntry.szModule, modName)) {
-					
-					if (!memcpy_s(pModEntry, sizeof(MODULEENTRY32), &modEntry, sizeof(MODULEENTRY32))) break;
-
+				if (!_stricmp(pModEntry->szModule, modName)) {
 					found = true;
 				}
 
-			} while (!found && Module32Next(hSnap, &modEntry));
+			} while (!found && Module32Next(hSnap, pModEntry));
 
 			CloseHandle(hSnap);
 
