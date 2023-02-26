@@ -22,7 +22,11 @@ namespace proc {
 
 			pProcEntry->dwSize = sizeof(PROCESSENTRY32);
 
-			if (!Process32First(hSnap, pProcEntry)) return false;
+			if (!Process32First(hSnap, pProcEntry)) {
+				CloseHandle(hSnap);
+				
+				return false;
+			}
 
 			bool found = false;
 
@@ -47,7 +51,11 @@ namespace proc {
 
 			pModEntry->dwSize = sizeof(MODULEENTRY32);
 
-			if (!Module32First(hSnap, pModEntry)) return false;
+			if (!Module32First(hSnap, pModEntry)) {
+				CloseHandle(hSnap);
+
+				return false;
+			}
 
 			bool found = false;
 
