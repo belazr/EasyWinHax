@@ -38,7 +38,7 @@ namespace proc {
 		// If there are multiple proccesses with the same name the id of one of them is returned.
 		DWORD getProcId(const char* procName);
 
-		// Gets the process entry of a snapshot of CreateToolhelp32Snapshot by process name.
+		// Gets a process entry of a snapshot of CreateToolhelp32Snapshot by process name.
 		// 
 		// Parameters:
 		// 
@@ -53,7 +53,7 @@ namespace proc {
 		// True on success, false on failure or if process was not found.
 		bool getTlHelpProcEntry(const char* procName, PROCESSENTRY32* pProcEntry);
 
-		// Gets the module entry of a snapshot of CreateToolhelp32Snapshot by module name.
+		// Gets a module entry of a snapshot of CreateToolhelp32Snapshot by module name.
 		// 
 		// Parameters:
 		// 
@@ -65,12 +65,28 @@ namespace proc {
 		// Name of the module.
 		// 
 		// [out] pModEntry:
-		// Address of the module entry structure of the module that receives the information about the module.
+		// Address of the module entry structure that receives the information about the module.
 		// If there are multiple modules with the same name the structure of one of them is returned.
 		// 
 		// Return:
 		// True on success, false on failure or if module was not found.
 		bool getTlHelpModEntry(HANDLE hProc, const char* modName, MODULEENTRY32* pModEntry);
+
+		// Gets a thread entry of a snapshot of CreateToolhelp32Snapshot by owning process.
+		// 
+		// Parameters:
+		// 
+		// [in] hProc:
+		// Handle to the process which threads should be searched.
+		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION access rights.
+		// 
+		// [out] pThreadEntry:
+		// Address of the thread entry structure that receives the information about the thread.
+		// If there are multiple threads with the same owning process the structure of one of them is returned.
+		// 
+		// Return:
+		// True on success, false on failure or if no thread was found.
+		bool getTlHelpThreadEntry(HANDLE hProc, THREADENTRY32* pThreadEntry);
 
 		// Gets the address of a function/procedure exported by a module of an external target process within the virtual address space this process.
 		// Works like an external version of GetProcAddress of the Win32 API.

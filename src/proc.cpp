@@ -72,6 +72,36 @@ namespace proc {
 			return found;
 		}
 
+
+		bool getTlHelpThreadEntry(HANDLE hProc, THREADENTRY32* pThreadEntry) {
+			DWORD procId = GetProcessId(hProc);
+			HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, procId);
+
+			pThreadEntry->dwSize = sizeof(THREADENTRY32);
+
+			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
+
+			if (!Thread32First(hSnap, pThreadEntry)) {
+				CloseHandle(hSnap);
+
+				return false;
+			}
+
+			bool found = false;
+
+			do {
+
+				if (pThreadEntry->th32OwnerProcessID == procId) {
+					found = true;
+				}
+
+			} while (!found && Thread32Next(hSnap, pThreadEntry));
+
+			CloseHandle(hSnap);
+
+			return found;
+		}
+
 		
 		static bool getDataDirFromPeHeaders(HANDLE hProc, const PeHeaders* pPeHeaders, IMAGE_DATA_DIRECTORY* pDataDir, char index);
 
