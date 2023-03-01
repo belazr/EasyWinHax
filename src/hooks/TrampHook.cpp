@@ -73,12 +73,10 @@ namespace hax {
 
 
 		bool TrampHook::disable() {
-			if (!this->_gateway) return false;
+			if (!this->_hooked || !this->_origin || !this->_gateway) return false;
 
 			// overwritten/stolen bytes
 			BYTE* const stolen = new BYTE[this->_size]{};
-
-			if (!stolen) return false;
 
 			// read the stolen bytes from the gateway
 			if (!ReadProcessMemory(this->_hProc, this->_gateway, stolen, this->_size, nullptr)) {
@@ -87,21 +85,17 @@ namespace hax {
 				return false;
 			}
 
-			if (this->_origin && this->_hooked) {
+			// patch the stolen bytes back
+			if (!mem::ex::patch(this->_hProc, this->_origin, stolen, this->_size)) {
+				delete[] stolen;
 
-				// patch the overwritten bytes back to the origin function
-				if (mem::ex::patch(this->_hProc, this->_origin, stolen, this->_size)) {
-					this->_hooked = false;
-					delete[] stolen;
-
-					return VirtualFreeEx(this->_hProc, _gateway, 0, MEM_RELEASE);
-				}
-
+				return false;
 			}
 
+			this->_hooked = false;
 			delete[] stolen;
 
-			return false;
+			return VirtualFreeEx(this->_hProc, _gateway, 0, MEM_RELEASE);
 		}
 
 
@@ -170,20 +164,14 @@ namespace hax {
 
 		bool TrampHook::disable() {
 
-			if (!this->_gateway) return false;
+			if (!this->_hooked || !this->_origin || !this->_gateway) return false;
 
-			if (this->_origin && this->_hooked) {
+			// patch the stolen bytes back
+			if (!mem::in::patch(this->_origin, this->_gateway, this->_size)) return false;
+					
+			this->_hooked = false;
 
-				if (mem::in::patch(this->_origin, this->_gateway, this->_size)) {
-					this->_hooked = false;
-
-					return VirtualFree(_gateway, 0, MEM_RELEASE);
-
-				}
-
-			}
-
-			return false;
+			return VirtualFree(_gateway, 0, MEM_RELEASE);
 		}
 
 

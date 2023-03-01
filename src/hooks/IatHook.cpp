@@ -79,8 +79,10 @@ namespace hax {
 			if (this->_hooked || !this->_pIatEntry || !this->_detour) return false;
 
 			if (this->_isWow64Proc) {
+				
 				// overwrites the IAT entry in the process
 				if (!mem::ex::patch(this->_hProc, this->_pIatEntry, reinterpret_cast<const BYTE*>(&this->_detour), sizeof(uint32_t))) return false;
+
 			}
 			else {
 
@@ -109,8 +111,10 @@ namespace hax {
 			if (!this->_hooked || !this->_pIatEntry || !this->_origin) return false;
 
 			if (this->_isWow64Proc) {
+				
 				// restores the IAT entry in the process
 				if (!mem::ex::patch(this->_hProc, this->_pIatEntry, reinterpret_cast<const BYTE*>(&this->_origin), sizeof(uint32_t))) return false;
+
 			}
 			else {
 
