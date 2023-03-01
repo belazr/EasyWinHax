@@ -8,3 +8,4 @@
 #include "hooks\IatHook.h"
 #include "mem.h"
 #include "proc.h"
+#include "launch.h"

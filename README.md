@@ -34,7 +34,9 @@ Even though EasyWinHax was written to provide helpers for game hacking it can be
 ### Process information
 The library provides functions to retrieve information about a windows process including reimplementations of some Win32 API functions with added advantages. Most function are defined to interact with the caller process as well as an external target process. The external functions are implemented so that the x64 builds of these functions are able to retrieve information about an x86 as well as an x64 external target process. Possible process information is eg. process id, process environment block, loader data, import and export adresses of functions. For example proc::ex::getProcAddress is able to get the address of an exported function (like the Win32 version) but on external processes and independent of the target architechture. See the "proc.h" header for further documentation.
 ### Memory interaction
-The library provides functions to interact with the virtual memory of a process. Again most furnctions are defined to interact with the caller process as well as an external target process. The external functions are again implemented so that the x64 compilations of these functions are able to interact with the virtual memory of an x64 as well as an x86 target process. Possible memory interactions are eg. low level hooking, patching and memory pattern scanning. See the "mem.h" header for further documentation.
+The library provides functions to interact with the virtual memory of a process. Again most functions are defined to interact with the caller process as well as an external target process. The external functions are again implemented so that the x64 compilations of these functions are able to interact with the virtual memory of an x64 as well as an x86 target process. Possible memory interactions are eg. low level hooking, patching and memory pattern scanning. See the "mem.h" header for further documentation.
+### Launching code
+The library provides functions to launch and execute code in an external target process. It supports launching via CreateRemoteThread and thread hijacking including retriving the return value of the executed code. See the "launch.h" header for further documentation.
 ### Vector math
 The library provides basic vector types and functions, as well as world to screen functions for column- and row-major projection matricies. See the "vecmath.h" header for further documentation.
 ### Function hooking
@@ -60,6 +62,9 @@ The library provides a way to setup an EndScene hook and some functions to draw 
 The library provides a way to setup an wglSwapBuffers hook and some functions to draw basic shapes within the hook. It also provides a font class that can be used to draw text to the screen. See the headers in the "ogl" folder for further documentation.
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
+
+## TODO
+- Add code launching via QueueUserApc and SetWindowsHookEx
 
 ## References
 - https://guidedhacking.com/

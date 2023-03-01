@@ -72,6 +72,9 @@
     <ClInclude Include="src\hooks\IHook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\launch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dx9\dx9Draw.cpp">
@@ -120,6 +123,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\hooks\TrampHook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\launch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
