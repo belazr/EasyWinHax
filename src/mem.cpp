@@ -1,5 +1,6 @@
 #pragma once
 #include "mem.h"
+#include <stdint.h>
 
 // ASM:
 // nop

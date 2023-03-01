@@ -1,6 +1,5 @@
 #pragma once
 #include <Windows.h>
-#include <stdint.h>
 
 // Functions to interact with the virtual memory of a windows process.
 // Most functions are defined to interact with the caller process as well as an external process.

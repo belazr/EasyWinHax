@@ -1,6 +1,7 @@
 #include "IatHook.h"
 #include "..\mem.h"
 #include "..\proc.h"
+#include <stdint.h>
 
 namespace hax {
 
