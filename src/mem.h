@@ -59,6 +59,7 @@ namespace mem {
 		// Pointer to the gateway within the virtual address space of the target process or nullptr on failure (eg because of architecture incompatibility)
 		// This address is called by the detour function at the address given by originCall.
 		// The stolen bytes of the orgin function are located here.
+		// Call VirtualFreeEx on the return value to free the memory in the target process.
 		BYTE* trampHook(HANDLE hProc, BYTE* origin, const BYTE* detour, BYTE* originCall, size_t size);
 		
 		#ifdef _WIN64
@@ -301,6 +302,7 @@ namespace mem {
 		// Return:
 		// Pointer to the gateway. This address should be called by the detour function with the same calling convention as the origin function.
 		// The stolen bytes of the orgin function are located here.
+		// Call VirtualFree on the return value to free the memory in the process.
 		BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size);
 		
 		#ifdef _WIN64
