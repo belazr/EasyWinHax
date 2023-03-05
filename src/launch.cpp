@@ -158,6 +158,8 @@ namespace launch {
 	}
 
 
+	static BOOL CALLBACK foregroundWindowCallback(HWND hWnd, LPARAM pArg);
+
 	bool hijackThread(HANDLE hProc, LPTHREAD_START_ROUTINE pFunc, void* pArg, void** pRet) {
 		BOOL isWow64 = FALSE;
 		IsWow64Process(hProc, &isWow64);
@@ -193,6 +195,8 @@ namespace launch {
 
 			return false;
 		}
+
+		bool success = false;
 
 		if (isWow64) {
 			WOW64_CONTEXT wow64Context{};
@@ -245,31 +249,38 @@ namespace launch {
 				return false;
 			}
 
+			DWORD procId = GetProcessId(hProc);
+
+			// foreground window to raise thread piority and ensure thread execution
+			if (!EnumWindows(foregroundWindowCallback, reinterpret_cast<LPARAM>(&procId))) {
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
 			ULONGLONG start = GetTickCount64();
 			bool flag = true;
 
 			do {
 				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
-
-				if (GetTickCount64() - start > THREAD_TIMEOUT) {
-
-					if (SuspendThread(hThread) != 0xFFFFFFFF) {
-						wow64Context.Eip = oldEip;
-						Wow64SetThreadContext(hThread, &wow64Context);
-						ResumeThread(hThread);
-					}
-
-					VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-					return false;
-				}
+				
+				if (!flag) break;
 
 				Sleep(50);
-			} while (flag);
+			} while (GetTickCount64() - start > THREAD_TIMEOUT);
 
-			CloseHandle(hThread);
-			ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint32_t), nullptr);
-			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+			success = !flag;
+
+			if (success) {
+				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint32_t), nullptr);
+			}
+			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
+				wow64Context.Eip = oldEip;
+				Wow64SetThreadContext(hThread, &wow64Context);
+				ResumeThread(hThread);				
+			}
+
 		}
 		else {
 
@@ -322,37 +333,70 @@ namespace launch {
 				return false;
 			}
 
+			DWORD procId = GetProcessId(hProc);
+
+			// foreground window to raise thread piority and ensure thread execution
+			if (!EnumWindows(foregroundWindowCallback, reinterpret_cast<LPARAM>(&procId))) {
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
 			ULONGLONG start = GetTickCount64();
 			bool flag = true;
 
 			do {
 				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
 
-				if (GetTickCount64() - start > THREAD_TIMEOUT) {
-
-					if (SuspendThread(hThread) != 0xFFFFFFFF) {
-						context.Rip = oldRip.QuadPart;
-						SetThreadContext(hThread, &context);
-						ResumeThread(hThread);
-					}
-
-					VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-					return false;
-				}
+				if (!flag) break;
 
 				Sleep(50);
-			} while (flag);
+			} while (GetTickCount64() - start > THREAD_TIMEOUT);
 
-			CloseHandle(hThread);
-			ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint64_t), nullptr);
-			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+			success = !flag;
+
+			if (success) {
+				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint64_t), nullptr);
+			}
+			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
+				context.Rip = oldRip.QuadPart;
+				SetThreadContext(hThread, &context);
+				ResumeThread(hThread);
+			}
 
 			#endif // _WIN64
 
 		}
 
-		return true;
+		CloseHandle(hThread);
+		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+		return success;
+	}
+
+
+	static BOOL CALLBACK foregroundWindowCallback(HWND hWnd, LPARAM pProcId) {
+		const DWORD targetProcId = *reinterpret_cast<DWORD*>(pProcId);
+		DWORD curProcId = 0;
+
+		GetWindowThreadProcessId(hWnd, &curProcId);
+
+		if (curProcId == targetProcId) {
+
+			if (IsWindowVisible(hWnd)) {
+				const HWND hForegroundWnd = GetForegroundWindow();
+
+				if (!hForegroundWnd) return FALSE;
+
+				SetForegroundWindow(hWnd);
+				Sleep(10);
+				SetForegroundWindow(hForegroundWnd);
+			}
+
+		}
+
+		return TRUE;
 	}
 
 }
