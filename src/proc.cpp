@@ -427,7 +427,10 @@ namespace proc {
 			if (!ReadProcessMemory(hProc, pPebLdrData64, &pebLdrData64, sizeof(PEB_LDR_DATA64), nullptr)) return nullptr;
 
 			wchar_t wModName[MAX_PATH]{};
-			MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+
+			if (modName) {
+				MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+			}
 
 			LDR_DATA_TABLE_ENTRY64* pLdrTableEntry = nullptr;
 			// static cast to convert from DWORD (4 bytes) to uintptr_t (4 bytes for x86, 8 bytes for x64)
@@ -448,7 +451,7 @@ namespace proc {
 
 				if (!ReadProcessMemory(hProc, wRemoteCurModName, wCurModName, curDataTableEntry.BaseDllName.Length, nullptr)) break;
 
-				if (!_wcsicmp(wModName, wCurModName)) {
+				if (!_wcsicmp(wModName, wCurModName) || !modName) {
 					pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY64* const>(pCurLdrTableEntry);
 					
 					break;
@@ -480,7 +483,10 @@ namespace proc {
 			if (!ReadProcessMemory(hProc, pPebLdrData32, &pebLdrData, sizeof(PEB_LDR_DATA32), nullptr)) return nullptr;
 
 			wchar_t wModName[MAX_PATH]{};
-			MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+
+			if (modName) {
+				MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+			}
 
 			LDR_DATA_TABLE_ENTRY32* pLdrTableEntry = nullptr;
 			// static cast to convert from DWORD (4 bytes) to uintptr_t (4 bytes for x86, 8 bytes for x64)
@@ -500,7 +506,7 @@ namespace proc {
 
 				if (!ReadProcessMemory(hProc, wRemoteCurModName, wCurModName, curDataTableEntry.BaseDllName.Length, nullptr)) break;
 
-				if (!_wcsicmp(wModName, wCurModName)) {
+				if (!_wcsicmp(wModName, wCurModName) || !modName) {
 					pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY32* const>(pCurLdrTableEntry);
 
 					break;
@@ -829,7 +835,10 @@ namespace proc {
 
 		LDR_DATA_TABLE_ENTRY* getLdrDataTableEntryAddress(const char* modName) {
 			wchar_t wModName[MAX_PATH]{};
-			MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+
+			if (modName) {
+				MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+			}
 
 			const PEB* const pPeb = getPebAddress();
 
@@ -841,7 +850,7 @@ namespace proc {
 
 				const LDR_DATA_TABLE_ENTRY* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 
-				if (!_wcsicmp(wModName, pCurLdrTableEntry->BaseDllName.Buffer)) {
+				if (!_wcsicmp(wModName, pCurLdrTableEntry->BaseDllName.Buffer) || !modName) {
 					pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY* const>(pCurLdrTableEntry);
 
 					break;
