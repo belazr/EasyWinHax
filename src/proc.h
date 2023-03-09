@@ -164,7 +164,7 @@ namespace proc {
 		// The process id of the target process.
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns a handle to the module of the file used to create the calling process (.exe file).
 		// 
 		// Return:
 		// Handle to the module or nullptr on failure or if the module was not found.
@@ -182,7 +182,7 @@ namespace proc {
 		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION and PROCESS_VM_READ access rights.
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns a handle to the module of the file used to create the calling process (.exe file).
 		// 
 		// Return:
 		// Handle to the module or nullptr on failure or if the module was not found.
@@ -199,7 +199,7 @@ namespace proc {
 		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION and PROCESS_VM_READ access rights.
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns the address of the x64 loader data table entry of the module of the file used to create the calling process (.exe file).
 		//
 		// Return:
 		// Address of the loader data table entry of the module or nullptr on failure or if the entry was not found.
@@ -216,7 +216,7 @@ namespace proc {
 		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION and PROCESS_VM_READ access rights.
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns the address of the x86 loader data table entry of the module of the file used to create the calling process (.exe file).
 		// 
 		// Return:
 		// Address of the loader data table entry of the module or nullptr on failure or if the entry was not found.
@@ -319,7 +319,7 @@ namespace proc {
 		// Parameters:
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns a handle to module of the file used to create the calling process (.exe file).
 		// 
 		// Return:
 		// Handle to the module or nullptr if the module was not found.
@@ -330,7 +330,7 @@ namespace proc {
 		// Parameters:
 		// 
 		// [in] modName:
-		// The name of the module.
+		// The name of the module. If nullptr returns the address of the loader data table entry of the module of the file used to create the calling process (.exe file).
 		// 
 		// Return:
 		// Address of the loader data table entry of the module or nullptr if the entry was not found.
