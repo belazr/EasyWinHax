@@ -268,7 +268,7 @@ namespace launch {
 				if (!flag) break;
 
 				Sleep(50);
-			} while (GetTickCount64() - start > THREAD_TIMEOUT);
+			} while (GetTickCount64() - start < THREAD_TIMEOUT);
 
 			success = !flag;
 
@@ -335,7 +335,7 @@ namespace launch {
 
 			DWORD procId = GetProcessId(hProc);
 
-			// foreground window to raise thread piority and ensure thread execution
+			// foreground window to raise thread priority and ensure thread execution
 			if (!EnumWindows(foregroundWindowCallback, reinterpret_cast<LPARAM>(&procId))) {
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
@@ -352,7 +352,7 @@ namespace launch {
 				if (!flag) break;
 
 				Sleep(50);
-			} while (GetTickCount64() - start > THREAD_TIMEOUT);
+			} while (GetTickCount64() - start < THREAD_TIMEOUT);
 
 			success = !flag;
 
@@ -379,7 +379,6 @@ namespace launch {
 	static BOOL CALLBACK foregroundWindowCallback(HWND hWnd, LPARAM pProcId) {
 		const DWORD targetProcId = *reinterpret_cast<DWORD*>(pProcId);
 		DWORD curProcId = 0;
-
 		GetWindowThreadProcessId(hWnd, &curProcId);
 
 		if (curProcId == targetProcId) {
