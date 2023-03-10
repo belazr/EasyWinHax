@@ -155,10 +155,9 @@ namespace launch {
 	}
 
 
-	static BOOL CALLBACK refreshCallback(HWND hWnd, LPARAM pArg);
 	static bool checkShellCodeFlag(HANDLE hProc, const BYTE* pFlag);
 
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet, bool refreshWnd) {
+	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
 		BOOL isWow64 = FALSE;
 		IsWow64Process(hProc, &isWow64);
 
@@ -234,6 +233,9 @@ namespace launch {
 				return false;
 			}
 
+			// post thread message to ensure thread execution
+			PostThreadMessageA(threadEntry.th32ThreadID, 0, 0, 0);
+
 			// thread can not be resumed
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				wow64Context.Eip = oldEip;
@@ -243,12 +245,6 @@ namespace launch {
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
-			}
-
-			if (refreshWnd) {
-				const DWORD procId = GetProcessId(hProc);
-				// refresh window to raise thread priority and ensure thread execution
-				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
 			if (!checkShellCodeFlag(hProc, pFlag)) {
@@ -314,6 +310,9 @@ namespace launch {
 				return false;
 			}
 
+			// post thread message to ensure thread execution
+			PostThreadMessageA(threadEntry.th32ThreadID, 0, 0, 0);
+
 			// thread can not be resumed
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				context.Rip = oldRip;
@@ -323,12 +322,6 @@ namespace launch {
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
-			}
-
-			if (refreshWnd) {
-				const DWORD procId = GetProcessId(hProc);
-				// refresh window to raise thread priority and ensure thread execution
-				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
 			if (!checkShellCodeFlag(hProc, pFlag)) {
@@ -360,37 +353,6 @@ namespace launch {
 		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 		return true;
-	}
-
-
-	static BOOL CALLBACK refreshCallback(HWND hWnd, LPARAM pProcId) {
-		const DWORD targetProcId = *reinterpret_cast<DWORD*>(pProcId);
-		DWORD curProcId = 0;
-		GetWindowThreadProcessId(hWnd, &curProcId);
-
-		if (curProcId == targetProcId) {
-
-			if (IsWindowVisible(hWnd)) {
-				WINDOWPLACEMENT wndPlacement{};
-				wndPlacement.length = sizeof(WINDOWPLACEMENT);
-				GetWindowPlacement(hWnd, &wndPlacement);
-				UINT oldShowCmd = wndPlacement.showCmd;
-
-				if (wndPlacement.showCmd == SW_MINIMIZE || wndPlacement.showCmd == SW_SHOWMINIMIZED) {
-					wndPlacement.showCmd = SW_RESTORE;
-				}
-				else {
-					wndPlacement.showCmd = SW_SHOWMINIMIZED;
-				}
-
-				SetWindowPlacement(hWnd, &wndPlacement);
-				wndPlacement.showCmd = oldShowCmd;
-				SetWindowPlacement(hWnd, &wndPlacement);
-			}
-
-		}
-
-		return TRUE;
 	}
 
 
