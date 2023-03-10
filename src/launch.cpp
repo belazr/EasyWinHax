@@ -155,9 +155,9 @@ namespace launch {
 	}
 
 
-	static BOOL CALLBACK foregroundWindowCallback(HWND hWnd, LPARAM pArg);
+	static BOOL CALLBACK refreshCallback(HWND hWnd, LPARAM pArg);
 
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
+	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet, bool refreshWnd) {
 		BOOL isWow64 = FALSE;
 		IsWow64Process(hProc, &isWow64);
 
@@ -248,12 +248,9 @@ namespace launch {
 
 			DWORD procId = GetProcessId(hProc);
 
-			// foreground window to raise thread piority and ensure thread execution
-			if (!EnumWindows(foregroundWindowCallback, reinterpret_cast<LPARAM>(&procId))) {
-				CloseHandle(hThread);
-				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-				return false;
+			if (refreshWnd) {
+				// refresh window to raise thread priority and ensure thread execution
+				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
 			ULONGLONG start = GetTickCount64();
@@ -331,12 +328,9 @@ namespace launch {
 
 			DWORD procId = GetProcessId(hProc);
 
-			// foreground window to raise thread priority and ensure thread execution
-			if (!EnumWindows(foregroundWindowCallback, reinterpret_cast<LPARAM>(&procId))) {
-				CloseHandle(hThread);
-				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-				return false;
+			if (refreshWnd) {
+				// refresh window to raise thread priority and ensure thread execution
+				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
 			ULONGLONG start = GetTickCount64();
@@ -370,7 +364,7 @@ namespace launch {
 	}
 
 
-	static BOOL CALLBACK foregroundWindowCallback(HWND hWnd, LPARAM pProcId) {
+	static BOOL CALLBACK refreshCallback(HWND hWnd, LPARAM pProcId) {
 		const DWORD targetProcId = *reinterpret_cast<DWORD*>(pProcId);
 		DWORD curProcId = 0;
 		GetWindowThreadProcessId(hWnd, &curProcId);
@@ -378,13 +372,21 @@ namespace launch {
 		if (curProcId == targetProcId) {
 
 			if (IsWindowVisible(hWnd)) {
-				const HWND hForegroundWnd = GetForegroundWindow();
+				WINDOWPLACEMENT wndPlacement{};
+				wndPlacement.length = sizeof(WINDOWPLACEMENT);
+				GetWindowPlacement(hWnd, &wndPlacement);
+				UINT oldShowCmd = wndPlacement.showCmd;
 
-				if (!hForegroundWnd) return FALSE;
+				if (wndPlacement.showCmd == SW_MINIMIZE || wndPlacement.showCmd == SW_SHOWMINIMIZED) {
+					wndPlacement.showCmd = SW_RESTORE;
+				}
+				else {
+					wndPlacement.showCmd = SW_SHOWMINIMIZED;
+				}
 
-				SetForegroundWindow(hWnd);
-				Sleep(10);
-				SetForegroundWindow(hForegroundWnd);
+				SetWindowPlacement(hWnd, &wndPlacement);
+				wndPlacement.showCmd = oldShowCmd;
+				SetWindowPlacement(hWnd, &wndPlacement);
 			}
 
 		}
