@@ -8,7 +8,7 @@
 #define LODWORD(qword) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(qword)))
 
 namespace launch {
-	
+
 	// ASM:
 	// mov rax, rcx
 	// mov rcx, QWORD PTR[rax]				load argument pointer to rcx
@@ -19,7 +19,7 @@ namespace launch {
 	// mov QWORD PTR[rcx], rax				write return value to beginning of shell code
 	// xor rax, rax							null rax
 	// ret
-	static BYTE x64CrtShell[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x8D, 0x0D, 0xD8, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x48, 0x31, 0xC0, 0xC3 };
+	static BYTE crtShellX64[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x8D, 0x0D, 0xD8, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x48, 0x31, 0xC0, 0xC3 };
 
 	// ASM:
 	// push   oldEip						save old eip for return instruction
@@ -38,7 +38,7 @@ namespace launch {
 	// pop    eax
 	// mov    BYTE PTR ds :&flag, 0x01		set flag to one
 	// ret									return to old eip
-	static BYTE x86HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x51, 0xFF, 0xD0, 0xA3, 0x00, 0x00, 0x00, 0x00, 0x9D, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
+	static BYTE hijackShellX86[]{ 0x00, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x51, 0xFF, 0xD0, 0xA3, 0x00, 0x00, 0x00, 0x00, 0x9D, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
 
 	// ASM:
 	// push   QWORD PTR [rip - 0x0E]		save old rip for return instruction
@@ -67,7 +67,7 @@ namespace launch {
 	// pop    rax
 	// mov    BYTE PTR[rip + 0x01], 0x01	set flag to one
 	// ret									return to old rip
-	static BYTE x64HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x35, 0xF2, 0xFF, 0xFF, 0xFF, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x8D, 0x0D, 0xC1, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x01, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
+	static BYTE hijackShellX64[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x35, 0xF2, 0xFF, 0xFF, 0xFF, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x8D, 0x0D, 0xC1, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x01, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
 
 
 	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
@@ -107,14 +107,14 @@ namespace launch {
 
 			// shell coding for x64 processes is done just to get the full 8 byte return value of x64 threads
 			// GetExitCodeThread can only get a DWORD value
-			*reinterpret_cast<void**>(x64CrtShell) = pArg;
-			*reinterpret_cast<const void**>(x64CrtShell + 0x8) = pFunc;
+			*reinterpret_cast<void**>(crtShellX64) = pArg;
+			*reinterpret_cast<const void**>(crtShellX64 + 0x8) = pFunc;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, 0x100, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) return false;
 
-			if (!WriteProcessMemory(hProc, pShellCode, x64CrtShell, sizeof(x64CrtShell), nullptr)) {
+			if (!WriteProcessMemory(hProc, pShellCode, crtShellX64, sizeof(crtShellX64), nullptr)) {
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
@@ -156,6 +156,7 @@ namespace launch {
 
 
 	static BOOL CALLBACK refreshCallback(HWND hWnd, LPARAM pArg);
+	static bool checkShellCodeFlag(HANDLE hProc, const BYTE* pFlag);
 
 	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet, bool refreshWnd) {
 		BOOL isWow64 = FALSE;
@@ -183,8 +184,8 @@ namespace launch {
 			return false;
 		}
 
-		// size of bigger shell code is used to be safe, allocates a whole page anyway
-		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(x64HijackShell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+		// size of larger shell code is used to be safe, allocates a whole page anyway
+		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(hijackShellX64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 		if (!pShellCode) {
 			ResumeThread(hThread);
@@ -192,8 +193,6 @@ namespace launch {
 
 			return false;
 		}
-
-		bool flag = false;
 
 		if (isWow64) {
 			WOW64_CONTEXT wow64Context{};
@@ -207,20 +206,19 @@ namespace launch {
 				return false;
 			}
 
-			DWORD oldEip = wow64Context.Eip;
-			// offset of flag in the shell code to signal successfull execution
-			ptrdiff_t flagOffset = sizeof(x86HijackShell) - 0x01;
-
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x05) = oldEip;
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x0E) = LODWORD(pArg);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x13) = LODWORD(pFunc);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x1B) = LODWORD(pShellCode);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x25) = LODWORD(pShellCode + flagOffset);
-
+			const uint32_t oldEip = wow64Context.Eip;
 			// set new instruction pointer to beginning of shell code function
 			wow64Context.Eip = LODWORD(pShellCode + 0x04);
+			// flag in the shell code to signal successfull execution
+			const BYTE* const pFlag = pShellCode + sizeof(hijackShellX86) - 0x01;
 
-			if (!WriteProcessMemory(hProc, pShellCode, x86HijackShell, sizeof(x86HijackShell), nullptr)) {
+			*reinterpret_cast<uint32_t*>(hijackShellX86 + 0x05) = oldEip;
+			*reinterpret_cast<uint32_t*>(hijackShellX86 + 0x0E) = LODWORD(pArg);
+			*reinterpret_cast<uint32_t*>(hijackShellX86 + 0x13) = LODWORD(pFunc);
+			*reinterpret_cast<uint32_t*>(hijackShellX86 + 0x1B) = LODWORD(pShellCode);
+			*reinterpret_cast<uint32_t*>(hijackShellX86 + 0x25) = LODWORD(pFlag);
+
+			if (!WriteProcessMemory(hProc, pShellCode, hijackShellX86, sizeof(hijackShellX86), nullptr)) {
 				ResumeThread(hThread);
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
@@ -240,37 +238,38 @@ namespace launch {
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				wow64Context.Eip = oldEip;
 				Wow64SetThreadContext(hThread, &wow64Context);
+				ResumeThread(hThread);
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
 			}
 
-			DWORD procId = GetProcessId(hProc);
-
 			if (refreshWnd) {
+				const DWORD procId = GetProcessId(hProc);
 				// refresh window to raise thread priority and ensure thread execution
 				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
-			ULONGLONG start = GetTickCount64();
+			if (!checkShellCodeFlag(hProc, pFlag)) {
 
-			do {
-				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
-				
-				if (flag) break;
+				if (SuspendThread(hThread) != 0xFFFFFFFF) {
+					wow64Context.Eip = oldEip;
+					Wow64SetThreadContext(hThread, &wow64Context);
+					ResumeThread(hThread);
+				}
 
-				Sleep(50);
-			} while (GetTickCount64() - start < THREAD_TIMEOUT);
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-			if (flag) {
-				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint32_t), nullptr);
+				return false;
 			}
-			// thread can be suspended
-			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
-				wow64Context.Eip = oldEip;
-				Wow64SetThreadContext(hThread, &wow64Context);
-				ResumeThread(hThread);				
+
+			if (!ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint32_t), nullptr)) {
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
 			}
 
 		}
@@ -289,18 +288,17 @@ namespace launch {
 				return false;
 			}
 
-			uint64_t oldRip = context.Rip;
-			// offset of flag in the shell code to signal successfull execution
-			ptrdiff_t flagOffset = sizeof(x64HijackShell) - 0x01;
-
-			*reinterpret_cast<uint64_t*>(x64HijackShell) = oldRip;
-			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x1C) = reinterpret_cast<const uint64_t>(pFunc);
-			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x26) = reinterpret_cast<uint64_t>(pArg);
-
+			const uint64_t oldRip = context.Rip;
 			// set new instruction pointer to beginning of shell code function
 			context.Rip = reinterpret_cast<uint64_t>(pShellCode + 0x08);
+			// offset of flag in the shell code to signal successfull execution
+			const BYTE* const pFlag = pShellCode + sizeof(hijackShellX64) - 0x01;
 
-			if (!WriteProcessMemory(hProc, pShellCode, x64HijackShell, sizeof(x64HijackShell), nullptr)) {
+			*reinterpret_cast<uint64_t*>(hijackShellX64 + 0x00) = oldRip;
+			*reinterpret_cast<uint64_t*>(hijackShellX64 + 0x1C) = reinterpret_cast<const uint64_t>(pFunc);
+			*reinterpret_cast<uint64_t*>(hijackShellX64 + 0x26) = reinterpret_cast<uint64_t>(pArg);
+
+			if (!WriteProcessMemory(hProc, pShellCode, hijackShellX64, sizeof(hijackShellX64), nullptr)) {
 				ResumeThread(hThread);
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
@@ -320,37 +318,38 @@ namespace launch {
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				context.Rip = oldRip;
 				SetThreadContext(hThread, &context);
+				ResumeThread(hThread);
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
 			}
 
-			DWORD procId = GetProcessId(hProc);
-
 			if (refreshWnd) {
+				const DWORD procId = GetProcessId(hProc);
 				// refresh window to raise thread priority and ensure thread execution
 				EnumWindows(refreshCallback, reinterpret_cast<LPARAM>(&procId));
 			}
 
-			ULONGLONG start = GetTickCount64();
+			if (!checkShellCodeFlag(hProc, pFlag)) {
 
-			do {
-				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
+				if (SuspendThread(hThread) != 0xFFFFFFFF) {
+					context.Rip = oldRip;
+					SetThreadContext(hThread, &context);
+					ResumeThread(hThread);
+				}
 
-				if (flag) break;
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-				Sleep(50);
-			} while (GetTickCount64() - start < THREAD_TIMEOUT);
-
-			if (flag) {
-				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint64_t), nullptr);
+				return false;
 			}
-			// thread can be suspended
-			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
-				context.Rip = oldRip;
-				SetThreadContext(hThread, &context);
-				ResumeThread(hThread);
+
+			if (!ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint64_t), nullptr)) {
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
 			}
 
 			#endif // _WIN64
@@ -360,7 +359,7 @@ namespace launch {
 		CloseHandle(hThread);
 		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-		return flag;
+		return true;
 	}
 
 
@@ -392,6 +391,22 @@ namespace launch {
 		}
 
 		return TRUE;
+	}
+
+
+	static bool checkShellCodeFlag(HANDLE hProc, const BYTE* pFlag) {
+		bool flag = false;
+		ULONGLONG start = GetTickCount64();
+
+		do {
+			ReadProcessMemory(hProc, pFlag, &flag, sizeof(flag), nullptr);
+
+			if (flag) break;
+
+			Sleep(50);
+		} while (GetTickCount64() - start < THREAD_TIMEOUT);
+
+		return flag;
 	}
 
 }
