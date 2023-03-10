@@ -81,6 +81,8 @@ namespace proc {
 
 			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
 
+			DWORD oldThreadId = pThreadEntry->th32ThreadID;
+
 			if (!Thread32First(hSnap, pThreadEntry)) {
 				CloseHandle(hSnap);
 
@@ -91,7 +93,7 @@ namespace proc {
 
 			do {
 
-				if (pThreadEntry->th32OwnerProcessID == procId) {
+				if (pThreadEntry->th32OwnerProcessID == procId && pThreadEntry->th32ThreadID != oldThreadId) {
 					found = true;
 				}
 

@@ -82,7 +82,9 @@ namespace proc {
 		// 
 		// [out] pThreadEntry:
 		// Address of the thread entry structure that receives the information about the thread.
-		// If there are multiple threads with the same owning process the structure of one of them is returned.
+		// The thread entry will have a different th32ThreadID value than the structure passed to the function.
+		// This way threads of a specific process can be enumerated.
+		// If there are multiple threads with the same owning process and differing thread ids the structure of one of them is returned.
 		// 
 		// Return:
 		// True on success, false on failure or if no thread was found.
