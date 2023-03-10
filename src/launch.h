@@ -58,8 +58,12 @@ namespace launch {
 	// [out] pRet:
 	// Pointer for the return value of the function called by the thread
 	// 
+	// [in] refreshWnd:
+	// If set to true, minimizes and restores (or restores and minimizes if already minimized) all the windows of the target process after thread context is switched.
+	// In some cases the hijacked thread is paused as long as there is no interaction with the window and setting this option to true works around that.
+	// 
 	// Return:
 	// True on success or false on failure.
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet, bool refreshWnd = false);
 
 }
