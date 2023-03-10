@@ -11,41 +11,38 @@ namespace launch {
 	
 	// ASM:
 	// mov rax, rcx
-	// mov rcx, QWORD PTR[rax]					load argument pointer to rcx
-	// sub rsp, 0x28							setup stack
-	// call QWORD PTR[rax + 0x8]				call function
-	// add rsp, 0x28							cleanup stack
-	// lea rcx, [rip + 0xffffffffffffffd8]			
-	// mov QWORD PTR[rcx], rax					write return value to beginning of shell code
-	// xor rax, rax								null rax
+	// mov rcx, QWORD PTR[rax]				load argument pointer to rcx
+	// sub rsp, 0x28						setup stack
+	// call QWORD PTR[rax + 0x8]			call function
+	// add rsp, 0x28						cleanup stack
+	// lea rcx, [rip - 0x28]
+	// mov QWORD PTR[rcx], rax				write return value to beginning of shell code
+	// xor rax, rax							null rax
 	// ret
 	static BYTE x64CrtShell[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x8D, 0x0D, 0xD8, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x48, 0x31, 0xC0, 0xC3 };
 
 	// ASM:
-	// sub    esp,0x4							setup stack for return value
-	// mov    DWORD PTR[esp], oldEip			save old eip for return instruction
-	// push   eax								save registers
+	// push   oldEip						save old eip for return instruction
+	// push   eax							save registers
 	// push   ecx
 	// push   edx
 	// pushf
 	// mov    ecx, pArg
 	// mov    eax, pFunc
-	// push   ecx								push pArg for function call
-	// call   eax								call pFunc
-	// mov    x64CrtShell, eax					write return value to beginning of shell code
+	// push   ecx							push pArg for function call
+	// call   eax							call pFunc
+	// mov    pShellCode, eax				write return value to beginning of shell code
 	// popf
-	// pop    edx								restore registers
+	// pop    edx							restore registers
 	// pop    ecx
 	// pop    eax
-	// mov    BYTE PTR ds : &flag, 0x0			set flag to zero
-	// ret										return to old eip
-	static BYTE x86HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x83, 0xEC, 0x04,	0xC7, 0x04, 0x24, 0x00, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x51,	0xFF, 0xD0, 0xA3, 0x00, 0x00, 0x00, 0x00, 0x9D, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC3 };
+	// mov    BYTE PTR ds :&flag, 0x01		set flag to one
+	// ret									return to old eip
+	static BYTE x86HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x51, 0xFF, 0xD0, 0xA3, 0x00, 0x00, 0x00, 0x00, 0x9D, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
 
 	// ASM:
-	// sub    rsp, 0x8									setup stack for return value
-	// mov    DWORD PTR[rsp], oldRip.LowPart			save old rip for return instruction
-	// mov    DWORD PTR[rsp + 0x4], oldRip.HighPart
-	// push   rax										save registers
+	// push   QWORD PTR [rip - 0x0E]		save old rip for return instruction
+	// push   rax							save registers
 	// push   rcx
 	// push   rdx
 	// push   r8
@@ -55,22 +52,22 @@ namespace launch {
 	// pushf
 	// movabs rax, pFunc
 	// movabs rcx, pArg
-	// sub    rsp, 0x20									setup stack for function call
-	// call   rax										call pFunc
-	// add    rsp, 0x20									cleanup stack from function call
-	// lea    rcx, [rip + 0xffffffffffffffb4]			write return value to beginning of shell code
+	// sub    rsp, 0x20						setup stack for function call
+	// call   rax							call pFunc
+	// add    rsp, 0x20						cleanup stack from function call
+	// lea    rcx, [rip - 0x3F]				write return value to beginning of shell code
 	// mov    QWORD PTR[rcx], rax
 	// popf
-	// pop    r11										restore registers
+	// pop    r11							restore registers
 	// pop    r10
 	// pop    r9
 	// pop    r8
 	// pop    rdx
 	// pop    rcx
 	// pop    rax
-	// mov    BYTE PTR[rip + 0xffffffffffffffa9], 0x0	set flag to zero
-	// ret												return to old rip
-	static BYTE x64HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x08, 0xC7, 0x04, 0x24, 0x00, 0x00, 0x00, 0x00,	0xC7, 0x44, 0x24, 0x04, 0x00, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x8D, 0x0D, 0xB4, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58,0xC6, 0x05, 0xA9, 0xFF, 0xFF, 0xFF, 0x00, 0xC3 };
+	// mov    BYTE PTR[rip + 0x01], 0x01	set flag to one
+	// ret									return to old rip
+	static BYTE x64HijackShell[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x35, 0xF2, 0xFF, 0xFF, 0xFF, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x8D, 0x0D, 0xC1, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x01, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x01, 0x00, 0x00, 0x00, 0x01, 0xC3, 0x00 };
 
 
 	bool createRemoteThread(HANDLE hProc, LPTHREAD_START_ROUTINE pFunc, void* pArg, void** pRet) {
@@ -108,7 +105,7 @@ namespace launch {
 
 			#ifdef _WIN64
 
-			// shell coding for x64 processes is just done to get the full 8 byte return value of x64 threads
+			// shell coding for x64 processes is done just to get the full 8 byte return value of x64 threads
 			// GetExitCodeThread can only get a DWORD value
 			*reinterpret_cast<void**>(x64CrtShell) = pArg;
 			*reinterpret_cast<const void**>(x64CrtShell + 0x8) = pFunc;
@@ -196,7 +193,7 @@ namespace launch {
 			return false;
 		}
 
-		bool success = false;
+		bool flag = false;
 
 		if (isWow64) {
 			WOW64_CONTEXT wow64Context{};
@@ -212,13 +209,13 @@ namespace launch {
 
 			DWORD oldEip = wow64Context.Eip;
 			// offset of flag in the shell code to signal successfull execution
-			ptrdiff_t flagOffset = 0x06;
+			ptrdiff_t flagOffset = sizeof(x86HijackShell) - 0x01;
 
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x0A) = oldEip;
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x13) = LODWORD(pArg);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x18) = LODWORD(pFunc);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x20) = LODWORD(pShellCode);
-			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x2A) = LODWORD(pShellCode + flagOffset);
+			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x05) = oldEip;
+			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x0E) = LODWORD(pArg);
+			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x13) = LODWORD(pFunc);
+			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x1B) = LODWORD(pShellCode);
+			*reinterpret_cast<uint32_t*>(x86HijackShell + 0x25) = LODWORD(pShellCode + flagOffset);
 
 			// set new instruction pointer to beginning of shell code function
 			wow64Context.Eip = LODWORD(pShellCode + 0x04);
@@ -260,21 +257,19 @@ namespace launch {
 			}
 
 			ULONGLONG start = GetTickCount64();
-			bool flag = true;
 
 			do {
 				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
 				
-				if (!flag) break;
+				if (flag) break;
 
 				Sleep(50);
 			} while (GetTickCount64() - start < THREAD_TIMEOUT);
 
-			success = !flag;
-
-			if (success) {
+			if (flag) {
 				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint32_t), nullptr);
 			}
+			// thread can be suspended
 			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
 				wow64Context.Eip = oldEip;
 				Wow64SetThreadContext(hThread, &wow64Context);
@@ -297,15 +292,13 @@ namespace launch {
 				return false;
 			}
 
-			LARGE_INTEGER oldRip{};
-			oldRip.QuadPart = context.Rip;
+			uint64_t oldRip = context.Rip;
 			// offset of flag in the shell code to signal successfull execution
-			ptrdiff_t flagOffset = 0x0B;
+			ptrdiff_t flagOffset = sizeof(x64HijackShell) - 0x01;
 
-			*reinterpret_cast<uint32_t*>(x64HijackShell + 0x0F) = oldRip.LowPart;
-			*reinterpret_cast<uint32_t*>(x64HijackShell + 0x17) = oldRip.HighPart;
-			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x29) = reinterpret_cast<const uint64_t>(pFunc);
-			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x33) = reinterpret_cast<uint64_t>(pArg);
+			*reinterpret_cast<uint64_t*>(x64HijackShell) = oldRip;
+			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x1C) = reinterpret_cast<const uint64_t>(pFunc);
+			*reinterpret_cast<uint64_t*>(x64HijackShell + 0x26) = reinterpret_cast<uint64_t>(pArg);
 
 			// set new instruction pointer to beginning of shell code function
 			context.Rip = reinterpret_cast<uint64_t>(pShellCode + 0x08);
@@ -326,7 +319,10 @@ namespace launch {
 				return false;
 			}
 
+			// thread can not be resumed
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
+				context.Rip = oldRip;
+				SetThreadContext(hThread, &context);
 				CloseHandle(hThread);
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
@@ -344,23 +340,21 @@ namespace launch {
 			}
 
 			ULONGLONG start = GetTickCount64();
-			bool flag = true;
 
 			do {
 				ReadProcessMemory(hProc, pShellCode + flagOffset, &flag, sizeof(flag), nullptr);
 
-				if (!flag) break;
+				if (flag) break;
 
 				Sleep(50);
 			} while (GetTickCount64() - start < THREAD_TIMEOUT);
 
-			success = !flag;
-
-			if (success) {
+			if (flag) {
 				ReadProcessMemory(hProc, pShellCode, pRet, sizeof(uint64_t), nullptr);
 			}
+			// thread can be suspended
 			else if (SuspendThread(hThread) != 0xFFFFFFFF) {
-				context.Rip = oldRip.QuadPart;
+				context.Rip = oldRip;
 				SetThreadContext(hThread, &context);
 				ResumeThread(hThread);
 			}
@@ -372,7 +366,7 @@ namespace launch {
 		CloseHandle(hThread);
 		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-		return success;
+		return flag;
 	}
 
 
