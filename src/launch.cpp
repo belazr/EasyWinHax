@@ -479,7 +479,7 @@ namespace launch {
 		HWND hWnd;
 	}HookData;
 
-	static BOOL CALLBACK setHookCallback(HWND hWnd, LPARAM pArg);
+	static BOOL CALLBACK setHookCallback(HWND hWnd, LPARAM lParam);
 
 	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
 		BOOL isWow64 = FALSE;
@@ -549,11 +549,7 @@ namespace launch {
 			return false;
 		}
 
-		if (!EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(&hookData))) {
-			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-			return false;
-		}
+		EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(&hookData));
 
 		if (!hookData.hHook || !hookData.hWnd) {
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
@@ -587,7 +583,7 @@ namespace launch {
 	}
 
 
-	static BOOL CALLBACK resize(HWND hWnd, LPARAM lParam);
+	static BOOL CALLBACK resizeCallback(HWND hWnd, LPARAM lParam);
 
 	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
 		BOOL isWow64 = FALSE;
@@ -639,7 +635,7 @@ namespace launch {
 			}
 
 			const DWORD procId = GetProcessId(hProc);
-			EnumWindows(resize, reinterpret_cast<LPARAM>(&procId));
+			EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&procId));
 
 			const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 			
@@ -703,7 +699,7 @@ namespace launch {
 			}
 
 			const DWORD procId = GetProcessId(hProc);
-			EnumWindows(resize, reinterpret_cast<LPARAM>(&procId));
+			EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&procId));
 
 			const LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + launchDataOffset);
 			const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
@@ -768,37 +764,42 @@ namespace launch {
 	}
 
 
-	// set hook in first possible window thread
-	static BOOL CALLBACK setHookCallback(HWND hWnd, LPARAM pArg) {
-		HookData* const pHookCallbackData = reinterpret_cast<HookData*>(pArg);
+	// set WNDPROC hook in the thread of a window of the target process
+	static BOOL CALLBACK setHookCallback(HWND hWnd, LPARAM lParam) {
+		HookData* const pHookCallbackData = reinterpret_cast<HookData*>(lParam);
+
+		if (pHookCallbackData->hHook) return TRUE;
+
 		DWORD curProcId = 0;
 		const DWORD curThreadId = GetWindowThreadProcessId(hWnd, &curProcId);
 
 		if (!curThreadId || !curProcId) return TRUE;
 
-		if (!pHookCallbackData->hHook && curProcId == pHookCallbackData->procId) {
-			char className[MAX_PATH]{};
+		if (curProcId != pHookCallbackData->procId)  return TRUE;
 
-			// window procedures hooks only possible for non-console windows
-			if (IsWindowVisible(hWnd) && GetClassNameA(hWnd, className, MAX_PATH) && strcmp(className, "ConsoleWindowClass")) {
-				// pretend the shell code is loaded by the module
-				HHOOK hHook = SetWindowsHookExA(WH_CALLWNDPROC, pHookCallbackData->pHookFunc, pHookCallbackData->hModule, curThreadId);
+		if (!IsWindowVisible(hWnd)) return TRUE;
 
-				if (hHook) {
-					pHookCallbackData->hHook = hHook;
-					pHookCallbackData->hWnd = hWnd;
-				}
+		char className[MAX_PATH]{};
 
-			}
+		if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
 
-		}
+		// window procedure hooks only possible for non-console windows
+		if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
 
-		return TRUE;
+		// pretend the shell code is loaded by the module
+		HHOOK hHook = SetWindowsHookExA(WH_CALLWNDPROC, pHookCallbackData->pHookFunc, pHookCallbackData->hModule, curThreadId);
+
+		if (!hHook)  return TRUE;
+
+		pHookCallbackData->hHook = hHook;
+		pHookCallbackData->hWnd = hWnd;
+
+		return FALSE;
 	}
 
 
-	// resizes a window of a process
-	static BOOL CALLBACK resize(HWND hWnd, LPARAM lParam) {
+	// resize a window of a process
+	static BOOL CALLBACK resizeCallback(HWND hWnd, LPARAM lParam) {
 		DWORD curProcId = 0;
 		GetWindowThreadProcessId(hWnd, &curProcId);
 
