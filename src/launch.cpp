@@ -1,5 +1,6 @@
 #include "launch.h"
 #include "proc.h"
+#include "mem.h"
 #include <stdint.h>
 #include <TlHelp32.h>
 
@@ -147,6 +148,38 @@ namespace launch {
 	static BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00, LAUNCH_DATA_X86_SPACE };
 
 	#endif
+
+	// ASM:
+	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
+	// mov    BYTE PTR[rip - 0x8], 0x2e		fix jump to skip pLaunchData->pFunc call
+	// push   rcx							save registers
+	// push   rdx
+	// mov    rcx, QWORD PTR[rip + 0x2a]	load pLaunchData->pArg for pLaunchData->pFunc call
+	// sub    rsp, 0x28						setup shadow space for function call
+	// call   QWORD PTR[rip + 0x28]			call pLaunchData->pFunc
+	// add    rsp, 0x28						cleanup shadow space of function call
+	// mov    QWORD PTR[rip + 0x25], rax	write return value to pLaunchData->pRet
+	// mov    BYTE PTR[rip + 0x26], 0x1		set pLaunchData->flag to one
+	// pop    rdx							restore registers
+	// pop    rcx
+	// movabs rax, pGateway					jump to gateway to execute NtUserBeginPaint
+	// jmp    rax
+	BYTE hookBeginPaintShellX64[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X64_SPACE };
+
+	// ASM:
+	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
+	// push   ebx							save register
+	// mov    ebx, pLaunchData						
+	// mov    BYTE PTR[ebx - 0x1f], 0x17	fix jump to skip pLaunchData->pFunc call
+	// push   DWORD PTR[ebx]				load pLaunchData->pArg for pLaunchData->pFunc call
+	// call   DWORD PTR[ebx + 0x4]			call pLaunchData->pFunc
+	// mov    DWORD PTR[ebx + 0x8], eax		write return value to pLaunchData->pRet
+	// mov    BYTE PTR[ebx + 0xc], 0x1		set pLaunchData->flag to one
+	// pop    ebx							restore register
+	// mov    eax, pGateway					jump to gateway to execute NtUserBeginPaint
+	// jmp    eax
+	BYTE hookBeginPaintShellX86[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X86_SPACE };
+
 
 
 	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
@@ -554,6 +587,170 @@ namespace launch {
 	}
 
 
+	static BOOL CALLBACK resize(HWND hWnd, LPARAM lParam);
+
+	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
+		BOOL isWow64 = FALSE;
+		IsWow64Process(hProc, &isWow64);
+
+		// x64 targets only feasable for x64 compilations
+		#ifndef _WIN64
+
+		if (!isWow64) return false;
+
+		#endif // !_WIN64
+
+		const HMODULE hNtdll = proc::ex::getModuleHandle(hProc, "win32u.dll");
+
+		if (!hNtdll) return false;
+
+		BYTE* const pNtUserBeginPaint = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hNtdll, "NtUserBeginPaint"));
+
+		if (!pNtUserBeginPaint) return false;
+
+		// size of larger shell code is used to be safe, allocates a whole page anyway
+		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(hookBeginPaintShellX64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+
+		if (!pShellCode) return false;
+
+		if (isWow64) {
+			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShellX86) - sizeof(LaunchDataX86);
+
+			LaunchDataX86* const pLaunchData = reinterpret_cast<LaunchDataX86*>(hookBeginPaintShellX86 + launchDataOffset);
+			pLaunchData->pArg = LODWORD(pArg);
+			pLaunchData->pFunc = LODWORD(pFunc);
+
+			const LaunchDataX86* const pLaunchDataEx = reinterpret_cast<LaunchDataX86*>(pShellCode + launchDataOffset);
+			*reinterpret_cast<uint32_t*>(hookBeginPaintShellX86 + 0x04) = LODWORD(pLaunchDataEx);
+
+			if (!WriteProcessMemory(hProc, pShellCode, hookBeginPaintShellX86, sizeof(hookBeginPaintShellX86), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			const size_t lenStolen = 10;
+			BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x1A, lenStolen);
+
+			if (!pGateway) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			const DWORD procId = GetProcessId(hProc);
+			EnumWindows(resize, reinterpret_cast<LPARAM>(&procId));
+
+			const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
+			
+			BYTE* const stolen = new BYTE[lenStolen]{};
+
+			// read the stolen bytes from the gateway
+			if (!ReadProcessMemory(hProc, pGateway, stolen, lenStolen, nullptr)) {
+				delete[] stolen;
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			// patch the stolen bytes back
+			if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, lenStolen)) {
+				delete[] stolen;
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			delete[] stolen;
+			VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
+
+			if (!success) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+		}
+		else {
+
+			#ifdef _WIN64
+
+			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShellX64) - sizeof(LaunchDataX64);
+
+			LaunchDataX64* const pLaunchData = reinterpret_cast<LaunchDataX64*>(hookBeginPaintShellX64 + launchDataOffset);
+			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
+			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
+
+			if (!WriteProcessMemory(hProc, pShellCode, hookBeginPaintShellX64, sizeof(hookBeginPaintShellX64), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			const size_t lenStolen = 8;
+			BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x32, lenStolen);
+
+			if (!pGateway) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			const DWORD procId = GetProcessId(hProc);
+			EnumWindows(resize, reinterpret_cast<LPARAM>(&procId));
+
+			const LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + launchDataOffset);
+			const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
+
+			BYTE* const stolen = new BYTE[lenStolen]{};
+
+			// read the stolen bytes from the gateway
+			if (!ReadProcessMemory(hProc, pGateway, stolen, lenStolen, nullptr)) {
+				delete[] stolen;
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			// patch the stolen bytes back
+			if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, lenStolen)) {
+				delete[] stolen;
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			delete[] stolen;
+			VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
+
+			if (!success) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			#endif // _WIN64
+
+		}
+
+		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+		return true;
+	}
+
+
 	// check via flag if shell code has been executed
 	static bool checkShellCodeFlag(HANDLE hProc, const void* pFlag) {
 		bool flag = false;
@@ -597,6 +794,50 @@ namespace launch {
 		}
 
 		return TRUE;
+	}
+
+
+	// resizes a window of a process
+	static BOOL CALLBACK resize(HWND hWnd, LPARAM lParam) {
+		DWORD curProcId = 0;
+		GetWindowThreadProcessId(hWnd, &curProcId);
+
+		if (!curProcId) return TRUE;
+
+		const DWORD procId = *reinterpret_cast<DWORD*>(lParam);
+
+		if (curProcId != procId) return TRUE;
+
+		if (!IsWindowVisible(hWnd)) return TRUE;
+
+		char className[MAX_PATH]{};
+
+		if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+		// NtUserBeginPaint only called for non-console windows
+		if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+		WINDOWPLACEMENT wndPlacement{};
+		wndPlacement.length = sizeof(WINDOWPLACEMENT);
+
+		if (!GetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
+
+		UINT oldShowCmd = wndPlacement.showCmd;
+
+		if (oldShowCmd == SW_MINIMIZE || oldShowCmd == SW_SHOWMINIMIZED || oldShowCmd == SW_SHOWMINNOACTIVE) {
+			wndPlacement.showCmd = SW_RESTORE;
+		}
+		else {
+			wndPlacement.showCmd = SW_SHOWMINIMIZED;
+		}
+
+		if (!SetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
+
+		wndPlacement.showCmd = oldShowCmd;
+
+		if (!SetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
+
+		return FALSE;
 	}
 
 }
