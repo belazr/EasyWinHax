@@ -65,6 +65,7 @@ namespace launch {
 
 	// Launches code execution by setting a windows hook.
 	// Hooks the window procedure to process messages for a window of the target process.
+	// After the hook is installed the function foregrounds the window to trigger execution.
 	// Waits for successfull execution, retrives the return value and unhooks the window procedure.
 	// In any case the function to launch is only executed once.
 	// Caller and target architechture have to match.
@@ -92,5 +93,35 @@ namespace launch {
 	// Return:
 	// True on success or false on failure.
 	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+
+	// Launches code execution by hooking NtUserBeginPaint from win32u.dll.
+	// NtUserBeginPaint gets called when a window is resized or moved.
+	// Sets a trampoline hook at the beginning of NtUserBeginPaint and then resizes the window to trigger execution.
+	// Waits for successfull execution, retrives the return value and unhooks NtUserBeginPaint.
+	// In any case the function to launch is only executed once.
+	// Can not be used on console application targets.
+	// 
+	// Parameters:
+	// 
+	// [in] hProc:
+	// Handle to the process where the code should be launched.
+	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
+	// 
+	// [in] pFunc:
+	// Pointer to the code that should be executed by the hijacked thread. Assumes the calling conventions:
+	// x86: __stdcall void* pFunc(void* pArg)
+	// x64: __fastcall void* pFunc(void* pArg)
+	// Additional arguments can be passed in a struct pointed to by pArg.
+	// To call api functions with different calling conventions shell code can be used as a wrapper.
+	// 
+	// [in] pArg:
+	// Argument of the function called by the hook.
+	// 
+	// [out] pRet:
+	// Pointer for the return value of the function called by the hook.
+	// 
+	// Return:
+	// True on success or false on failure.
+	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
 
 }
