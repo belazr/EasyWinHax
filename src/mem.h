@@ -114,8 +114,7 @@ namespace mem {
 		
 		#ifdef _WIN64
 		
-		// Patches an absolute jump into an external process. The address of the detour is loaded to the volatile r10 register.
-		// Can only be used in an x64 process.
+		// Patches an absolute jump into an external process. Can only be used with an x64 target process.
 		// 
 		// Parameters:
 		// 
@@ -349,8 +348,7 @@ namespace mem {
 		
 		#ifdef _WIN64
 		
-		// Patches an absolute jump into the caller process. The address of the detour is loaded to the volatile r10 register.
-		// Can only be used in an x64 process.
+		// Patches an absolute jump into the caller process. Can only be used with an x64 target process.
 		// 
 		// Parameters:
 		// 
