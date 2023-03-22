@@ -74,12 +74,12 @@ namespace proc {
 
 
 		bool getTlHelpThreadEntry(HANDLE hProc, THREADENTRY32* pThreadEntry) {
-			DWORD procId = GetProcessId(hProc);
-			HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, procId);
-
-			pThreadEntry->dwSize = sizeof(THREADENTRY32);
+			const DWORD procId = GetProcessId(hProc);
+			const HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, procId);
 
 			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
+
+			pThreadEntry->dwSize = sizeof(THREADENTRY32);
 
 			if (!Thread32First(hSnap, pThreadEntry)) {
 				CloseHandle(hSnap);
