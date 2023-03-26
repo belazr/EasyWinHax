@@ -10,6 +10,15 @@
 
 namespace proc {
 
+	// Alike PROCESSENTRY32 from the TlHelp32 library without the unused or unnecessary fields.
+	typedef struct procEntry {
+		DWORD processId;
+		DWORD cntThreads;
+		DWORD parentProcessId;
+		LONG pcPriClassBase;
+		char exeFile[MAX_PATH];
+	}processEntry;
+
 	typedef struct PeHeaders {
 		const IMAGE_DOS_HEADER* pDosHeader;
 		const IMAGE_NT_HEADERS* pNtHeaders;
@@ -38,7 +47,7 @@ namespace proc {
 		// If there are multiple proccesses with the same name the id of one of them is returned.
 		DWORD getProcId(const char* procName);
 
-		// Gets a process entry of a snapshot of CreateToolhelp32Snapshot by process name.
+		// Gets a process entry struct by process name.
 		// 
 		// Parameters:
 		// 
@@ -51,7 +60,7 @@ namespace proc {
 		// 
 		// Return:
 		// True on success, false on failure or if process was not found.
-		bool getTlHelpProcEntry(const char* procName, PROCESSENTRY32* pProcEntry);
+		bool getProcEntry(const char* procName, procEntry* pProcEntry);
 
 		// Gets a module entry of a snapshot of CreateToolhelp32Snapshot by module name.
 		// 
