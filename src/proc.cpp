@@ -72,35 +72,6 @@ namespace proc {
 		}
 
 
-		bool getTlHelpModEntry(HANDLE hProc, const char* modName, MODULEENTRY32* pModEntry) {
-			const HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(hProc));
-
-			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
-
-			pModEntry->dwSize = sizeof(MODULEENTRY32);
-
-			if (!Module32First(hSnap, pModEntry)) {
-				CloseHandle(hSnap);
-
-				return false;
-			}
-
-			bool found = false;
-
-			do {
-
-				if (!_stricmp(pModEntry->szModule, modName)) {
-					found = true;
-				}
-
-			} while (!found && Module32Next(hSnap, pModEntry));
-
-			CloseHandle(hSnap);
-
-			return found;
-		}
-
-
 		bool getTlHelpThreadEntry(HANDLE hProc, THREADENTRY32* pThreadEntry) {
 			const DWORD procId = GetProcessId(hProc);
 			const HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, procId);

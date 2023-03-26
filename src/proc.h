@@ -62,25 +62,6 @@ namespace proc {
 		// True on success, false on failure or if process was not found.
 		bool getProcessEntry(const char* processName, ProcessEntry* pProcessEntry);
 
-		// Gets a module entry of a snapshot of CreateToolhelp32Snapshot by module name.
-		// 
-		// Parameters:
-		// 
-		// [in] hProc:
-		// Handle to the process which modules should be searched.
-		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION access rights.
-		// 
-		// [in] modName:
-		// Name of the module.
-		// 
-		// [out] pModEntry:
-		// Address of the module entry structure that receives the information about the module.
-		// If there are multiple modules with the same name the structure of one of them is returned.
-		// 
-		// Return:
-		// True on success, false on failure or if module was not found.
-		bool getTlHelpModEntry(HANDLE hProc, const char* modName, MODULEENTRY32* pModEntry);
-
 		// Gets a thread entry of a snapshot of CreateToolhelp32Snapshot by owning process.
 		// 
 		// Parameters:
