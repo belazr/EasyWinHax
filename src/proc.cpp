@@ -6,16 +6,16 @@ namespace proc {
 
 	namespace ex {
 
-		DWORD getProcId(const char* procName) {
-			procEntry procEntry{};
+		DWORD getProcessId(const char* processName) {
+			ProcessEntry processEntry{};
 
-			if (!getProcEntry(procName, &procEntry)) return 0;
+			if (!getProcessEntry(processName, &processEntry)) return 0;
 
-			return procEntry.processId;
+			return processEntry.processId;
 		}
 
 
-		bool getProcEntry(const char* procName, procEntry* pProcEntry) {
+		bool getProcessEntry(const char* procName, ProcessEntry* pProcessEntry) {
 			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
 			if (!hNtDll) return false;
@@ -47,19 +47,19 @@ namespace proc {
 			do {
 
 				if (pCurSysProcInfo->ImageName.Buffer) {
-					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcEntry->exeFile, MAX_PATH, nullptr, nullptr);
+					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
 				}
 
-				if (!_stricmp(pProcEntry->exeFile, procName)) {
-					pProcEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
-					pProcEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
-					pProcEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
-					pProcEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
+				if (!_stricmp(pProcessEntry->exeFile, procName)) {
+					pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
+					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
+					pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
 
 					found = true;
 				}
 				else {
-					memset(pProcEntry->exeFile, 0, MAX_PATH);
+					memset(pProcessEntry->exeFile, 0, MAX_PATH);
 				}
 
 				// NextEntryOffset is null for last entry
