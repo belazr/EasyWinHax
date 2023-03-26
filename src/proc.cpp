@@ -7,38 +7,66 @@ namespace proc {
 	namespace ex {
 
 		DWORD getProcId(const char* procName) {
-			PROCESSENTRY32 procEntry{};
+			procEntry procEntry{};
 
-			if (!getTlHelpProcEntry(procName, &procEntry)) return 0;
+			if (!getProcEntry(procName, &procEntry)) return 0;
 
-			return procEntry.th32ProcessID;
+			return procEntry.processId;
 		}
 
 
-		bool getTlHelpProcEntry(const char* procName, PROCESSENTRY32* pProcEntry) {
-			const HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+		bool getProcEntry(const char* procName, procEntry* pProcEntry) {
+			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
-			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
+			if (!hNtDll) return false;
 
-			pProcEntry->dwSize = sizeof(PROCESSENTRY32);
+			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
 
-			if (!Process32First(hSnap, pProcEntry)) {
-				CloseHandle(hSnap);
-				
+			if (!pNtQuerySystemInformation) return false;
+
+			ULONG outSize = 0;
+			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
+			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
+
+			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
+
+			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
+			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
+
+			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
+
+			if (ntStatus != STATUS_SUCCESS) {
+				delete[] pSysProcInfoBuffer;
+
 				return false;
 			}
 
+			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
 			bool found = false;
 
 			do {
-				
-				if (!_stricmp(pProcEntry->szExeFile, procName)) {
-					found = true;
+
+				if (pCurSysProcInfo->ImageName.Buffer) {
+					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcEntry->exeFile, MAX_PATH, nullptr, nullptr);
 				}
 
-			} while (!found && Process32Next(hSnap, pProcEntry));
+				if (!_stricmp(pProcEntry->exeFile, procName)) {
+					pProcEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
+					pProcEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+					pProcEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
+					pProcEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
 
-			CloseHandle(hSnap);
+					found = true;
+				}
+				else {
+					memset(pProcEntry->exeFile, 0, MAX_PATH);
+				}
+
+				// NextEntryOffset is null for last entry
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+			} while (!found && pCurSysProcInfo->NextEntryOffset);
+
+			delete[] pSysProcInfoBuffer;
 
 			return found;
 		}
