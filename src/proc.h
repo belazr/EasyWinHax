@@ -4,10 +4,24 @@
 // Functions to retrieve information about of a windows process.
 // Some functions are implemented to emulate functions of the Win32 API and delcared as similarly as possible.
 // These Win32 API calls could be replaced for example to avoid simple detections.
-// Most functions are defined to interact with the caller process as well as an external process.
-// The x64 compilations of these functions are capable of interacting with both x86 as well as x64 target processes.
 
 namespace proc {
+
+	// Alike PROCESSENTRY32 from the TlHelp32 library without the unused or unnecessary fields.
+	typedef struct ProcessEntry {
+		DWORD processId;
+		DWORD cntThreads;
+		DWORD parentProcessId;
+		LONG pcPriClassBase;
+		char exeFile[MAX_PATH];
+	}ProcessEntry;
+
+	typedef struct ThreadEntry {
+		DWORD threadId;
+		DWORD ownerProcessId;
+		DWORD threadState;
+		KWAIT_REASON waitReason;
+	}ThreadEntry;
 
 	typedef struct PeHeaders {
 		const IMAGE_DOS_HEADER* pDosHeader;
@@ -20,86 +34,55 @@ namespace proc {
 		const IMAGE_OPTIONAL_HEADER64* pOptHeader64;
 	}PeHeaders;
 
+	// Gets the process id by process name.
+	// 
+	// Parameters:
+	// 
+	// [in] processName:
+	// Name of the process.
+	// 
+	// Return:
+	// Process id of the process, 0 on failure or no process was found.
+	// If there are multiple proccesses with the same name the id of one of them is returned.
+	DWORD getProcessId(const char* processName);
+
+	// Gets a process entry struct by process ID.
+	// 
+	// Parameters:
+	// 
+	// [in] processName:
+	// Process ID of the process.
+	// 
+	// [out] pProcessEntry:
+	// Address of the process entry structure that receives the information about the process.
+	// If there are multiple proccesses with the same name the structure of one of them is returned.
+	// 
+	// Return:
+	// True on success, false on failure or if process was not found.
+	bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry);
+
+	// Gets the ThreadEntry structs of all execution threads started by a process.
+	// 
+	// Parameters:
+	// 
+	// [in] processId:
+	// Process ID of the owning process of the threads.
+	// 
+	// [out] pThreadEntries:
+	// Address of a buffer for the ThreadEntry structs.
+	// 
+	// [in]
+	// size:
+	// Size of the buffer in ThreadEntry structs.
+	// 
+	// Return:
+	// True on success, false on failure or if the buffer was too small.
+	bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size);
+
 	// Functions to retrieve information about an external process.
 	// Compiled as x64 the external functions are designed to work both on x64 targets as well as x86 targets.
 	// Compiled as x86 interacting with x64 processes is neihter supported nor feasable.
 	namespace ex {
-
-		// Alike PROCESSENTRY32 from the TlHelp32 library without the unused or unnecessary fields.
-		typedef struct ProcessEntry {
-			DWORD processId;
-			DWORD cntThreads;
-			DWORD parentProcessId;
-			LONG pcPriClassBase;
-			char exeFile[MAX_PATH];
-		}ProcessEntry;
-
-		typedef struct ThreadEntry {
-			DWORD threadId;
-			DWORD ownerProcessId;
-			DWORD threadState;
-			KWAIT_REASON waitReason;
-		}ThreadEntry;
-
-		// Gets the process id by process name.
-		// 
-		// Parameters:
-		// 
-		// [in] processName:
-		// Name of the process.
-		// 
-		// Return:
-		// Process id of the process, 0 on failure or no process was found.
-		// If there are multiple proccesses with the same name the id of one of them is returned.
-		DWORD getProcessId(const char* processName);
-
-		// Gets a process entry struct by process name.
-		// 
-		// Parameters:
-		// 
-		// [in] processName:
-		// Name of the process.
-		// 
-		// [out] pProcessEntry:
-		// Address of the process entry structure that receives the information about the process.
-		// If there are multiple proccesses with the same name the structure of one of them is returned.
-		// 
-		// Return:
-		// True on success, false on failure or if process was not found.
-		bool getProcessEntry(const char* processName, ProcessEntry* pProcessEntry);
-
-		// Gets a process entry struct by process ID.
-		// 
-		// Parameters:
-		// 
-		// [in] processName:
-		// Process ID of the process.
-		// 
-		// [out] pProcessEntry:
-		// Address of the process entry structure that receives the information about the process.
-		// If there are multiple proccesses with the same name the structure of one of them is returned.
-		// 
-		// Return:
-		// True on success, false on failure or if process was not found.
-		bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry);
-
-		// Gets the ThreadEntry structs of all execution threads started by a process.
-		// 
-		// Parameters:
-		// 
-		// [in] processId:
-		// Process ID of the owning process of the threads.
-		// 
-		// [out] pThreadEntries:
-		// Address of a buffer for the ThreadEntry structs.
-		// 
-		// [in]
-		// size:
-		// Size of the buffer in bytes.
-		// 
-		// Return:
-		// True on success, false on failure or if the buffer was too small.
-		bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size);
 
 		// Gets the address of a function/procedure exported by a module of an external target process within the virtual address space this process.
 		// Works like an external version of GetProcAddress of the Win32 API.
