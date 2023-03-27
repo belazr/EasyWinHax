@@ -43,7 +43,7 @@ namespace proc {
 	// 
 	// Return:
 	// Process id of the process, 0 on failure or no process was found.
-	// If there are multiple proccesses with the same name the id of one of them is returned.
+	// If there are multiple proccesses with the same name, the id of one of them is returned.
 	DWORD getProcessId(const char* processName);
 
 	// Gets a process entry struct by process ID.
@@ -55,7 +55,6 @@ namespace proc {
 	// 
 	// [out] pProcessEntry:
 	// Address of the process entry structure that receives the information about the process.
-	// If there are multiple proccesses with the same name the structure of one of them is returned.
 	// 
 	// Return:
 	// True on success, false on failure or if process was not found.
