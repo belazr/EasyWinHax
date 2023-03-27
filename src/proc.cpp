@@ -303,7 +303,6 @@ namespace proc {
 				if (!mem::ex::copyRemoteString(hProc, curModName, pBase + importDesc.Name, MAX_PATH)) break;
 
 				if (!_stricmp(exportModName, curModName)) {
-					// found the import descriptor of the module exporting the function
 					found = true;
 
 					break;
@@ -417,10 +416,8 @@ namespace proc {
 			}
 			else {
 
-				// target is a native x64 binary so intertaction is only possible when compiled in x64
 				#ifdef _WIN64
 
-				// target is a native x64 binary so searching the x64 loader data table
 				const LDR_DATA_TABLE_ENTRY64* const pLdrEntry64 = getLdrDataTableEntry64Address(hProc, modName);
 
 				if (!pLdrEntry64) return nullptr;
@@ -429,8 +426,7 @@ namespace proc {
 				
 				if (!ReadProcessMemory(hProc, pLdrEntry64, &ldrEntry64, sizeof(LDR_DATA_TABLE_ENTRY64), nullptr)) return nullptr;
 
-				// static cast to convert from ULONG (4 bytes) to uintptr_t (4 bytes for x86, 8 bytes for x64)
-				modBase = static_cast<uintptr_t>(ldrEntry64.DllBase);
+				modBase = ldrEntry64.DllBase;
 
 				#endif // _WIN64
 
@@ -444,7 +440,6 @@ namespace proc {
 		#ifdef _WIN64
 
 		LDR_DATA_TABLE_ENTRY64* getLdrDataTableEntry64Address(HANDLE hProc, const char* modName) {
-			// x64 loader data table pointer is stored in x64 process envrionment block
 			const PEB64* const pPeb64 = proc::ex::getPeb64Address(hProc);
 
 			if (!pPeb64) return nullptr;
@@ -465,8 +460,7 @@ namespace proc {
 			}
 
 			LDR_DATA_TABLE_ENTRY64* pLdrTableEntry = nullptr;
-			// static cast to convert from DWORD (4 bytes) to uintptr_t (4 bytes for x86, 8 bytes for x64)
-			const LIST_ENTRY64* pNextEntry = reinterpret_cast<LIST_ENTRY64*>(static_cast<uintptr_t>(pebLdrData64.InMemoryOrderModuleList.Flink));
+			const LIST_ENTRY64* pNextEntry = reinterpret_cast<LIST_ENTRY64*>(pebLdrData64.InMemoryOrderModuleList.Flink);
 
 			// walk the linked list until back at the beginning
 			while (pNextEntry != &pPebLdrData64->InMemoryOrderModuleList) {
@@ -616,9 +610,9 @@ namespace proc {
 		template <typename ITD, typename FLG>
 		static BYTE* getIatEntryAddressFromImportDesc(HANDLE hProc, const char* funcName, const BYTE* pBase, const IMAGE_IMPORT_DESCRIPTOR* pImportDesc, FLG ordinalFlag) {
 			BYTE* pIatEntry = nullptr;
-			// thunks get overwritten with the function address at load time with the actual function address
+			// thunks get overwritten at load time with the actual function address
 			const ITD* pThunk = reinterpret_cast<const ITD*>(pBase + pImportDesc->FirstThunk);
-			// original thunks do not get overwritten with the function address at load time
+			// original thunks do not get overwritten
 			const ITD* pOriginalThunk = reinterpret_cast<const ITD*>(pBase + pImportDesc->OriginalFirstThunk);
 			ITD originalThunk{};
 
@@ -679,7 +673,6 @@ namespace proc {
 			const WORD* const pExportOrdinalTable = reinterpret_cast<const WORD*>(pBase + pExportDir->AddressOfNameOrdinals);
 
 			if (!pExportOrdinalTable) return nullptr;
-
 			
 			DWORD funcRva = 0;
 			// export by ordinal if everything but the lowest word of name param is zero
@@ -764,7 +757,6 @@ namespace proc {
 			while (pImportDesc->Characteristics) {
 				
 				if (!_stricmp(exportModName, reinterpret_cast<const char*>(pBase + pImportDesc->Name))) {
-					// found the import descriptor of the module exportng the function
 					found = true;
 
 					break;
@@ -776,9 +768,9 @@ namespace proc {
 			if (!found) return nullptr;
 
 			BYTE* pIatEntry = nullptr;
-			// thunks get overwritten with the function address at load time with the actual function address
+			// thunks get overwritten at load time with the actual function address
 			const IMAGE_THUNK_DATA* pThunk = reinterpret_cast<const IMAGE_THUNK_DATA*>(pBase + pImportDesc->FirstThunk);
-			// original thunks do not get overwritten with the function address at load time
+			// original thunks do not get overwritten
 			const IMAGE_THUNK_DATA* pOriginalThunk = reinterpret_cast<const IMAGE_THUNK_DATA*>(pBase + pImportDesc->OriginalFirstThunk);
 
 			while (pOriginalThunk->u1.AddressOfData) {
