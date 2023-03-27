@@ -4,184 +4,137 @@
 
 namespace proc {
 
-	namespace ex {
+	static SYSTEM_PROCESS_INFORMATION* getSystemProcessInformation();
 
-		DWORD getProcessId(const char* processName) {
-			ProcessEntry processEntry{};
+	DWORD getProcessId(const char* processName) {
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
 
-			if (!getProcessEntry(processName, &processEntry)) return 0;
+		if (!pSysProcInfoBuffer) return 0;
 
-			return processEntry.processId;
-		}
+		const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+		DWORD processId = 0;
+		wchar_t wProcessName[MAX_PATH];
+		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, processName, -1, wProcessName, MAX_PATH);
 
+		do {
 
-		bool getProcessEntry(const char* processName, ProcessEntry* pProcessEntry) {
-			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
-
-			if (!hNtDll) return false;
-
-			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
-
-			if (!pNtQuerySystemInformation) return false;
-
-			ULONG outSize = 0;
-			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
-			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
-
-			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
-
-			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
-			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
-
-			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
-
-			if (ntStatus != STATUS_SUCCESS) {
-				delete[] pSysProcInfoBuffer;
-
-				return false;
+			if (pCurSysProcInfo->ImageName.Buffer && !_wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName)) {
+				processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
 			}
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-			bool found = false;
+			// NextEntryOffset is null for last entry
+			pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+		} while (!processId && pCurSysProcInfo->NextEntryOffset);
 
-			do {
+		delete[] pSysProcInfoBuffer;
+
+		return processId;
+	}
+
+
+	bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry) {
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
+
+		if (!pSysProcInfoBuffer) return false;
+
+		const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+		bool found = false;
+
+		do {
+
+			if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
+				pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
+				pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+				pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
+				pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
 
 				if (pCurSysProcInfo->ImageName.Buffer) {
 					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
 				}
 
-				if (!_stricmp(pProcessEntry->exeFile, processName)) {
-					pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
-					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
-					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
-					pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
-
-					found = true;
-				}
-				else {
-					memset(pProcessEntry->exeFile, 0, MAX_PATH);
-				}
-
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!found && pCurSysProcInfo->NextEntryOffset);
-
-			delete[] pSysProcInfoBuffer;
-
-			return found;
-		}
-
-
-		bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry) {
-			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
-
-			if (!hNtDll) return false;
-
-			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
-
-			if (!pNtQuerySystemInformation) return false;
-
-			ULONG outSize = 0;
-			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
-			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
-
-			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
-
-			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
-			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
-
-			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
-
-			if (ntStatus != STATUS_SUCCESS) {
-				delete[] pSysProcInfoBuffer;
-
-				return false;
+				found = true;
 			}
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-			bool found = false;
+			// NextEntryOffset is null for last entry
+			pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+		} while (!found && pCurSysProcInfo->NextEntryOffset);
 
-			do {
+		delete[] pSysProcInfoBuffer;
 
-				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
-					pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
-					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
-					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
-					pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
+		return found;
+	}
 
-					if (pCurSysProcInfo->ImageName.Buffer) {
-						WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
-					}
 
-					found = true;
+	bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size) {
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
+
+		if (!pSysProcInfoBuffer) return false;
+
+		const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+		bool found = false;
+
+		do {
+
+			if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
+				
+				if (pCurSysProcInfo->NumberOfThreads > size) {
+					delete[] pSysProcInfoBuffer;
+
+					return false;
 				}
 
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!found && pCurSysProcInfo->NextEntryOffset);
+				for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads; i++) {
+					pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
+					pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
+					pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
+					pThreadEntries[i].waitReason = pCurSysProcInfo->Threads[i].WaitReason;
+				}
 
-			delete[] pSysProcInfoBuffer;
-
-			return found;
-		}
-
-
-		bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size) {
-			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
-
-			if (!hNtDll) return false;
-
-			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
-
-			if (!pNtQuerySystemInformation) return false;
-
-			ULONG outSize = 0;
-			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
-			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
-
-			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
-
-			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
-			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
-
-			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
-
-			if (ntStatus != STATUS_SUCCESS) {
-				delete[] pSysProcInfoBuffer;
-
-				return false;
+				found = true;
 			}
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-			bool found = false;
-			bool fitAll = false;
+			// NextEntryOffset is null for last entry
+			pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+		} while (!found && pCurSysProcInfo->NextEntryOffset);
 
-			do {
+		delete[] pSysProcInfoBuffer;
 
-				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
-					const size_t bufSpace = size / sizeof(ThreadEntry);
-					fitAll = pCurSysProcInfo->NumberOfThreads <= bufSpace;
+		return found;
+	}
 
-					for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads && i < bufSpace; i++) {
-						pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
-						pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
-						pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
-						pThreadEntries[i].waitReason = pCurSysProcInfo->Threads[i].WaitReason;
-					}
+	// return value points to an array on the heap
+	// always delete[] after usage!
+	static SYSTEM_PROCESS_INFORMATION* getSystemProcessInformation() {
+		const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
-					found = true;
-				}
+		if (!hNtDll) return nullptr;
 
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!found && pCurSysProcInfo->NextEntryOffset);
+		const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
 
+		if (!pNtQuerySystemInformation) return nullptr;
+
+		ULONG outSize = 0;
+		SYSTEM_PROCESS_INFORMATION sysProcInfo{};
+		NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
+
+		if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return nullptr;
+
+		// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one running process)
+		SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
+
+		ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
+
+		if (ntStatus != STATUS_SUCCESS) {
 			delete[] pSysProcInfoBuffer;
 
-			return found && fitAll;
+			return nullptr;
 		}
 
-		
+		return pSysProcInfoBuffer;
+	}
+
+	namespace ex {
+
 		static bool getDataDirFromPeHeaders(HANDLE hProc, const PeHeaders* pPeHeaders, IMAGE_DATA_DIRECTORY* pDataDir, char index);
 
 		FARPROC getProcAddress(HANDLE hProc, HMODULE hMod, const char* funcName) {

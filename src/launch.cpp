@@ -281,8 +281,8 @@ namespace launch {
 		#endif // !_WIN64
 
 		// get the first thread entry
-		proc::ex::ThreadEntry threadEntry{};
-		proc::ex::getProcessThreadEntries(GetProcessId(hProc), &threadEntry, sizeof(threadEntry));
+		proc::ThreadEntry threadEntry{};
+		proc::getProcessThreadEntries(GetProcessId(hProc), &threadEntry, sizeof(threadEntry));
 
 		const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, threadEntry.threadId);
 
