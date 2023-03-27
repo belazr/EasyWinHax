@@ -280,11 +280,11 @@ namespace launch {
 
 		#endif // !_WIN64
 
-		THREADENTRY32 threadEntry{};
+		// get the first thread entry
+		proc::ex::ThreadEntry threadEntry{};
+		proc::ex::getProcessThreadEntries(GetProcessId(hProc), &threadEntry, sizeof(threadEntry));
 
-		if (!proc::ex::getTlHelpThreadEntry(hProc, &threadEntry)) return false;
-
-		const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, threadEntry.th32ThreadID);
+		const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, threadEntry.threadId);
 
 		if (!hThread) return false;
 
@@ -347,7 +347,7 @@ namespace launch {
 			}
 
 			// post thread message to ensure thread execution
-			PostThreadMessageA(threadEntry.th32ThreadID, 0, 0, 0);
+			PostThreadMessageA(threadEntry.threadId, 0, 0, 0);
 
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				wow64Context.Eip = oldEip;
@@ -425,7 +425,7 @@ namespace launch {
 			}
 
 			// post thread message to ensure thread execution
-			PostThreadMessageA(threadEntry.th32ThreadID, 0, 0, 0);
+			PostThreadMessageA(threadEntry.threadId, 0, 0, 0);
 
 			if (ResumeThread(hThread) == 0xFFFFFFFF) {
 				context.Rip = oldRip;
