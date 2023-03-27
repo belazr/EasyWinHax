@@ -43,10 +43,10 @@ namespace proc {
 		do {
 
 			if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
-				pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
+				pProcessEntry->threadCount = pCurSysProcInfo->NumberOfThreads;
 				pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
 				pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
-				pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
+				pProcessEntry->basePriority = pCurSysProcInfo->BasePriority;
 
 				if (pCurSysProcInfo->ImageName.Buffer) {
 					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
