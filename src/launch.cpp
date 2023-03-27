@@ -698,31 +698,31 @@ namespace launch {
 				return false;
 			}
 
-			const DWORD procId = GetProcessId(hProc);
-			EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&procId));
+			const DWORD processId = GetProcessId(hProc);
+			EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&processId));
 
 			const LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + launchDataOffset);
 			const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
-			BYTE* const stolen = new BYTE[lenStolen]{};
+			BYTE* const pStolen = new BYTE[lenStolen]{};
 
 			// read the stolen bytes from the gateway
-			if (!ReadProcessMemory(hProc, pGateway, stolen, lenStolen, nullptr)) {
-				delete[] stolen;
+			if (!ReadProcessMemory(hProc, pGateway, pStolen, lenStolen, nullptr)) {
+				delete[] pStolen;
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
 			}
 
 			// patch the stolen bytes back
-			if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, lenStolen)) {
-				delete[] stolen;
+			if (!mem::ex::patch(hProc, pNtUserBeginPaint, pStolen, lenStolen)) {
+				delete[] pStolen;
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 				return false;
 			}
 
-			delete[] stolen;
+			delete[] pStolen;
 			VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
 
 			if (!success) {
