@@ -64,7 +64,6 @@ The library provides a way to setup an wglSwapBuffers hook and some functions to
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 
 ## TODO
-- Get rid of TlHelp32 library
 - Add code launching via QueueUserApc
 
 ## References

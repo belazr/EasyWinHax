@@ -15,7 +15,7 @@ namespace proc {
 		}
 
 
-		bool getProcessEntry(const char* procName, ProcessEntry* pProcessEntry) {
+		bool getProcessEntry(const char* processName, ProcessEntry* pProcessEntry) {
 			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
 			if (!hNtDll) return false;
@@ -50,7 +50,7 @@ namespace proc {
 					WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
 				}
 
-				if (!_stricmp(pProcessEntry->exeFile, procName)) {
+				if (!_stricmp(pProcessEntry->exeFile, processName)) {
 					pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
 					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
 					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
@@ -72,33 +72,113 @@ namespace proc {
 		}
 
 
-		bool getTlHelpThreadEntry(HANDLE hProc, THREADENTRY32* pThreadEntry) {
-			const DWORD procId = GetProcessId(hProc);
-			const HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, procId);
+		bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry) {
+			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
-			if (!hSnap || hSnap == INVALID_HANDLE_VALUE) return false;
+			if (!hNtDll) return false;
 
-			pThreadEntry->dwSize = sizeof(THREADENTRY32);
+			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
 
-			if (!Thread32First(hSnap, pThreadEntry)) {
-				CloseHandle(hSnap);
+			if (!pNtQuerySystemInformation) return false;
+
+			ULONG outSize = 0;
+			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
+			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
+
+			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
+
+			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
+			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
+
+			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
+
+			if (ntStatus != STATUS_SUCCESS) {
+				delete[] pSysProcInfoBuffer;
 
 				return false;
 			}
 
+			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
 			bool found = false;
 
 			do {
 
-				if (pThreadEntry->th32OwnerProcessID == procId) {
+				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
+					pProcessEntry->cntThreads = pCurSysProcInfo->NumberOfThreads;
+					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
+					pProcessEntry->pcPriClassBase = pCurSysProcInfo->BasePriority;
+
+					if (pCurSysProcInfo->ImageName.Buffer) {
+						WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
+					}
+
 					found = true;
 				}
 
-			} while (!found && Thread32Next(hSnap, pThreadEntry));
+				// NextEntryOffset is null for last entry
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+			} while (!found && pCurSysProcInfo->NextEntryOffset);
 
-			CloseHandle(hSnap);
+			delete[] pSysProcInfoBuffer;
 
 			return found;
+		}
+
+
+		bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size) {
+			const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
+
+			if (!hNtDll) return false;
+
+			const tNtQuerySystemInformation pNtQuerySystemInformation = reinterpret_cast<tNtQuerySystemInformation>(proc::in::getProcAddress(hNtDll, "NtQuerySystemInformation"));
+
+			if (!pNtQuerySystemInformation) return false;
+
+			ULONG outSize = 0;
+			SYSTEM_PROCESS_INFORMATION sysProcInfo{};
+			NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
+
+			if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return false;
+
+			// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one process)
+			SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
+
+			ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
+
+			if (ntStatus != STATUS_SUCCESS) {
+				delete[] pSysProcInfoBuffer;
+
+				return false;
+			}
+
+			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+			bool found = false;
+			bool fitAll = false;
+
+			do {
+
+				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
+					const size_t bufSpace = size / sizeof(ThreadEntry);
+					fitAll = pCurSysProcInfo->NumberOfThreads <= bufSpace;
+
+					for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads && i < bufSpace; i++) {
+						pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
+						pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
+						pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
+						pThreadEntries[i].waitReason = pCurSysProcInfo->Threads[i].WaitReason;
+					}
+
+					found = true;
+				}
+
+				// NextEntryOffset is null for last entry
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
+			} while (!found && pCurSysProcInfo->NextEntryOffset);
+
+			delete[] pSysProcInfoBuffer;
+
+			return found && fitAll;
 		}
 
 		
@@ -119,33 +199,33 @@ namespace proc {
 			if (!ReadProcessMemory(hProc, pBase + dirEntryExport.VirtualAddress, &exportDir, sizeof(IMAGE_EXPORT_DIRECTORY), nullptr)) return nullptr;
 
 			const DWORD numberOfFuncs = exportDir.NumberOfFunctions;
-			DWORD* const exportFunctionTable = new DWORD[numberOfFuncs];
+			DWORD* const pExportFunctionTable = new DWORD[numberOfFuncs];
 			const BYTE* const addressOfFunctions = pBase + exportDir.AddressOfFunctions;
 
-			if (!ReadProcessMemory(hProc, addressOfFunctions, exportFunctionTable, numberOfFuncs * sizeof(DWORD), nullptr)) {
-				delete[] exportFunctionTable;
+			if (!ReadProcessMemory(hProc, addressOfFunctions, pExportFunctionTable, numberOfFuncs * sizeof(DWORD), nullptr)) {
+				delete[] pExportFunctionTable;
 
 				return nullptr;
 			}
 
 			const DWORD numberOfNames = exportDir.NumberOfNames;
-			DWORD* const exportNameTable = new DWORD[numberOfNames];
+			DWORD* const pExportNameTable = new DWORD[numberOfNames];
 			const BYTE* const addressOfNames = pBase + exportDir.AddressOfNames;
 
-			if (!ReadProcessMemory(hProc, addressOfNames, exportNameTable, numberOfNames * sizeof(DWORD), nullptr)) {
-				delete[] exportFunctionTable;
-				delete[] exportNameTable;
+			if (!ReadProcessMemory(hProc, addressOfNames, pExportNameTable, numberOfNames * sizeof(DWORD), nullptr)) {
+				delete[] pExportFunctionTable;
+				delete[] pExportNameTable;
 
 				return nullptr;
 			}
 
-			WORD* const exportOrdinalTable = new WORD[numberOfNames];
+			WORD* const pExportOrdinalTable = new WORD[numberOfNames];
 			const BYTE* const addressOfNameOrdinals = pBase + exportDir.AddressOfNameOrdinals;
 
-			if (!ReadProcessMemory(hProc, addressOfNameOrdinals, exportOrdinalTable, numberOfNames * sizeof(WORD), nullptr)) {
-				delete[] exportFunctionTable;
-				delete[] exportNameTable;
-				delete[] exportOrdinalTable;
+			if (!ReadProcessMemory(hProc, addressOfNameOrdinals, pExportOrdinalTable, numberOfNames * sizeof(WORD), nullptr)) {
+				delete[] pExportFunctionTable;
+				delete[] pExportNameTable;
+				delete[] pExportOrdinalTable;
 				
 				return nullptr;
 			}
@@ -156,18 +236,18 @@ namespace proc {
 
 			if (byOrdinal) {
 				const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & 0xFFFF) - exportDir.Base);
-				funcRva = exportFunctionTable[index];
+				funcRva = pExportFunctionTable[index];
 			}
 			else {
 
 				for (DWORD i = 0; i < exportDir.NumberOfNames; i++) {
 					char curFuncName[MAX_PATH]{};
 
-					if (!mem::ex::copyRemoteString(hProc, curFuncName, pBase + exportNameTable[i], MAX_PATH)) continue;
+					if (!mem::ex::copyRemoteString(hProc, curFuncName, pBase + pExportNameTable[i], MAX_PATH)) continue;
 
 					if (!_stricmp(funcName, curFuncName)) {
 						// the function rva is in the export table indexed by the ordinal in the ordinal table at the same index as the name in the name table
-						funcRva = exportFunctionTable[exportOrdinalTable[i]];
+						funcRva = pExportFunctionTable[pExportOrdinalTable[i]];
 
 						break;
 					}
@@ -177,9 +257,9 @@ namespace proc {
 			}
 
 			if (!funcRva) {
-				delete[] exportFunctionTable;
-				delete[] exportNameTable;
-				delete[] exportOrdinalTable;
+				delete[] pExportFunctionTable;
+				delete[] pExportNameTable;
+				delete[] pExportOrdinalTable;
 
 				return nullptr;
 			}
@@ -193,9 +273,9 @@ namespace proc {
 				char curForward[MAX_PATH]{};
 
 				if (!mem::ex::copyRemoteString(hProc, curForward, pBase + funcRva, MAX_PATH)) {
-					delete[] exportFunctionTable;
-					delete[] exportNameTable;
-					delete[] exportOrdinalTable;
+					delete[] pExportFunctionTable;
+					delete[] pExportNameTable;
+					delete[] pExportOrdinalTable;
 					
 					return nullptr;
 				}
@@ -213,9 +293,9 @@ namespace proc {
 				HMODULE hForwardMod = getModuleHandle(hProc, forwardModFileName);
 
 				if (!hForwardMod) {
-					delete[] exportFunctionTable;
-					delete[] exportNameTable;
-					delete[] exportOrdinalTable;
+					delete[] pExportFunctionTable;
+					delete[] pExportNameTable;
+					delete[] pExportOrdinalTable;
 
 					return nullptr;
 				}
@@ -234,9 +314,9 @@ namespace proc {
 				procAddress = reinterpret_cast<FARPROC>(pBase + funcRva);
 			}
 
-			delete[] exportFunctionTable;
-			delete[] exportNameTable;
-			delete[] exportOrdinalTable;
+			delete[] pExportFunctionTable;
+			delete[] pExportNameTable;
+			delete[] pExportOrdinalTable;
 
 			return procAddress;
 		}
