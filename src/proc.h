@@ -10,9 +10,9 @@ namespace proc {
 	// Alike PROCESSENTRY32 from the TlHelp32 library without the unused or unnecessary fields.
 	typedef struct ProcessEntry {
 		DWORD processId;
-		DWORD cntThreads;
+		DWORD threadCount;
 		DWORD parentProcessId;
-		LONG pcPriClassBase;
+		LONG basePriority;
 		char exeFile[MAX_PATH];
 	}ProcessEntry;
 
