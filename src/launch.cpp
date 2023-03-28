@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <TlHelp32.h>
 
-// how long should be waited for return value of executed code in ms
-#define THREAD_TIMEOUT 5000
+// how long to wait for return value of launched function in milliseconds
+#define LAUNCH_TIMEOUT 5000
 #define LODWORD(qword) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(qword)))
 
 #define LAUNCH_DATA_X64_SPACE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -40,6 +40,91 @@ namespace launch {
 	// xor rax, rax
 	// ret
 	static BYTE crtShellX64[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3, LAUNCH_DATA_X64_SPACE };
+
+	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
+		BOOL isWow64 = FALSE;
+		IsWow64Process(hProc, &isWow64);
+
+		// x64 targets only feasable for x64 compilations
+		#ifndef _WIN64
+
+		if (!isWow64) return false;
+
+		#endif // !_WIN64
+
+		if (isWow64) {
+			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, nullptr);
+
+			if (!hThread) return false;
+
+			if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT)) {
+
+				#pragma warning (push)
+				#pragma warning (disable: 6258)
+				TerminateThread(hThread, 0);
+				#pragma warning (pop)
+
+				CloseHandle(hThread);
+
+				return false;
+			}
+
+			GetExitCodeThread(hThread, reinterpret_cast<DWORD*>(pRet));
+			CloseHandle(hThread);
+		}
+		else {
+
+			#ifdef _WIN64
+
+			// shell coding for x64 processes is done just to get the full 8 byte return value of x64 threads
+			// GetExitCodeThread only gets a DWORD value
+			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(crtShellX64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+
+			if (!pShellCode) return false;
+
+			LaunchDataX64* const pLaunchData = reinterpret_cast<LaunchDataX64*>(crtShellX64 + sizeof(crtShellX64) - sizeof(LaunchDataX64));
+			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
+			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
+
+			if (!WriteProcessMemory(hProc, pShellCode, crtShellX64, sizeof(crtShellX64), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + sizeof(crtShellX64) - sizeof(LaunchDataX64));
+			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, nullptr);
+
+			if (!hThread) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT)) {
+
+				#pragma warning (push)
+				#pragma warning (disable: 6258)
+				TerminateThread(hThread, 0);
+				#pragma warning (pop)
+
+				CloseHandle(hThread);
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr);
+			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+			CloseHandle(hThread);
+
+			#endif
+
+		}
+
+		return true;
+	}
+
 
 	// ASM:
 	// push   oldEip						save old eip for return instruction
@@ -89,182 +174,6 @@ namespace launch {
 	// mov    BYTE PTR[rip + 0x19], 0x1		set pLaunchData->flag to one
 	// ret
 	static BYTE hijackShellX64[]{ 0xFF, 0x35, 0x4F, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0x8B, 0x0D, 0x2C, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x05, 0x2D, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x89, 0x05, 0x24, 0x00, 0x00, 0x00, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x19, 0x00, 0x00, 0x00, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
-
-	#ifdef _WIN64
-
-	// ASM:
-	// push   rbp							save registers						
-	// push   rsp
-	// push   rbx
-	// push   r8
-	// push   rdx
-	// push   rcx
-	// jmp    0x0							jump to skip pLaunchData->pFunc call after first execution
-	// mov    BYTE PTR[rip - 0x08], 0x2A	fix jump to skip pLaunchData->pFunc call
-	// mov    rcx, QWORD PTR[rip + 0x39]	load pLaunchData->pArg for pLaunchData->pFunc call
-	// sub    rsp, 0x28						setup shadow space for function call
-	// call   QWORD PTR[rip + 0x37]			call pLaunchData->pFunc
-	// add    rsp, 0x28						cleanup shadow space from function call
-	// mov    QWORD PTR[rip + 0x34], rax	write return value to pLaunchData->pRet
-	// mov    BYTE PTR[rip + 0x35], 0x1		set pLaunchData->flag to one
-	// pop    rdx							restore registers for pCallNextHookEx call
-	// pop    r8
-	// pop    r9
-	// movabs rbx, pCallNextHookEx			
-	// sub    rsp, 0x28						setup shadow space for function call
-	// call   rbx							call pCallNextHookEx
-	// add    rsp, 0x28						cleanup shadow space from function call
-	// pop    rbx							restore registers
-	// pop    rsp
-	// pop    rbp
-	// ret
-	static BYTE windowsHookShell[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3, LAUNCH_DATA_X64_SPACE };
-
-	#else
-
-	// ASM:
-	// push   ebp								setup stack frame
-	// mov    ebp, esp
-	// jmp    0x0								jump to skip pLaunchData->pFunc call after first execution
-	// push   eax								save registers
-	// push   ebx
-	// mov    ebx, pLaunchData	
-	// mov    BYTE PTR[ebx - 0x30], 0x1B		fix jump to skip pLaunchData->pFunc call
-	// push   ebx								save pLaunchData
-	// push   DWORD PTR[ebx]					load pLaunchData->pArg for pLaunchData->pFunc call
-	// call   DWORD PTR[ebx + 0x4]
-	// pop    ebx								restore pLaunchData
-	// mov    DWORD PTR[ebx + 0x8], eax			write return value to pLaunchData->pRet
-	// mov    BYTE PTR[ebx + 0xC], 0x1			set pLaunchData->flag to one
-	// pop    ebx								restore registers for pCallNextHookEx call
-	// pop    eax
-	// push   DWORD PTR[ebp + 0x10]				load arguments for pCallNextHookEx call
-	// push   DWORD PTR[ebp + 0xc]
-	// push   DWORD PTR[ebp + 0x8]
-	// push   0x0
-	// call   pCallNextHook
-	// pop    ebp
-	// ret    0xc
-	static BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00, LAUNCH_DATA_X86_SPACE };
-
-	#endif
-
-	// ASM:
-	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
-	// mov    BYTE PTR[rip - 0x8], 0x2e		fix jump to skip pLaunchData->pFunc call
-	// push   rcx							save registers
-	// push   rdx
-	// mov    rcx, QWORD PTR[rip + 0x2a]	load pLaunchData->pArg for pLaunchData->pFunc call
-	// sub    rsp, 0x28						setup shadow space for function call
-	// call   QWORD PTR[rip + 0x28]			call pLaunchData->pFunc
-	// add    rsp, 0x28						cleanup shadow space of function call
-	// mov    QWORD PTR[rip + 0x25], rax	write return value to pLaunchData->pRet
-	// mov    BYTE PTR[rip + 0x26], 0x1		set pLaunchData->flag to one
-	// pop    rdx							restore registers
-	// pop    rcx
-	// movabs rax, pGateway					jump to gateway to execute NtUserBeginPaint
-	// jmp    rax
-	BYTE hookBeginPaintShellX64[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X64_SPACE };
-
-	// ASM:
-	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
-	// push   ebx							save register
-	// mov    ebx, pLaunchData						
-	// mov    BYTE PTR[ebx - 0x1f], 0x17	fix jump to skip pLaunchData->pFunc call
-	// push   DWORD PTR[ebx]				load pLaunchData->pArg for pLaunchData->pFunc call
-	// call   DWORD PTR[ebx + 0x4]			call pLaunchData->pFunc
-	// mov    DWORD PTR[ebx + 0x8], eax		write return value to pLaunchData->pRet
-	// mov    BYTE PTR[ebx + 0xc], 0x1		set pLaunchData->flag to one
-	// pop    ebx							restore register
-	// mov    eax, pGateway					jump to gateway to execute NtUserBeginPaint
-	// jmp    eax
-	BYTE hookBeginPaintShellX86[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X86_SPACE };
-
-
-
-	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
-		BOOL isWow64 = FALSE;
-		IsWow64Process(hProc, &isWow64);
-
-		// x64 targets only feasable for x64 compilations
-		#ifndef _WIN64
-
-		if (!isWow64) return false;
-
-		#endif // !_WIN64
-
-		if (isWow64) {
-			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, nullptr);
-
-			if (!hThread) return false;
-
-			if (WaitForSingleObject(hThread, THREAD_TIMEOUT)) {
-
-				#pragma warning (push)
-				#pragma warning (disable: 6258)
-				TerminateThread(hThread, 0);
-				#pragma warning (pop)
-
-				CloseHandle(hThread);
-
-				return false;
-			}
-
-			GetExitCodeThread(hThread, reinterpret_cast<DWORD*>(pRet));
-			CloseHandle(hThread);
-		}
-		else {
-
-			#ifdef _WIN64
-
-			// shell coding for x64 processes is done just to get the full 8 byte return value of x64 threads
-			// GetExitCodeThread only gets a DWORD value
-			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(crtShellX64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
-
-			if (!pShellCode) return false;
-
-			LaunchDataX64* const pLaunchData = reinterpret_cast<LaunchDataX64*>(crtShellX64 + sizeof(crtShellX64) - sizeof(LaunchDataX64));
-			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
-			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
-
-			if (!WriteProcessMemory(hProc, pShellCode, crtShellX64, sizeof(crtShellX64), nullptr)) {
-				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-				return false;
-			}
-
-			LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + sizeof(crtShellX64) - sizeof(LaunchDataX64));
-			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, nullptr);
-
-			if (!hThread) {
-				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-				return false;
-			}
-
-			if (WaitForSingleObject(hThread, THREAD_TIMEOUT)) {
-
-				#pragma warning (push)
-				#pragma warning (disable: 6258)
-				TerminateThread(hThread, 0);
-				#pragma warning (pop)
-
-				CloseHandle(hThread);
-				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-				return false;
-			}
-
-			ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr);
-			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-			CloseHandle(hThread);
-
-			#endif
-
-		}
-
-		return true;
-	}
 
 
 	static bool checkShellCodeFlag(HANDLE hProc, const void* pFlag);
@@ -471,6 +380,65 @@ namespace launch {
 	}
 
 
+	#ifdef _WIN64
+
+	// ASM:
+	// push   rbp							save registers						
+	// push   rsp
+	// push   rbx
+	// push   r8
+	// push   rdx
+	// push   rcx
+	// jmp    0x0							jump to skip pLaunchData->pFunc call after first execution
+	// mov    BYTE PTR[rip - 0x08], 0x2A	fix jump to skip pLaunchData->pFunc call
+	// mov    rcx, QWORD PTR[rip + 0x39]	load pLaunchData->pArg for pLaunchData->pFunc call
+	// sub    rsp, 0x28						setup shadow space for function call
+	// call   QWORD PTR[rip + 0x37]			call pLaunchData->pFunc
+	// add    rsp, 0x28						cleanup shadow space from function call
+	// mov    QWORD PTR[rip + 0x34], rax	write return value to pLaunchData->pRet
+	// mov    BYTE PTR[rip + 0x35], 0x1		set pLaunchData->flag to one
+	// pop    rdx							restore registers for pCallNextHookEx call
+	// pop    r8
+	// pop    r9
+	// movabs rbx, pCallNextHookEx			
+	// sub    rsp, 0x28						setup shadow space for function call
+	// call   rbx							call pCallNextHookEx
+	// add    rsp, 0x28						cleanup shadow space from function call
+	// pop    rbx							restore registers
+	// pop    rsp
+	// pop    rbp
+	// ret
+	static BYTE windowsHookShell[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3, LAUNCH_DATA_X64_SPACE };
+
+	#else
+
+	// ASM:
+	// push   ebp								setup stack frame
+	// mov    ebp, esp
+	// jmp    0x0								jump to skip pLaunchData->pFunc call after first execution
+	// push   eax								save registers
+	// push   ebx
+	// mov    ebx, pLaunchData	
+	// mov    BYTE PTR[ebx - 0x30], 0x1B		fix jump to skip pLaunchData->pFunc call
+	// push   ebx								save pLaunchData
+	// push   DWORD PTR[ebx]					load pLaunchData->pArg for pLaunchData->pFunc call
+	// call   DWORD PTR[ebx + 0x4]
+	// pop    ebx								restore pLaunchData
+	// mov    DWORD PTR[ebx + 0x8], eax			write return value to pLaunchData->pRet
+	// mov    BYTE PTR[ebx + 0xC], 0x1			set pLaunchData->flag to one
+	// pop    ebx								restore registers for pCallNextHookEx call
+	// pop    eax
+	// push   DWORD PTR[ebp + 0x10]				load arguments for pCallNextHookEx call
+	// push   DWORD PTR[ebp + 0xc]
+	// push   DWORD PTR[ebp + 0x8]
+	// push   0x0
+	// call   pCallNextHook
+	// pop    ebp
+	// ret    0xc
+	static BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00, LAUNCH_DATA_X86_SPACE };
+
+	#endif
+
 	typedef struct HookData {
 		DWORD procId;
 		HMODULE hModule;
@@ -582,6 +550,37 @@ namespace launch {
 		return true;
 	}
 
+
+	// ASM:
+	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
+	// mov    BYTE PTR[rip - 0x8], 0x2e		fix jump to skip pLaunchData->pFunc call
+	// push   rcx							save registers
+	// push   rdx
+	// mov    rcx, QWORD PTR[rip + 0x2a]	load pLaunchData->pArg for pLaunchData->pFunc call
+	// sub    rsp, 0x28						setup shadow space for function call
+	// call   QWORD PTR[rip + 0x28]			call pLaunchData->pFunc
+	// add    rsp, 0x28						cleanup shadow space of function call
+	// mov    QWORD PTR[rip + 0x25], rax	write return value to pLaunchData->pRet
+	// mov    BYTE PTR[rip + 0x26], 0x1		set pLaunchData->flag to one
+	// pop    rdx							restore registers
+	// pop    rcx
+	// movabs rax, pGateway					jump to gateway to execute NtUserBeginPaint
+	// jmp    rax
+	static BYTE hookBeginPaintShellX64[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X64_SPACE };
+
+	// ASM:
+	// jmp    0x2							jump to skip pLaunchData->pFunc call after first execution
+	// push   ebx							save register
+	// mov    ebx, pLaunchData						
+	// mov    BYTE PTR[ebx - 0x1f], 0x17	fix jump to skip pLaunchData->pFunc call
+	// push   DWORD PTR[ebx]				load pLaunchData->pArg for pLaunchData->pFunc call
+	// call   DWORD PTR[ebx + 0x4]			call pLaunchData->pFunc
+	// mov    DWORD PTR[ebx + 0x8], eax		write return value to pLaunchData->pRet
+	// mov    BYTE PTR[ebx + 0xc], 0x1		set pLaunchData->flag to one
+	// pop    ebx							restore register
+	// mov    eax, pGateway					jump to gateway to execute NtUserBeginPaint
+	// jmp    eax
+	static BYTE hookBeginPaintShellX86[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X86_SPACE };
 
 	static BOOL CALLBACK resizeCallback(HWND hWnd, LPARAM lParam);
 
@@ -747,6 +746,161 @@ namespace launch {
 	}
 
 
+	// ASM:
+	// push   rcx							save register with pLaunchData
+	// mov    rax, QWORD PTR[rcx + 0x8]		load pLaunchData->pFunc for call
+	// mov    rcx, QWORD PTR[rcx]			load pLaunchData->pArg for pLaunchData->pFunc call
+	// sub    rsp, 0x20						setup shadow space for function call
+	// call   rax							call pLaunchData->pFunc
+	// add    rsp, 0x20						cleanup shadow space of function call
+	// pop    rcx							restore register to pLaunchData
+	// mov    QWORD PTR[rcx + 0x10], rax	write return value to pLaunchData->pRet
+	// mov    BYTE PTR[rcx + 0x18], 0x1		set pLaunchData->flag to one
+	// ret
+	static BYTE queueUserApcShellX64[]{ 0x51, 0x48, 0x8B, 0x41, 0x08, 0x48, 0x8B, 0x09, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0xC6, 0x41, 0x18, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
+
+	// ASM:
+	// push   ebp							setup stack frame
+	// mov    ebp, esp
+	// mov    ecx, DWORD PTR[ebp + 0x8]		load pLaunchData
+	// push   ecx							save register with pLaunchData
+	// push   DWORD PTR[ecx]				load pLaunchData->pArg for pLaunchData->pFunc call
+	// call   DWORD PTR[ecx + 0x4]			call pLaunchData->pFunc
+	// pop    ecx							restore register to pLaunchData
+	// mov    DWORD PTR[ecx + 0x8], eax		write return value to pLaunchData->pRet
+	// mov    BYTE PTR[ecx + 0xc], 0x1		set pLaunchData->flag to one
+	// pop    ebp							cleanup stack frame
+	// ret    0x4
+	static BYTE queueUserApcShellX86[]{ 0x55, 0x89, 0xE5, 0x8B, 0x4D, 0x08, 0x51, 0xFF, 0x31, 0xFF, 0x51, 0x04, 0x59, 0x89, 0x41, 0x08, 0xC6, 0x41, 0x0C, 0x01, 0x5D, 0xC2, 0x04, 0x00, LAUNCH_DATA_X86_SPACE };
+
+	static bool queueUserApcForSpecificThread(DWORD threadId, const void* pFunc, void* pArg, BOOL isWow64);
+
+	bool queueUserApc(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet) {
+		BOOL isWow64 = FALSE;
+		IsWow64Process(hProc, &isWow64);
+
+		// x64 targets only feasable for x64 compilations
+		#ifndef _WIN64
+
+		if (!isWow64) return false;
+
+		#endif // !_WIN64
+
+		const DWORD processId = GetProcessId(hProc);
+
+		proc::ProcessEntry procEntry{};
+
+		if (!proc::getProcessEntry(processId, &procEntry)) return false;
+
+		proc::ThreadEntry* const pThreadEntries = new proc::ThreadEntry[procEntry.threadCount];
+
+		if (!proc::getProcessThreadEntries(processId, pThreadEntries, procEntry.threadCount)) {
+			delete[] pThreadEntries;
+
+			return false;
+		}
+
+		DWORD threadId = 0;
+
+		for (DWORD i = 0; i < procEntry.threadCount; i++) {
+
+			// SignalObjectAndWait, MsgWaitForMultipleObjectsEx, WaitForMultipleObjectsEx, WaitForSingleObjectEx set wait reason to WrQueue
+			// SleepEx sets wait reason to DelayExecution
+			if (pThreadEntries[i].waitReason == KWAIT_REASON::WrQueue || pThreadEntries[i].waitReason == KWAIT_REASON::DelayExecution) {
+				threadId = pThreadEntries[i].threadId;
+			}
+
+		}
+
+		delete[] pThreadEntries;
+
+		if (!threadId) return false;
+
+		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(queueUserApcShellX64), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+
+		if (!pShellCode) return false;
+
+		if (isWow64) {
+			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShellX86) - sizeof(LaunchDataX86);
+
+			LaunchDataX86* const pLaunchData = reinterpret_cast<LaunchDataX86*>(queueUserApcShellX86 + launchDataOffset);
+			pLaunchData->pArg = LODWORD(pArg);
+			pLaunchData->pFunc = LODWORD(pFunc);
+
+			if (!WriteProcessMemory(hProc, pShellCode, queueUserApcShellX86, sizeof(queueUserApcShellX86), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			LaunchDataX86* const pLaunchDataEx = reinterpret_cast<LaunchDataX86*>(pShellCode + launchDataOffset);
+
+			if (!queueUserApcForSpecificThread(threadId, pShellCode, pLaunchDataEx, TRUE)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+		}
+		else {
+
+			#ifdef _WIN64
+
+			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShellX64) - sizeof(LaunchDataX64);
+
+			LaunchDataX64* const pLaunchData = reinterpret_cast<LaunchDataX64*>(queueUserApcShellX64 + launchDataOffset);
+			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
+			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
+
+			if (!WriteProcessMemory(hProc, pShellCode, queueUserApcShellX64, sizeof(queueUserApcShellX64), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			LaunchDataX64* const pLaunchDataEx = reinterpret_cast<LaunchDataX64*>(pShellCode + launchDataOffset);
+
+			if (!queueUserApcForSpecificThread(threadId, pShellCode, pLaunchDataEx, FALSE)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+
+			if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) {
+				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+				return false;
+			}
+
+			#endif // _WIN64
+
+		}
+
+		VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
+
+		return true;
+	}
+
+
 	// check via flag if shell code has been executed
 	static bool checkShellCodeFlag(HANDLE hProc, const void* pFlag) {
 		bool flag = false;
@@ -758,7 +912,7 @@ namespace launch {
 			if (flag) break;
 
 			Sleep(50);
-		} while (GetTickCount64() - start < THREAD_TIMEOUT);
+		} while (GetTickCount64() - start < LAUNCH_TIMEOUT);
 
 		return flag;
 	}
@@ -839,6 +993,56 @@ namespace launch {
 		if (!SetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
 
 		return FALSE;
+	}
+
+
+	static bool queueUserApcForSpecificThread(DWORD threadId, const void* pFunc, void* pArg, BOOL isWow64) {
+		const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, threadId);
+
+		if (!hThread) return false;
+
+		// QueueUserAPC does not work on x86 target processes from x64 caller processes
+		if (isWow64) {
+			HMODULE hNtdll = proc::in::getModuleHandle("ntdll.dll");
+
+			if (!hNtdll) {
+				CloseHandle(hThread);
+
+				return false;
+			}
+
+			tRtlQueueApcWow64Thread pRtlQueueApcWow64Thread = reinterpret_cast<tRtlQueueApcWow64Thread>(proc::in::getProcAddress(hNtdll, "RtlQueueApcWow64Thread"));
+
+			if (!pRtlQueueApcWow64Thread) {
+				CloseHandle(hThread);
+
+				return false;
+			}
+
+			if (pRtlQueueApcWow64Thread(hThread, pFunc, pArg, nullptr, nullptr) != STATUS_SUCCESS) {
+				CloseHandle(hThread);
+
+				return false;
+			}
+
+		}
+		else {
+
+			#ifdef _WIN64
+
+			if (!QueueUserAPC(reinterpret_cast<PAPCFUNC>(pFunc), hThread, reinterpret_cast<ULONG_PTR>(pArg))) {
+				CloseHandle(hThread);
+
+				return false;
+			}
+
+			#endif // _WIN64
+
+		}
+
+		CloseHandle(hThread);
+
+		return true;
 	}
 
 }

@@ -36,7 +36,7 @@ The library provides functions to retrieve information about a windows process i
 ### Memory interaction
 The library provides functions to interact with the virtual memory of a process. Again most functions are defined to interact with the caller process as well as an external target process. The external functions are again implemented so that the x64 compilations of these functions are able to interact with the virtual memory of an x64 as well as an x86 target process. Possible memory interactions are eg. low level hooking, patching and memory pattern scanning. See the "mem.h" header for further documentation.
 ### Launching code
-The library provides functions to launch and execute code in an external target process. It supports launching via CreateRemoteThread, thread hijacking, SetWindowsHookEx and hooking NtUserBeginPaint including retriving the return value of the executed code. See the "launch.h" header for further documentation.
+The library provides functions to launch and execute code in an external target process. It supports launching via CreateRemoteThread, thread hijacking, SetWindowsHookEx, hooking NtUserBeginPaint and QueueUserAPC including retriving the return value of the executed code. See the "launch.h" header for further documentation.
 ### Vector math
 The library provides basic vector types and functions, as well as world to screen functions for column- and row-major projection matricies. See the "vecmath.h" header for further documentation.
 ### Function hooking
@@ -64,7 +64,7 @@ The library provides a way to setup an wglSwapBuffers hook and some functions to
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 
 ## TODO
-- Add code launching via QueueUserApc
+- Better error handling for launch functions
 
 ## References
 - https://guidedhacking.com/

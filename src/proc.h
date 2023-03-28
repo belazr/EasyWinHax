@@ -19,7 +19,7 @@ namespace proc {
 	typedef struct ThreadEntry {
 		DWORD threadId;
 		DWORD ownerProcessId;
-		DWORD threadState;
+		THREAD_STATE threadState;
 		KWAIT_REASON waitReason;
 	}ThreadEntry;
 

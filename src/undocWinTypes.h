@@ -6,6 +6,12 @@
 // Use with care!
 // Especially the architecture specific structures are not complete and only defined as needed.
 
+//
+// 
+// NTSTATUS
+#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+#define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
+
 typedef struct _UNICODE_STRING
 {
     USHORT Length;
@@ -518,7 +524,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY64 {
 } LDR_DATA_TABLE_ENTRY64, * PLDR_DATA_TABLE_ENTRY64;
 //
 //
-// NtNtQueryInformationProcess
+// NtQueryInformationProcess
 typedef LONG KPRIORITY, * PKPRIORITY;
 
 typedef struct _PROCESS_BASIC_INFORMATION {
@@ -685,6 +691,18 @@ typedef enum _KWAIT_REASON {
     MaximumWaitReason
 } KWAIT_REASON;
 
+typedef enum _THREAD_STATE {
+    Initialized,
+    Ready,
+    Running,
+    Standby,
+    Terminated,
+    Waiting,
+    Transition,
+    TsUnknown,
+    MaximumThreadState
+} THREAD_STATE;
+
 typedef struct _CLIENT_ID {
     HANDLE UniqueProcess;
     HANDLE UniqueThread;
@@ -700,7 +718,7 @@ typedef struct _SYSTEM_THREAD_INFORMATION {
     KPRIORITY Priority;
     LONG BasePriority;
     ULONG ContextSwitches;
-    ULONG ThreadState;
+    THREAD_STATE ThreadState;
     KWAIT_REASON WaitReason;
 } SYSTEM_THREAD_INFORMATION, * PSYSTEM_THREAD_INFORMATION;
 
@@ -748,6 +766,7 @@ typedef NTSTATUS(__stdcall* tNtQuerySystemInformation) (
     ULONG SystemInformationLength,
     PULONG ReturnLength
 );
-
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
-#define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
+//
+// 
+// RtlQueueApcWow64Thread
+typedef NTSTATUS(__stdcall* tRtlQueueApcWow64Thread)(HANDLE hThread, const void* pRoutine, void* pArg1, void* pArg2, void* pArg3);
