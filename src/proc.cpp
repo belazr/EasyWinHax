@@ -72,18 +72,13 @@ namespace proc {
 
 		const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
 		bool found = false;
+		bool fitted = false;
 
 		do {
 
 			if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
 				
-				if (pCurSysProcInfo->NumberOfThreads > size) {
-					delete[] pSysProcInfoBuffer;
-
-					return false;
-				}
-
-				for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads; i++) {
+				for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads && i < size; i++) {
 					pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
 					pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
 					pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
@@ -91,6 +86,7 @@ namespace proc {
 				}
 
 				found = true;
+				fitted = pCurSysProcInfo->NumberOfThreads <= size;
 			}
 
 			// NextEntryOffset is null for last entry
@@ -99,7 +95,7 @@ namespace proc {
 
 		delete[] pSysProcInfoBuffer;
 
-		return found;
+		return found && fitted;
 	}
 
 	// return value points to an array on the heap
