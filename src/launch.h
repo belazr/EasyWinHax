@@ -34,7 +34,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by hijacking an existing thread of the target process.
 	// Suspends the thread, switches it's context and resumes it executing the desired code.
@@ -62,7 +62,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by setting a windows hook.
 	// Hooks the window procedure to process messages for a window of the target process.
@@ -93,7 +93,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by hooking NtUserBeginPaint from win32u.dll.
 	// NtUserBeginPaint gets called when a window is resized or moved.
@@ -123,7 +123,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by queuing a user-mode APC.
 	// Waits for successfull execution and retrives the return value.
@@ -151,6 +151,6 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool queueUserApc(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void** pRet);
+	bool queueUserApc(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 }
