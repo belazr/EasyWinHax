@@ -384,8 +384,8 @@ namespace proc {
 		}
 
 
-		HMODULE getModuleHandle(DWORD procId, const char* modName) {
-			const HANDLE hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, false, procId);
+		HMODULE getModuleHandle(DWORD processId, const char* modName) {
+			const HANDLE hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
 			
 			return getModuleHandle(hProc, modName);
 		}

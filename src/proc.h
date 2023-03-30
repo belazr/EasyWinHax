@@ -155,7 +155,7 @@ namespace proc {
 		// 
 		// Parameters:
 		// 
-		// [in] procId:
+		// [in] processId:
 		// The process id of the target process.
 		// 
 		// [in] modName:
@@ -163,7 +163,7 @@ namespace proc {
 		// 
 		// Return:
 		// Handle to the module or nullptr on failure or if the module was not found.
-		HMODULE getModuleHandle(DWORD procId, const char* modName);
+		HMODULE getModuleHandle(DWORD processId, const char* modName);
 
 		// Gets a handle to a module of an external target process.
 		// The value of the handle is equivalent to the base address of the module within the virtual address space of the target process.
