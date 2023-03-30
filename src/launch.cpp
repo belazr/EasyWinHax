@@ -94,7 +94,7 @@ namespace launch {
 
 		if (!processId) return false;
 
-		// get the first thread entry
+		// get the first/main thread entry
 		proc::ThreadEntry threadEntry{};
 		proc::getProcessThreadEntries(processId, &threadEntry, 1);
 
@@ -102,7 +102,6 @@ namespace launch {
 
 		if (!hThread) return false;
 
-		// size of larger shell code is used to be safe, allocates a whole page anyway
 		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, PAGE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 		if (!pShellCode) {
@@ -207,7 +206,6 @@ namespace launch {
 
 		if (!pNtUserBeginPaint) return false;
 
-		// size of larger shell code is used to be safe, allocates a whole page anyway
 		BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, PAGE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 		if (!pShellCode) return false;
@@ -357,7 +355,7 @@ namespace launch {
 		// push   eax
 		// push   edx
 		// pushf
-		// mov    ecx, pLaunchData				
+		// mov    ecx, pLaunchDataEx				
 		// mov    eax, DWORD PTR [ecx+0x4]		load pLaunchData->pFunc
 		// push   ecx							save pLaunchData
 		// push   [ecx]							push pLaunchData->pArg for function call
@@ -538,7 +536,7 @@ namespace launch {
 			const DWORD processId = GetProcessId(hProc);
 
 			if (processId) {
-				// resize the window to trigger UserBeginPaint execution
+				// resize the window to trigger NtUserBeginPaint execution
 				EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&processId));
 			}
 			
@@ -548,7 +546,7 @@ namespace launch {
 
 			// read the stolen bytes from the gateway
 			if (!ReadProcessMemory(hProc, pGateway, stolen, lenStolen, nullptr)) {
-				// if we deallocte the gateway here, the process will crash
+				// if gateway gets deallocated here, the process will crash
 				delete[] stolen;
 
 				return false;
@@ -556,13 +554,14 @@ namespace launch {
 
 			// patch the stolen bytes back
 			if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, lenStolen)) {
-				// if we deallocte the gateway here, the process will crash
+				// if gateway gets deallocated here, the process will crash
 				delete[] stolen;
 
 				return false;
 			}
 
 			delete[] stolen;
+			// now gateway can be deallocated safely
 			VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
 
 			if (!success) return false;
@@ -722,7 +721,8 @@ namespace launch {
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 			const uint64_t oldRip = context.Rip;
-			// save old rip at pRet because we need it before it is overwritten
+			// save old rip at pRet for convenience
+			// it is used before it is overwritten by the return value
 			pLaunchData->pRet = oldRip;
 
 			if (!WriteProcessMemory(hProc, pShellCode, hijackShell, sizeof(hijackShell), nullptr)) {
@@ -882,7 +882,7 @@ namespace launch {
 
 			// read the stolen bytes from the gateway
 			if (!ReadProcessMemory(hProc, pGateway, pStolen, lenStolen, nullptr)) {
-				// if we deallocte the gateway here, the process will crash
+				// if gateway gets deallocated here, the process will crash
 				delete[] pStolen;
 
 				return false;
@@ -890,13 +890,14 @@ namespace launch {
 
 			// patch the stolen bytes back
 			if (!mem::ex::patch(hProc, pNtUserBeginPaint, pStolen, lenStolen)) {
-				// if we deallocte the gateway here, the process will crash
+				// if gateway gets deallocated here, the process will crash
 				delete[] pStolen;
 
 				return false;
 			}
 
 			delete[] pStolen;
+			// now gateway can be deallocated safely
 			VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
 
 			if (!success) return false;
@@ -947,7 +948,7 @@ namespace launch {
 	// check via flag if shell code has been executed
 	static bool checkShellCodeFlag(HANDLE hProc, const void* pFlag) {
 		bool flag = false;
-		ULONGLONG start = GetTickCount64();
+		const ULONGLONG start = GetTickCount64();
 
 		do {
 			ReadProcessMemory(hProc, pFlag, &flag, sizeof(flag), nullptr);
@@ -984,7 +985,7 @@ namespace launch {
 		if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
 
 		// pretend the shell code is loaded by the module
-		HHOOK hHook = SetWindowsHookExA(WH_CALLWNDPROC, pHookCallbackData->pHookFunc, pHookCallbackData->hModule, curThreadId);
+		const HHOOK hHook = SetWindowsHookExA(WH_CALLWNDPROC, pHookCallbackData->pHookFunc, pHookCallbackData->hModule, curThreadId);
 
 		if (!hHook)  return TRUE;
 
@@ -1020,7 +1021,7 @@ namespace launch {
 
 		if (!GetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
 
-		UINT oldShowCmd = wndPlacement.showCmd;
+		const UINT oldShowCmd = wndPlacement.showCmd;
 
 		if (oldShowCmd == SW_MINIMIZE || oldShowCmd == SW_SHOWMINIMIZED || oldShowCmd == SW_SHOWMINNOACTIVE) {
 			wndPlacement.showCmd = SW_RESTORE;
