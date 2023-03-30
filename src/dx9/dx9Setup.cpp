@@ -72,10 +72,10 @@ namespace dx9 {
 
 
 	static BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM pArg) {
-		DWORD procId = 0;
-		GetWindowThreadProcessId(hWnd, &procId);
+		DWORD processId = 0;
+		GetWindowThreadProcessId(hWnd, &processId);
 
-		if (GetCurrentProcessId() != procId || !procId) return TRUE;
+		if (GetCurrentProcessId() != processId || !processId) return TRUE;
 
 		*reinterpret_cast<HWND*>(pArg) = hWnd;
 
