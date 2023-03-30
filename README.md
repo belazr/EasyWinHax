@@ -65,6 +65,9 @@ The library provides a collection of structures and function types used by the w
 
 ## TODO
 - Better error handling for launch functions
+- Refactor graphic API hooking and drawing
+- Add DirectX 11 hook setup and drawing
+- Add API independent render engine
 
 ## References
 - https://guidedhacking.com/
