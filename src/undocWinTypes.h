@@ -770,3 +770,8 @@ typedef NTSTATUS(__stdcall* tNtQuerySystemInformation) (
 // 
 // RtlQueueApcWow64Thread
 typedef NTSTATUS(__stdcall* tRtlQueueApcWow64Thread)(HANDLE hThread, const void* pRoutine, void* pArg1, void* pArg2, void* pArg3);
+
+//
+//
+// NtCreateThreadEx
+typedef NTSTATUS(__stdcall* tNtCreateThreadEx)(HANDLE* pThread, ACCESS_MASK DesiredAccess, PLONG ObjectAttributes, HANDLE hProcess, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, SIZE_T ZeroBits, SIZE_T dwStackSize, SIZE_T dwMaxStackSize, PVOID lpAttrListOut);

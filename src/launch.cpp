@@ -25,7 +25,7 @@ namespace launch {
 	// x86 specific parts of the implementations
 	namespace x86 {
 
-		static bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchFunc pFunc, void* pArg, void* pRet);
 		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 		#ifndef _WIN64
@@ -44,7 +44,7 @@ namespace launch {
 	// x64 specific parts of the implementations
 	namespace x64 {
 
-		static bool createRemoteThread(HANDLE hProc, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet);
 		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet);
 		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet);
 		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet);
@@ -55,7 +55,15 @@ namespace launch {
 	#endif // _WIN64
 
 
-	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool createThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		const HMODULE hNtdll = proc::in::getModuleHandle("Ntdll.dll");
+
+		if (!hNtdll) return false;
+
+		const tNtCreateThreadEx pNtCreateThreadEx = reinterpret_cast<tNtCreateThreadEx>(proc::in::getProcAddress(hNtdll, "NtCreateThreadEx"));
+
+		if (!pNtCreateThreadEx) return false;
+		
 		BOOL isWow64 = FALSE;
 		IsWow64Process(hProc, &isWow64);
 
@@ -63,7 +71,7 @@ namespace launch {
 
 		if (isWow64) {
 			
-			success = x86::createRemoteThread(hProc, pFunc, pArg, pRet);
+			success = x86::createThread(hProc, pNtCreateThreadEx, pFunc, pArg, pRet);
 
 		}
 		else {
@@ -77,7 +85,7 @@ namespace launch {
 
 			if (!pShellCode) return false;
 
-			success = x64::createRemoteThread(hProc, pShellCode, pFunc, pArg, pRet);
+			success = x64::createThread(hProc, pNtCreateThreadEx, pShellCode, pFunc, pArg, pRet);
 
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
@@ -326,8 +334,10 @@ namespace launch {
 			uint8_t flag;
 		}LaunchData;
 
-		static bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
-			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, nullptr);
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchFunc pFunc, void* pArg, void* pRet) {
+			HANDLE hThread = nullptr;
+			
+			if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
 
 			if (!hThread) return false;
 
@@ -384,7 +394,6 @@ namespace launch {
 			}
 
 			const ptrdiff_t launchDataOffset = sizeof(hijackShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hijackShell + launchDataOffset);
 			pLaunchData->pArg = LODWORD(pArg);
 			pLaunchData->pFunc = LODWORD(pFunc);
@@ -466,7 +475,6 @@ namespace launch {
 
 		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint32_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint32_t>(pFunc);
@@ -518,7 +526,6 @@ namespace launch {
 
 		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
 			pLaunchData->pArg = LODWORD(pArg);
 			pLaunchData->pFunc = LODWORD(pFunc);
@@ -588,7 +595,6 @@ namespace launch {
 
 		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
 			pLaunchData->pArg = LODWORD(pArg);
 			pLaunchData->pFunc = LODWORD(pFunc);
@@ -642,15 +648,18 @@ namespace launch {
 		// ret
 		static BYTE crtShell[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3, LAUNCH_DATA_X64_SPACE };
 
-		static bool createRemoteThread(HANDLE hProc, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet) {
-			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(crtShell + sizeof(crtShell) - sizeof(LaunchData));
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet) {
+			const ptrdiff_t launchDataOffset = sizeof(crtShell) - sizeof(LaunchData);
+			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(crtShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 			if (!WriteProcessMemory(hProc, pShellCode, crtShell, sizeof(crtShell), nullptr)) return false;
 
 			LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + sizeof(crtShell) - sizeof(LaunchData));
-			const HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, nullptr);
+			HANDLE hThread = nullptr;
+
+			if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
 
 			if (!hThread) return false;
 
@@ -715,7 +724,6 @@ namespace launch {
 			}
 
 			const ptrdiff_t launchDataOffset = sizeof(hijackShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hijackShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
@@ -799,7 +807,6 @@ namespace launch {
 
 		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
@@ -852,7 +859,6 @@ namespace launch {
 
 		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
@@ -922,7 +928,6 @@ namespace launch {
 
 		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
-
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 			pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
