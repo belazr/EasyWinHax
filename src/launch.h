@@ -10,7 +10,7 @@ namespace launch {
 
 	typedef void* (WINAPI* tLaunchFunc)(void* pArg);
 
-	// Launches code execution by creating a thread in the target process via CreateRemoteThread.
+	// Launches code execution by creating a thread in the target process via NtCreateThreadEx.
 	// Waits for the thread and retrives the return value. Can retrive 8 byte return values for x64 targets (unlike GetExitCodeThread).
 	// 
 	// Parameters:
@@ -34,7 +34,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool createRemoteThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool createThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by hijacking an existing thread of the target process.
 	// Suspends the thread, switches it's context and resumes it executing the desired code.
