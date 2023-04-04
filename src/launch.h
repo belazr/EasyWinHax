@@ -8,7 +8,8 @@
 
 namespace launch {
 
-	typedef void* (WINAPI* tLaunchFunc)(void* pArg);
+	typedef void* (WINAPI* tLaunchableFunc)(void* pArg);
+	typedef bool (* tLaunchFunc)(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by creating a thread in the target process via NtCreateThreadEx.
 	// Waits for the thread and retrives the return value. Can retrive 8 byte return values for x64 targets (unlike GetExitCodeThread).
@@ -16,7 +17,7 @@ namespace launch {
 	// Parameters:
 	// 
 	// [in] hProc:
-	// Handle to the process where the code should be launched.
+	// Handle to the process in which context the code should be launched.
 	// Needs at least PROCESS_CREATE_THREAD, PROCESS_QUERY_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
@@ -24,7 +25,7 @@ namespace launch {
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
-	// To call API functions with different calling conventions use shell as a wrapper.
+	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
 	// Argument of the function called by the thread.
@@ -34,7 +35,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool createThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by hijacking an existing thread of the target process.
 	// Suspends the thread, switches it's context and resumes it executing the desired code.
@@ -44,7 +45,7 @@ namespace launch {
 	// Parameters:
 	// 
 	// [in] hProc:
-	// Handle to the process where the code should be launched.
+	// Handle to the process in which context the code should be launched.
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
@@ -52,7 +53,7 @@ namespace launch {
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
-	// To call API functions with different calling conventions use shell as a wrapper.
+	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
 	// Argument of the function called by the thread.
@@ -62,7 +63,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by setting a windows hook.
 	// Hooks the window procedure to process messages for a window of the target process.
@@ -75,7 +76,7 @@ namespace launch {
 	// Parameters:
 	// 
 	// [in] hProc:
-	// Handle to the process where the code should be launched.
+	// Handle to the process in which context the code should be launched.
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
@@ -83,7 +84,7 @@ namespace launch {
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
-	// To call API functions with different calling conventions use shell as a wrapper.
+	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
 	// Argument of the function called by the hook.
@@ -93,7 +94,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by hooking NtUserBeginPaint from win32u.dll.
 	// NtUserBeginPaint gets called when a window is resized or moved.
@@ -105,7 +106,7 @@ namespace launch {
 	// Parameters:
 	// 
 	// [in] hProc:
-	// Handle to the process where the code should be launched.
+	// Handle to the process in which context the code should be launched.
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
@@ -113,7 +114,7 @@ namespace launch {
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
-	// To call API functions with different calling conventions use shell as a wrapper.
+	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
 	// Argument of the function called by the hook.
@@ -123,7 +124,7 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	// Launches code execution by queuing a user-mode APC.
 	// Waits for successfull execution and retrives the return value.
@@ -133,7 +134,7 @@ namespace launch {
 	// Parameters:
 	// 
 	// [in] hProc:
-	// Handle to the process where the code should be launched.
+	// Handle to the process in which context the code should be launched.
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
@@ -141,7 +142,7 @@ namespace launch {
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
-	// To call API functions with different calling conventions use shell as a wrapper.
+	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
 	// Argument of the function called by the hook.
@@ -151,6 +152,6 @@ namespace launch {
 	// 
 	// Return:
 	// True on success or false on failure.
-	bool queueUserApc(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet);
+	bool queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 }
