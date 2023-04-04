@@ -25,17 +25,17 @@ namespace launch {
 	// x86 specific parts of the implementations
 	namespace x86 {
 
-		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		#ifndef _WIN64
 
-		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		#endif // !_WIN64
 
-		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	}
 
@@ -44,18 +44,18 @@ namespace launch {
 	// x64 specific parts of the implementations
 	namespace x64 {
 
-		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet);
-		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet);
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	}
 
 	#endif // _WIN64
 
 
-	bool createThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 		const HMODULE hNtdll = proc::in::getModuleHandle("Ntdll.dll");
 
 		if (!hNtdll) return false;
@@ -97,7 +97,7 @@ namespace launch {
 	}
 
 
-	bool hijackThread(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 		const DWORD processId = GetProcessId(hProc);
 
 		if (!processId) return false;
@@ -146,7 +146,7 @@ namespace launch {
 	}
 
 
-	bool setWindowsHook(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 		const DWORD processId = GetProcessId(hProc);
 
 		if (!processId) return false;
@@ -205,7 +205,7 @@ namespace launch {
 	}
 
 
-	bool hookBeginPaint(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 		const HMODULE hNtdll = proc::ex::getModuleHandle(hProc, "win32u.dll");
 
 		if (!hNtdll) return false;
@@ -245,7 +245,7 @@ namespace launch {
 	}
 
 
-	bool queueUserApc(HANDLE hProc, tLaunchFunc pFunc, void* pArg, void* pRet) {
+	bool queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 		const DWORD processId = GetProcessId(hProc);
 
 		proc::ProcessEntry procEntry{};
@@ -334,7 +334,7 @@ namespace launch {
 			uint8_t flag;
 		}LaunchData;
 
-		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			HANDLE hThread = nullptr;
 			
 			if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
@@ -380,7 +380,7 @@ namespace launch {
 		// ret									return to old eip
 		static BYTE hijackShell[]{ 0x68, 0x00, 0x00, 0x00, 0x00, 0x51, 0x50, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x41, 0x04, 0x51, 0xFF, 0x31, 0xFF, 0xD0, 0x59, 0x89, 0x41, 0x08, 0x9D, 0x5A, 0x58, 0xC6, 0x41, 0x0C, 0x01, 0x59, 0xC3, LAUNCH_DATA_X86_SPACE };
 
-		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
 			if (SuspendThread(hThread) == 0xFFFFFFFF) return false;
 
@@ -473,7 +473,7 @@ namespace launch {
 		// ret    0xc
 		static BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00, LAUNCH_DATA_X86_SPACE };
 
-		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint32_t>(pArg);
@@ -524,7 +524,7 @@ namespace launch {
 		// jmp    eax
 		static BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X86_SPACE };
 
-		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
 			pLaunchData->pArg = LODWORD(pArg);
@@ -593,7 +593,7 @@ namespace launch {
 		// ret    0x4
 		static BYTE queueUserApcShell[]{ 0x55, 0x89, 0xE5, 0x8B, 0x4D, 0x08, 0x51, 0xFF, 0x31, 0xFF, 0x51, 0x04, 0x59, 0x89, 0x41, 0x08, 0xC6, 0x41, 0x0C, 0x01, 0x5D, 0xC2, 0x04, 0x00, LAUNCH_DATA_X86_SPACE };
 
-		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
 			pLaunchData->pArg = LODWORD(pArg);
@@ -648,7 +648,7 @@ namespace launch {
 		// ret
 		static BYTE crtShell[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3, LAUNCH_DATA_X64_SPACE };
 
-		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(crtShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(crtShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
@@ -710,7 +710,7 @@ namespace launch {
 		// ret
 		static BYTE hijackShell[]{ 0xFF, 0x35, 0x4F, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0x8B, 0x0D, 0x2C, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x05, 0x2D, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x89, 0x05, 0x24, 0x00, 0x00, 0x00, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x19, 0x00, 0x00, 0x00, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
 
-		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
 			if (SuspendThread(hThread) == 0xFFFFFFFF) return false;
 
@@ -805,7 +805,7 @@ namespace launch {
 		// ret
 		static BYTE windowsHookShell[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3, LAUNCH_DATA_X64_SPACE };
 
-		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
@@ -857,7 +857,7 @@ namespace launch {
 		// jmp    rax
 		static BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X64_SPACE };
 
-		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
@@ -926,7 +926,7 @@ namespace launch {
 		// ret
 		static BYTE queueUserApcShell[]{ 0x51, 0x48, 0x8B, 0x41, 0x08, 0x48, 0x8B, 0x09, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0xC6, 0x41, 0x18, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
 
-		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchFunc pFunc, void* pArg, void* pRet) {
+		static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
 			LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
 			pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
