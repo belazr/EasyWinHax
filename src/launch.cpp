@@ -262,7 +262,8 @@ namespace launch {
 
 		DWORD threadId = 0;
 
-		for (DWORD i = 0; i < procEntry.threadCount; i++) {
+		// iterate in reverse to avoid threadpool worker threads
+		for (LONG i = procEntry.threadCount - 1; i >= 0 ; i--) {
 
 			// SignalObjectAndWait, MsgWaitForMultipleObjectsEx, WaitForMultipleObjectsEx, WaitForSingleObjectEx set wait reason to WrQueue
 			// SleepEx sets wait reason to DelayExecution
