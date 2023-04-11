@@ -80,7 +80,7 @@ namespace launch {
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
-	// Pointer to the code that should be executed by the hijacked thread. Assumes the calling conventions:
+	// Pointer to the code that should be executed by the hook. Assumes the calling conventions:
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
@@ -110,7 +110,7 @@ namespace launch {
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
-	// Pointer to the code that should be executed by the hijacked thread. Assumes the calling conventions:
+	// Pointer to the code that should be executed by the hook. Assumes the calling conventions:
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
@@ -138,17 +138,17 @@ namespace launch {
 	// Needs at least PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
-	// Pointer to the code that should be executed by the hijacked thread. Assumes the calling conventions:
+	// Pointer to the code that should be executed by the APC. Assumes the calling conventions:
 	// x86: __stdcall void* pFunc(void* pArg)
 	// x64: __fastcall void* pFunc(void* pArg)
 	// Additional arguments can be passed in a struct pointed to by pArg.
 	// To call API functions with different calling conventions use as a wrapper function.
 	// 
 	// [in] pArg:
-	// Argument of the function called by the hook.
+	// Argument of the function called by the APC.
 	// 
 	// [out] pRet:
-	// Pointer for the return value of the function called by the hook.
+	// Pointer for the return value of the function called by the APC.
 	// 
 	// Return:
 	// True on success or false on failure.
