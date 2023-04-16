@@ -18,7 +18,7 @@ namespace launch {
 	// 
 	// [in] hProc:
 	// Handle to the process in which context the code should be launched.
-	// Needs at least PROCESS_CREATE_THREAD, PROCESS_QUERY_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
+	// Needs at least PROCESS_CREATE_THREAD, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access rights.
 	// 
 	// [in] pFunc:
 	// Pointer to the code that should be executed by the new thread. Assumes the calling conventions:
