@@ -78,6 +78,25 @@ namespace proc {
 	// True on success, false on failure or if the buffer was too small.
 	bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size);
 
+
+	// Retreives a duplicate handle to a process.
+	// The original handle will be owned by a process other than caller or target process.
+	// Can be used instead of OpenProcess.
+	// The caller process should use the handle as if it had opened the handle itself (including closing it).
+	// Running as admin increases success rate significantly.
+	//
+	// Parameters:
+	// 
+	// [in] desiredAccess:
+	// Access rights the returned handle should have.
+	// 
+	// [in] processId:
+	// Process ID of the process  which handle should be duplicated.
+	//
+	// Return:
+	// Handle to the specified process with the specified access rights on success, nullptr on failure.
+	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, DWORD processId);
+
 	// Functions to retrieve information about an external process.
 	// Compiled as x64 the external functions are designed to work both on x64 targets as well as x86 targets.
 	// Compiled as x86 interacting with x64 processes is neihter supported nor feasable.
@@ -229,7 +248,7 @@ namespace proc {
 		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION access rights.
 		// 
 		// Return:
-		// Address of the x64 process environment block or nullptr on failure.
+		// Address of the x64 process environment block on success or nullptr on failure.
 		PEB64* getPeb64Address(HANDLE hProc);
 		
 		#endif // _WIN64
@@ -244,7 +263,7 @@ namespace proc {
 		// Needs at least PROCESS_QUERY_LIMITED_INFORMATION access rights.
 		// 
 		// Return:
-		// Address of the x86 process environment block or nullptr on failure or if the process is not x86 (not running in the WOW64 environment).
+		// Address of the x86 process environment block on success or nullptr on failure or if the process is not x86 (not running in the WOW64 environment).
 		PEB32* getPeb32Address(HANDLE hProc);
 
 	}

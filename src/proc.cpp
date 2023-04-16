@@ -4,17 +4,18 @@
 
 namespace proc {
 
-	static SYSTEM_PROCESS_INFORMATION* getSystemProcessInformation();
+	template <typename ITYPE>
+	static ITYPE* getSystemInformation(SYSTEM_INFORMATION_CLASS infoClass);
 
 	DWORD getProcessId(const char* processName) {
-		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
 		if (!pSysProcInfoBuffer) return 0;
 
 		const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-		DWORD processId = 0;
 		wchar_t wProcessName[MAX_PATH];
 		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, processName, -1, wProcessName, MAX_PATH);
+		DWORD processId = 0;
 
 		do {
 
@@ -33,7 +34,7 @@ namespace proc {
 
 
 	bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry) {
-		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
 		if (!pSysProcInfoBuffer) return false;
 
@@ -66,7 +67,7 @@ namespace proc {
 
 
 	bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size) {
-		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemProcessInformation();
+		const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
 		if (!pSysProcInfoBuffer) return false;
 
@@ -98,9 +99,72 @@ namespace proc {
 		return found && fitted;
 	}
 
+
+	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, DWORD processId) {
+		const DWORD curProcessId = GetCurrentProcessId();
+
+		if (!curProcessId) return nullptr;
+
+		const HANDLE hCallerProc = GetCurrentProcess();
+
+		if (!hCallerProc) return nullptr;
+
+		const SYSTEM_HANDLE_INFORMATION* const pSysHandleInfoBuffer = getSystemInformation<SYSTEM_HANDLE_INFORMATION>(SystemHandleInformation);
+
+		if (!pSysHandleInfoBuffer) {
+			CloseHandle(hCallerProc);
+
+			return nullptr;
+		}
+
+		HANDLE hProc = nullptr;
+
+		for (ULONG i = 0; i < pSysHandleInfoBuffer->NumberOfHandles; i++) {
+			const SYSTEM_HANDLE_TABLE_ENTRY_INFO curHandleInfo = pSysHandleInfoBuffer->Handles[i];
+
+			// check if handle is process handle
+			if (curHandleInfo.ObjectTypeIndex != 0x07) continue;
+
+			// pointless if caller process is owner process
+			if (curHandleInfo.UniqueProcessId == curProcessId) continue;
+
+			// pointless if target process is owner process
+			if (curHandleInfo.UniqueProcessId == processId) continue;
+
+			if ((curHandleInfo.GrantedAccess & desiredAccess) != desiredAccess) continue;
+
+			const HANDLE hOwnerProc = OpenProcess(PROCESS_DUP_HANDLE, FALSE, curHandleInfo.UniqueProcessId);
+
+			if (!hOwnerProc) continue;
+
+			if (!DuplicateHandle(hOwnerProc, reinterpret_cast<HANDLE>(curHandleInfo.HandleValue), hCallerProc, &hProc, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+				CloseHandle(hOwnerProc);
+
+				continue;
+			}
+
+			CloseHandle(hOwnerProc);
+
+			if (!hProc) continue;
+
+			if (GetProcessId(hProc) == processId) break;
+
+			CloseHandle(hProc);
+			hProc = nullptr;
+		}
+
+		delete[] pSysHandleInfoBuffer;
+
+		return hProc;
+	}
+
+
+	// use with care!
+	// ITYPE and infoClass parameters have to correspond (e.g. SYSTEM_PROCESS_INFORMATION <-> SystemProcessInformation)
 	// return value points to an array on the heap
 	// always delete[] after usage!
-	static SYSTEM_PROCESS_INFORMATION* getSystemProcessInformation() {
+	template <typename ITYPE>
+	static ITYPE* getSystemInformation(SYSTEM_INFORMATION_CLASS infoClass) {
 		const HMODULE hNtDll = proc::in::getModuleHandle("ntdll.dll");
 
 		if (!hNtDll) return nullptr;
@@ -110,24 +174,25 @@ namespace proc {
 		if (!pNtQuerySystemInformation) return nullptr;
 
 		ULONG outSize = 0;
-		SYSTEM_PROCESS_INFORMATION sysProcInfo{};
-		NTSTATUS ntStatus = pNtQuerySystemInformation(SystemProcessInformation, &sysProcInfo, sizeof(SYSTEM_PROCESS_INFORMATION), &outSize);
+		ITYPE sysInfo{};
+		NTSTATUS ntStatus = pNtQuerySystemInformation(infoClass, &sysInfo, sizeof(ITYPE), &outSize);
 
 		if (!(ntStatus == STATUS_INFO_LENGTH_MISMATCH || ntStatus == STATUS_SUCCESS)) return nullptr;
 
-		// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH (if not system has only one running process)
-		SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = reinterpret_cast<SYSTEM_PROCESS_INFORMATION*>(new BYTE[outSize]);
+		// always allocate dynamic buffer because ntStatus should always be STATUS_INFO_LENGTH_MISMATCH
+		ITYPE* const pSysInfoBuffer = reinterpret_cast<ITYPE*>(new BYTE[outSize]);
 
-		ntStatus = pNtQuerySystemInformation(SystemProcessInformation, pSysProcInfoBuffer, outSize, &outSize);
+		ntStatus = pNtQuerySystemInformation(infoClass, pSysInfoBuffer, outSize, &outSize);
 
 		if (ntStatus != STATUS_SUCCESS) {
-			delete[] pSysProcInfoBuffer;
+			delete[] pSysInfoBuffer;
 
 			return nullptr;
 		}
 
-		return pSysProcInfoBuffer;
+		return pSysInfoBuffer;
 	}
+
 
 	namespace ex {
 
