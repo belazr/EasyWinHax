@@ -100,7 +100,7 @@ namespace proc {
 	}
 
 
-	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, DWORD processId) {
+	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, BOOL inheritable, DWORD processId) {
 		const DWORD curProcessId = GetCurrentProcessId();
 
 		if (!curProcessId) return nullptr;
@@ -137,7 +137,7 @@ namespace proc {
 
 			if (!hOwnerProc) continue;
 
-			if (!DuplicateHandle(hOwnerProc, reinterpret_cast<HANDLE>(curHandleInfo.HandleValue), hCallerProc, &hProc, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+			if (!DuplicateHandle(hOwnerProc, reinterpret_cast<HANDLE>(curHandleInfo.HandleValue), hCallerProc, &hProc, 0, inheritable, DUPLICATE_SAME_ACCESS)) {
 				CloseHandle(hOwnerProc);
 
 				continue;

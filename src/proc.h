@@ -79,23 +79,27 @@ namespace proc {
 	bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size);
 
 
-	// Retreives a duplicate handle to a process.
+	// Retreives a duplicate handle to a process if available.
 	// The original handle will be owned by a process other than caller or target process.
 	// Can be used instead of OpenProcess.
 	// The caller process should use the handle as if it had opened the handle itself (including closing it).
-	// Running as admin increases success rate significantly.
+	// Duplication will not grant additional access rights.
+	// Running as admin increases success chance significantly.
 	//
 	// Parameters:
 	// 
 	// [in] desiredAccess:
 	// Access rights the returned handle should have.
 	// 
+	// [in] inheritable
+	// Indicates whether the handle is inheritable.
+	// 
 	// [in] processId:
 	// Process ID of the process  which handle should be duplicated.
 	//
 	// Return:
 	// Handle to the specified process with the specified access rights on success, nullptr on failure.
-	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, DWORD processId);
+	HANDLE getDuplicateProcessHandle(DWORD desiredAccess, BOOL inheritable, DWORD processId);
 
 	// Functions to retrieve information about an external process.
 	// Compiled as x64 the external functions are designed to work both on x64 targets as well as x86 targets.
