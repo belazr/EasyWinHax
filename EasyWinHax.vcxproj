@@ -19,43 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\dx9\charsets\dx9Charsets.h" />
+    <ClInclude Include="src\engine\dx9\dx9Font.h" />
+    <ClInclude Include="src\engine\Engine.h" />
+    <ClInclude Include="src\engine\dx9\dx9Draw.h" />
+    <ClInclude Include="src\engine\IDraw.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
-    <ClInclude Include="src\dx9\dx9.h" />
-    <ClInclude Include="src\dx9\dx9Charsets.h" />
-    <ClInclude Include="src\dx9\dx9Draw.h" />
-    <ClInclude Include="src\dx9\dx9Font.h" />
-    <ClInclude Include="src\dx9\dx9Setup.h" />
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\hax.h" />
     <ClInclude Include="src\hooks\IatHook.h" />
     <ClInclude Include="src\hooks\TrampHook.h" />
     <ClInclude Include="src\hooks\IHook.h" />
     <ClInclude Include="src\mem.h" />
-    <ClInclude Include="src\ogl\ogl.h" />
-    <ClInclude Include="src\ogl\oglDraw.h" />
-    <ClInclude Include="src\ogl\oglFont.h" />
-    <ClInclude Include="src\ogl\oglSetup.h" />
     <ClInclude Include="src\proc.h" />
     <ClInclude Include="src\undocWinTypes.h" />
     <ClInclude Include="src\vecmath.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\dx9\charsets\dx9LargeCharset.cpp" />
+    <ClCompile Include="src\engine\dx9\charsets\dx9MediumCharset.cpp" />
+    <ClCompile Include="src\engine\dx9\charsets\dx9TinyCharset.cpp" />
+    <ClCompile Include="src\engine\dx9\dx9Font.cpp" />
+    <ClCompile Include="src\engine\Engine.cpp" />
+    <ClCompile Include="src\engine\dx9\dx9Draw.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
-    <ClCompile Include="src\dx9\dx9Draw.cpp" />
-    <ClCompile Include="src\dx9\dx9Font.cpp" />
-    <ClCompile Include="src\dx9\dx9LargeCharset.cpp" />
-    <ClCompile Include="src\dx9\dx9MediumCharset.cpp" />
-    <ClCompile Include="src\dx9\dx9Setup.cpp" />
-    <ClCompile Include="src\dx9\dx9TinyCharset.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />
     <ClCompile Include="src\hooks\IatHook.cpp" />
     <ClCompile Include="src\hooks\TrampHook.cpp" />
     <ClCompile Include="src\mem.cpp" />
-    <ClCompile Include="src\ogl\oglDraw.cpp" />
-    <ClCompile Include="src\ogl\oglFont.cpp" />
-    <ClCompile Include="src\ogl\oglSetup.cpp" />
     <ClCompile Include="src\proc.cpp" />
     <ClCompile Include="src\vecmath.cpp" />
   </ItemGroup>
