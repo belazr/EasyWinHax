@@ -15,8 +15,7 @@ Build tested with:
 - Windows 11 SDK (10.0.22621)
 
 Usage tested with:
-- Windows 10 64bit
-- Windows 11 64bit
+- Windows 11 22H2 64bit
 
 ## Build
 Open the solution file (EasyWinHax.sln) with Visual Studio and run the desired builds from there.
@@ -42,32 +41,40 @@ The library provides basic vector types and functions, as well as world to scree
 ### Function hooking
 #### Trampoline hook
 The library provides classes to install a trampoline hook in the beginning of a function.
-The internal TrampHook class hooks functions within the same process it is instantiated in. The function redirected to is usually defined in a DLL injected into the process. In the context of game hacking the class provides an easy way to hook graphics api functions (eg. EndScene or wglSwapBuffer) and draw to screen via dll injection.
-The external TrampHook class hooks functions in an external target process. The function redirected to is shell code the object injects into the process. Due to the limitations of shell code the use cases are limited. Though some fun can be had with it like hooking SystemQueryProcessInformation in a TaskManger process and hiding a process from it.
+The internal TrampHook class hooks functions within the same process it is instantiated in. The function redirected to is usually defined in a DLL injected into the process.
+In the context of game hacking the class provides an easy way to hook graphics api functions (eg. EndScene or wglSwapBuffer) and draw to screen via dll injection.
+The external TrampHook class hooks functions in an external target process. The function redirected to is shell code the object injects into the process.
+Due to the limitations of shell code the use cases are limited.
+Though some fun can be had with it like hooking SystemQueryProcessInformation in a TaskManger.exe instance and hiding a process from it or hooking NtUserBeginPaint to launch shell code like the JackieBlue DLL injector does.
 The x64 compilation of the external class is able to hook functions of x64 as well as x86 target processes.
 See the "hooks\TrampHook.h" header for further documentation.
 #### Import address table hook
 The library further provides classes to install an import address table hook.
 The internal IatHook class hooks the IAT of a module of the caller process, again execution usually redirected to a function within an injected DLL.
 The external IatHook class hooks the IAT of a module of an external target process, again execution redirected to shell code.
+The same restrictions as for the external trampoline hook apply.
 The x64 compilation of the external class is able to hook IATs of modules of x64 as well as x86 target processes.
 See the "hooks\IatHook.h" header for further documentation.
 ### Benchmarking
 The library provides a simple benchmarking class to benchmark code execution. It is useful for measuring the average execution time of code in a function hook. See the "Bench.h" header for further documentation.
 ### Loading files
 The library provides a simple file loader class to load files from disk into memory. See the "FileLoader.h" header for further documentation.
-### DirectX 9 drawing
-The library provides a way to setup an EndScene hook and some functions to draw basic shapes within the hook. It also provides a font class that can be used to draw text to the screen without including the deprecated DirectX SDK. See the headers in the "dx9" folder for further documentation.
-### OpenGL drawing
-The library provides a way to setup an wglSwapBuffers hook and some functions to draw basic shapes within the hook. It also provides a font class that can be used to draw text to the screen. See the headers in the "ogl" folder for further documentation.
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
+### Drawing from hooks
+The library provides an Engine class that can be used to draw geometric shapes within a hook independent of graphics API via the IDraw interface.
+Currently there are implementations of the IDraw interface for DirectX 9 to draw from an EndScene hook and for OpenGL 2 to draw from an wglSwapBuffers hook.
+See the "engine\Engine.h" and "engine\IDraw.h" headers for further documentation.
+#### DirectX 9 implementation
+The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
+It provides a font class that is used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" folder for further documentation.
+#### OpenGL 2 implementation
+The library provides an OpenGL 2 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
+It also provides a font class that is used for text drawing. See the headers in the "engine\ogl2" folder for further documentation.
 
 ## TODO
 - Better error handling for launch functions
-- Refactor graphic API hooking and drawing
-- Add DirectX 11 hook setup and drawing
-- Add API independent render engine
+- Add further implementations of the IDraw interface (DirectX 11/12, Vulkan)
 
 ## References
 - https://guidedhacking.com/

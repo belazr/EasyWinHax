@@ -1,7 +1,7 @@
 #pragma once
 #include "..\..\..\vecmath.h"
 
-// These structs can be used to draw characters via the 9Font class.
+// These structs can be used to draw characters via the Font class.
 // Their main purpose is to avoid using the deprecated legacy DirectX SDK for text redndering.
 
 namespace hax {
@@ -11,7 +11,6 @@ namespace hax {
 		#define PIXEL_COUNT(charpixels) (sizeof(charpixels) / sizeof(Vector2))
 
 		// Holds pixel coordinates and size in pixels of a single character.
-		// Pixel coordinates have to be supplied as a Vector2 array.
 		// Only monochrome characters are supported.
 		typedef struct Fontchar {
 			const Vector2* pixel;
@@ -123,7 +122,7 @@ namespace hax {
 
 		namespace charsets {
 
-			// Charactersets for external usage in three different sizes.
+			// Charsets for external usage in three different sizes.
 			extern const Charset tiny;
 			extern const Charset medium;
 			extern const Charset large;

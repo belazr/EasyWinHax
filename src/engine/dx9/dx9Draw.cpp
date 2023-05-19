@@ -5,9 +5,11 @@ namespace hax {
 
 	namespace dx9 {
 
-		bool Draw::getD3D9DeviceVTable(void** pDeviceVTable, size_t size) {
+		static BOOL CALLBACK getWindowCallback(HWND hWnd, LPARAM lParam);
+
+		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size) {
 			HWND hWnd = nullptr;
-			EnumWindows(getWindowHandleCallback, reinterpret_cast<LPARAM>(&hWnd));
+			EnumWindows(getWindowCallback, reinterpret_cast<LPARAM>(&hWnd));
 
 			if (!hWnd) return false;
 
@@ -88,7 +90,8 @@ namespace hax {
 				data[i].color = color;
 			}
 
-			this->pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count, data, sizeof(Vertex));
+			// triangle count is vertex count - 2
+			this->pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count - 2, data, sizeof(Vertex));
 			delete[] data;
 
 			return;
@@ -413,9 +416,9 @@ namespace hax {
 			if (!this->pDevice || !pDx9Font) return E_FAIL;
 
 			// vertex array is allocated at first use
-			// array is not deleted during object lifetime for (meassurable) performance reasons
+			// array is not deleted during object lifetime for (meassurable) performance improvements
 			if (!pDx9Font->charVertexArrays[index]) {
-				pDx9Font->charVertexArrays[index] = new Vertex[pChar->pixelCount]{};
+				pDx9Font->charVertexArrays[index] = new Vertex[pChar->pixelCount];
 			}
 
 			if (pDx9Font->charVertexArrays[index]) {
@@ -423,8 +426,8 @@ namespace hax {
 				for (unsigned int i = 0; i < pChar->pixelCount; i++) {
 					pDx9Font->charVertexArrays[index][i].x = pos->x + pChar->pixel[i].x;
 					pDx9Font->charVertexArrays[index][i].y = pos->y + pChar->pixel[i].y;
-					pDx9Font->charVertexArrays[index][i].z = 1.0f;
-					pDx9Font->charVertexArrays[index][i].rhw = 1.0f;
+					pDx9Font->charVertexArrays[index][i].z = 1.f;
+					pDx9Font->charVertexArrays[index][i].rhw = 1.f;
 					pDx9Font->charVertexArrays[index][i].color = color;
 				}
 
@@ -435,7 +438,7 @@ namespace hax {
 		}
 
 
-		static BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM lParam) {
+		static BOOL CALLBACK getWindowCallback(HWND hWnd, LPARAM lParam) {
 			DWORD processId = 0;
 			GetWindowThreadProcessId(hWnd, &processId);
 

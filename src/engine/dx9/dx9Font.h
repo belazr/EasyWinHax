@@ -2,8 +2,8 @@
 #include "charsets\dx9Charsets.h"
 #include <d3d9.h>
 
-// Class to specify a text font for DirectX 9 EndScenes hook drawing without the need to include the deprecated DirectX 9 SDK.
-// Uses the charset structure which defines width and height of a character and the pixel coordinates of every character.
+// Class for fonts for text drawing within a DirectX 9 hook without the need to include the deprecated DirectX 9 SDK.
+// Uses the Charset structure which defines width and height of a character and the pixel coordinates of every character.
 // Characters are drawn monospaced.
 
 namespace hax {
@@ -17,7 +17,8 @@ namespace hax {
 
 		class Font {
 		public:
-			const Charset* pCharset;
+			const Charset* const pCharset;
+			// Array for vertecis of the charset characters.
 			Vertex* charVertexArrays[CHAR_COUNT];
 
 			// Allocate memory for the character vertex arrays and initializes members.
