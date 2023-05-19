@@ -18,3 +18,7 @@
 #include "engine\dx9\dx9Draw.h"
 #include "engine\dx9\dx9Font.h"
 #include "engine\dx9\charsets\dx9Charsets.h"
+
+// Headers for OpenGL 2
+#include "engine\ogl2\ogl2Draw.h"
+#include "engine\ogl2\ogl2Font.h"

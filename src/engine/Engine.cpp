@@ -1,7 +1,27 @@
 #include "Engine.h"
 
 namespace hax {
-	Engine::Engine(const IDraw* pDraw) : _pDraw(pDraw) {}
+	Engine::Engine(IDraw* pDraw) : pHookArg(nullptr), iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.), fWindowHeight(0.), _pDraw(pDraw) {}
+
+
+	void Engine::beginDraw(void* pArg, int width, int height) {
+		this->iWindowWidth = width;
+		this->iWindowHeight = height;
+		this->fWindowWidth = static_cast<float>(width);
+		this->fWindowHeight = static_cast<float>(height);
+		this->pHookArg = pArg;
+
+		_pDraw->beginDraw(this);
+
+		return;
+	}
+
+
+	void Engine::endDraw() const {
+		_pDraw->endDraw(this);
+
+		return;
+	}
 
 
 	void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
@@ -89,8 +109,8 @@ namespace hax {
 		_pDraw->drawTriangleStrip(corners, 4, color);
 	}
 
-	void Engine::drawString(const Vector2* origin, const char* text, rgb::Color color) const {
-		_pDraw->drawString(origin, text, color);
+	void Engine::drawString(void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
+		_pDraw->drawString(pFont, origin, text, color);
 	}
 
 	void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const {
