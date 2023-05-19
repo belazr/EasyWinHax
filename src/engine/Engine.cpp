@@ -1,7 +1,7 @@
 #include "Engine.h"
 
 namespace hax {
-	Engine::Engine(IDraw* pDraw) : pHookArg(nullptr), iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.), fWindowHeight(0.), _pDraw(pDraw) {}
+	Engine::Engine(IDraw* pDraw) : pHookArg(nullptr), iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.f), fWindowHeight(0.f), _pDraw(pDraw) {}
 
 
 	void Engine::beginDraw(void* pArg, int width, int height) {
@@ -27,15 +27,15 @@ namespace hax {
 	void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
 		// defaults for horizontal line
 		float cosAtan = 0.f;
-		float sinAtan = width / 2;
+		float sinAtan = width / 2.f;
 
 		// trigonometry black magic to calculate the corners of the line/rectangle
 		if (pos1->y - pos2->y) {
 			const float omega = (pos2->x - pos1->x) / (pos1->y - pos2->y);
 			const float oSqrt = sqrtf(1.f + omega * omega);
 
-			cosAtan = width / 2 / oSqrt;
-			sinAtan = width / 2 * omega / oSqrt;
+			cosAtan = width / 2.f / oSqrt;
+			sinAtan = width / 2.f * omega / oSqrt;
 
 			// has to be drawn from bottom to top
 			if (pos1->y < pos2->y) {
