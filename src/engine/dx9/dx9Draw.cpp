@@ -1,370 +1,15 @@
 #include "dx9Draw.h"
+#include "..\Engine.h"
 
 namespace hax {
 
 	namespace dx9 {
-
-		Draw::Draw() : iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.), fWindowHeight(0.), pDevice(nullptr), pFont(nullptr) {}
-
-
-		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
-
-			if (!this->pDevice) return;
-
-			Vertex* const data = new Vertex[count];
-
-			if (!data) return;
-
-			for (UINT i = 0; i < count; i++) {
-				data[i].x = corners[i].x;
-				data[i].y = corners[i].y;
-				data[i].z = 1.f;
-				data[i].rhw = 1.f;
-				data[i].color = color;
-			}
-
-			this->pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count, data, sizeof(Vertex));
-			delete[] data;
-
-			return;
-		}
-
-
-		void Draw::drawString(const Vector2* pos, const char* text, rgb::Color color) const {
-
-			if (!this->pDevice || !this->pFont) return;
-
-			const size_t size = strlen(text);
-
-			for (size_t indexInString = 0; indexInString < size; indexInString++) {
-				const Fontchar* pCurChar = nullptr;
-
-				switch (text[indexInString]) {
-				case '!':
-					pCurChar = &pFont->pCharset->exclamationPoint;
-					break;
-				case '"':
-					pCurChar = &pFont->pCharset->doubleQuotes;
-					break;
-				case '#':
-					pCurChar = &pFont->pCharset->poundSign;
-					break;
-				case '$':
-					pCurChar = &pFont->pCharset->dollarSign;
-					break;
-				case '%':
-					pCurChar = &pFont->pCharset->percentSign;
-					break;
-				case '&':
-					pCurChar = &pFont->pCharset->ampersand;
-					break;
-				case '\'':
-					pCurChar = &pFont->pCharset->singleQuote;
-					break;
-				case '(':
-					pCurChar = &pFont->pCharset->openParanthesis;
-					break;
-				case ')':
-					pCurChar = &pFont->pCharset->closeParanthesis;
-					break;
-				case '*':
-					pCurChar = &pFont->pCharset->asterisk;
-					break;
-				case '+':
-					pCurChar = &pFont->pCharset->plus;
-					break;
-				case ',':
-					pCurChar = &pFont->pCharset->comma;
-					break;
-				case '-':
-					pCurChar = &pFont->pCharset->dash;
-					break;
-				case '.':
-					pCurChar = &pFont->pCharset->period;
-					break;
-				case '/':
-					pCurChar = &pFont->pCharset->slash;
-					break;
-				case '0':
-					pCurChar = &pFont->pCharset->zero;
-					break;
-				case '1':
-					pCurChar = &pFont->pCharset->one;
-					break;
-				case '2':
-					pCurChar = &pFont->pCharset->two;
-					break;
-				case '3':
-					pCurChar = &pFont->pCharset->three;
-					break;
-				case '4':
-					pCurChar = &pFont->pCharset->four;
-					break;
-				case '5':
-					pCurChar = &pFont->pCharset->five;
-					break;
-				case '6':
-					pCurChar = &pFont->pCharset->six;
-					break;
-				case '7':
-					pCurChar = &pFont->pCharset->seven;
-					break;
-				case '8':
-					pCurChar = &pFont->pCharset->eight;
-					break;
-				case '9':
-					pCurChar = &pFont->pCharset->nine;
-					break;
-				case ':':
-					pCurChar = &pFont->pCharset->colon;
-					break;
-				case ';':
-					pCurChar = &pFont->pCharset->semicolon;
-					break;
-				case '<':
-					pCurChar = &pFont->pCharset->smaller;
-					break;
-				case '=':
-					pCurChar = &pFont->pCharset->equals;
-					break;
-				case '>':
-					pCurChar = &pFont->pCharset->greater;
-					break;
-				case '?':
-					pCurChar = &pFont->pCharset->questionmark;
-					break;
-				case '@':
-					pCurChar = &pFont->pCharset->atSign;
-					break;
-				case 'A':
-					pCurChar = &pFont->pCharset->upperA;
-					break;
-				case 'B':
-					pCurChar = &pFont->pCharset->upperB;
-					break;
-				case 'C':
-					pCurChar = &pFont->pCharset->upperC;
-					break;
-				case 'D':
-					pCurChar = &pFont->pCharset->upperD;
-					break;
-				case 'E':
-					pCurChar = &pFont->pCharset->upperE;
-					break;
-				case 'F':
-					pCurChar = &pFont->pCharset->upperF;
-					break;
-				case 'G':
-					pCurChar = &pFont->pCharset->upperG;
-					break;
-				case 'H':
-					pCurChar = &pFont->pCharset->upperH;
-					break;
-				case 'I':
-					pCurChar = &pFont->pCharset->upperI;
-					break;
-				case 'J':
-					pCurChar = &pFont->pCharset->upperJ;
-					break;
-				case 'K':
-					pCurChar = &pFont->pCharset->upperK;
-					break;
-				case 'L':
-					pCurChar = &pFont->pCharset->upperL;
-					break;
-				case 'M':
-					pCurChar = &pFont->pCharset->upperM;
-					break;
-				case 'N':
-					pCurChar = &pFont->pCharset->upperN;
-					break;
-				case 'O':
-					pCurChar = &pFont->pCharset->upperO;
-					break;
-				case 'P':
-					pCurChar = &pFont->pCharset->upperP;
-					break;
-				case 'Q':
-					pCurChar = &pFont->pCharset->upperQ;
-					break;
-				case 'R':
-					pCurChar = &pFont->pCharset->upperR;
-					break;
-				case 'S':
-					pCurChar = &pFont->pCharset->upperS;
-					break;
-				case 'T':
-					pCurChar = &pFont->pCharset->upperT;
-					break;
-				case 'U':
-					pCurChar = &pFont->pCharset->upperU;
-					break;
-				case 'V':
-					pCurChar = &pFont->pCharset->upperV;
-					break;
-				case 'W':
-					pCurChar = &pFont->pCharset->upperW;
-					break;
-				case 'X':
-					pCurChar = &pFont->pCharset->upperX;
-					break;
-				case 'Y':
-					pCurChar = &pFont->pCharset->upperY;
-					break;
-				case 'Z':
-					pCurChar = &pFont->pCharset->upperZ;
-					break;
-				case '[':
-					pCurChar = &pFont->pCharset->openBracket;
-					break;
-				case '\\':
-					pCurChar = &pFont->pCharset->backslash;
-					break;
-				case ']':
-					pCurChar = &pFont->pCharset->closeBracket;
-					break;
-				case '^':
-					pCurChar = &pFont->pCharset->circumflex;
-					break;
-				case '_':
-					pCurChar = &pFont->pCharset->underscore;
-					break;
-				case '`':
-					pCurChar = &pFont->pCharset->backtick;
-					break;
-				case 'a':
-					pCurChar = &pFont->pCharset->lowerA;
-					break;
-				case 'b':
-					pCurChar = &pFont->pCharset->lowerB;
-					break;
-				case 'c':
-					pCurChar = &pFont->pCharset->lowerC;
-					break;
-				case 'd':
-					pCurChar = &pFont->pCharset->lowerD;
-					break;
-				case 'e':
-					pCurChar = &pFont->pCharset->lowerE;
-					break;
-				case 'f':
-					pCurChar = &pFont->pCharset->lowerF;
-					break;
-				case 'g':
-					pCurChar = &pFont->pCharset->lowerG;
-					break;
-				case 'h':
-					pCurChar = &pFont->pCharset->lowerH;
-					break;
-				case 'i':
-					pCurChar = &pFont->pCharset->lowerI;
-					break;
-				case 'j':
-					pCurChar = &pFont->pCharset->lowerJ;
-					break;
-				case 'k':
-					pCurChar = &pFont->pCharset->lowerK;
-					break;
-				case 'l':
-					pCurChar = &pFont->pCharset->lowerL;
-					break;
-				case 'm':
-					pCurChar = &pFont->pCharset->lowerM;
-					break;
-				case 'n':
-					pCurChar = &pFont->pCharset->lowerN;
-					break;
-				case 'o':
-					pCurChar = &pFont->pCharset->lowerO;
-					break;
-				case 'p':
-					pCurChar = &pFont->pCharset->lowerP;
-					break;
-				case 'q':
-					pCurChar = &pFont->pCharset->lowerQ;
-					break;
-				case 'r':
-					pCurChar = &pFont->pCharset->lowerR;
-					break;
-				case 's':
-					pCurChar = &pFont->pCharset->lowerS;
-					break;
-				case 't':
-					pCurChar = &pFont->pCharset->lowerT;
-					break;
-				case 'u':
-					pCurChar = &pFont->pCharset->lowerU;
-					break;
-				case 'v':
-					pCurChar = &pFont->pCharset->lowerV;
-					break;
-				case 'w':
-					pCurChar = &pFont->pCharset->lowerW;
-					break;
-				case 'x':
-					pCurChar = &pFont->pCharset->lowerX;
-					break;
-				case 'y':
-					pCurChar = &pFont->pCharset->lowerY;
-					break;
-				case 'z':
-					pCurChar = &pFont->pCharset->lowerZ;
-					break;
-				case '{':
-					pCurChar = &pFont->pCharset->openBrace;
-					break;
-				case '|':
-					pCurChar = &pFont->pCharset->pipe;
-					break;
-				case '}':
-					pCurChar = &pFont->pCharset->closeBrace;
-					break;
-				case '~':
-					pCurChar = &pFont->pCharset->tilde;
-					break;
-				case '°':
-					pCurChar = &pFont->pCharset->degrees;
-					break;
-				}
-
-				if (pCurChar && pCurChar->pixel) {
-					// the index of the character in the charset array of the class is the same as the offset in the charset structure
-					// bit of a hack
-					const size_t indexInCharset = pCurChar - &pFont->pCharset->exclamationPoint;
-					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pFont->pCharset->width + 1) * indexInString, pos->y - pFont->pCharset->height };
-					this->drawFontchar(pCurChar, &curPos, indexInCharset, color);
-				}
-
-			}
-
-			return;
-		}
-
-
-		void Draw::beginDraw(IDirect3DDevice9* pOriginalDevice) {
-
-			if (!this->pDevice) {
-				this->pDevice = pOriginalDevice;
-			}
-
-			pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
-
-			return;
-		}
-
 
 		bool Draw::getD3D9DeviceVTable(void** pDeviceVTable, size_t size) {
 			HWND hWnd = nullptr;
 			EnumWindows(getWindowHandleCallback, reinterpret_cast<LPARAM>(&hWnd));
 
 			if (!hWnd) return false;
-
-			RECT wndRect{};
-
-			if (!GetWindowRect(hWnd, &wndRect)) return false;
-
-			setWindowSize(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
 
 			IDirect3D9* const pDirect3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 
@@ -405,44 +50,392 @@ namespace hax {
 		}
 
 
-		void Draw::setWindowSize(int width, int height) {
-			this->iWindowWidth = width;
-			this->iWindowHeight = height;
-			this->fWindowWidth = static_cast<float>(width);
-			this->fWindowHeight = static_cast<float>(height);
+		Draw::Draw() : pDevice(nullptr) {}
+
+
+		void Draw::beginDraw(const Engine* pEngine) {
+
+			if (!this->pDevice) {
+				this->pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg);
+			}
+
+			pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 
 			return;
 		}
 
 
-		HRESULT Draw::drawFontchar(const Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+		void Draw::endDraw(const Engine* pEngine) const { 
+			UNREFERENCED_PARAMETER(pEngine);
+			
+			return; 
+		}
 
-			if (!this->pDevice || !this->pFont) return E_FAIL;
+
+		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
+
+			if (!this->pDevice) return;
+
+			Vertex* const data = new Vertex[count];
+
+			if (!data) return;
+
+			for (UINT i = 0; i < count; i++) {
+				data[i].x = corners[i].x;
+				data[i].y = corners[i].y;
+				data[i].z = 1.f;
+				data[i].rhw = 1.f;
+				data[i].color = color;
+			}
+
+			this->pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count, data, sizeof(Vertex));
+			delete[] data;
+
+			return;
+		}
+
+
+		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
+			Font* pDx9Font = reinterpret_cast<Font*>(pFont);
+
+			if (!this->pDevice || !pDx9Font) return;
+
+			const size_t size = strlen(text);
+
+			for (size_t indexInString = 0; indexInString < size; indexInString++) {
+				const Fontchar* pCurChar = nullptr;
+
+				switch (text[indexInString]) {
+				case '!':
+					pCurChar = &pDx9Font->pCharset->exclamationPoint;
+					break;
+				case '"':
+					pCurChar = &pDx9Font->pCharset->doubleQuotes;
+					break;
+				case '#':
+					pCurChar = &pDx9Font->pCharset->poundSign;
+					break;
+				case '$':
+					pCurChar = &pDx9Font->pCharset->dollarSign;
+					break;
+				case '%':
+					pCurChar = &pDx9Font->pCharset->percentSign;
+					break;
+				case '&':
+					pCurChar = &pDx9Font->pCharset->ampersand;
+					break;
+				case '\'':
+					pCurChar = &pDx9Font->pCharset->singleQuote;
+					break;
+				case '(':
+					pCurChar = &pDx9Font->pCharset->openParanthesis;
+					break;
+				case ')':
+					pCurChar = &pDx9Font->pCharset->closeParanthesis;
+					break;
+				case '*':
+					pCurChar = &pDx9Font->pCharset->asterisk;
+					break;
+				case '+':
+					pCurChar = &pDx9Font->pCharset->plus;
+					break;
+				case ',':
+					pCurChar = &pDx9Font->pCharset->comma;
+					break;
+				case '-':
+					pCurChar = &pDx9Font->pCharset->dash;
+					break;
+				case '.':
+					pCurChar = &pDx9Font->pCharset->period;
+					break;
+				case '/':
+					pCurChar = &pDx9Font->pCharset->slash;
+					break;
+				case '0':
+					pCurChar = &pDx9Font->pCharset->zero;
+					break;
+				case '1':
+					pCurChar = &pDx9Font->pCharset->one;
+					break;
+				case '2':
+					pCurChar = &pDx9Font->pCharset->two;
+					break;
+				case '3':
+					pCurChar = &pDx9Font->pCharset->three;
+					break;
+				case '4':
+					pCurChar = &pDx9Font->pCharset->four;
+					break;
+				case '5':
+					pCurChar = &pDx9Font->pCharset->five;
+					break;
+				case '6':
+					pCurChar = &pDx9Font->pCharset->six;
+					break;
+				case '7':
+					pCurChar = &pDx9Font->pCharset->seven;
+					break;
+				case '8':
+					pCurChar = &pDx9Font->pCharset->eight;
+					break;
+				case '9':
+					pCurChar = &pDx9Font->pCharset->nine;
+					break;
+				case ':':
+					pCurChar = &pDx9Font->pCharset->colon;
+					break;
+				case ';':
+					pCurChar = &pDx9Font->pCharset->semicolon;
+					break;
+				case '<':
+					pCurChar = &pDx9Font->pCharset->smaller;
+					break;
+				case '=':
+					pCurChar = &pDx9Font->pCharset->equals;
+					break;
+				case '>':
+					pCurChar = &pDx9Font->pCharset->greater;
+					break;
+				case '?':
+					pCurChar = &pDx9Font->pCharset->questionmark;
+					break;
+				case '@':
+					pCurChar = &pDx9Font->pCharset->atSign;
+					break;
+				case 'A':
+					pCurChar = &pDx9Font->pCharset->upperA;
+					break;
+				case 'B':
+					pCurChar = &pDx9Font->pCharset->upperB;
+					break;
+				case 'C':
+					pCurChar = &pDx9Font->pCharset->upperC;
+					break;
+				case 'D':
+					pCurChar = &pDx9Font->pCharset->upperD;
+					break;
+				case 'E':
+					pCurChar = &pDx9Font->pCharset->upperE;
+					break;
+				case 'F':
+					pCurChar = &pDx9Font->pCharset->upperF;
+					break;
+				case 'G':
+					pCurChar = &pDx9Font->pCharset->upperG;
+					break;
+				case 'H':
+					pCurChar = &pDx9Font->pCharset->upperH;
+					break;
+				case 'I':
+					pCurChar = &pDx9Font->pCharset->upperI;
+					break;
+				case 'J':
+					pCurChar = &pDx9Font->pCharset->upperJ;
+					break;
+				case 'K':
+					pCurChar = &pDx9Font->pCharset->upperK;
+					break;
+				case 'L':
+					pCurChar = &pDx9Font->pCharset->upperL;
+					break;
+				case 'M':
+					pCurChar = &pDx9Font->pCharset->upperM;
+					break;
+				case 'N':
+					pCurChar = &pDx9Font->pCharset->upperN;
+					break;
+				case 'O':
+					pCurChar = &pDx9Font->pCharset->upperO;
+					break;
+				case 'P':
+					pCurChar = &pDx9Font->pCharset->upperP;
+					break;
+				case 'Q':
+					pCurChar = &pDx9Font->pCharset->upperQ;
+					break;
+				case 'R':
+					pCurChar = &pDx9Font->pCharset->upperR;
+					break;
+				case 'S':
+					pCurChar = &pDx9Font->pCharset->upperS;
+					break;
+				case 'T':
+					pCurChar = &pDx9Font->pCharset->upperT;
+					break;
+				case 'U':
+					pCurChar = &pDx9Font->pCharset->upperU;
+					break;
+				case 'V':
+					pCurChar = &pDx9Font->pCharset->upperV;
+					break;
+				case 'W':
+					pCurChar = &pDx9Font->pCharset->upperW;
+					break;
+				case 'X':
+					pCurChar = &pDx9Font->pCharset->upperX;
+					break;
+				case 'Y':
+					pCurChar = &pDx9Font->pCharset->upperY;
+					break;
+				case 'Z':
+					pCurChar = &pDx9Font->pCharset->upperZ;
+					break;
+				case '[':
+					pCurChar = &pDx9Font->pCharset->openBracket;
+					break;
+				case '\\':
+					pCurChar = &pDx9Font->pCharset->backslash;
+					break;
+				case ']':
+					pCurChar = &pDx9Font->pCharset->closeBracket;
+					break;
+				case '^':
+					pCurChar = &pDx9Font->pCharset->circumflex;
+					break;
+				case '_':
+					pCurChar = &pDx9Font->pCharset->underscore;
+					break;
+				case '`':
+					pCurChar = &pDx9Font->pCharset->backtick;
+					break;
+				case 'a':
+					pCurChar = &pDx9Font->pCharset->lowerA;
+					break;
+				case 'b':
+					pCurChar = &pDx9Font->pCharset->lowerB;
+					break;
+				case 'c':
+					pCurChar = &pDx9Font->pCharset->lowerC;
+					break;
+				case 'd':
+					pCurChar = &pDx9Font->pCharset->lowerD;
+					break;
+				case 'e':
+					pCurChar = &pDx9Font->pCharset->lowerE;
+					break;
+				case 'f':
+					pCurChar = &pDx9Font->pCharset->lowerF;
+					break;
+				case 'g':
+					pCurChar = &pDx9Font->pCharset->lowerG;
+					break;
+				case 'h':
+					pCurChar = &pDx9Font->pCharset->lowerH;
+					break;
+				case 'i':
+					pCurChar = &pDx9Font->pCharset->lowerI;
+					break;
+				case 'j':
+					pCurChar = &pDx9Font->pCharset->lowerJ;
+					break;
+				case 'k':
+					pCurChar = &pDx9Font->pCharset->lowerK;
+					break;
+				case 'l':
+					pCurChar = &pDx9Font->pCharset->lowerL;
+					break;
+				case 'm':
+					pCurChar = &pDx9Font->pCharset->lowerM;
+					break;
+				case 'n':
+					pCurChar = &pDx9Font->pCharset->lowerN;
+					break;
+				case 'o':
+					pCurChar = &pDx9Font->pCharset->lowerO;
+					break;
+				case 'p':
+					pCurChar = &pDx9Font->pCharset->lowerP;
+					break;
+				case 'q':
+					pCurChar = &pDx9Font->pCharset->lowerQ;
+					break;
+				case 'r':
+					pCurChar = &pDx9Font->pCharset->lowerR;
+					break;
+				case 's':
+					pCurChar = &pDx9Font->pCharset->lowerS;
+					break;
+				case 't':
+					pCurChar = &pDx9Font->pCharset->lowerT;
+					break;
+				case 'u':
+					pCurChar = &pDx9Font->pCharset->lowerU;
+					break;
+				case 'v':
+					pCurChar = &pDx9Font->pCharset->lowerV;
+					break;
+				case 'w':
+					pCurChar = &pDx9Font->pCharset->lowerW;
+					break;
+				case 'x':
+					pCurChar = &pDx9Font->pCharset->lowerX;
+					break;
+				case 'y':
+					pCurChar = &pDx9Font->pCharset->lowerY;
+					break;
+				case 'z':
+					pCurChar = &pDx9Font->pCharset->lowerZ;
+					break;
+				case '{':
+					pCurChar = &pDx9Font->pCharset->openBrace;
+					break;
+				case '|':
+					pCurChar = &pDx9Font->pCharset->pipe;
+					break;
+				case '}':
+					pCurChar = &pDx9Font->pCharset->closeBrace;
+					break;
+				case '~':
+					pCurChar = &pDx9Font->pCharset->tilde;
+					break;
+				case '°':
+					pCurChar = &pDx9Font->pCharset->degrees;
+					break;
+				}
+
+				if (pCurChar && pCurChar->pixel) {
+					// the index of the character in the charset array of the class is the same as the offset in the charset structure
+					// bit of a hack
+					const size_t indexInCharset = pCurChar - &pDx9Font->pCharset->exclamationPoint;
+					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
+					const Vector2 curPos{ pos->x + (pDx9Font->pCharset->width + 1) * indexInString, pos->y - pDx9Font->pCharset->height };
+					this->drawFontchar(pDx9Font, pCurChar, &curPos, indexInCharset, color);
+				}
+
+			}
+
+			return;
+		}
+
+
+		HRESULT Draw::drawFontchar(Font* pDx9Font, const Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+
+			if (!this->pDevice || !pDx9Font) return E_FAIL;
 
 			// vertex array is allocated at first use
 			// array is not deleted during object lifetime for (meassurable) performance reasons
-			if (!pFont->charVertexArrays[index]) {
-				pFont->charVertexArrays[index] = new Vertex[pChar->pixelCount]{};
+			if (!pDx9Font->charVertexArrays[index]) {
+				pDx9Font->charVertexArrays[index] = new Vertex[pChar->pixelCount]{};
 			}
 
-			if (pFont->charVertexArrays[index]) {
+			if (pDx9Font->charVertexArrays[index]) {
 
 				for (unsigned int i = 0; i < pChar->pixelCount; i++) {
-					pFont->charVertexArrays[index][i].x = pos->x + pChar->pixel[i].x;
-					pFont->charVertexArrays[index][i].y = pos->y + pChar->pixel[i].y;
-					pFont->charVertexArrays[index][i].z = 1.0f;
-					pFont->charVertexArrays[index][i].rhw = 1.0f;
-					pFont->charVertexArrays[index][i].color = color;
+					pDx9Font->charVertexArrays[index][i].x = pos->x + pChar->pixel[i].x;
+					pDx9Font->charVertexArrays[index][i].y = pos->y + pChar->pixel[i].y;
+					pDx9Font->charVertexArrays[index][i].z = 1.0f;
+					pDx9Font->charVertexArrays[index][i].rhw = 1.0f;
+					pDx9Font->charVertexArrays[index][i].color = color;
 				}
 
-				return pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pFont->charVertexArrays[index], sizeof(Vertex));
+				return pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVertexArrays[index], sizeof(Vertex));
 			}
 
 			return E_FAIL;
 		}
 
 
-		BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM lParam) {
+		static BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM lParam) {
 			DWORD processId = 0;
 			GetWindowThreadProcessId(hWnd, &processId);
 

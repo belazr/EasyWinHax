@@ -15,26 +15,21 @@ namespace hax {
 		class Draw : public IDraw {
 		public:
 			IDirect3DDevice9* pDevice;
-			Font* pFont;
-			int iWindowWidth;
-			int iWindowHeight;
-			float fWindowWidth;
-			float fWindowHeight;
+
+			static bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
 
 			Draw();
 
+			void beginDraw(const Engine* pEngine) override;
+			void endDraw(const Engine* pEngine) const override;
 			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const override;
-			void drawString(const Vector2* pos, const char* text, rgb::Color color) const override;
-
-			void beginDraw(IDirect3DDevice9* pOriginalDevice);
-			bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
-			void setWindowSize(int width, int height);
+			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
 			
 		private:
-			HRESULT drawFontchar(const Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
+			HRESULT drawFontchar(Font* pDx9Font, const Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
 		};
 
-		BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM lParam);
+		static BOOL CALLBACK getWindowHandleCallback(HWND hWnd, LPARAM lParam);
 	}
 	
 }
