@@ -33,7 +33,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Sum.
-	inline Vector2 add(Vector2 sum1, Vector2 sum2);
+	inline Vector2 add(Vector2 sum1, Vector2 sum2) {
+
+		return { sum1.x + sum2.x, sum1.y + sum2.y };
+	}
 
 	// Subtracts one two dimensional vector from another.
 	// 
@@ -47,7 +50,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Difference.
-	inline Vector2 subtract(Vector2 min, Vector2 sub);
+	inline Vector2 subtract(Vector2 min, Vector2 sub) {
+
+		return { min.x - sub.x, min.y - sub.y };
+	}
 
 	// Multiplies one two dimensional vector by a scalar.
 	// 
@@ -61,7 +67,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Product.
-	inline Vector2 multiply(Vector2 fac, float sFac);
+	inline Vector2 multiply(Vector2 fac, float sFac) {
+
+		return { fac.x * sFac, fac.y * sFac };
+	}
 
 	// Divides one two dimensional vector by a scalar.
 	// 
@@ -75,7 +84,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Fraction.
-	inline Vector2 divide(Vector2 divd, float sDivs);
+	inline Vector2 divide(Vector2 divd, float sDivs) {
+
+		return { divd.x / sDivs, divd.y / sDivs };;
+	}
 
 	// Calculates the dot product of two two dimensional vectors.
 	// 
@@ -89,7 +101,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Dot product.
-	inline float dotProd(Vector2 fac1, Vector2 fac2);
+	inline float dotProd(Vector2 fac1, Vector2 fac2) {
+
+		return (fac1.x * fac2.x + fac1.y * fac2.y);
+	}
 
 	// Calculates the magnitude of a two dimensional vector.
 	// 
@@ -100,7 +115,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Magnitude of the vector.
-	float magnitude(Vector2 vec);
+	inline float magnitude(Vector2 vec) {
+
+		return sqrtf(dotProd(vec, vec));
+	}
 
 	// Adds one three dimensional vector to another.
 	// 
@@ -114,7 +132,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Sum.
-	inline Vector3 add(Vector3 sum1, Vector3 sum2);
+	inline Vector3 add(Vector3 sum1, Vector3 sum2) {
+
+		return { sum1.x + sum2.x, sum1.y + sum2.y, sum1.z + sum2.z };
+	}
 	
 	// Subtracts one three dimensional vector from another.
 	// 
@@ -128,7 +149,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Difference.
-	inline Vector3 subtract(Vector3 min, Vector3 sub);
+	inline Vector3 subtract(Vector3 min, Vector3 sub) {
+
+		return { min.x - sub.x, min.y - sub.y, min.z - sub.z };
+	}
 
 	// Multiplies one three dimensional vector by a scalar.
 	// 
@@ -142,7 +166,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Product.
-	inline Vector3 multiply(Vector3 fac, float sFac);
+	inline Vector3 multiply(Vector3 fac, float sFac) {
+
+		return { fac.x * sFac, fac.y * sFac, fac.z * sFac };
+	}
 
 	// Divides one three dimensional vector by a scalar.
 	// 
@@ -156,7 +183,11 @@ namespace vecmath {
 	// 
 	// Return:
 	// Fraction.
-	inline Vector3 divide(Vector3 divd, float sDivs);
+	inline Vector3 divide(Vector3 divd, float sDivs) {
+
+		return { divd.x / sDivs, divd.y / sDivs, divd.z / sDivs };;
+	}
+
 
 	// Calculates the dot product of two three dimensional vectors.
 	// 
@@ -170,7 +201,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Dot product.
-	inline float dotProd(Vector3 fac1, Vector3 fac2);
+	inline float dotProd(Vector3 fac1, Vector3 fac2) {
+
+		return (fac1.x * fac2.x + fac1.y * fac2.y + fac1.z * fac2.z);
+	}
 
 	// Calculates the magnitude of a three dimensional vector.
 	// 
@@ -181,7 +215,10 @@ namespace vecmath {
 	// 
 	// Return:
 	// Magnitude of the vector.
-	float magnitude(Vector3 vec);
+	inline float magnitude(Vector3 vec) {
+
+		return sqrtf(dotProd(vec, vec));
+	}
 
 	// Calculates the pitch from one point in three dimensional space to another.
 	// 
