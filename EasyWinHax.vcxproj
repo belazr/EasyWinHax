@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\dx11\dx11Draw.h" />
     <ClInclude Include="src\engine\dx9\charsets\dx9Charsets.h" />
     <ClInclude Include="src\engine\dx9\dx9Font.h" />
     <ClInclude Include="src\engine\Engine.h" />
@@ -39,6 +40,7 @@
     <ClInclude Include="src\vecmath.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\dx11\dx11Draw.cpp" />
     <ClCompile Include="src\engine\dx9\charsets\dx9LargeCharset.cpp" />
     <ClCompile Include="src\engine\dx9\charsets\dx9MediumCharset.cpp" />
     <ClCompile Include="src\engine\dx9\charsets\dx9TinyCharset.cpp" />
