@@ -85,15 +85,15 @@ namespace hax {
 		}Vertex;
 
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
-			Vertex pVerts[2]{
-				{ DirectX::XMFLOAT3(0, 0, 1.0f), { 0.0f, 1.0f, 0.0f, 1.0f } },
-				{ DirectX::XMFLOAT3(400, 400, 1.0f), { 0.0f, 1.0f, 0.0f, 1.0f } },
-			};
-
 			D3D11_BUFFER_DESC bufferDescLine{ 0 };
 			bufferDescLine.BindFlags = D3D11_BIND_INDEX_BUFFER;
 			bufferDescLine.ByteWidth = sizeof(Vertex) * 2;
 			bufferDescLine.Usage = D3D11_USAGE_DEFAULT;
+
+			Vertex pVerts[2]{
+				{ DirectX::XMFLOAT3(0, 0, 1.0f), { 0.0f, 1.0f, 0.0f, 1.0f } },
+				{ DirectX::XMFLOAT3(400, 400, 1.0f), { 0.0f, 1.0f, 0.0f, 1.0f } },
+			};
 
 			D3D11_SUBRESOURCE_DATA subresourceData{};
 			subresourceData.pSysMem = &pVerts;
@@ -108,14 +108,19 @@ namespace hax {
 
 			this->_pContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
+
+			D3D11_PRIMITIVE_TOPOLOGY oldTopology;
+			this->_pContext->IAGetPrimitiveTopology(&oldTopology);
 			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
-			this->_pContext->RSSetViewports(1, &this->_viewport);
+
 			this->_pContext->Draw(2, 0);
 
 			pVertexBuffer->Release();
+
+			this->_pContext->IASetPrimitiveTopology(oldTopology);
 
 			return;
 		}
@@ -217,7 +222,6 @@ namespace hax {
 
 			if (viewportCount && viewports[0].Width) {
 				this->_viewport = viewports[0];
-				this->_pContext->RSSetViewports(1, &this->_viewport);
 			}
 			else {
 				HWND hMainWnd = nullptr;
@@ -256,15 +260,15 @@ namespace hax {
 
 
 		bool Draw::setupOrtho() {
-			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, this->_viewport.Width, this->_viewport.Height, 0, 0.0f, 1.0f);
-
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			bufferDesc.ByteWidth = sizeof(ortho);
+			bufferDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
 			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
 			D3D11_SUBRESOURCE_DATA subresourceData{};
+			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, this->_viewport.Width, this->_viewport.Height, 0, 0.0f, 1.0f);
 			subresourceData.pSysMem = &ortho;
+
 			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, &this->_pConstantBuffer);
 			
 			if (hResult != S_OK || !this->_pConstantBuffer) return false;
