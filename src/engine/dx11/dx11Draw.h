@@ -70,7 +70,7 @@ namespace hax {
 
 		private:
 			bool compileShaders();
-			bool setupOrtho(float screenWidth, float screenHeight);
+			void setupConstantBuffer();
 
 		};
 
