@@ -10,19 +10,18 @@ namespace hax {
 
 		class Draw : IDraw {
 		private:
-			IDXGISwapChain* _pSwapChain;
 			ID3D11Device* _pDevice;
 			ID3D11DeviceContext* _pContext;
-			ID3D11RenderTargetView* _pRenderTargetView;
 			ID3D11VertexShader* _pVertexShader;
 			ID3D11InputLayout* _pVertexLayout;
 			ID3D11PixelShader* _pPixelShader;
 			ID3D11Buffer* _pConstantBuffer;
 
-			D3D11_VIEWPORT _viewport;
+			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
 
 		public:
 			Draw();
+			~Draw();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//
@@ -70,15 +69,11 @@ namespace hax {
 			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
 
 		private:
-			ID3D11RenderTargetView* createRenderTargetView();
 			bool compileShaders();
-			bool getViewport();
-			bool setupOrtho();
+			bool setupOrtho(float screenWidth, float screenHeight);
 
 		};
 
 	}
 
 }
-
-

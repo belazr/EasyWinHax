@@ -20,6 +20,10 @@ namespace hax{
 		#define UCHAR_R(color) (static_cast<UCHAR>(color >> 16))
 		#define UCHAR_G(color) (static_cast<UCHAR>(color >> 8))
 		#define UCHAR_B(color) (static_cast<UCHAR>(color))
+		#define FLOAT_A(color) (static_cast<float>((color >> 24) & 0xFF) / 255.f)
+		#define FLOAT_R(color) (static_cast<float>((color >> 16) & 0xFF) / 255.f)
+		#define FLOAT_G(color) (static_cast<float>((color >> 8) & 0xFF) / 255.f)
+		#define FLOAT_B(color) (static_cast<float>((color) & 0xFF) / 255.f)
 
 		constexpr Color red = COLOR_ARGB(255, 255, 0, 0);
 		constexpr Color orange = COLOR_ARGB(255, 255, 127, 0);
