@@ -76,8 +76,6 @@ namespace hax {
 		}
 
 
-		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
-
 		void Draw::beginDraw(const Engine* pEngine) {
 
 			if (!this->_originalTopology) {
@@ -90,59 +88,19 @@ namespace hax {
 
 				if (!this->_pContext) return;
 
-				D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
-				UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
-
-				this->_pContext->RSGetViewports(&viewportCount, viewports);
-
-				D3D11_VIEWPORT viewport = viewports[0];
-
-				if (!viewportCount || !viewport.Width) {
-					HWND hMainWnd = nullptr;
-
-					EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
-
-					if (!hMainWnd) return;
-
-					RECT windowRect{};
-
-					if (!GetClientRect(hMainWnd, &windowRect)) return;
-
-					viewport.Width = static_cast<FLOAT>(windowRect.right);
-					viewport.Height = static_cast<FLOAT>(windowRect.bottom);
-					viewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
-					viewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
-					viewport.MinDepth = 0.0f;
-					viewport.MaxDepth = 1.0f;
-					this->_pContext->RSSetViewports(1, &viewport);
-				}
-
 				if (!this->compileShaders()) return;
-
-				if (!this->setupOrtho(viewport.Width, viewport.Height)) return;
 
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
 
 			}
 
+			setupConstantBuffer();
+
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
-			this->_pContext->VSSetConstantBuffers(0, 1, &this->_pConstantBuffer);
 
 			return;
-		}
-
-
-		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
-			DWORD processId = 0;
-			GetWindowThreadProcessId(hWnd, &processId);
-
-			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
-
-			*reinterpret_cast<HWND*>(lParam) = hWnd;
-
-			return FALSE;
 		}
 
 
@@ -205,10 +163,6 @@ namespace hax {
 
 
 		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
-			UNREFERENCED_PARAMETER(pFont);
-			UNREFERENCED_PARAMETER(pos);
-			UNREFERENCED_PARAMETER(text);
-			UNREFERENCED_PARAMETER(color);
 
 			return;
 		}
@@ -281,8 +235,37 @@ namespace hax {
 		}
 
 
-		bool Draw::setupOrtho(float screenWidth, float screenHeight) {
-			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, screenWidth, screenHeight, 0, 0.0f, 1.0f);
+		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
+
+		void Draw::setupConstantBuffer() {
+			D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
+			UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
+
+			this->_pContext->RSGetViewports(&viewportCount, viewports);
+
+			D3D11_VIEWPORT viewport = viewports[0];
+
+			if (!viewportCount || !viewport.Width) {
+				HWND hMainWnd = nullptr;
+
+				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
+
+				if (!hMainWnd) return;
+
+				RECT windowRect{};
+
+				if (!GetClientRect(hMainWnd, &windowRect)) return;
+
+				viewport.Width = static_cast<FLOAT>(windowRect.right);
+				viewport.Height = static_cast<FLOAT>(windowRect.bottom);
+				viewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
+				viewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
+				viewport.MinDepth = 0.0f;
+				viewport.MaxDepth = 1.0f;
+				this->_pContext->RSSetViewports(1, &viewport);
+			}
+
+			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, viewport.Width, viewport.Height, 0, 0.0f, 1.0f);
 
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -291,11 +274,30 @@ namespace hax {
 
 			D3D11_SUBRESOURCE_DATA subresourceData{};
 			subresourceData.pSysMem = &ortho;
+
+			if (this->_pConstantBuffer) {
+				this->_pConstantBuffer->Release();
+			}
+
 			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, &this->_pConstantBuffer);
 
-			if (hResult != S_OK || !this->_pConstantBuffer) return false;
+			if (hResult != S_OK || !this->_pConstantBuffer) return;
 
-			return true;
+			this->_pContext->VSSetConstantBuffers(0, 1, &this->_pConstantBuffer);
+
+			return;
+		}
+
+
+		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
+			DWORD processId = 0;
+			GetWindowThreadProcessId(hWnd, &processId);
+
+			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+			*reinterpret_cast<HWND*>(lParam) = hWnd;
+
+			return FALSE;
 		}
 
 	}
