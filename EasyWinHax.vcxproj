@@ -19,14 +19,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\engine\dx11\dx11Draw.h" />
-    <ClInclude Include="src\engine\dx9\charsets\dx9Charsets.h" />
-    <ClInclude Include="src\engine\dx9\dx9Font.h" />
+    <ClInclude Include="src\engine\dx\dx11\dx11Vertex.h" />
+    <ClInclude Include="src\engine\dx\dx9\dx9Vertex.h" />
+    <ClInclude Include="src\engine\dx\dx11\dx11Draw.h" />
+    <ClInclude Include="src\engine\dx\font\charsets\dxCharsets.h" />
+    <ClInclude Include="src\engine\dx\font\dxFont.h" />
     <ClInclude Include="src\engine\Engine.h" />
-    <ClInclude Include="src\engine\dx9\dx9Draw.h" />
+    <ClInclude Include="src\engine\dx\dx9\dx9Draw.h" />
     <ClInclude Include="src\engine\IDraw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Draw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Font.h" />
+    <ClInclude Include="src\engine\rgb.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
     <ClInclude Include="src\FileLoader.h" />
@@ -40,13 +43,15 @@
     <ClInclude Include="src\vecmath.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\engine\dx11\dx11Draw.cpp" />
-    <ClCompile Include="src\engine\dx9\charsets\dx9LargeCharset.cpp" />
-    <ClCompile Include="src\engine\dx9\charsets\dx9MediumCharset.cpp" />
-    <ClCompile Include="src\engine\dx9\charsets\dx9TinyCharset.cpp" />
-    <ClCompile Include="src\engine\dx9\dx9Font.cpp" />
+    <ClCompile Include="src\engine\dx\dx11\dx11Vertex.cpp" />
+    <ClCompile Include="src\engine\dx\dx9\dx9Vertex.cpp" />
+    <ClCompile Include="src\engine\dx\dx11\dx11Draw.cpp" />
+    <ClCompile Include="src\engine\dx\font\charsets\dxLargeCharset.cpp" />
+    <ClCompile Include="src\engine\dx\font\charsets\dxMediumCharset.cpp" />
+    <ClCompile Include="src\engine\dx\font\charsets\dxTinyCharset.cpp" />
+    <ClCompile Include="src\engine\dx\font\dxFont.cpp" />
     <ClCompile Include="src\engine\Engine.cpp" />
-    <ClCompile Include="src\engine\dx9\dx9Draw.cpp" />
+    <ClCompile Include="src\engine\dx\dx9\dx9Draw.cpp" />
     <ClCompile Include="src\engine\ogl2\ogl2Draw.cpp" />
     <ClCompile Include="src\engine\ogl2\ogl2Font.cpp" />
     <ClCompile Include="src\launch.cpp" />

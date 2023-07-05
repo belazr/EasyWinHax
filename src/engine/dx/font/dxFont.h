@@ -1,5 +1,7 @@
 #pragma once
-#include "charsets\dx9Charsets.h"
+#include "charsets\dxCharsets.h"
+#include "..\dx9\dx9Vertex.h"
+#include "..\dx11\dx11Vertex.h"
 #include <d3d9.h>
 
 // Class for fonts for text drawing within a DirectX 9 hook without the need to include the deprecated DirectX 9 SDK.
@@ -8,18 +10,14 @@
 
 namespace hax {
 
-	namespace dx9 {
+	namespace dx {
 
-		typedef struct Vertex {
-			float x, y, z, rhw;
-			D3DCOLOR color;
-		}Vertex;
-
+		template <typename V>
 		class Font {
 		public:
 			const Charset* const pCharset;
-			// Array for vertecis of the charset characters.
-			Vertex* charVertexArrays[CHAR_COUNT];
+			// Array for vertices of the charset characters.
+			V* charVertexArrays[CHAR_COUNT];
 
 			// Allocate memory for the character vertex arrays and initializes members.
 			//

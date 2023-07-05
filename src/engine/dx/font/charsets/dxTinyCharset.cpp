@@ -1,8 +1,8 @@
-#include "dx9Charsets.h"
+#include "dxCharsets.h"
 
 namespace hax {
 
-	namespace dx9 {
+	namespace dx {
 
 		namespace charsets {
 

@@ -24,7 +24,7 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void beginDraw(const Engine* pEngine) override;
+			void beginDraw(Engine* pEngine) override;
 
 			// Ends drawing within a hook. Should be called by an Engine object.
 			// 

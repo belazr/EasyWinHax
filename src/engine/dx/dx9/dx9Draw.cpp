@@ -1,5 +1,5 @@
 #include "dx9Draw.h"
-#include "..\Engine.h"
+#include "..\..\Engine.h"
 
 namespace hax {
 
@@ -55,10 +55,17 @@ namespace hax {
 		Draw::Draw() : pDevice(nullptr) {}
 
 
-		void Draw::beginDraw(const Engine* pEngine) {
+		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->pDevice) {
 				this->pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg);
+			}
+
+			D3DVIEWPORT9 viewport{};
+			HRESULT const res = pDevice->GetViewport(&viewport);
+
+			if (res == S_OK) {
+				pEngine->setWindowSize(viewport.Width, viewport.Height);
 			}
 
 			pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
@@ -78,7 +85,7 @@ namespace hax {
 
 			if (!this->pDevice) return;
 
-			Vertex* const data = new Vertex[count];
+			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
 
 			if (!data) return;
 
@@ -99,14 +106,14 @@ namespace hax {
 
 
 		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
-			Font* pDx9Font = reinterpret_cast<Font*>(pFont);
+			dx::Font<Vertex>* const pDx9Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
 
 			if (!this->pDevice || !pDx9Font) return;
 
 			const size_t size = strlen(text);
 
 			for (size_t indexInString = 0; indexInString < size; indexInString++) {
-				const Fontchar* pCurChar = nullptr;
+				const dx::Fontchar* pCurChar = nullptr;
 
 				switch (text[indexInString]) {
 				case '!':
@@ -411,14 +418,14 @@ namespace hax {
 		}
 
 
-		HRESULT Draw::drawFontchar(Font* pDx9Font, const Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+		HRESULT Draw::drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
 
 			if (!this->pDevice || !pDx9Font) return E_FAIL;
 
 			// vertex array is allocated at first use
 			// array is not deleted during object lifetime for (meassurable) performance improvements
 			if (!pDx9Font->charVertexArrays[index]) {
-				pDx9Font->charVertexArrays[index] = new Vertex[pChar->pixelCount];
+				pDx9Font->charVertexArrays[index] = reinterpret_cast<Vertex*>(new BYTE[pChar->pixelCount * sizeof(Vertex)]);
 			}
 
 			if (pDx9Font->charVertexArrays[index]) {

@@ -1,27 +1,40 @@
 #pragma once
-#include "..\IDraw.h"
-#include <d3d11.h>
+#include "..\font\dxFont.h"
+#include "..\font\charsets\dxCharsets.h"
+#include "..\..\IDraw.h"
+#include <d3d9.h>
+
+// Class for drawing within a DirectX 9 EndScene hook.
+// All methods are intended to be called by an Engine object and not for direct calls.
 
 namespace hax {
 
-	namespace dx11 {
+	namespace dx9 {
 
-		bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size);
+		typedef HRESULT(APIENTRY* tEndScene)(LPDIRECT3DDEVICE9 pDevice);
 
-		class Draw : IDraw {
-		private:
-			ID3D11Device* _pDevice;
-			ID3D11DeviceContext* _pContext;
-			ID3D11VertexShader* _pVertexShader;
-			ID3D11InputLayout* _pVertexLayout;
-			ID3D11PixelShader* _pPixelShader;
-			ID3D11Buffer* _pConstantBuffer;
+		// Gets a copy of the vTable of the DirectX 9 device used by the caller process.
+		// 
+		// Parameter:
+		// 
+		// [out] pDeviceVTable:
+		// Contains the devices vTable on success. See the d3d9 header for the offset of the EndScene function (typically 42).
+		// 
+		// [in] size:
+		// Size of the memory allocated at the address pointed to by pDeviceVTable.
+		// See the d3d9 header for the actual size of the vTable. Has to be at least offset of the function needed + one.
+		// 
+		// Return:
+		// True on success, false on failure.
+		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
 
-			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
 
+		class Draw : public IDraw {
 		public:
+			// The current drawing device.
+			IDirect3DDevice9* pDevice;
+
 			Draw();
-			~Draw();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//
@@ -29,7 +42,7 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void beginDraw(const Engine* pEngine) override;
+			void beginDraw(Engine* pEngine) override;
 
 			// Ends drawing within a hook. Should be called by an Engine object.
 			// 
@@ -67,13 +80,13 @@ namespace hax {
 			// [in] color:
 			// Color of the text.
 			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
-
+			
 		private:
-			bool compileShaders();
-			void setupConstantBuffer();
-
+			HRESULT drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
 		};
 
 	}
-
+	
 }
+
+
