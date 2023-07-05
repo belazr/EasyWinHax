@@ -1,5 +1,6 @@
 #pragma once
 #include "IDraw.h"
+#include "rgb.h"
 
 // Class for drawing within a hook independent of graphics API.
 // 
@@ -89,16 +90,22 @@ namespace hax {
 		// The argument of the the hooked function.
 		// For OpenGL 2 wglSwapBuffers hooks pass the HDC.
 		// For DirectX 9 EndScene hooks pass the LPDIRECT3DDEVICE9.
+		void beginDraw(void* pArg);
+		
+		// Ends drawing within a hook. Has to be called after any drawing calls.
+		void endDraw() const;
+
+		// Sets the current window size.
+		//
+		// Parameters:
+		// 
 		// 
 		// [in] width:
 		// Width of the window.
 		// 
 		// [in] height:
 		// Height of the window.
-		void beginDraw(void* pArg, int width, int height);
-		
-		// Ends drawing within a hook. Has to be called after any drawing calls.
-		void endDraw() const;
+		void setWindowSize(int width, int height);
 
 		// Draws a line. The line is a filled rectangle with the ends perpendicular to the middle axis.
 		//

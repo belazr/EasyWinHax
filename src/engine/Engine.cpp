@@ -4,11 +4,7 @@ namespace hax {
 	Engine::Engine(IDraw* pDraw) : pHookArg(nullptr), iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.f), fWindowHeight(0.f), _pDraw(pDraw) {}
 
 
-	void Engine::beginDraw(void* pArg, int width, int height) {
-		this->iWindowWidth = width;
-		this->iWindowHeight = height;
-		this->fWindowWidth = static_cast<float>(width);
-		this->fWindowHeight = static_cast<float>(height);
+	void Engine::beginDraw(void* pArg) {
 		this->pHookArg = pArg;
 
 		_pDraw->beginDraw(this);
@@ -19,6 +15,16 @@ namespace hax {
 
 	void Engine::endDraw() const {
 		_pDraw->endDraw(this);
+
+		return;
+	}
+
+
+	void Engine::setWindowSize(int width, int height) {
+		this->iWindowWidth = width;
+		this->iWindowHeight = height;
+		this->fWindowWidth = static_cast<float>(width);
+		this->fWindowHeight = static_cast<float>(height);
 
 		return;
 	}

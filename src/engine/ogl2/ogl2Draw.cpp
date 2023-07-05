@@ -11,7 +11,7 @@ namespace hax {
 		Draw::Draw() : _hGameContext(nullptr), _hHookContext(nullptr) {}
 
 
-		void Draw::beginDraw(const Engine* pEngine) {
+		void Draw::beginDraw(Engine* pEngine) {
 			const HDC hDc = reinterpret_cast<HDC>(pEngine->pHookArg);
 
 			if (!this->_hGameContext || !this->_hHookContext) {

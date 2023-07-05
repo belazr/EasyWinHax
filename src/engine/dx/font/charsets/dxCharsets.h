@@ -1,12 +1,12 @@
 #pragma once
-#include "..\..\..\vecmath.h"
+#include "..\..\..\..\vecmath.h"
 
 // These structs can be used to draw characters via the Font class.
 // Their main purpose is to avoid using the deprecated legacy DirectX SDK for text redndering.
 
 namespace hax {
 
-	namespace dx9 {
+	namespace dx {
 		// Gets the count of pixels in a pixel array of a character
 		#define PIXEL_COUNT(charpixels) (sizeof(charpixels) / sizeof(Vector2))
 

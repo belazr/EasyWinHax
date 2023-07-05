@@ -14,10 +14,17 @@
 #include "engine\Engine.h"
 #include "engine\IDraw.h"
 
+// Headers for DirectX
+#include "engine\dx\font\dxFont.h"
+#include "engine\dx\font\charsets\dxCharsets.h"
+
 // Headers for DirectX 9
-#include "engine\dx9\dx9Draw.h"
-#include "engine\dx9\dx9Font.h"
-#include "engine\dx9\charsets\dx9Charsets.h"
+#include "engine\dx\dx9\dx9Draw.h"
+#include "engine\dx\dx9\dx9Vertex.h"
+
+// Headers for DirectX 11
+#include "engine\dx\dx11\dx11Draw.h"
+#include "engine\dx\dx11\dx11Vertex.h"
 
 // Headers for OpenGL 2
 #include "engine\ogl2\ogl2Draw.h"

@@ -48,19 +48,19 @@
     <ClInclude Include="src\launch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx9\charsets\dx9Charsets.h">
+    <ClInclude Include="src\engine\dx\font\charsets\dxCharsets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx9\dx9Draw.h">
+    <ClInclude Include="src\engine\dx\dx9\dx9Draw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\IDraw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx9\dx9Font.h">
+    <ClInclude Include="src\engine\dx\font\dxFont.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\ogl2\ogl2Draw.h">
@@ -69,7 +69,16 @@
     <ClInclude Include="src\engine\ogl2\ogl2Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx11\dx11Draw.h">
+    <ClInclude Include="src\engine\dx\dx11\dx11Draw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\dx\dx9\dx9Vertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\rgb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\dx\dx11\dx11Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -98,22 +107,22 @@
     <ClCompile Include="src\launch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx9\charsets\dx9LargeCharset.cpp">
+    <ClCompile Include="src\engine\dx\font\charsets\dxLargeCharset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx9\charsets\dx9MediumCharset.cpp">
+    <ClCompile Include="src\engine\dx\font\charsets\dxMediumCharset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx9\charsets\dx9TinyCharset.cpp">
+    <ClCompile Include="src\engine\dx\font\charsets\dxTinyCharset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx9\dx9Draw.cpp">
+    <ClCompile Include="src\engine\dx\dx9\dx9Draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx9\dx9Font.cpp">
+    <ClCompile Include="src\engine\dx\font\dxFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\ogl2\ogl2Draw.cpp">
@@ -122,7 +131,13 @@
     <ClCompile Include="src\engine\ogl2\ogl2Font.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx11\dx11Draw.cpp">
+    <ClCompile Include="src\engine\dx\dx11\dx11Draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\dx\dx9\dx9Vertex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\dx\dx11\dx11Vertex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
