@@ -52,23 +52,27 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : pDevice(nullptr) {}
+		Draw::Draw() : _pDevice{ nullptr }, _isInit{} {}
 
 
 		void Draw::beginDraw(Engine* pEngine) {
 
-			if (!this->pDevice) {
-				this->pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg);
+			if (!this->_isInit) {
+				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg);
+
+				if (!this->_pDevice) return;
+
+				this->_isInit = true;
 			}
 
 			D3DVIEWPORT9 viewport{};
-			HRESULT const res = pDevice->GetViewport(&viewport);
+			HRESULT const res = _pDevice->GetViewport(&viewport);
 
 			if (res == S_OK) {
 				pEngine->setWindowSize(viewport.Width, viewport.Height);
 			}
 
-			pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+			_pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 
 			return;
 		}
@@ -83,7 +87,7 @@ namespace hax {
 
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
 
-			if (!this->pDevice) return;
+			if (!this->_isInit) return;
 
 			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
 
@@ -94,7 +98,7 @@ namespace hax {
 			}
 
 			// triangle count is vertex count - 2
-			this->pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count - 2, data, sizeof(Vertex));
+			this->_pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count - 2, data, sizeof(Vertex));
 			delete[] data;
 
 			return;
@@ -104,7 +108,7 @@ namespace hax {
 		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
 			dx::Font<Vertex>* const pDx9Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
 
-			if (!this->pDevice || !pDx9Font) return;
+			if (!this->_isInit || !pDx9Font) return;
 
 			const size_t size = strlen(text);
 
@@ -414,9 +418,9 @@ namespace hax {
 		}
 
 
-		HRESULT Draw::drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+		void Draw::drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
 
-			if (!this->pDevice || !pDx9Font) return E_FAIL;
+			if (!this->_isInit || !pDx9Font) return;
 
 			// vertex array is allocated at first use
 			// array is not deleted during object lifetime for (meassurable) performance improvements
@@ -424,16 +428,15 @@ namespace hax {
 				pDx9Font->charVertexArrays[index] = reinterpret_cast<Vertex*>(new BYTE[pChar->pixelCount * sizeof(Vertex)]);
 			}
 
-			if (pDx9Font->charVertexArrays[index]) {
+			if (!pDx9Font->charVertexArrays[index]) return;
 
-				for (unsigned int i = 0; i < pChar->pixelCount; i++) {
-					pDx9Font->charVertexArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
-				}
-
-				return pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVertexArrays[index], sizeof(Vertex));
+			for (unsigned int i = 0; i < pChar->pixelCount; i++) {
+				pDx9Font->charVertexArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
 			}
 
-			return E_FAIL;
+			_pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVertexArrays[index], sizeof(Vertex));
+
+			return;
 		}
 
 

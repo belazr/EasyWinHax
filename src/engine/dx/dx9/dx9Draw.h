@@ -10,7 +10,7 @@ namespace hax {
 
 	namespace dx9 {
 
-		typedef HRESULT(APIENTRY* tEndScene)(LPDIRECT3DDEVICE9 pDevice);
+		typedef HRESULT(APIENTRY* tEndScene)(LPDIRECT3DDEVICE9 _pDevice);
 
 		// Gets a copy of the vTable of the DirectX 9 device used by the caller process.
 		// 
@@ -29,10 +29,11 @@ namespace hax {
 
 
 		class Draw : public IDraw {
-		public:
-			// The current drawing device.
-			IDirect3DDevice9* pDevice;
+		private:
+			IDirect3DDevice9* _pDevice;
+			bool _isInit;
 
+		public:
 			Draw();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
@@ -81,7 +82,7 @@ namespace hax {
 			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
 			
 		private:
-			HRESULT drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
+			void drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
 		};
 
 	}

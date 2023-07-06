@@ -7,7 +7,7 @@ namespace hax {
 
 	namespace ogl2 {
 
-		Draw::Draw() : _hGameContext{ nullptr }, _hHookContext{ nullptr }, _width{}, _height{} {}
+		Draw::Draw() : _hGameContext{ nullptr }, _hHookContext{ nullptr }, _width{}, _height{}, _isInit{} {}
 
 
 		void Draw::beginDraw(Engine* pEngine) {
@@ -16,6 +16,10 @@ namespace hax {
 			if (!this->_hGameContext || !this->_hHookContext) {
 				this->_hGameContext = wglGetCurrentContext();
 				this->_hHookContext = wglCreateContext(hDc);
+				
+				if (!this->_hGameContext || !this->_hHookContext) return;
+				
+				this->_isInit = true;
 			}
 
 			wglMakeCurrent(hDc, this->_hHookContext);
@@ -44,7 +48,7 @@ namespace hax {
 
 		void Draw::endDraw(const Engine* pEngine) const {
 
-			if (!this->_hGameContext) return;
+			if (!this->_isInit) return;
 
 			wglMakeCurrent(reinterpret_cast<HDC>(pEngine->pHookArg), this->_hGameContext);
 
@@ -52,6 +56,9 @@ namespace hax {
 		}
 
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
+			
+			if (!this->_isInit) return;
+			
 			glColor3ub(UCHAR_R(color), UCHAR_G(color), UCHAR_B(color));
 			glBegin(GL_TRIANGLE_STRIP);
 
@@ -66,6 +73,9 @@ namespace hax {
 
 
 		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
+			
+			if (!this->_isInit) return;
+
 			Font* pOgl2Font = reinterpret_cast<Font*>(pFont);
 			GLsizei strLen = static_cast<GLsizei>(strlen(text));
 			
