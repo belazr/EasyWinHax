@@ -5,21 +5,14 @@ namespace hax {
 
 	namespace dx9 {
 
-		static BOOL CALLBACK getWindowCallback(HWND hWnd, LPARAM lParam);
-
 		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size) {
-			HWND hWnd = nullptr;
-			EnumWindows(getWindowCallback, reinterpret_cast<LPARAM>(&hWnd));
-
-			if (!hWnd) return false;
-
 			IDirect3D9* const pDirect3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 
 			if (!pDirect3D9) return false;
 
 			D3DPRESENT_PARAMETERS d3dpp{};
-			d3dpp.hDeviceWindow = hWnd;
-			d3dpp.Windowed = FALSE;
+			d3dpp.hDeviceWindow = GetDesktopWindow();
+			d3dpp.Windowed = TRUE;
 			d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 
 			IDirect3DDevice9* pDirect3D9Device = nullptr;
@@ -27,15 +20,9 @@ namespace hax {
 			HRESULT hResult = pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.hDeviceWindow, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &pDirect3D9Device);
 
 			if (hResult != S_OK) {
-				d3dpp.Windowed = TRUE;
-				hResult = pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.hDeviceWindow, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &pDirect3D9Device);
+				pDirect3D9->Release();
 
-				if (hResult != S_OK) {
-					pDirect3D9->Release();
-
-					return false;
-				}
-
+				return false;
 			}
 
 			if (memcpy_s(pDeviceVTable, size, *reinterpret_cast<void**>(pDirect3D9Device), size)) {
@@ -437,18 +424,6 @@ namespace hax {
 			_pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVertexArrays[index], sizeof(Vertex));
 
 			return;
-		}
-
-
-		static BOOL CALLBACK getWindowCallback(HWND hWnd, LPARAM lParam) {
-			DWORD processId = 0;
-			GetWindowThreadProcessId(hWnd, &processId);
-
-			if (!processId || GetCurrentProcessId() != processId) return TRUE;
-
-			*reinterpret_cast<HWND*>(lParam) = hWnd;
-
-			return FALSE;
 		}
 
 	}
