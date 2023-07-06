@@ -1,6 +1,5 @@
 #pragma once
 #include "..\font\dxFont.h"
-#include "..\font\charsets\dxCharsets.h"
 #include "..\..\IDraw.h"
 #include <d3d9.h>
 
