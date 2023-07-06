@@ -594,6 +594,12 @@ namespace hax {
 
 			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
 
+			char className[MAX_PATH]{};
+			
+			if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+			if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
 			*reinterpret_cast<HWND*>(lParam) = hWnd;
 
 			return FALSE;
