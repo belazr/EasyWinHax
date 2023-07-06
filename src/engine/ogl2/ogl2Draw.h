@@ -17,6 +17,7 @@ namespace hax {
 			HGLRC _hHookContext;
 			GLint _width;
 			GLint _height;
+			bool _isInit;
 
 		public:
 			Draw();
