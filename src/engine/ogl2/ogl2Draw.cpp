@@ -2,13 +2,12 @@
 #include "ogl2Font.h"
 #include "..\Engine.h"
 #include <Windows.h>
-#include <gl\GL.h>
 
 namespace hax {
 
 	namespace ogl2 {
 
-		Draw::Draw() : _hGameContext(nullptr), _hHookContext(nullptr) {}
+		Draw::Draw() : _hGameContext{ nullptr }, _hHookContext{ nullptr }, _width{}, _height{} {}
 
 
 		void Draw::beginDraw(Engine* pEngine) {
@@ -21,9 +20,19 @@ namespace hax {
 
 			wglMakeCurrent(hDc, this->_hHookContext);
 
+			GLint viewport[4]{};
+			glGetIntegerv(GL_VIEWPORT, viewport);
+
+			if (this->_width == viewport[2] && this->_height == viewport[3]) return;
+
+			this->_width = viewport[2];
+			this->_height = viewport[3];
+			
+			pEngine->setWindowSize(this->_width, this->_height);
+
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			glOrtho(0, static_cast<double>(pEngine->fWindowWidth), static_cast<double>(pEngine->fWindowHeight), 0, 1, -1);
+			glOrtho(0, static_cast<double>(this->_width), static_cast<double>(this->_height), 0, 1, -1);
 
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();

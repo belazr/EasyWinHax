@@ -3,6 +3,9 @@
 #include "..\font\dxFont.h"
 #include <d3d11.h>
 
+// Class for drawing within a DirectX 11 Present hook.
+// All methods are intended to be called by an Engine object and not for direct calls.
+
 namespace hax {
 
 	namespace dx11 {
@@ -33,7 +36,9 @@ namespace hax {
 			ID3D11PixelShader* _pPixelShader;
 			ID3D11Buffer* _pConstantBuffer;
 
+			D3D11_VIEWPORT _viewport;
 			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
+			bool _isInit;
 
 		public:
 			Draw();
@@ -86,8 +91,8 @@ namespace hax {
 
 		private:
 			bool compileShaders();
-			void setupConstantBuffer();
-			void drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
+			bool createConstantBuffer(ID3D11Buffer** pConstantBuffer);
+			void drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
 
 		};
 

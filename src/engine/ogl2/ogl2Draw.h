@@ -1,5 +1,6 @@
 #pragma once
 #include "..\IDraw.h"
+#include <gl\GL.h>
 
 // Class for drawing with OpenGL 2.
 // All methods are intended to be called by an Engine object and not for direct calls.
@@ -14,6 +15,8 @@ namespace hax {
 		private:
 			HGLRC _hGameContext;
 			HGLRC _hHookContext;
+			GLint _width;
+			GLint _height;
 
 		public:
 			Draw();

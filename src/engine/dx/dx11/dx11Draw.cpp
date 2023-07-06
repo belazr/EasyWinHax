@@ -39,9 +39,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() :
-			_pDevice(nullptr), _pContext(nullptr), _pVertexShader(nullptr), _pVertexLayout(nullptr), _pPixelShader(nullptr), _pConstantBuffer(nullptr), _originalTopology{}
-		{}
+		Draw::Draw() : _pDevice(nullptr), _pContext(nullptr), _pVertexShader(nullptr), _pVertexLayout(nullptr), _pPixelShader(nullptr), _pConstantBuffer(nullptr), _viewport{}, _originalTopology{}, _isInit{} {}
 
 
 		Draw::~Draw() {
@@ -63,10 +61,6 @@ namespace hax {
 				ret = this->_pVertexLayout->Release();
 			}
 
-			if (this->_pDevice) {
-				ret = this->_pDevice->Release();
-			}
-
 			if (this->_pPixelShader) {
 				ret = this->_pPixelShader->Release();
 			}
@@ -80,7 +74,7 @@ namespace hax {
 
 		void Draw::beginDraw(Engine* pEngine) {
 
-			if (!this->_originalTopology) {
+			if (!this->_isInit) {
 				IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg);
 				const HRESULT hResult = pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice));
 
@@ -93,11 +87,14 @@ namespace hax {
 				if (!this->compileShaders()) return;
 
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
-
+				this->_isInit = true;
 			}
 
-			setupConstantBuffer();
+			if (createConstantBuffer(&this->_pConstantBuffer)) {
+				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
+			}
 
+			this->_pContext->VSSetConstantBuffers(0, 1, &this->_pConstantBuffer);
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
@@ -109,32 +106,28 @@ namespace hax {
 		void Draw::endDraw(const Engine* pEngine) const {
 			UNREFERENCED_PARAMETER(pEngine);
 
-			this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
-
+			if (this->_originalTopology) {
+				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
+			}
+			
 			return;
 		}
 
 
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
 
-			if (!this->_pDevice || !this->_pContext) return;
+			if (!this->_isInit) return;
 
 			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
 
 			if (!data) return;
 
 			for (UINT i = 0; i < count; i++) {
-				data[i].pos.x = corners[i].x;
-				data[i].pos.y = corners[i].y;
-				data[i].pos.z = 1.f;
-				data[i].color.r = FLOAT_R(color);
-				data[i].color.g = FLOAT_G(color);
-				data[i].color.b = FLOAT_B(color);
-				data[i].color.a = FLOAT_A(color);
+				data[i] = Vertex{ corners[i], color };
 			}
 
 			D3D11_BUFFER_DESC bufferDescLine{};
-			bufferDescLine.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			bufferDescLine.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			bufferDescLine.ByteWidth = count * sizeof(Vertex);
 			bufferDescLine.Usage = D3D11_USAGE_DEFAULT;
 
@@ -142,7 +135,6 @@ namespace hax {
 			subresourceData.pSysMem = data;
 
 			ID3D11Buffer* pVertexBuffer = nullptr;
-
 			this->_pDevice->CreateBuffer(&bufferDescLine, &subresourceData, &pVertexBuffer);
 
 			UINT stride = sizeof(Vertex);
@@ -160,9 +152,10 @@ namespace hax {
 
 
 		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
-			dx::Font<Vertex>* const pDx11Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
+			
+			if (!this->_isInit || !pFont) return;
 
-			if (!this->_pDevice || !pDx11Font) return;
+			dx::Font<Vertex>* const pDx11Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -541,35 +534,37 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		void Draw::setupConstantBuffer() {
+		bool Draw::createConstantBuffer(ID3D11Buffer** ppConstantBuffer) {
 			D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
 			UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
 
 			this->_pContext->RSGetViewports(&viewportCount, viewports);
 
-			D3D11_VIEWPORT viewport = viewports[0];
+			D3D11_VIEWPORT curViewport = viewports[0];
 
-			if (!viewportCount || !viewport.Width) {
+			if (!viewportCount || !curViewport.Width) {
 				HWND hMainWnd = nullptr;
 
 				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
 
-				if (!hMainWnd) return;
+				if (!hMainWnd) return false;
 
 				RECT windowRect{};
 
-				if (!GetClientRect(hMainWnd, &windowRect)) return;
+				if (!GetClientRect(hMainWnd, &windowRect)) return false;
 
-				viewport.Width = static_cast<FLOAT>(windowRect.right);
-				viewport.Height = static_cast<FLOAT>(windowRect.bottom);
-				viewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
-				viewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
-				viewport.MinDepth = 0.0f;
-				viewport.MaxDepth = 1.0f;
-				this->_pContext->RSSetViewports(1, &viewport);
+				curViewport.Width = static_cast<FLOAT>(windowRect.right);
+				curViewport.Height = static_cast<FLOAT>(windowRect.bottom);
+				curViewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
+				curViewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
+				curViewport.MinDepth = 0.0f;
+				curViewport.MaxDepth = 1.0f;
+				this->_pContext->RSSetViewports(1, &curViewport);
 			}
 
-			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, viewport.Width, viewport.Height, 0, 0.0f, 1.0f);
+			if (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height) return false;
+
+			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, curViewport.Width, curViewport.Height, 0, 0.f, 1.f);
 
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -579,17 +574,17 @@ namespace hax {
 			D3D11_SUBRESOURCE_DATA subresourceData{};
 			subresourceData.pSysMem = &ortho;
 
-			if (this->_pConstantBuffer) {
-				this->_pConstantBuffer->Release();
+			if (*ppConstantBuffer) {
+				(*ppConstantBuffer)->Release();
 			}
 
-			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, &this->_pConstantBuffer);
+			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, ppConstantBuffer);
 
-			if (hResult != S_OK || !this->_pConstantBuffer) return;
+			if (hResult != S_OK || !*ppConstantBuffer) return false;
 
-			this->_pContext->VSSetConstantBuffers(0, 1, &this->_pConstantBuffer);
+			this->_viewport = curViewport;
 
-			return;
+			return true;
 		}
 
 
@@ -604,38 +599,31 @@ namespace hax {
 			return FALSE;
 		}
 
-		void Draw::drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+		void Draw::drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
 			
-			if (!this->_pDevice || !this->_pContext || !pDx9Font) return;
+			if (!this->_isInit || !pDx11Font) return;
 
 			// vertex array is allocated at first use
 			// array is not deleted during object lifetime for (meassurable) performance improvements
-			if (!pDx9Font->charVertexArrays[index]) {
-				pDx9Font->charVertexArrays[index] = reinterpret_cast<Vertex*>(new BYTE[pChar->pixelCount * sizeof(Vertex)]);
+			if (!pDx11Font->charVertexArrays[index]) {
+				pDx11Font->charVertexArrays[index] = reinterpret_cast<Vertex*>(new BYTE[pChar->pixelCount * sizeof(Vertex)]);
 			}
 
-			if (!pDx9Font->charVertexArrays[index]) return;
+			if (!pDx11Font->charVertexArrays[index]) return;
 
 			for (UINT i = 0; i < pChar->pixelCount; i++) {
-				pDx9Font->charVertexArrays[index][i].pos.x = pos->x + pChar->pixel[i].x;
-				pDx9Font->charVertexArrays[index][i].pos.y = pos->y + pChar->pixel[i].y;
-				pDx9Font->charVertexArrays[index][i].pos.z = 1.f;
-				pDx9Font->charVertexArrays[index][i].color.r = FLOAT_R(color);
-				pDx9Font->charVertexArrays[index][i].color.g = FLOAT_G(color);
-				pDx9Font->charVertexArrays[index][i].color.b = FLOAT_B(color);
-				pDx9Font->charVertexArrays[index][i].color.a = FLOAT_A(color);
+				pDx11Font->charVertexArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
 			}
 
 			D3D11_BUFFER_DESC bufferDescLine{};
-			bufferDescLine.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			bufferDescLine.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			bufferDescLine.ByteWidth = pChar->pixelCount * sizeof(Vertex);
 			bufferDescLine.Usage = D3D11_USAGE_DEFAULT;
 
 			D3D11_SUBRESOURCE_DATA subresourceData{};
-			subresourceData.pSysMem = pDx9Font->charVertexArrays[index];
+			subresourceData.pSysMem = pDx11Font->charVertexArrays[index];
 
 			ID3D11Buffer* pVertexBuffer = nullptr;
-
 			this->_pDevice->CreateBuffer(&bufferDescLine, &subresourceData, &pVertexBuffer);
 
 			UINT stride = sizeof(Vertex);

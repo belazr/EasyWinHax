@@ -20,9 +20,23 @@ namespace hax {
 	}
 
 
+	void Engine::setWindowSize(float width, float height) {
+		this->fWindowWidth = width;
+		this->fWindowHeight = height;
+
+		return;
+	}
+
+
+	void Engine::setWindowSize(unsigned long width, unsigned long height) {
+		this->fWindowWidth = static_cast<float>(width);
+		this->fWindowHeight = static_cast<float>(height);
+
+		return;
+	}
+
+
 	void Engine::setWindowSize(int width, int height) {
-		this->iWindowWidth = width;
-		this->iWindowHeight = height;
 		this->fWindowWidth = static_cast<float>(width);
 		this->fWindowHeight = static_cast<float>(height);
 

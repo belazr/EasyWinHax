@@ -90,11 +90,7 @@ namespace hax {
 			if (!data) return;
 
 			for (UINT i = 0; i < count; i++) {
-				data[i].x = corners[i].x;
-				data[i].y = corners[i].y;
-				data[i].z = 1.f;
-				data[i].rhw = 1.f;
-				data[i].color = color;
+				data[i] = Vertex{ corners[i], color };
 			}
 
 			// triangle count is vertex count - 2
@@ -431,11 +427,7 @@ namespace hax {
 			if (pDx9Font->charVertexArrays[index]) {
 
 				for (unsigned int i = 0; i < pChar->pixelCount; i++) {
-					pDx9Font->charVertexArrays[index][i].x = pos->x + pChar->pixel[i].x;
-					pDx9Font->charVertexArrays[index][i].y = pos->y + pChar->pixel[i].y;
-					pDx9Font->charVertexArrays[index][i].z = 1.f;
-					pDx9Font->charVertexArrays[index][i].rhw = 1.f;
-					pDx9Font->charVertexArrays[index][i].color = color;
+					pDx9Font->charVertexArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
 				}
 
 				return pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVertexArrays[index], sizeof(Vertex));

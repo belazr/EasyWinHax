@@ -69,8 +69,8 @@ namespace hax {
 
 	public:
 		void* pHookArg;
-		int iWindowWidth;
-		int iWindowHeight;
+		unsigned long iWindowWidth;
+		unsigned long iWindowHeight;
 		float fWindowWidth;
 		float fWindowHeight;
 
@@ -105,6 +105,10 @@ namespace hax {
 		// 
 		// [in] height:
 		// Height of the window.
+		void setWindowSize(float width, float height);
+		
+		void setWindowSize(unsigned long width, unsigned long height);
+
 		void setWindowSize(int width, int height);
 
 		// Draws a line. The line is a filled rectangle with the ends perpendicular to the middle axis.
