@@ -63,8 +63,11 @@ The library provides a simple file loader class to load files from disk into mem
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
 The library provides an Engine class that can be used to draw geometric shapes within a hook independent of graphics API via the IDraw interface.
-Currently there are implementations of the IDraw interface for DirectX 9 to draw from an EndScene hook and for OpenGL 2 to draw from an wglSwapBuffers hook.
+Currently there are implementations of the IDraw interface for DirectX 11 to draw from a Present hook, DirectX 9 to draw from an EndScene hook and for OpenGL 2 to draw from an wglSwapBuffers hook.
 See the "engine\Engine.h" and "engine\IDraw.h" headers for further documentation.
+#### DirectX 11 implementation
+The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
+It provides a font class that is used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" folder for further documentation.
 #### DirectX 9 implementation
 The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
 It provides a font class that is used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" folder for further documentation.
@@ -74,7 +77,7 @@ It also provides a font class that is used for text drawing. See the headers in 
 
 ## TODO
 - Better error handling for launch functions
-- Add further implementations of the IDraw interface (DirectX 11/12, Vulkan)
+- Add further implementations of the IDraw interface (DirectX 12, Vulkan)
 
 ## References
 - https://guidedhacking.com/

@@ -17,7 +17,7 @@
 // hax::Engine engine(&draw);
 // 
 // void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pOriginalDevice) {
-//     engine.beginDraw(pOriginalDevice, 800, 600);
+//     engine.beginDraw(pOriginalDevice);
 // 
 //     Vector2 pos1{ 100, 100 };
 //     Vector2 pos2{ 300, 100 };
@@ -26,6 +26,30 @@
 //     engine.drawString(&font, &pos1, "Hi!", hax::rgb::green);
 // 
 //     pGatewayToEndScene(pOriginalDevice);
+// 
+//     return;
+// }
+// 
+// 
+// DirectX 11 Present hook:
+// 
+// 
+// hax::dx11::tPresent pGatewayToPresent = 0xDEADBEEF;
+//
+// hax::dx::Font font<hax::dx11::Vertex>(&hax::dx::charsets::medium);
+// hax::dx11::Draw draw;
+// hax::Engine engine(&draw);
+// 
+// HRESULT __stdcall hkPresent(IDXGISwapChain* pOriginalSwapChain, UINT syncInterval, UINT flags) {
+//     engine.beginDraw(pOriginalSwapChain);
+// 
+//     Vector2 pos1{ 100, 100 };
+//     Vector2 pos2{ 300, 100 };
+// 
+//     engine.drawLine(&pos1, &pos2, 2, hax::rgb::red);
+//     engine.drawString(&font, &pos1, "Hi!", hax::rgb::green);
+// 
+//     pGatewayToPresent(pOriginalSwapChain, syncInterval, flags);
 // 
 //     return;
 // }
@@ -46,7 +70,7 @@
 //         pFont = new hax::ogl2::Font(hDc, "Consolas", 10);
 //     }
 // 
-//     engine.beginDraw(hDc, 800, 600);
+//     engine.beginDraw(hDc);
 // 
 //     Vector2 pos1{ 100, 100 };
 //     Vector2 pos2{ 300, 100 };
@@ -69,8 +93,6 @@ namespace hax {
 
 	public:
 		void* pHookArg;
-		unsigned long iWindowWidth;
-		unsigned long iWindowHeight;
 		float fWindowWidth;
 		float fWindowHeight;
 
@@ -90,6 +112,7 @@ namespace hax {
 		// The argument of the the hooked function.
 		// For OpenGL 2 wglSwapBuffers hooks pass the HDC.
 		// For DirectX 9 EndScene hooks pass the LPDIRECT3DDEVICE9.
+		// For DirectX 11 Present hooks pass the IDXGISwapChain.
 		void beginDraw(void* pArg);
 		
 		// Ends drawing within a hook. Has to be called after any drawing calls.
@@ -221,10 +244,10 @@ namespace hax {
 		// Parameters:
 		//
 		// [in] bot:
-		// Screen coordinates of the four bottom corners of the box.
+		// Screen coordinates of the four bottom corners of the box. The bottom surface is drawn in clockwise orientation.
 		// 
 		// [in] top:
-		// Screen coordinates of the four corners of the box.
+		// Screen coordinates of the four corners of the box. The top surface is drawn in clockwise orientation.
 		// 
 		// [in] width:
 		// Line width in pixels.

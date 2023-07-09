@@ -69,7 +69,7 @@ namespace hax {
 			// Parameters:
 			// 
 			// [in] pFont:
-			// Pointer to a dx9::Font object.
+			// Pointer to a dx::Font<dx11::Vertex> object.
 			//
 			// [in] origin:
 			// Coordinates of the bottom left corner of the first character of the text.

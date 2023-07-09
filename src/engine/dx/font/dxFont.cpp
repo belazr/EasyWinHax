@@ -5,7 +5,7 @@ namespace hax {
 	namespace dx {
 
 		template <typename V>
-		Font<V>::Font(const Charset* pChrSet) : pCharset(pChrSet), charVertexArrays{} {}
+		Font<V>::Font(const Charset* pChrSet) : pCharset{pChrSet}, charVertexArrays{} {}
 
 		
 		template <typename V>
@@ -36,6 +36,7 @@ namespace hax {
 			return this->pCharset->height;
 		}
 
+		// Explicit instantiation to get a compilation in a static library
 		template class Font<dx9::Vertex>;
 		template class Font<dx11::Vertex>;
 

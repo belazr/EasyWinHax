@@ -4,7 +4,7 @@
 #include "..\dx11\dx11Vertex.h"
 #include <d3d9.h>
 
-// Class for fonts for text drawing within a DirectX 9 hook without the need to include the deprecated DirectX 9 SDK.
+// Class for fonts for text drawing within a DirectX hook without the need to include the deprecated DirectX 9 SDK.
 // Uses the Charset structure which defines width and height of a character and the pixel coordinates of every character.
 // Characters are drawn monospaced.
 

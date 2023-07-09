@@ -1,7 +1,7 @@
 #include "Engine.h"
 
 namespace hax {
-	Engine::Engine(IDraw* pDraw) : pHookArg(nullptr), iWindowWidth(0), iWindowHeight(0), fWindowWidth(0.f), fWindowHeight(0.f), _pDraw(pDraw) {}
+	Engine::Engine(IDraw* pDraw) : pHookArg{ nullptr }, fWindowWidth{ 0.f }, fWindowHeight{ 0.f }, _pDraw{ pDraw } {}
 
 
 	void Engine::beginDraw(void* pArg) {

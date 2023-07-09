@@ -39,34 +39,33 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice(nullptr), _pContext(nullptr), _pVertexShader(nullptr), _pVertexLayout(nullptr), _pPixelShader(nullptr), _pConstantBuffer(nullptr), _viewport{}, _originalTopology{}, _isInit{} {}
+		Draw::Draw() : _pDevice{ nullptr }, _pContext{ nullptr }, _pVertexShader{ nullptr }, _pVertexLayout{ nullptr }, _pPixelShader{ nullptr }, _pConstantBuffer{ nullptr }, _viewport{}, _originalTopology{}, _isInit{} {}
 
 
 		Draw::~Draw() {
-			ULONG ret = 0;
 
 			if (this->_pDevice) {
-				ret = this->_pDevice->Release();
+				this->_pDevice->Release();
 			}
 
 			if (this->_pContext) {
-				ret = this->_pContext->Release();
+				this->_pContext->Release();
 			}
 
 			if (this->_pVertexShader) {
-				ret = this->_pVertexShader->Release();
+				this->_pVertexShader->Release();
 			}
 
 			if (this->_pVertexLayout) {
-				ret = this->_pVertexLayout->Release();
+				this->_pVertexLayout->Release();
 			}
 
 			if (this->_pPixelShader) {
-				ret = this->_pPixelShader->Release();
+				this->_pPixelShader->Release();
 			}
 
 			if (this->_pConstantBuffer) {
-				ret = this->_pConstantBuffer->Release();
+				this->_pConstantBuffer->Release();
 			}
 
 		}

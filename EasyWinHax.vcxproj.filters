@@ -134,11 +134,5 @@
     <ClCompile Include="src\engine\dx\dx11\dx11Draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx9\dx9Vertex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\dx\dx11\dx11Vertex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
