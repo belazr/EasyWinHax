@@ -17,7 +17,7 @@ namespace hax {
 		public:
 			const Charset* const pCharset;
 			// Array for vertices of the charset characters.
-			V* charVertexArrays[CHAR_COUNT];
+			V* charVerticesArrays[CharIndex::MAX_CHAR];
 
 			// Allocate memory for the character vertex arrays and initializes members.
 			//

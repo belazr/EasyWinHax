@@ -5,17 +5,22 @@ namespace hax {
 	namespace dx {
 
 		template <typename V>
-		Font<V>::Font(const Charset* pChrSet) : pCharset{pChrSet}, charVertexArrays{} {}
+		Font<V>::Font(const Charset* pChrSet) : pCharset{ pChrSet }, charVerticesArrays{} {
+			
+			for (unsigned int i = 0; i < CharIndex::MAX_CHAR; i++) {
+				charVerticesArrays[i] = reinterpret_cast<V*>(new BYTE[pCharset->chars[i].pixelCount * sizeof(V)]);
+			}
+			
+		}
 
 		
 		template <typename V>
 		Font<V>::~Font() {
 
-			// character vertex arrays are only deleted at object destrucion for (meassurable) performance reasons
-			for (int i = 0; i < CHAR_COUNT; i++) {
+			for (unsigned int i = 0; i < CharIndex::MAX_CHAR; i++) {
 
-				if (this->charVertexArrays[i]) {
-					delete[] this->charVertexArrays[i];
+				if (this->charVerticesArrays[i]) {
+					delete[] this->charVerticesArrays[i];
 				}
 
 			}
