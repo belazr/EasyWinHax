@@ -5,7 +5,7 @@
 namespace hax {
 	
 	Bench::Bench(const char* label, size_t runs):
-		_startTime(0.), _endTime(0.), _counter(0), _label(label), _runs(runs)
+		_label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _counter{}
 	{
 		this->_durations = new double[this->_runs];
 	}

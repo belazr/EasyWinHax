@@ -7,7 +7,7 @@ namespace hax {
 	namespace ex {
 
 		TrampHook::TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size) :
-			_hProc(hProc), _origin(origin), _detour(nullptr), _detourOriginCall(nullptr), _size(size), _gateway(nullptr), _hooked(false)
+			_hProc(hProc), _origin(origin), _size(size), _detour{}, _detourOriginCall{}, _gateway{}, _hooked{}
 		{
 			_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
@@ -25,7 +25,7 @@ namespace hax {
 
 		TrampHook::TrampHook(
 			HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
-		) : _hProc(hProc), _origin(nullptr), _detour(nullptr), _detourOriginCall(nullptr), _size(size), _gateway(nullptr), _hooked(false)
+		) : _hProc(hProc), _size(size), _origin{}, _detour{}, _detourOriginCall{}, _gateway{}, _hooked{}
 		{
 			HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
 
