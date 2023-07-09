@@ -4,7 +4,7 @@
 namespace hax {
 	
 	FileLoader::FileLoader(const char* path):
-		_path(path), _pBytes(nullptr), _size(0), _errno(0)
+		_path{ path }, _pBytes{}, _size{}, _errno{}
 	{
 		FILE* pFile = nullptr;
 		this->_errno = fopen_s(&pFile,this->_path, "rb");

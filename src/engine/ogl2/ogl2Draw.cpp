@@ -7,7 +7,7 @@ namespace hax {
 
 	namespace ogl2 {
 
-		Draw::Draw() : _hGameContext{ nullptr }, _hHookContext{ nullptr }, _width{}, _height{}, _isInit{} {}
+		Draw::Draw() : _hGameContext{}, _hHookContext{}, _width{}, _height{}, _isInit{} {}
 
 
 		void Draw::beginDraw(Engine* pEngine) {

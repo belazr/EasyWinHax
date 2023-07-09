@@ -39,7 +39,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{ nullptr }, _isInit{} {}
+		Draw::Draw() : _pDevice{}, _isInit{} {}
 
 
 		void Draw::beginDraw(Engine* pEngine) {

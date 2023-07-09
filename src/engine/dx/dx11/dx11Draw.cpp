@@ -39,7 +39,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{ nullptr }, _pContext{ nullptr }, _pVertexShader{ nullptr }, _pVertexLayout{ nullptr }, _pPixelShader{ nullptr }, _pConstantBuffer{ nullptr }, _viewport{}, _originalTopology{}, _isInit{} {}
+		Draw::Draw() : _pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _viewport{}, _originalTopology{}, _isInit{} {}
 
 
 		Draw::~Draw() {

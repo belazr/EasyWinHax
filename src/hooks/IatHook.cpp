@@ -7,9 +7,8 @@ namespace hax {
 
 	namespace ex {
 
-		IatHook::IatHook(
-			HANDLE hProc, HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern
-		) : _hProc(hProc), _origin(nullptr), _detour(nullptr), _pIatEntry(nullptr), _hooked(false), _isWow64Proc(FALSE)
+		IatHook::IatHook(HANDLE hProc, HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern) :
+			_hProc{ hProc }, _origin{}, _detour{}, _pIatEntry{}, _hooked{}, _isWow64Proc{}
 		{
 			IsWow64Process(this->_hProc, &this->_isWow64Proc);
 			this->_pIatEntry = proc::ex::getIatEntryAddress(this->_hProc, hImportMod, exportModName, funcName);
@@ -168,7 +167,7 @@ namespace hax {
 	namespace in {
 
 		IatHook::IatHook(HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* detour) :
-			_origin(nullptr), _detour(detour), _pIatEntry(nullptr), _hooked(false)
+			_detour{ detour }, _origin{}, _pIatEntry{}, _hooked{}
 		{
 			this->_pIatEntry = proc::in::getIatEntryAddress(hImportMod, exportModName, funcName);
 
