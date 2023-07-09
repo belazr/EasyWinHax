@@ -8,7 +8,7 @@ namespace hax {
 
 			namespace tinyCharPixel {
 
-				const Vector2 exclamationPoint[]{
+				constexpr Vector2 exclamationPoint[]{
 					{ 3, 2 },
 					{ 4, 2 },
 					{ 3, 3 },
@@ -24,7 +24,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 doubleQuotes[]{
+				constexpr Vector2 doubleQuotes[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 4, 2 },
@@ -38,7 +38,7 @@ namespace hax {
 					{ 4, 4 },
 					{ 5, 4 }
 				};
-				const Vector2 poundSign[]{
+				constexpr Vector2 poundSign[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -74,7 +74,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 dollarSign[]{
+				constexpr Vector2 dollarSign[]{
 					{ 3, 2 },
 					{ 1, 3 },
 					{ 2, 3 },
@@ -104,7 +104,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 percentSign[]{
+				constexpr Vector2 percentSign[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -140,7 +140,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 ampersand[]{
+				constexpr Vector2 ampersand[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -172,7 +172,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 singleQuote[]{
+				constexpr Vector2 singleQuote[]{
 					{ 3, 2 },
 					{ 4, 2 },
 					{ 3, 3 },
@@ -180,7 +180,7 @@ namespace hax {
 					{ 3, 4 },
 					{ 4, 4 }
 				};
-				const Vector2 openParanthesis[]{
+				constexpr Vector2 openParanthesis[]{
 					{ 3, 1 },
 					{ 4, 1 },
 					{ 5, 1 },
@@ -206,7 +206,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 closeParanthesis[]{
+				constexpr Vector2 closeParanthesis[]{
 					{ 2, 1 },
 					{ 3, 1 },
 					{ 4, 1 },
@@ -232,7 +232,7 @@ namespace hax {
 					{ 3, 11 },
 					{ 4, 11 }
 				};
-				const Vector2 asterisk[]{
+				constexpr Vector2 asterisk[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -250,7 +250,7 @@ namespace hax {
 					{ 5, 5 },
 					{ 3, 6 }
 				};
-				const Vector2 plus[]{
+				constexpr Vector2 plus[]{
 					{ 3, 4 },
 					{ 4, 4 },
 					{ 1, 5 },
@@ -263,7 +263,7 @@ namespace hax {
 					{ 3, 7 },
 					{ 4, 7 }
 				};
-				const Vector2 comma[]{
+				constexpr Vector2 comma[]{
 					{ 3, 9 },
 					{ 4, 9 },
 					{ 3, 10 },
@@ -271,18 +271,18 @@ namespace hax {
 					{ 3, 11 },
 					{ 4, 11 }
 				};
-				const Vector2 dash[]{
+				constexpr Vector2 dash[]{
 					{ 1, 6 },
 					{ 2, 6 },
 					{ 3, 6 },
 					{ 4, 6 },
 					{ 5, 6 }
 				};
-				const Vector2 period[]{
+				constexpr Vector2 period[]{
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 slash[]{
+				constexpr Vector2 slash[]{
 					{ 5, 2 },
 					{ 4, 3 },
 					{ 5, 3 },
@@ -296,7 +296,7 @@ namespace hax {
 					{ 1, 9 },
 					{ 2, 9 }
 				};
-				const Vector2 zero[]{
+				constexpr Vector2 zero[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -339,7 +339,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 one[]{
+				constexpr Vector2 one[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -361,7 +361,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 two[]{
+				constexpr Vector2 two[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -387,7 +387,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 three[]{
+				constexpr Vector2 three[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -413,7 +413,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 four[]{
+				constexpr Vector2 four[]{
 					{ 3, 2 },
 					{ 4, 2 },
 					{ 5, 2 },
@@ -444,7 +444,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 five[]{
+				constexpr Vector2 five[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -471,7 +471,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 six[]{
+				constexpr Vector2 six[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -504,7 +504,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 seven[]{
+				constexpr Vector2 seven[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -526,7 +526,7 @@ namespace hax {
 					{ 2, 9 },
 					{ 3, 9 }
 				};
-				const Vector2 eight[]{
+				constexpr Vector2 eight[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -563,7 +563,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 nine[]{
+				constexpr Vector2 nine[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -596,13 +596,13 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 colon[]{
+				constexpr Vector2 colon[]{
 					{ 3, 6 },
 					{ 4, 6 },
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 semicolon[]{
+				constexpr Vector2 semicolon[]{
 					{ 3, 6 },
 					{ 4, 6 },
 					{ 3, 9 },
@@ -611,7 +611,7 @@ namespace hax {
 					{ 4, 10 },
 					{ 3, 11 }
 				};
-				const Vector2 smaller[]{
+				constexpr Vector2 smaller[]{
 					{ 4, 3 },
 					{ 5, 3 },
 					{ 3, 4 },
@@ -628,7 +628,7 @@ namespace hax {
 					{ 4, 8 },
 					{ 5, 8 }
 				};
-				const Vector2 equals[]{
+				constexpr Vector2 equals[]{
 					{ 2, 4 },
 					{ 3, 4 },
 					{ 4, 4 },
@@ -638,7 +638,7 @@ namespace hax {
 					{ 4, 6 },
 					{ 5, 6 }
 				};
-				const Vector2 greater[]{
+				constexpr Vector2 greater[]{
 					{ 2, 3 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -652,7 +652,7 @@ namespace hax {
 					{ 1, 8 },
 					{ 2, 8 }
 				};
-				const Vector2 questionmark[]{
+				constexpr Vector2 questionmark[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -675,7 +675,7 @@ namespace hax {
 					{ 2, 9 },
 					{ 3, 9 }
 				};
-				const Vector2 atSign[]{
+				constexpr Vector2 atSign[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -718,7 +718,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 upperA[]{
+				constexpr Vector2 upperA[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -751,7 +751,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperB[]{
+				constexpr Vector2 upperB[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -788,7 +788,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperC[]{
+				constexpr Vector2 upperC[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -810,7 +810,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperD[]{
+				constexpr Vector2 upperD[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -846,7 +846,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperE[]{
+				constexpr Vector2 upperE[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -873,7 +873,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperF[]{
+				constexpr Vector2 upperF[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -897,7 +897,7 @@ namespace hax {
 					{ 1, 9 },
 					{ 2, 9 }
 				};
-				const Vector2 upperG[]{
+				constexpr Vector2 upperG[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -927,7 +927,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperH[]{
+				constexpr Vector2 upperH[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 5, 2 },
@@ -963,7 +963,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 upperI[]{
+				constexpr Vector2 upperI[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -987,7 +987,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperJ[]{
+				constexpr Vector2 upperJ[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -1010,7 +1010,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperK[]{
+				constexpr Vector2 upperK[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 4, 2 },
@@ -1041,7 +1041,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperL[]{
+				constexpr Vector2 upperL[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 1, 3 },
@@ -1062,7 +1062,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperM[]{
+				constexpr Vector2 upperM[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 4, 2 },
@@ -1098,7 +1098,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperN[]{
+				constexpr Vector2 upperN[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 5, 2 },
@@ -1133,7 +1133,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperO[]{
+				constexpr Vector2 upperO[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1173,7 +1173,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperP[]{
+				constexpr Vector2 upperP[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1203,7 +1203,7 @@ namespace hax {
 					{ 1, 9 },
 					{ 2, 9 }
 				};
-				const Vector2 upperQ[]{
+				constexpr Vector2 upperQ[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1249,7 +1249,7 @@ namespace hax {
 					{ 3, 10 },
 					{ 4, 10 }
 				};
-				const Vector2 upperR[]{
+				constexpr Vector2 upperR[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1285,7 +1285,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperS[]{
+				constexpr Vector2 upperS[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1312,7 +1312,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperT[]{
+				constexpr Vector2 upperT[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1334,7 +1334,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 upperU[]{
+				constexpr Vector2 upperU[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 4, 2 },
@@ -1369,7 +1369,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperV[]{
+				constexpr Vector2 upperV[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 4, 2 },
@@ -1401,7 +1401,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 upperW[]{
+				constexpr Vector2 upperW[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 5, 2 },
@@ -1441,7 +1441,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 upperX[]{
+				constexpr Vector2 upperX[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 5, 2 },
@@ -1472,7 +1472,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 upperY[]{
+				constexpr Vector2 upperY[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 5, 2 },
@@ -1498,7 +1498,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 upperZ[]{
+				constexpr Vector2 upperZ[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1525,7 +1525,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 openBracket[]{
+				constexpr Vector2 openBracket[]{
 					{ 2, 1 },
 					{ 3, 1 },
 					{ 4, 1 },
@@ -1553,7 +1553,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 backslash[]{
+				constexpr Vector2 backslash[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 2, 3 },
@@ -1568,7 +1568,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 closeBracket[]{
+				constexpr Vector2 closeBracket[]{
 					{ 2, 1 },
 					{ 3, 1 },
 					{ 4, 1 },
@@ -1596,7 +1596,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 circumflex[]{
+				constexpr Vector2 circumflex[]{
 					{ 3, 3 },
 					{ 4, 3 },
 					{ 2, 4 },
@@ -1608,7 +1608,7 @@ namespace hax {
 					{ 5, 5 },
 					{ 6, 5 }
 				};
-				const Vector2 underscore[]{
+				constexpr Vector2 underscore[]{
 					{ 1, 11 },
 					{ 2, 11 },
 					{ 3, 11 },
@@ -1616,12 +1616,12 @@ namespace hax {
 					{ 5, 11 },
 					{ 6, 11 }
 				};
-				const Vector2 backtick[]{
+				constexpr Vector2 backtick[]{
 					{ 3, 2 },
 					{ 3, 3 },
 					{ 4, 3 }
 				};
-				const Vector2 lowerA[]{
+				constexpr Vector2 lowerA[]{
 					{ 2, 4 },
 					{ 3, 4 },
 					{ 4, 4 },
@@ -1652,7 +1652,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 lowerB[]{
+				constexpr Vector2 lowerB[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 1, 3 },
@@ -1684,7 +1684,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerC[]{
+				constexpr Vector2 lowerC[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -1704,7 +1704,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerD[]{
+				constexpr Vector2 lowerD[]{
 					{ 4, 2 },
 					{ 5, 2 },
 					{ 4, 3 },
@@ -1736,7 +1736,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerE[]{
+				constexpr Vector2 lowerE[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -1763,7 +1763,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerF[]{
+				constexpr Vector2 lowerF[]{
 					{ 3, 2 },
 					{ 4, 2 },
 					{ 5, 2 },
@@ -1791,7 +1791,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 lowerG[]{
+				constexpr Vector2 lowerG[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -1825,7 +1825,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 lowerH[]{
+				constexpr Vector2 lowerH[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 1, 3 },
@@ -1856,7 +1856,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerI[]{
+				constexpr Vector2 lowerI[]{
 					{ 3, 2 },
 					{ 4, 2 },
 					{ 1, 4 },
@@ -1877,7 +1877,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerJ[]{
+				constexpr Vector2 lowerJ[]{
 					{ 4, 2 },
 					{ 5, 2 },
 					{ 2, 4 },
@@ -1901,7 +1901,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 lowerK[]{
+				constexpr Vector2 lowerK[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 1, 3 },
@@ -1931,7 +1931,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerL[]{
+				constexpr Vector2 lowerL[]{
 					{ 1, 2 },
 					{ 2, 2 },
 					{ 3, 2 },
@@ -1954,7 +1954,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerM[]{
+				constexpr Vector2 lowerM[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -1991,7 +1991,7 @@ namespace hax {
 					{ 5, 9 },
 					{ 6, 9 }
 				};
-				const Vector2 lowerN[]{
+				constexpr Vector2 lowerN[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2018,7 +2018,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerO[]{
+				constexpr Vector2 lowerO[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2050,7 +2050,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerP[]{
+				constexpr Vector2 lowerP[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2086,7 +2086,7 @@ namespace hax {
 					{ 1, 11 },
 					{ 2, 11 }
 				};
-				const Vector2 lowerQ[]{
+				constexpr Vector2 lowerQ[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2118,7 +2118,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 lowerR[]{
+				constexpr Vector2 lowerR[]{
 					{ 2, 4 },
 					{ 3, 4 },
 					{ 4, 4 },
@@ -2134,7 +2134,7 @@ namespace hax {
 					{ 1, 9 },
 					{ 2, 9 }
 				};
-				const Vector2 lowerS[]{
+				constexpr Vector2 lowerS[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2157,7 +2157,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerT[]{
+				constexpr Vector2 lowerT[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -2185,7 +2185,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerU[]{
+				constexpr Vector2 lowerU[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 4, 4 },
@@ -2212,7 +2212,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerV[]{
+				constexpr Vector2 lowerV[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 4, 4 },
@@ -2238,7 +2238,7 @@ namespace hax {
 					{ 3, 9 },
 					{ 4, 9 }
 				};
-				const Vector2 lowerW[]{
+				constexpr Vector2 lowerW[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 5, 4 },
@@ -2269,7 +2269,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerX[]{
+				constexpr Vector2 lowerX[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 4, 4 },
@@ -2293,7 +2293,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 lowerY[]{
+				constexpr Vector2 lowerY[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 5, 4 },
@@ -2321,7 +2321,7 @@ namespace hax {
 					{ 2, 11 },
 					{ 3, 11 }
 				};
-				const Vector2 lowerZ[]{
+				constexpr Vector2 lowerZ[]{
 					{ 1, 4 },
 					{ 2, 4 },
 					{ 3, 4 },
@@ -2342,7 +2342,7 @@ namespace hax {
 					{ 4, 9 },
 					{ 5, 9 }
 				};
-				const Vector2 openBrace[]{
+				constexpr Vector2 openBrace[]{
 					{ 4, 1 },
 					{ 5, 1 },
 					{ 3, 2 },
@@ -2366,7 +2366,7 @@ namespace hax {
 					{ 4, 11 },
 					{ 5, 11 }
 				};
-				const Vector2 pipe[]{
+				constexpr Vector2 pipe[]{
 					{ 3, 1 },
 					{ 4, 1 },
 					{ 3, 2 },
@@ -2390,7 +2390,7 @@ namespace hax {
 					{ 3, 11 },
 					{ 4, 11 }
 				};
-				const Vector2 closeBrace[]{
+				constexpr Vector2 closeBrace[]{
 					{ 2, 1 },
 					{ 3, 1 },
 					{ 3, 2 },
@@ -2414,7 +2414,7 @@ namespace hax {
 					{ 2, 11 },
 					{ 3, 11 }
 				};
-				const Vector2 tilde[]{
+				constexpr Vector2 tilde[]{
 					{ 2, 5 },
 					{ 3, 5 },
 					{ 4, 5 },
@@ -2425,7 +2425,7 @@ namespace hax {
 					{ 4, 6 },
 					{ 5, 6 }
 				};
-				const Vector2 degrees[]{
+				constexpr Vector2 degrees[]{
 					{ 2, 2 },
 					{ 3, 2 },
 					{ 4, 2 },
@@ -2447,7 +2447,7 @@ namespace hax {
 
 			}
 
-			const Charset tiny{
+			constexpr Charset tiny{
 				{ tinyCharPixel::exclamationPoint, PIXEL_COUNT(tinyCharPixel::exclamationPoint) },
 				{ tinyCharPixel::doubleQuotes, PIXEL_COUNT(tinyCharPixel::doubleQuotes) },
 				{ tinyCharPixel::poundSign, PIXEL_COUNT(tinyCharPixel::poundSign) },
