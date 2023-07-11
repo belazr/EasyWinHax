@@ -26,7 +26,7 @@ To create a program linking to this library, create an empty project in visual s
 Then go to the project property page and set C/C++->Code Generation->Runtime Libraray to "Multi-threaded (/MT)" and "Multi-threaded Debug (/MTd)" for Release and Debug configurations respectively.
 Under Linker->General->Additional Library Directories add the path of the EasyWinHax.lib file for each build configuration and platform.
 Under Linker->Input->Additional Dependencies add "EasyWinHax.lib".
-Finally include the headers "hax.h" for general functionallity, "dx9.h" for drawing inside a DirectX 9 hook and/or "ogl.h" for drawing inside an OpenGL hook and use the provided functions and classes as documented at their declaration in the header files.
+Finally include the headers "hax.h" and use the provided functions and classes as documented at their declaration in the header files.
 
 ## Functionallity
 Even though EasyWinHax was written to provide helpers for game hacking it can be helpful in interacting and manipulating any windows process.
@@ -66,14 +66,14 @@ The library provides an Engine class that can be used to draw geometric shapes w
 Currently there are implementations of the IDraw interface for DirectX 11 to draw from a Present hook, DirectX 9 to draw from an EndScene hook and for OpenGL 2 to draw from an wglSwapBuffers hook.
 See the "engine\Engine.h" and "engine\IDraw.h" headers for further documentation.
 #### DirectX 11 implementation
-The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It provides a font class that is used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" folder for further documentation.
+The library provides a DirectX 11 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
+It provides a font class that can be used for text drawing. See the headers in the "engine\dx11" and "engine\dx" folders for further documentation.
 #### DirectX 9 implementation
 The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It provides a font class that is used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" folder for further documentation.
+It provides a font class that can be used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" and "engine\dx" folders for further documentation.
 #### OpenGL 2 implementation
 The library provides an OpenGL 2 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It also provides a font class that is used for text drawing. See the headers in the "engine\ogl2" folder for further documentation.
+It also provides a font class that can be used for text drawing. See the headers in the "engine\ogl2" folder for further documentation.
 
 ## TODO
 - Better error handling for launch functions
