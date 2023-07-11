@@ -46,7 +46,7 @@ namespace hax{
 		// Parameters:
 		// 
 		// [in] pFont:
-		// Pointer to an appropriate Font object. ogl2::Font* for OpenGL 2 hooks and dx9::Font* for DirectX 9 hooks.
+		// Pointer to an appropriate Font object. dx::Font<dx1:Vertex>* for DirectX 11 hooks, dx::Font<dx9:Vertex>* for DirectX 9 hooks and ogl2::Font* for OpenGL 2 hooks.
 		//
 		// [in] origin:
 		// Coordinates of the bottom left corner of the first character of the text.
