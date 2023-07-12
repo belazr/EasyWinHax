@@ -10,10 +10,19 @@ namespace hax {
 		Draw::Draw() : _hGameContext{}, _hHookContext{}, _width{}, _height{}, _isInit{} {}
 
 
+		Draw::~Draw() {
+
+			if (this->_hHookContext) {
+				wglDeleteContext(this->_hHookContext);
+			}
+
+		}
+
+
 		void Draw::beginDraw(Engine* pEngine) {
 			const HDC hDc = reinterpret_cast<HDC>(pEngine->pHookArg);
 
-			if (!this->_hGameContext || !this->_hHookContext) {
+			if (!this->_isInit) {
 				this->_hGameContext = wglGetCurrentContext();
 				this->_hHookContext = wglCreateContext(hDc);
 				
