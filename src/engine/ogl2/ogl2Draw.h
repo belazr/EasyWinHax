@@ -22,6 +22,8 @@ namespace hax {
 		public:
 			Draw();
 
+			~Draw();
+
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//
 			// Parameters:
