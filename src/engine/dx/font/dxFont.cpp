@@ -41,7 +41,7 @@ namespace hax {
 			return this->pCharset->height;
 		}
 
-		// Explicit instantiation to get a compilation in a static library
+		// explicit instantiation to get a compilation in a static library
 		template class Font<dx9::Vertex>;
 		template class Font<dx11::Vertex>;
 

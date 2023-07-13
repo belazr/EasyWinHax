@@ -12,8 +12,7 @@
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 #define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
 
-typedef struct _UNICODE_STRING
-{
+typedef struct _UNICODE_STRING {
     USHORT Length;
     USHORT MaximumLength;
     PWSTR Buffer;
