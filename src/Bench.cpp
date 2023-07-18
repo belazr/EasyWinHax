@@ -1,12 +1,10 @@
 #include "Bench.h"
-#include <omp.h>
+#include <chrono>
 #include <iostream>
 
 namespace hax {
 	
-	Bench::Bench(const char* label, size_t runs):
-		_label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _counter{}
-	{
+	Bench::Bench(const char* label, size_t runs): _label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _counter{} {
 		this->_durations = new double[this->_runs];
 	}
 
@@ -17,12 +15,12 @@ namespace hax {
 
 
 	void Bench::start() {
-		this->_startTime = omp_get_wtime();
+		this->_startTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	}
 
 
 	void Bench::end() {
-		this->_endTime = omp_get_wtime();
+		this->_endTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 		this->_durations[_counter] = this->_endTime - this->_startTime;
 		this->_counter++;
 	}
