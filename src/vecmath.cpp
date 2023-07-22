@@ -10,7 +10,7 @@ namespace hax {
 
 			const float aTan = atanf(diff.z / magnitude(diff2d));
 
-			return TO_DEG(aTan);
+			return radToDeg(aTan);
 		}
 
 
@@ -20,7 +20,7 @@ namespace hax {
 			// connection vector in xy plane
 			const Vector2 diffXY = subtract(target2d, origin2d);
 
-			float aTanDeg = TO_DEG(atanf(diffXY.y / diffXY.x));
+			float aTanDeg = radToDeg(atanf(diffXY.y / diffXY.x));
 
 			// adjustment for quadrants
 			if (diffXY.x < 0.f) {
@@ -39,7 +39,7 @@ namespace hax {
 
 
 		Vector3 shiftByAngle(Vector3 origin, float pitch, float yaw, float distance) {
-			const Vector3 factors{ cosf(TO_RAD(yaw)), sinf(TO_RAD(yaw)), sinf(TO_RAD(pitch)) };
+			const Vector3 factors{ cosf(degToRad(yaw)), sinf(degToRad(yaw)), sinf(degToRad(pitch)) };
 			const Vector3 shifts = multiply(factors, distance);
 
 			return add(origin, shifts);
