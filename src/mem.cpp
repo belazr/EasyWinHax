@@ -11,10 +11,7 @@
 #define X86_JUMP_SIZE 5
 #ifdef _WIN64
 // ASM:
-// movabs r10,0x00000000
-// jmp r10
-#define X64_JUMP1 0x49, 0xBA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0xFF, 0xE2
-#define X64_JUMP_SIZE1 13
+// jmp QWORD PTR[rip + 0x0000000000000000]
 #define X64_JUMP 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 #define X64_JUMP_SIZE 14
 
@@ -220,7 +217,7 @@ namespace hax {
 
 				BYTE jump[X64_JUMP_SIZE]{ X64_JUMP };
 
-				// copies the jump offset to after the movabs r10 op code in the stack buffer
+				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
 				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return nullptr;
@@ -502,7 +499,7 @@ namespace hax {
 
 				BYTE jump[X64_JUMP_SIZE]{ X64_JUMP };
 
-				// copies the jump offset to after the movabs r10 op code in the stack buffer
+				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
 				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
 
 				if (!patch(origin, jump, sizeof(jump))) return nullptr;
