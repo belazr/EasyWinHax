@@ -3,10 +3,7 @@
 #include "mem.h"
 #include <stdint.h>
 
-// how long to wait for return value of launched function in milliseconds
-#define LAUNCH_TIMEOUT 5000
-#define PAGE_SIZE 0x1000
-#define LODWORD(qword) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(qword)))
+#define LOW_DWORD(qword) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(qword)))
 
 #define LAUNCH_DATA_X64_SPACE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 #define LAUNCH_DATA_X86_SPACE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -14,6 +11,9 @@
 namespace hax {
 
 	namespace launch {
+		// how long to wait for return value of launched function in milliseconds
+		constexpr DWORD LAUNCH_TIMEOUT = 5000;
+		constexpr SIZE_T PAGE_SIZE = 0x1000;
 
 		typedef struct HookData {
 			DWORD processId;
@@ -398,14 +398,14 @@ namespace hax {
 
 				const ptrdiff_t launchDataOffset = sizeof(hijackShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hijackShell + launchDataOffset);
-				pLaunchData->pArg = LODWORD(pArg);
-				pLaunchData->pFunc = LODWORD(pFunc);
+				pLaunchData->pArg = LOW_DWORD(pArg);
+				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				const uint32_t oldEip = wow64Context.Eip;
 				*reinterpret_cast<uint32_t*>(hijackShell + 0x01) = oldEip;
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
-				*reinterpret_cast<uint32_t*>(hijackShell + 0x0A) = LODWORD(pLaunchDataEx);
+				*reinterpret_cast<uint32_t*>(hijackShell + 0x0A) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, hijackShell, sizeof(hijackShell), nullptr)) {
 					ResumeThread(hThread);
@@ -413,7 +413,7 @@ namespace hax {
 					return false;
 				}
 
-				wow64Context.Eip = LODWORD(pShellCode);
+				wow64Context.Eip = LOW_DWORD(pShellCode);
 
 				if (!Wow64SetThreadContext(hThread, &wow64Context)) {
 					ResumeThread(hThread);
@@ -530,11 +530,11 @@ namespace hax {
 			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
-				pLaunchData->pArg = LODWORD(pArg);
-				pLaunchData->pFunc = LODWORD(pFunc);
+				pLaunchData->pArg = LOW_DWORD(pArg);
+				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
-				*reinterpret_cast<uint32_t*>(hookBeginPaintShell + 0x04) = LODWORD(pLaunchDataEx);
+				*reinterpret_cast<uint32_t*>(hookBeginPaintShell + 0x04) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, hookBeginPaintShell, sizeof(hookBeginPaintShell), nullptr)) return false;
 
@@ -599,8 +599,8 @@ namespace hax {
 			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
-				pLaunchData->pArg = LODWORD(pArg);
-				pLaunchData->pFunc = LODWORD(pFunc);
+				pLaunchData->pArg = LOW_DWORD(pArg);
+				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				if (!WriteProcessMemory(hProc, pShellCode, queueUserApcShell, sizeof(queueUserApcShell), nullptr)) return false;
 

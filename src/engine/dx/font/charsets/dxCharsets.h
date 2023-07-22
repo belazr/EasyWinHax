@@ -7,9 +7,7 @@
 namespace hax {
 
 	namespace dx {
-		// Gets the count of pixels in a pixel array of a character
-		#define PIXEL_COUNT(charpixels) (sizeof(charpixels) / sizeof(Vector2))
-
+		
 		// Holds pixel coordinates and size in pixels of a single character.
 		// Only monochrome characters are supported.
 		typedef struct Fontchar {

@@ -3,11 +3,35 @@
 
 // Defines low abstraction vector structures and low overhead functions to do calculations on them needed for drawing in three dimensional space.
 
-#define PI 3.1415926535f
-#define TO_RAD(x) ((x) * 0.01745329f)
-#define TO_DEG(x) ((x) * 57.29578f)
-
 namespace hax {
+
+	constexpr float PI = 3.1415926535f;
+
+	// Converts degrees to radians.
+	//
+	// Parameters:
+	//
+	// [in] degrees:
+	// Degrees to convert to radians.
+	// 
+	// Return:
+	// Radians converted from degrees.
+	constexpr float degToRad(float degrees) {
+		return degrees * 0.01745329f;
+	}
+
+	// Converts radians to degrees.
+	//
+	// Parameters:
+	//
+	// [in] radians:
+	// Radians to convert to degrees.
+	// 
+	// Return:
+	// degrees converted from radians.
+	constexpr float radToDeg(float radians) {
+		return radians * 57.29578f;
+	}
 
 	typedef struct Vector2 {
 		float x, y;
@@ -35,7 +59,7 @@ namespace hax {
 		// 
 		// Return:
 		// Sum.
-		inline Vector2 add(Vector2 sum1, Vector2 sum2) {
+		constexpr Vector2 add(Vector2 sum1, Vector2 sum2) {
 
 			return { sum1.x + sum2.x, sum1.y + sum2.y };
 		}
@@ -52,7 +76,7 @@ namespace hax {
 		// 
 		// Return:
 		// Difference.
-		inline Vector2 subtract(Vector2 min, Vector2 sub) {
+		constexpr Vector2 subtract(Vector2 min, Vector2 sub) {
 
 			return { min.x - sub.x, min.y - sub.y };
 		}
@@ -69,7 +93,7 @@ namespace hax {
 		// 
 		// Return:
 		// Product.
-		inline Vector2 multiply(Vector2 fac, float sFac) {
+		constexpr Vector2 multiply(Vector2 fac, float sFac) {
 
 			return { fac.x * sFac, fac.y * sFac };
 		}
@@ -86,7 +110,7 @@ namespace hax {
 		// 
 		// Return:
 		// Fraction.
-		inline Vector2 divide(Vector2 divd, float sDivs) {
+		constexpr Vector2 divide(Vector2 divd, float sDivs) {
 
 			return { divd.x / sDivs, divd.y / sDivs };;
 		}
@@ -103,7 +127,7 @@ namespace hax {
 		// 
 		// Return:
 		// Dot product.
-		inline float dotProd(Vector2 fac1, Vector2 fac2) {
+		constexpr float dotProd(Vector2 fac1, Vector2 fac2) {
 
 			return (fac1.x * fac2.x + fac1.y * fac2.y);
 		}
@@ -134,7 +158,7 @@ namespace hax {
 		// 
 		// Return:
 		// Sum.
-		inline Vector3 add(Vector3 sum1, Vector3 sum2) {
+		constexpr Vector3 add(Vector3 sum1, Vector3 sum2) {
 
 			return { sum1.x + sum2.x, sum1.y + sum2.y, sum1.z + sum2.z };
 		}
@@ -151,7 +175,7 @@ namespace hax {
 		// 
 		// Return:
 		// Difference.
-		inline Vector3 subtract(Vector3 min, Vector3 sub) {
+		constexpr Vector3 subtract(Vector3 min, Vector3 sub) {
 
 			return { min.x - sub.x, min.y - sub.y, min.z - sub.z };
 		}
@@ -168,7 +192,7 @@ namespace hax {
 		// 
 		// Return:
 		// Product.
-		inline Vector3 multiply(Vector3 fac, float sFac) {
+		constexpr Vector3 multiply(Vector3 fac, float sFac) {
 
 			return { fac.x * sFac, fac.y * sFac, fac.z * sFac };
 		}
@@ -185,7 +209,7 @@ namespace hax {
 		// 
 		// Return:
 		// Fraction.
-		inline Vector3 divide(Vector3 divd, float sDivs) {
+		constexpr Vector3 divide(Vector3 divd, float sDivs) {
 
 			return { divd.x / sDivs, divd.y / sDivs, divd.z / sDivs };;
 		}
@@ -203,7 +227,7 @@ namespace hax {
 		// 
 		// Return:
 		// Dot product.
-		inline float dotProd(Vector3 fac1, Vector3 fac2) {
+		constexpr float dotProd(Vector3 fac1, Vector3 fac2) {
 
 			return (fac1.x * fac2.x + fac1.y * fac2.y + fac1.z * fac2.z);
 		}
