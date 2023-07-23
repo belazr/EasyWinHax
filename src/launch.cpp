@@ -3,10 +3,7 @@
 #include "mem.h"
 #include <stdint.h>
 
-#define LOW_DWORD(qword) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(qword)))
-
-#define LAUNCH_DATA_X64_SPACE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-#define LAUNCH_DATA_X86_SPACE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+#define LOW_DWORD(ptr) (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(ptr)))
 
 namespace hax {
 
@@ -381,7 +378,7 @@ namespace hax {
 			// mov    BYTE PTR [ecx+0xc], 0x1		set pLaunchData->flag to one
 			// pop    ecx							restore register
 			// ret									return to old eip
-			static BYTE hijackShell[]{ 0x68, 0x00, 0x00, 0x00, 0x00, 0x51, 0x50, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x41, 0x04, 0x51, 0xFF, 0x31, 0xFF, 0xD0, 0x59, 0x89, 0x41, 0x08, 0x9D, 0x5A, 0x58, 0xC6, 0x41, 0x0C, 0x01, 0x59, 0xC3, LAUNCH_DATA_X86_SPACE };
+			static constexpr BYTE hijackShell[]{ 0x68, 0x00, 0x00, 0x00, 0x00, 0x51, 0x50, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x41, 0x04, 0x51, 0xFF, 0x31, 0xFF, 0xD0, 0x59, 0x89, 0x41, 0x08, 0x9D, 0x5A, 0x58, 0xC6, 0x41, 0x0C, 0x01, 0x59, 0xC3 };
 
 			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
@@ -396,18 +393,21 @@ namespace hax {
 					return false;
 				}
 
-				const ptrdiff_t launchDataOffset = sizeof(hijackShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hijackShell + launchDataOffset);
+				BYTE localShell[sizeof(hijackShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), hijackShell, sizeof(hijackShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				const uint32_t oldEip = wow64Context.Eip;
-				*reinterpret_cast<uint32_t*>(hijackShell + 0x01) = oldEip;
+				*reinterpret_cast<uint32_t*>(localShell + 0x01) = oldEip;
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
-				*reinterpret_cast<uint32_t*>(hijackShell + 0x0A) = LOW_DWORD(pLaunchDataEx);
+				*reinterpret_cast<uint32_t*>(localShell + 0x0A) = LOW_DWORD(pLaunchDataEx);
 
-				if (!WriteProcessMemory(hProc, pShellCode, hijackShell, sizeof(hijackShell), nullptr)) {
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					ResumeThread(hThread);
 
 					return false;
@@ -474,19 +474,22 @@ namespace hax {
 			// call   pCallNextHook
 			// pop    ebp
 			// ret    0xc
-			static BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00, LAUNCH_DATA_X86_SPACE };
+			static constexpr BYTE windowsHookShell[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00 };
 
 			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
+				BYTE localShell[sizeof(windowsHookShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), windowsHookShell, sizeof(windowsHookShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint32_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint32_t>(pFunc);
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
-				*reinterpret_cast<uint32_t*>(windowsHookShell + 0x08) = reinterpret_cast<uint32_t>(pLaunchDataEx);
-				*reinterpret_cast<uint32_t*>(windowsHookShell + 0x2C) = reinterpret_cast<uint32_t>(pHookData->pCallNextHookEx) - (reinterpret_cast<uint32_t>(pShellCode) + 0x30);
+				*reinterpret_cast<uint32_t*>(localShell + 0x08) = reinterpret_cast<uint32_t>(pLaunchDataEx);
+				*reinterpret_cast<uint32_t*>(localShell + 0x2C) = reinterpret_cast<uint32_t>(pHookData->pCallNextHookEx) - (reinterpret_cast<uint32_t>(pShellCode) + 0x30);
 
-				if (!WriteProcessMemory(hProc, pShellCode, windowsHookShell, sizeof(windowsHookShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(pHookData));
 
@@ -525,18 +528,21 @@ namespace hax {
 			// pop    ebx							restore register
 			// mov    eax, pGateway					jump to gateway to execute NtUserBeginPaint
 			// jmp    eax
-			static BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X86_SPACE };
+			static constexpr BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
 
 			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
+				BYTE localShell[sizeof(hookBeginPaintShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), hookBeginPaintShell, sizeof(hookBeginPaintShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
-				*reinterpret_cast<uint32_t*>(hookBeginPaintShell + 0x04) = LOW_DWORD(pLaunchDataEx);
+				*reinterpret_cast<uint32_t*>(localShell + 0x04) = LOW_DWORD(pLaunchDataEx);
 
-				if (!WriteProcessMemory(hProc, pShellCode, hookBeginPaintShell, sizeof(hookBeginPaintShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				const size_t lenStolen = 10;
 				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x1A, lenStolen);
@@ -594,15 +600,18 @@ namespace hax {
 			// mov    BYTE PTR[ecx + 0xc], 0x1		set pLaunchData->flag to one
 			// pop    ebp							cleanup stack frame
 			// ret    0x4
-			static BYTE queueUserApcShell[]{ 0x55, 0x89, 0xE5, 0x8B, 0x4D, 0x08, 0x51, 0xFF, 0x31, 0xFF, 0x51, 0x04, 0x59, 0x89, 0x41, 0x08, 0xC6, 0x41, 0x0C, 0x01, 0x5D, 0xC2, 0x04, 0x00, LAUNCH_DATA_X86_SPACE };
+			static constexpr BYTE queueUserApcShell[]{ 0x55, 0x89, 0xE5, 0x8B, 0x4D, 0x08, 0x51, 0xFF, 0x31, 0xFF, 0x51, 0x04, 0x59, 0x89, 0x41, 0x08, 0xC6, 0x41, 0x0C, 0x01, 0x5D, 0xC2, 0x04, 0x00 };
 
 			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
+				BYTE localShell[sizeof(queueUserApcShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), queueUserApcShell, sizeof(queueUserApcShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, queueUserApcShell, sizeof(queueUserApcShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				const HMODULE hNtdll = proc::in::getModuleHandle("ntdll.dll");
 
@@ -649,17 +658,20 @@ namespace hax {
 			// mov QWORD PTR[rcx + 0x10], rax		write return value to &pLaunchData->pRet
 			// xor rax, rax
 			// ret
-			static BYTE crtShell[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3, LAUNCH_DATA_X64_SPACE };
+			static constexpr BYTE crtShell[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3 };
 
 			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(crtShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(crtShell + launchDataOffset);
+				BYTE localShell[sizeof(crtShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), crtShell, sizeof(crtShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, crtShell, sizeof(crtShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + sizeof(crtShell) - sizeof(LaunchData));
+				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
 				HANDLE hThread = nullptr;
 
 				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
@@ -711,7 +723,7 @@ namespace hax {
 			// pop    rax
 			// mov    BYTE PTR[rip + 0x19], 0x1		set pLaunchData->flag to one
 			// ret
-			static BYTE hijackShell[]{ 0xFF, 0x35, 0x4F, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0x8B, 0x0D, 0x2C, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x05, 0x2D, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x89, 0x05, 0x24, 0x00, 0x00, 0x00, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x19, 0x00, 0x00, 0x00, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
+			static constexpr BYTE hijackShell[]{ 0xFF, 0x35, 0x4F, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0x8B, 0x0D, 0x2C, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x05, 0x2D, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x89, 0x05, 0x24, 0x00, 0x00, 0x00, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x19, 0x00, 0x00, 0x00, 0x01, 0xC3 };
 
 			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
@@ -726,8 +738,11 @@ namespace hax {
 					return false;
 				}
 
-				const ptrdiff_t launchDataOffset = sizeof(hijackShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hijackShell + launchDataOffset);
+				BYTE localShell[sizeof(hijackShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), hijackShell, sizeof(hijackShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
@@ -736,7 +751,7 @@ namespace hax {
 				// it is used before it is overwritten by the return value
 				pLaunchData->pRet = oldRip;
 
-				if (!WriteProcessMemory(hProc, pShellCode, hijackShell, sizeof(hijackShell), nullptr)) {
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					ResumeThread(hThread);
 
 					return false;
@@ -806,19 +821,22 @@ namespace hax {
 			// pop    rsp
 			// pop    rbp
 			// ret
-			static BYTE windowsHookShell[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3, LAUNCH_DATA_X64_SPACE };
+			static constexpr BYTE windowsHookShell[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3 };
 
 			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(windowsHookShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(windowsHookShell + launchDataOffset);
+				BYTE localShell[sizeof(windowsHookShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), windowsHookShell, sizeof(windowsHookShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				*reinterpret_cast<uint64_t*>(windowsHookShell + 0x3A) = reinterpret_cast<uint64_t>(pHookData->pCallNextHookEx);
+				*reinterpret_cast<uint64_t*>(localShell + 0x3A) = reinterpret_cast<uint64_t>(pHookData->pCallNextHookEx);
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
 
-				if (!WriteProcessMemory(hProc, pShellCode, windowsHookShell, sizeof(windowsHookShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(pHookData));
 
@@ -858,15 +876,18 @@ namespace hax {
 			// pop    rcx
 			// movabs rax, pGateway					jump to gateway to execute NtUserBeginPaint
 			// jmp    rax
-			static BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, LAUNCH_DATA_X64_SPACE };
+			static constexpr BYTE hookBeginPaintShell[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
 
 			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(hookBeginPaintShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(hookBeginPaintShell + launchDataOffset);
+				BYTE localShell[sizeof(hookBeginPaintShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), hookBeginPaintShell, sizeof(hookBeginPaintShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, hookBeginPaintShell, sizeof(hookBeginPaintShell), nullptr)) {
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
 					return false;
@@ -927,15 +948,18 @@ namespace hax {
 			// mov    QWORD PTR[rcx + 0x10], rax	write return value to pLaunchData->pRet
 			// mov    BYTE PTR[rcx + 0x18], 0x1		set pLaunchData->flag to one
 			// ret
-			static BYTE queueUserApcShell[]{ 0x51, 0x48, 0x8B, 0x41, 0x08, 0x48, 0x8B, 0x09, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0xC6, 0x41, 0x18, 0x01, 0xC3, LAUNCH_DATA_X64_SPACE };
+			static constexpr BYTE queueUserApcShell[]{ 0x51, 0x48, 0x8B, 0x41, 0x08, 0x48, 0x8B, 0x09, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0xC6, 0x41, 0x18, 0x01, 0xC3 };
 
 			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				const ptrdiff_t launchDataOffset = sizeof(queueUserApcShell) - sizeof(LaunchData);
-				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(queueUserApcShell + launchDataOffset);
+				BYTE localShell[sizeof(queueUserApcShell) + sizeof(LaunchData)]{};
+				memcpy_s(localShell, sizeof(localShell), queueUserApcShell, sizeof(queueUserApcShell));
+				
+				const ptrdiff_t launchDataOffset = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + launchDataOffset);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, queueUserApcShell, sizeof(queueUserApcShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset);
 
