@@ -46,7 +46,7 @@ namespace hax {
 		}
 
 
-		static inline bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight);
+		static bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight);
 
 		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float windowWidth, float windowHeight) {
 			// matrix-vector product, multiplying world coordinates by projection matrix (column-major) = clip coordinates
@@ -78,7 +78,7 @@ namespace hax {
 		}
 
 
-		static inline bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight) {
+		static bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight) {
 			// perspective division -> normalized device coordinates
 			const Vector3 clip3d{ clip->x, clip->y, clip->z };
 			const Vector3 ndc = divide(clip3d, clip->w);
