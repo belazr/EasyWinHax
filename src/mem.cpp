@@ -2,21 +2,6 @@
 #include "mem.h"
 #include <stdint.h>
 
-// ASM:
-// nop
-#define NOP 0x90
-// ASM:
-// jmp 0x00000000
-#define X86_JUMP 0xE9, 0x00, 0x00, 0x00, 0x00
-#define X86_JUMP_SIZE 5
-#ifdef _WIN64
-// ASM:
-// jmp QWORD PTR[rip + 0x0000000000000000]
-#define X64_JUMP 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-#define X64_JUMP_SIZE 14
-
-#endif // _WIN64
-
 namespace hax {
 
 	namespace mem {
@@ -33,7 +18,19 @@ namespace hax {
 		// gets the range of address that is reachable by a relative jump
 		static void getNearAddressRange(const BYTE* pBase, AddressRange* pAddrRange);
 
+		// ASM:
+		// jmp QWORD PTR[rip + 0x0000000000000000]
+		constexpr BYTE X64_JUMP[]{ 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 		#endif // _WIN64
+
+		// ASM:
+		// nop
+		constexpr BYTE NOP{ 0x90 };
+
+		// ASM:
+		// jmp 0x00000000
+		constexpr BYTE X86_JUMP[]{ 0xE9, 0x00, 0x00, 0x00, 0x00 };
 
 		namespace ex {
 
@@ -47,7 +44,7 @@ namespace hax {
 				if (isWow64) {
 					// allocate enough memory for the relative jump (gateway to origin)
 					// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
-					gateway = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, size + X86_JUMP_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+					gateway = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 					targetPtrSize = sizeof(uint32_t);
 				}
 				else {
@@ -56,7 +53,7 @@ namespace hax {
 					#ifdef _WIN64
 
 					// allocate enough memory for the relative jump (gateway to origin) and the absolute relay jump (relay to detour) near the origin (reachable by relative jump)
-					gateway = virtualAllocNear(hProc, origin, size + X86_JUMP_SIZE + X64_JUMP_SIZE);
+					gateway = virtualAllocNear(hProc, origin, size + sizeof(X86_JUMP) + sizeof(X64_JUMP));
 					targetPtrSize = sizeof(uint64_t);
 
 					#endif // _WIN64
@@ -96,7 +93,7 @@ namespace hax {
 				delete[] stolen;
 
 				// relative jump from the gateway to the origin
-				if (!relJmp(hProc, gateway + size, origin + X86_JUMP_SIZE, X86_JUMP_SIZE)) {
+				if (!relJmp(hProc, gateway + size, origin + sizeof(X86_JUMP), sizeof(X86_JUMP))) {
 					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -119,10 +116,10 @@ namespace hax {
 
 					// in x64 targets an absolute jump is needed to reliably jump from the origin to the detour
 					// instead of patching the origin with a longer absolute jump, a relay is used that can be reached by a relative jump
-					BYTE* const relay = gateway + size + X86_JUMP_SIZE;
+					BYTE* const relay = gateway + size + sizeof(X86_JUMP);
 
 					// absolute jump from the relay to the detour function
-					if (!absJumpX64(hProc, relay, detour, X64_JUMP_SIZE)) {
+					if (!absJumpX64(hProc, relay, detour, sizeof(X64_JUMP))) {
 						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
@@ -192,12 +189,15 @@ namespace hax {
 
 				#endif // _WIN64
 
-				if (size < X86_JUMP_SIZE) return nullptr;
+				if (size < sizeof(X86_JUMP)) return nullptr;
 
 				if (!nop(hProc, origin, size)) return nullptr;
 
-				BYTE jump[X86_JUMP_SIZE]{ X86_JUMP };
-				const uint32_t offset = static_cast<uint32_t>(detour - origin - X86_JUMP_SIZE);
+				BYTE jump[sizeof(X86_JUMP)]{};
+
+				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
+				
+				const uint32_t offset = static_cast<uint32_t>(detour - origin - sizeof(jump));
 
 				// copies the jump offset to after the relative jump op code in the stack buffer
 				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
@@ -211,11 +211,13 @@ namespace hax {
 			#ifdef _WIN64
 
 			BYTE* absJumpX64(HANDLE hProc, BYTE* origin, const BYTE* detour, size_t size) {
-				if (size < X64_JUMP_SIZE) return nullptr;
+				if (size < sizeof(X64_JUMP)) return nullptr;
 
 				if (!nop(hProc, origin, size)) return nullptr;
 
-				BYTE jump[X64_JUMP_SIZE]{ X64_JUMP };
+				BYTE jump[sizeof(X64_JUMP)]{};
+
+				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return nullptr;
 
 				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
 				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
@@ -364,13 +366,13 @@ namespace hax {
 				#ifdef _WIN64
 
 				// allocate enough memory for the relative jump (gateway to origin) and the absolute relay jump (relay to detour) near the origin (reachable by relative jump)
-				BYTE* const gateway = virtualAllocNear(origin, size + X86_JUMP_SIZE + X64_JUMP_SIZE);
+				BYTE* const gateway = virtualAllocNear(origin, size + sizeof(X86_JUMP) + sizeof(X64_JUMP));
 
 				#else
 
 				// allocate enough memory for the relative jump (gateway to origin)
 				// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
-				BYTE* gateway = static_cast<BYTE*>(VirtualAlloc(nullptr, size + X86_JUMP_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+				BYTE* gateway = static_cast<BYTE*>(VirtualAlloc(nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 				#endif
 
@@ -384,7 +386,7 @@ namespace hax {
 				}
 
 				// relative jump from the gateway to the origin
-				if (!relJmp(gateway + size, origin + X86_JUMP_SIZE, X86_JUMP_SIZE)) {
+				if (!relJmp(gateway + size, origin + sizeof(X86_JUMP), sizeof(X86_JUMP))) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -394,10 +396,10 @@ namespace hax {
 
 				// in x64 targets an absolute jump is needed to reliably jump from the origin to the detour
 				// instead of patching the origin with a longer absolute jump, a relay is used that can be reached by a relative jump
-				BYTE* const relay = gateway + size + X86_JUMP_SIZE;
+				BYTE* const relay = gateway + size + sizeof(X86_JUMP);
 
 				// absolute jump from the relay to the detour function
-				if (!absJumpX64(relay, detour, X64_JUMP_SIZE)) {
+				if (!absJumpX64(relay, detour, sizeof(X64_JUMP))) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -474,12 +476,15 @@ namespace hax {
 
 				#endif // _WIN64
 
-				if (size < X86_JUMP_SIZE) return nullptr;
+				if (size < sizeof(X86_JUMP)) return nullptr;
 
 				if (!nop(origin, size)) return nullptr;
 
-				BYTE jump[X86_JUMP_SIZE]{ X86_JUMP };
-				const uint32_t offset = static_cast<uint32_t>(detour - origin - X86_JUMP_SIZE);
+				BYTE jump[sizeof(X86_JUMP)]{};
+
+				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
+
+				const uint32_t offset = static_cast<uint32_t>(detour - origin - sizeof(jump));
 
 				// copies the jump offset after the relative jump op code in the stack buffer
 				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
@@ -493,11 +498,13 @@ namespace hax {
 			#ifdef _WIN64
 
 			BYTE* absJumpX64(BYTE* origin, const BYTE* detour, size_t size) {
-				if (size < X64_JUMP_SIZE) return nullptr;
+				if (size < sizeof(X64_JUMP)) return nullptr;
 
 				if (!nop(origin, size)) return nullptr;
 
-				BYTE jump[X64_JUMP_SIZE]{ X64_JUMP };
+				BYTE jump[sizeof(X64_JUMP)]{};
+
+				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return nullptr;
 
 				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
 				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
