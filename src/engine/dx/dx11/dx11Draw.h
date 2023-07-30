@@ -96,7 +96,7 @@ namespace hax {
 			bool compileShaders();
 			bool createConstantBuffer();
 			void drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color);
-			bool setupVertexBuffer(const Vertex* data, UINT count);
+			bool setupVertexBuffer(const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 		};
 
 	}
