@@ -122,18 +122,8 @@ namespace hax {
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
 
 			if (!this->_isInit) return;
-
-			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
-
-			if (!data) return;
-
-			for (UINT i = 0; i < count; i++) {
-				data[i] = Vertex{ corners[i], color };
-			}
 			
-			if (!this->setupVertexBuffer(data, count)) return;
-
-			delete[] data;
+			if (!this->setupVertexBuffer(corners, count, color)) return;
 
 			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 			this->_pContext->Draw(count, 0);
@@ -314,11 +304,7 @@ namespace hax {
 			
 			if (!this->_isInit || !pDx11Font || index >= dx::CharIndex::MAX_CHAR || !pDx11Font->charVerticesArrays[index]) return;
 
-			for (UINT i = 0; i < pChar->pixelCount; i++) {
-				pDx11Font->charVerticesArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
-			}
-
-			if (!setupVertexBuffer(pDx11Font->charVerticesArrays[index], pChar->pixelCount)) return;
+			if (!setupVertexBuffer(pChar->pixel, pChar->pixelCount, color, *pos)) return;
 
 			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			this->_pContext->Draw(pChar->pixelCount, 0);	
@@ -326,7 +312,7 @@ namespace hax {
 			return; 
 		}
 
-		bool Draw::setupVertexBuffer(const Vertex* data, UINT count) {
+		bool Draw::setupVertexBuffer(const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
 			
 			if (!this->_pVertexBuffer || this->_vertexBufferSize < count) {
 
@@ -357,20 +343,23 @@ namespace hax {
 				D3D11_MAPPED_SUBRESOURCE subresource{};
 				const HRESULT hResult = this->_pContext->Map(this->_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
 
-				if (hResult != S_OK || !this->_pVertexBuffer) {
+				if (hResult != S_OK) {
 					this->_vertexBufferSize = 0;
 
 					return false;
 				}
 
-				memcpy_s(subresource.pData, this->_vertexBufferSize, data, count * sizeof(Vertex));
+				for (UINT i = 0; i < count; i++) {
+					Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
+					memcpy(&(reinterpret_cast<Vertex*>(subresource.pData)[i]), &curVertex, sizeof(Vertex));
+				}
+
 				this->_pContext->Unmap(this->_pVertexBuffer, 0);
 			}
 
 			constexpr UINT STRIDE = sizeof(Vertex);
-			constexpr UINT OFFSET = 0;
 
-			this->_pContext->IASetVertexBuffers(0, 1, &this->_pVertexBuffer, &STRIDE, &OFFSET);
+			this->_pContext->IASetVertexBuffers(0, 1, &this->_pVertexBuffer, &STRIDE, nullptr);
 
 			return true;
 		}
