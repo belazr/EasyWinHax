@@ -39,7 +39,7 @@ namespace hax{
 		// 
 		// [in]
 		// Color of the triangle strip.
-		virtual void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const = 0;
+		virtual void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) = 0;
 
 		// Draws text to the screen. Should be called by an Engine object.
 		//
@@ -56,7 +56,7 @@ namespace hax{
 		//
 		// [in] color:
 		// Color of the text.
-		virtual void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const = 0;
+		virtual void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
 	};
 
 }

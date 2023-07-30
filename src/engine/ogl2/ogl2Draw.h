@@ -50,7 +50,7 @@ namespace hax {
 			// 
 			// [in]
 			// Color of the triangle strip.
-			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const override;
+			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) override;
 
 			// Draws text to the screen. Should be called by an Engine object.
 			//
@@ -67,7 +67,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
+			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 		};
 
 	}
