@@ -304,7 +304,7 @@ namespace hax {
 			
 			if (!this->_isInit) return;
 
-			if (!setupVertexBuffer(pChar->pixel, pChar->pixelCount, color, *pos)) return;
+			if (!this->setupVertexBuffer(pChar->pixel, pChar->pixelCount, color, *pos)) return;
 
 			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			this->_pContext->Draw(pChar->pixelCount, 0);	
@@ -313,8 +313,9 @@ namespace hax {
 		}
 
 		bool Draw::setupVertexBuffer(const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
+			const UINT bytesNeeded = count * sizeof(Vertex);
 			
-			if (!this->_pVertexBuffer || this->_vertexBufferSize < count) {
+			if (!this->_pVertexBuffer || this->_vertexBufferSize < bytesNeeded) {
 
 				if (this->_pVertexBuffer) {
 					this->_pVertexBuffer->Release();
@@ -322,7 +323,7 @@ namespace hax {
 
 				D3D11_BUFFER_DESC bufferDesc{};
 				bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-				bufferDesc.ByteWidth = count * sizeof(Vertex);
+				bufferDesc.ByteWidth = bytesNeeded;
 				bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
@@ -334,7 +335,7 @@ namespace hax {
 					return false;
 				}
 
-				this->_vertexBufferSize = bufferDesc.ByteWidth;
+				this->_vertexBufferSize = bytesNeeded;
 			}
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
