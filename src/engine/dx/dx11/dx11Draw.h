@@ -36,6 +36,7 @@ namespace hax {
 			ID3D11PixelShader* _pPixelShader;
 			ID3D11Buffer* _pConstantBuffer;
 			ID3D11Buffer* _pVertexBuffer;
+			
 			UINT _vertexBufferSize;
 
 			D3D11_VIEWPORT _viewport;
