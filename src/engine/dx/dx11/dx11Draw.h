@@ -35,6 +35,8 @@ namespace hax {
 			ID3D11InputLayout* _pVertexLayout;
 			ID3D11PixelShader* _pPixelShader;
 			ID3D11Buffer* _pConstantBuffer;
+			ID3D11Buffer* _pVertexBuffer;
+			UINT _vertexBufferSize;
 
 			D3D11_VIEWPORT _viewport;
 			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
@@ -71,7 +73,7 @@ namespace hax {
 			// 
 			// [in]
 			// Color of the triangle strip.
-			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const override;
+			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) override;
 
 			// Draws text to the screen. Should be called by an Engine object.
 			//
@@ -88,12 +90,13 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const override;
+			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
 			bool compileShaders();
-			bool createConstantBuffer(ID3D11Buffer** pConstantBuffer);
-			void drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
+			bool createConstantBuffer();
+			void drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color);
+			bool setupVertexBuffer(const Vertex* data, UINT count);
 		};
 
 	}

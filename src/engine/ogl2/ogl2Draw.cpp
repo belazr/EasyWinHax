@@ -64,7 +64,7 @@ namespace hax {
 			return;
 		}
 
-		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) const {
+		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
 			
 			if (!this->_isInit) return;
 			
@@ -81,7 +81,7 @@ namespace hax {
         }
 
 
-		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
+		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
 			if (!this->_isInit) return;
 
