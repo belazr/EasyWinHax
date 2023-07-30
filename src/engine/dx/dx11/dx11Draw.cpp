@@ -151,7 +151,7 @@ namespace hax {
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
 					const Vector2 curPos{ pos->x + (pDx11Font->pCharset->width + 1) * i, pos->y - pDx11Font->pCharset->height };
-					this->drawFontchar(pDx11Font, pCurChar, &curPos, index, color);
+					this->drawFontchar(pCurChar, &curPos, color);
 				}
 
 			}
@@ -160,40 +160,40 @@ namespace hax {
 		}
 
 
-		constexpr const char* shader = R"(
-			cbuffer ConstantBuffer : register(b0)
-			{
-				matrix projection;
+		constexpr const char shader[]{ R"(
+			cbuffer vertexBuffer : register(b0) {
+				float4x4 projectionMatrix;
 			}
 
-			struct PSI
-			{
-				float4 pos : SV_POSITION;
-				float4 color : COLOR;
+			struct VSI {
+			    float2 pos : POSITION;
+				float4 col : COLOR0;
 			};
 
-			PSI VS( float4 pos : POSITION, float4 color : COLOR )
-			{
-				PSI psi;
-				psi.pos = mul( projection, pos );
-				psi.color = color;
-				return psi;
+			struct PSI {
+				float4 pos : SV_POSITION;
+				float4 col : COLOR0;
+			};
+
+			PSI mainVS(VSI input) {
+				PSI output;
+				output.pos = mul(projectionMatrix, float4(input.pos.xy, 0.f, 1.f));
+				output.col = input.col;
+				return output;
 			}
 
-			float4 PS(PSI psi) : SV_TARGET
-			{
-				return psi.color;
+			float4 mainPS(PSI input) : SV_TARGET {
+				return input.col;
 			}
-		)";
+		)" };
 
 		bool Draw::compileShaders() {
 			ID3D10Blob* pCompiledVertexShader = nullptr;
-			HRESULT hResult = D3DCompile(shader, strlen(shader), 0, nullptr, nullptr, "VS", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledVertexShader, nullptr);
+			HRESULT hResult = D3DCompile(shader, sizeof(shader), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledVertexShader, nullptr);
 
 			if (hResult != S_OK || !pCompiledVertexShader) return false;
 
 			hResult = this->_pDevice->CreateVertexShader(pCompiledVertexShader->GetBufferPointer(), pCompiledVertexShader->GetBufferSize(), nullptr, &this->_pVertexShader);
-
 
 			if (hResult != S_OK || !this->_pVertexShader) {
 				pCompiledVertexShader->Release();
@@ -202,8 +202,8 @@ namespace hax {
 			}
 
 			D3D11_INPUT_ELEMENT_DESC inputElementDesc[2]{
-				{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-				{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+				{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+				{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 			};
 
 			hResult = this->_pDevice->CreateInputLayout(inputElementDesc, sizeof(inputElementDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), pCompiledVertexShader->GetBufferPointer(), pCompiledVertexShader->GetBufferSize(), &this->_pVertexLayout);
@@ -213,7 +213,7 @@ namespace hax {
 			if (hResult != S_OK) return false;
 
 			ID3D10Blob* pCompiledPixelShader = nullptr;
-			hResult = D3DCompile(shader, strlen(shader), 0, nullptr, nullptr, "PS", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledPixelShader, nullptr);
+			hResult = D3DCompile(shader, sizeof(shader), 0, nullptr, nullptr, "mainPS", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledPixelShader, nullptr);
 
 			if (hResult != S_OK || !pCompiledPixelShader) return false;
 
@@ -300,9 +300,9 @@ namespace hax {
 			return FALSE;
 		}
 
-		void Draw::drawFontchar(dx::Font<Vertex>* pDx11Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) {
+		void Draw::drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color) {
 			
-			if (!this->_isInit || !pDx11Font || index >= dx::CharIndex::MAX_CHAR || !pDx11Font->charVerticesArrays[index]) return;
+			if (!this->_isInit) return;
 
 			if (!setupVertexBuffer(pChar->pixel, pChar->pixelCount, color, *pos)) return;
 
@@ -326,10 +326,7 @@ namespace hax {
 				bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-				D3D11_SUBRESOURCE_DATA subresourceData{};
-				subresourceData.pSysMem = data;
-
-				const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, &this->_pVertexBuffer);
+				const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pVertexBuffer);
 
 				if (hResult != S_OK || !this->_pVertexBuffer) {
 					this->_vertexBufferSize = 0;
@@ -339,27 +336,27 @@ namespace hax {
 
 				this->_vertexBufferSize = bufferDesc.ByteWidth;
 			}
-			else {
-				D3D11_MAPPED_SUBRESOURCE subresource{};
-				const HRESULT hResult = this->_pContext->Map(this->_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
 
-				if (hResult != S_OK) {
-					this->_vertexBufferSize = 0;
+			D3D11_MAPPED_SUBRESOURCE subresource{};
+			const HRESULT hResult = this->_pContext->Map(this->_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
 
-					return false;
-				}
+			if (hResult != S_OK) {
+				this->_vertexBufferSize = 0;
 
-				for (UINT i = 0; i < count; i++) {
-					Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
-					memcpy(&(reinterpret_cast<Vertex*>(subresource.pData)[i]), &curVertex, sizeof(Vertex));
-				}
-
-				this->_pContext->Unmap(this->_pVertexBuffer, 0);
+				return false;
 			}
 
-			constexpr UINT STRIDE = sizeof(Vertex);
+			for (UINT i = 0; i < count; i++) {
+				Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
+				memcpy(&(reinterpret_cast<Vertex*>(subresource.pData)[i]), &curVertex, sizeof(Vertex));
+			}
 
-			this->_pContext->IASetVertexBuffers(0, 1, &this->_pVertexBuffer, &STRIDE, nullptr);
+			this->_pContext->Unmap(this->_pVertexBuffer, 0);
+
+			constexpr UINT STRIDE = sizeof(Vertex);
+			constexpr UINT OFFSET = 0;
+
+			this->_pContext->IASetVertexBuffers(0, 1, &this->_pVertexBuffer, &STRIDE, &OFFSET);
 
 			return true;
 		}

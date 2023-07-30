@@ -121,7 +121,7 @@ namespace hax {
 			const float width;
 		}Charset;
 
-		inline CharIndex charToCharIndex(char c) {
+		constexpr CharIndex charToCharIndex(char c) {
 			CharIndex index = CharIndex::MAX_CHAR;
 			
 			switch (c) {
