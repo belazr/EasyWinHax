@@ -1,11 +1,11 @@
-#include "dxCharsets.h"
+#include "dxFonts.h"
 #include <stdlib.h>
 
 namespace hax {
 
 	namespace dx {
 
-		namespace charsets {
+		namespace fonts {
 
 			namespace tinyCharPixels {
 
@@ -2448,7 +2448,7 @@ namespace hax {
 
 			}
 
-			constexpr Charset tiny{
+			constexpr Font tiny{
 				{
 					{ tinyCharPixels::exclamationPoint, _countof(tinyCharPixels::exclamationPoint) },
 					{ tinyCharPixels::doubleQuotes, _countof(tinyCharPixels::doubleQuotes) },

@@ -1,5 +1,7 @@
 #include "dx9Draw.h"
+#include "dx9Vertex.h"
 #include "..\..\Engine.h"
+#include "..\..\..\Bench.h"
 
 namespace hax {
 
@@ -19,7 +21,7 @@ namespace hax {
 
 			HRESULT hResult = pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.hDeviceWindow, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &pDirect3D9Device);
 
-			if (hResult != S_OK) {
+			if (hResult != D3D_OK) {
 				pDirect3D9->Release();
 
 				return false;
@@ -39,9 +41,21 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _isInit{} {}
+		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _isInit {} {}
 
 
+		Draw::~Draw() {
+
+			if (this->_pointListBufferData.pBuffer) {
+				this->_pointListBufferData.pBuffer->Unlock();
+				this->_pointListBufferData.pBuffer->Release();
+			}
+
+		}
+
+
+		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZRHW | D3DFVF_DIFFUSE;
+		
 		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->_isInit) {
@@ -49,24 +63,37 @@ namespace hax {
 
 				if (!this->_pDevice) return;
 
+				if (!createVertexBufferData(&this->_pointListBufferData, 1000)) return;
+
 				this->_isInit = true;
 			}
 
 			D3DVIEWPORT9 viewport{};
-			HRESULT const res = _pDevice->GetViewport(&viewport);
+			HRESULT const res = this->_pDevice->GetViewport(&viewport);
 
-			if (res == S_OK) {
+			if (res == D3D_OK) {
 				pEngine->setWindowSize(viewport.Width, viewport.Height);
 			}
 
-			_pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
+
+			this->_pointListBufferData.pBuffer->Lock(0, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
 
 			return;
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) const { 
+		void Draw::endDraw(const Engine* pEngine) { 
 			UNREFERENCED_PARAMETER(pEngine);
+
+			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
+
+				if (this->_pDevice->SetStreamSource(0, this->_pointListBufferData.pBuffer, 0, sizeof(Vertex)) == D3D_OK) {
+					this->_pDevice->DrawPrimitive(D3DPT_POINTLIST, 0, this->_pointListBufferData.curOffset);
+					this->_pointListBufferData.curOffset = 0;
+				}
+
+			}
 			
 			return; 
 		}
@@ -75,13 +102,13 @@ namespace hax {
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
 
 			if (!this->_isInit) return;
-
+			
 			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
 
 			if (!data) return;
 
 			for (UINT i = 0; i < count; i++) {
-				data[i] = Vertex{ corners[i], color };
+				data[i] = { corners[i], color };
 			}
 
 			// triangle count is vertex count - 2
@@ -92,11 +119,11 @@ namespace hax {
 		}
 
 
-		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
 			if (!this->_isInit || !pFont) return;
 
-			dx::Font<Vertex>* const pDx9Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
+			const dx::Font* const pDxFont = reinterpret_cast<const dx::Font*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -106,12 +133,12 @@ namespace hax {
 				if (c == ' ') continue;
 				
 				const dx::CharIndex index = dx::charToCharIndex(c);
-				const dx::Fontchar * pCurChar = &pDx9Font->pCharset->chars[index];
+				const dx::Fontchar* pCurChar = &pDxFont->chars[index];
 
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pDx9Font->pCharset->width + 1) * i, pos->y - pDx9Font->pCharset->height };
-					this->drawFontchar(pDx9Font, pCurChar, &curPos, index, color);
+					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
+					this->drawFontchar(pCurChar, &curPos, color);
 				}
 
 			}
@@ -120,17 +147,77 @@ namespace hax {
 		}
 
 
-		void Draw::drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const {
+		void Draw::drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color) {
 
-			if (!this->_isInit || !pDx9Font || index >= dx::CharIndex::MAX_CHAR || !pDx9Font->charVerticesArrays[index]) return;
+			if (!this->_isInit) return;
 
-			for (unsigned int i = 0; i < pChar->pixelCount; i++) {
-				pDx9Font->charVerticesArrays[index][i] = Vertex{ pos->x + pChar->pixel[i].x, pos->y + pChar->pixel[i].y, color };
-			}
-
-			_pDevice->DrawPrimitiveUP(D3DPT_POINTLIST, pChar->pixelCount, pDx9Font->charVerticesArrays[index], sizeof(Vertex));
+			copyToVertexBuffer(&this->_pointListBufferData, pChar->pixel, pChar->pixelCount, color, *pos);
 
 			return;
+		}
+
+
+		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) {
+			const HRESULT hResult = this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pVertexBufferData->pBuffer, nullptr);
+
+			if (hResult != D3D_OK || !pVertexBufferData->pBuffer) {
+				pVertexBufferData->pBuffer = nullptr;
+				pVertexBufferData->pLocalBuffer = nullptr;
+				pVertexBufferData->size = 0;
+				pVertexBufferData->curOffset = 0;
+
+				return false;
+			}
+			
+			pVertexBufferData->pLocalBuffer = nullptr;
+			pVertexBufferData->size = size;
+			pVertexBufferData->curOffset = 0;
+
+			return true;
+		}
+
+
+		bool Draw::resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) {
+			const UINT bytesUsed = pVertexBufferData->curOffset * sizeof(Vertex);
+			
+			if (newSize < bytesUsed) return false;
+
+			VertexBufferData const oldBufferData = *pVertexBufferData;
+
+			if (!createVertexBufferData(pVertexBufferData, newSize)) return false;
+			
+			if (pVertexBufferData->pBuffer->Lock(0, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+
+			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
+				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
+
+				oldBufferData.pBuffer->Unlock();
+				oldBufferData.pBuffer->Release();
+			}
+
+			pVertexBufferData->curOffset = oldBufferData.curOffset;
+
+			return true;
+		}
+
+
+		bool Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
+			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
+
+			if (sizeNeeded > pVertexBufferData->size) {
+
+				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return false;
+
+			}
+
+			for (UINT i = 0; i < count; i++) {
+				Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
+				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
+			}
+
+			pVertexBufferData->curOffset += count;
+
+			return true;
 		}
 
 	}

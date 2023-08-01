@@ -14,7 +14,7 @@ namespace hax {
 	}
 
 
-	void Engine::endDraw() const {
+	void Engine::endDraw() {
 		_pDraw->endDraw(this);
 
 		return;
@@ -130,7 +130,7 @@ namespace hax {
 		_pDraw->drawTriangleStrip(corners, 4, color);
 	}
 
-	void Engine::drawString(void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
+	void Engine::drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
 		_pDraw->drawString(pFont, origin, text, color);
 	}
 

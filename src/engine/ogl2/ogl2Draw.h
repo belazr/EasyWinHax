@@ -36,7 +36,7 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void endDraw(const Engine* pEngine) const override;
+			void endDraw(const Engine* pEngine) override;
 
 			// Draws a filled triangle strip. Should be called by an Engine object.
 			// 
@@ -67,7 +67,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 		};
 
 	}

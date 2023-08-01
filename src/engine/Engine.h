@@ -116,7 +116,7 @@ namespace hax {
 		void beginDraw(void* pArg);
 		
 		// Ends drawing within a hook. Has to be called after any drawing calls.
-		void endDraw() const;
+		void endDraw();
 
 		// Sets the current window size.
 		//
@@ -190,7 +190,7 @@ namespace hax {
 		// Parameters:
 		// 
 		// [in] pFont:
-		// Pointer to an appropriate Font object. ogl2::Font* for OpenGL 2 hooks and dx9::Font* for DirectX 9 hooks.
+		// Pointer to an appropriate Font object. ogl2::Font* for OpenGL 2 hooks and dx::Font* for DirectX hooks.
 		//
 		// [in] origin:
 		// Coordinates of the bottom left corner of the first character of the text.
@@ -200,7 +200,7 @@ namespace hax {
 		//
 		// [in] color:
 		// Color of the text.
-		void drawString(void* pFont, const Vector2* origin, const char* text, rgb::Color color) const;
+		void drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const;
 
 		// Draws a parallelogram grid with horizontal bottom and top sides.
 		//
