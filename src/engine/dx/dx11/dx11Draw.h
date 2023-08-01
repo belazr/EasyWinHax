@@ -1,6 +1,6 @@
 #pragma once
+#include "..\font\dxFonts.h"
 #include "..\..\IDraw.h"
-#include "..\font\dxFont.h"
 #include <d3d11.h>
 
 // Class for drawing within a DirectX 11 Present hook.
@@ -60,7 +60,7 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void endDraw(const Engine* pEngine) const override;
+			void endDraw(const Engine* pEngine) override;
 
 			// Draws a filled triangle strip. Should be called by an Engine object.
 			// 
@@ -81,7 +81,7 @@ namespace hax {
 			// Parameters:
 			// 
 			// [in] pFont:
-			// Pointer to a dx::Font<dx11::Vertex> object.
+			// Pointer to a dx::Font object.
 			//
 			// [in] origin:
 			// Coordinates of the bottom left corner of the first character of the text.
@@ -91,7 +91,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
 			bool compileShaders();

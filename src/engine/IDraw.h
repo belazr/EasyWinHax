@@ -25,7 +25,7 @@ namespace hax{
 		// 
 		// [in] pEngine:
 		// Pointer to the Engine object responsible for drawing within the hook.
-		virtual void endDraw(const Engine* pEngine) const = 0;
+		virtual void endDraw(const Engine* pEngine) = 0;
 
 		// Draws a filled triangle strip. Should be called by an Engine object.
 		// 
@@ -56,7 +56,7 @@ namespace hax{
 		//
 		// [in] color:
 		// Color of the text.
-		virtual void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
+		virtual void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
 	};
 
 }

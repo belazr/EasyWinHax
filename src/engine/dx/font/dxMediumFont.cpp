@@ -1,11 +1,11 @@
-#include "dxCharsets.h"
+#include "dxFonts.h"
 #include <stdlib.h>
 
 namespace hax {
 
 	namespace dx {
 
-		namespace charsets {
+		namespace fonts {
 
 			namespace mediumCharPixels {
 
@@ -7719,7 +7719,7 @@ namespace hax {
 
 			}
 
-			constexpr Charset medium{
+			constexpr Font medium{
 				{
 					{ mediumCharPixels::exclamationPoint, _countof(mediumCharPixels::exclamationPoint) },
 					{ mediumCharPixels::doubleQuotes, _countof(mediumCharPixels::doubleQuotes) },

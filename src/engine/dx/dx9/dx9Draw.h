@@ -1,5 +1,6 @@
 #pragma once
-#include "..\font\dxFont.h"
+#include "dx9Vertex.h"
+#include "..\font\dxFonts.h"
 #include "..\..\IDraw.h"
 #include <d3d9.h>
 
@@ -27,14 +28,24 @@ namespace hax {
 		// True on success, false on failure.
 		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
 
+		typedef struct VertexBufferData {
+			IDirect3DVertexBuffer9* pBuffer;
+			Vertex* pLocalBuffer;
+			UINT size;
+			UINT curOffset;
+		}VertexBufferData;
 
 		class Draw : public IDraw {
 		private:
 			IDirect3DDevice9* _pDevice;
+			VertexBufferData _pointListBufferData;
+
 			bool _isInit;
 
 		public:
 			Draw();
+
+			~Draw();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//
@@ -48,7 +59,7 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void endDraw(const Engine* pEngine) const override;
+			void endDraw(const Engine* pEngine) override;
 
 			// Draws a filled triangle strip. Should be called by an Engine object.
 			// 
@@ -69,7 +80,7 @@ namespace hax {
 			// Parameters:
 			// 
 			// [in] pFont:
-			// Pointer to a dx::Font<dx11::Vertex> object.
+			// Pointer to a dx::Font object.
 			//
 			// [in] origin:
 			// Coordinates of the bottom left corner of the first character of the text.
@@ -79,10 +90,14 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 			
 		private:
-			void drawFontchar(dx::Font<Vertex>* pDx9Font, const dx::Fontchar* pChar, const Vector2* pos, size_t index, rgb::Color color) const;
+			void drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color);
+			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size);
+			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize);
+			bool copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
+
 		};
 
 	}

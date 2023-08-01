@@ -108,7 +108,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) const {
+		void Draw::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (this->_originalTopology) {
@@ -132,11 +132,11 @@ namespace hax {
 		}
 
 
-		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
 			if (!this->_isInit || !pFont) return;
 
-			dx::Font<Vertex>* const pDx11Font = reinterpret_cast<dx::Font<Vertex>*>(pFont);
+			const dx::Font* const pDxFont = reinterpret_cast<const dx::Font*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -146,11 +146,11 @@ namespace hax {
 				if (c == ' ') continue;
 
 				const dx::CharIndex index = dx::charToCharIndex(c);
-				const dx::Fontchar* pCurChar = &pDx11Font->pCharset->chars[index];
+				const dx::Fontchar* pCurChar = &pDxFont->chars[index];
 
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pDx11Font->pCharset->width + 1) * i, pos->y - pDx11Font->pCharset->height };
+					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
 					this->drawFontchar(pCurChar, &curPos, color);
 				}
 

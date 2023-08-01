@@ -1,11 +1,11 @@
-#include "dxCharsets.h"
+#include "dxFonts.h"
 #include <stdlib.h>
 
 namespace hax {
 
 	namespace dx {
 
-		namespace charsets {
+		namespace fonts {
 
 			namespace largeCharPixels {
 
@@ -26310,7 +26310,7 @@ namespace hax {
 
 			}
 
-			constexpr Charset large{
+			constexpr Font large{
 				{
 					{ largeCharPixels::exclamationPoint, _countof(largeCharPixels::exclamationPoint) },
 					{ largeCharPixels::doubleQuotes, _countof(largeCharPixels::doubleQuotes) },

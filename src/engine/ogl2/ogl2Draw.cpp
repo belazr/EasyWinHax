@@ -55,7 +55,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) const {
+		void Draw::endDraw(const Engine* pEngine) {
 
 			if (!this->_isInit) return;
 
@@ -81,11 +81,11 @@ namespace hax {
         }
 
 
-		void Draw::drawString(void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
 			if (!this->_isInit) return;
 
-			Font* pOgl2Font = reinterpret_cast<Font*>(pFont);
+			const Font* const pOgl2Font = reinterpret_cast<const Font*>(pFont);
 			GLsizei strLen = static_cast<GLsizei>(strlen(text));
 			
 			if (!pOgl2Font || strLen > 100) return;

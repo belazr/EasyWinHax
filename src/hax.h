@@ -15,8 +15,7 @@
 #include "engine\IDraw.h"
 
 // Headers for DirectX
-#include "engine\dx\font\dxFont.h"
-#include "engine\dx\font\charsets\dxCharsets.h"
+#include "engine\dx\font\dxFonts.h"
 
 // Headers for DirectX 9
 #include "engine\dx\dx9\dx9Draw.h"

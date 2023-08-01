@@ -1,5 +1,5 @@
 #pragma once
-#include "..\..\..\..\vecmath.h"
+#include "..\..\..\vecmath.h"
 
 // These structs can be used to draw characters via the Font class.
 // Their main purpose is to avoid using the deprecated legacy DirectX SDK for text redndering.
@@ -115,11 +115,11 @@ namespace hax {
 		}CharIndex;
 
 		// Holds all characters that can be rendered by the Font class and the dimensions of any single character (always monospaced).
-		typedef struct Charset {
+		typedef struct Font {
 			const Fontchar chars[CharIndex::MAX_CHAR];
 			const float height;
 			const float width;
-		}Charset;
+		}Font;
 
 		constexpr CharIndex charToCharIndex(char c) {
 			CharIndex index = CharIndex::MAX_CHAR;
@@ -415,12 +415,12 @@ namespace hax {
 			return index;
 		}
 
-		namespace charsets {
+		namespace fonts {
 
-			// Charsets for external usage in three different sizes.
-			extern const Charset tiny;
-			extern const Charset medium;
-			extern const Charset large;
+			// Fonts for external usage in three different sizes.
+			extern const Font tiny;
+			extern const Font medium;
+			extern const Font large;
 
 		}
 
