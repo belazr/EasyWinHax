@@ -93,10 +93,9 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 			
 		private:
-			void drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color);
 			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size);
-			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize);
 			bool copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
+			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize);
 
 		};
 
