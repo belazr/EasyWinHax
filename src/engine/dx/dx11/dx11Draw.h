@@ -1,4 +1,5 @@
 #pragma once
+#include "dx11Vertex.h"
 #include "..\font\dxFonts.h"
 #include "..\..\IDraw.h"
 #include <d3d11.h>
@@ -27,6 +28,13 @@ namespace hax {
 		// True on success, false on failure.
 		bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size);
 
+		typedef struct VertexBufferData {
+			ID3D11Buffer* pBuffer;
+			Vertex* pLocalBuffer;
+			UINT size;
+			UINT curOffset;
+		}VertexBufferData;
+
 		class Draw : public IDraw {
 		private:
 			ID3D11Device* _pDevice;
@@ -35,12 +43,13 @@ namespace hax {
 			ID3D11InputLayout* _pVertexLayout;
 			ID3D11PixelShader* _pPixelShader;
 			ID3D11Buffer* _pConstantBuffer;
-			ID3D11Buffer* _pVertexBuffer;
 			
-			UINT _vertexBufferSize;
-
+			VertexBufferData _pointListBufferData;
+			VertexBufferData _triangleStripBufferData;
+			
 			D3D11_VIEWPORT _viewport;
 			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
+			
 			bool _isInit;
 
 		public:
@@ -96,8 +105,11 @@ namespace hax {
 		private:
 			bool compileShaders();
 			bool createConstantBuffer();
-			void drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color);
-			bool setupVertexBuffer(const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
+			bool copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const;
+			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;
+			void drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
+
 		};
 
 	}
