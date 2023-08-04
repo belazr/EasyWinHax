@@ -41,7 +41,7 @@ namespace hax {
 
 		Draw::Draw() :
 			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{},
-			_pVertexBuffer{}, _vertexBufferSize{}, _viewport {}, _originalTopology{}, _isInit{} {}
+			_pointListBufferData{}, _triangleStripBufferData{}, _viewport {}, _originalTopology{}, _isInit{} {}
 
 
 		Draw::~Draw() {
@@ -70,12 +70,19 @@ namespace hax {
 				this->_pConstantBuffer->Release();
 			}
 
-			if (this->_pVertexBuffer) {
-				this->_pVertexBuffer->Release();
+			if (this->_pointListBufferData.pBuffer) {
+				this->_pointListBufferData.pBuffer->Release();
+			}
+
+			if (this->_triangleStripBufferData.pBuffer) {
+				this->_triangleStripBufferData.pBuffer->Release();
 			}
 
 		}
 
+
+		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
+		constexpr UINT INITIAL_TRIANGLE_STRIP_BUFFER_SIZE = sizeof(Vertex) * 4;
 
 		void Draw::beginDraw(Engine* pEngine) {
 
@@ -91,6 +98,10 @@ namespace hax {
 
 				if (!this->compileShaders()) return;
 
+				if (!this->createVertexBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
+				
+				if (!this->createVertexBufferData(&this->_triangleStripBufferData, INITIAL_TRIANGLE_STRIP_BUFFER_SIZE)) return;
+
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
 				this->_isInit = true;
 			}
@@ -104,12 +115,25 @@ namespace hax {
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
 
+			// mapping the buffer is expensive so it is just done once per frame if no resize is necessary
+			D3D11_MAPPED_SUBRESOURCE subresource{};
+			this->_pContext->Map(this->_pointListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+			this->_pointListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
+
 			return;
 		}
 
 
 		void Draw::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
+
+			if (!this->_isInit) return;
+
+			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
+			this->_pointListBufferData.pLocalBuffer = nullptr;
+
+			// draw the whole point list buffer at once
+			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			if (this->_originalTopology) {
 				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
@@ -122,11 +146,19 @@ namespace hax {
 		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
 
 			if (!this->_isInit) return;
-			
-			if (!this->setupVertexBuffer(corners, count, color)) return;
 
-			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			this->_pContext->Draw(count, 0);
+			D3D11_MAPPED_SUBRESOURCE subresource{};
+			
+			if (this->_pContext->Map(this->_triangleStripBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource) != S_OK) return;
+			
+			this->_triangleStripBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
+			
+			if (!this->copyToVertexBuffer(&this->_triangleStripBufferData, corners, count, color)) return;
+
+			this->_pContext->Unmap(this->_triangleStripBufferData.pBuffer, 0);
+			this->_triangleStripBufferData.pLocalBuffer = nullptr;
+
+			this->drawVertexBuffer(&this->_triangleStripBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 			return;
 		}
@@ -151,7 +183,7 @@ namespace hax {
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
 					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
-					this->drawFontchar(pCurChar, &curPos, color);
+					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->pixel, pCurChar->pixelCount, color, curPos);
 				}
 
 			}
@@ -300,66 +332,90 @@ namespace hax {
 			return FALSE;
 		}
 
-		void Draw::drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color) {
-			
-			if (!this->_isInit) return;
 
-			if (!this->setupVertexBuffer(pChar->pixel, pChar->pixelCount, color, *pos)) return;
+		bool Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
+			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
-			this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-			this->_pContext->Draw(pChar->pixelCount, 0);	
+			if (sizeNeeded > pVertexBufferData->size) {
 
-			return; 
-		}
+				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return false;
 
-		bool Draw::setupVertexBuffer(const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
-			const UINT bytesNeeded = count * sizeof(Vertex);
-			
-			if (!this->_pVertexBuffer || this->_vertexBufferSize < bytesNeeded) {
-
-				if (this->_pVertexBuffer) {
-					this->_pVertexBuffer->Release();
-				}
-
-				D3D11_BUFFER_DESC bufferDesc{};
-				bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-				bufferDesc.ByteWidth = bytesNeeded;
-				bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-				const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pVertexBuffer);
-
-				if (hResult != S_OK || !this->_pVertexBuffer) {
-					this->_vertexBufferSize = 0;
-					
-					return false;
-				}
-
-				this->_vertexBufferSize = bytesNeeded;
-			}
-
-			D3D11_MAPPED_SUBRESOURCE subresource{};
-			const HRESULT hResult = this->_pContext->Map(this->_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
-
-			if (hResult != S_OK) {
-				this->_vertexBufferSize = 0;
-
-				return false;
 			}
 
 			for (UINT i = 0; i < count; i++) {
 				Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
-				memcpy(&(reinterpret_cast<Vertex*>(subresource.pData)[i]), &curVertex, sizeof(Vertex));
+				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
 			}
 
-			this->_pContext->Unmap(this->_pVertexBuffer, 0);
-
-			constexpr UINT STRIDE = sizeof(Vertex);
-			constexpr UINT OFFSET = 0;
-
-			this->_pContext->IASetVertexBuffers(0, 1, &this->_pVertexBuffer, &STRIDE, &OFFSET);
+			pVertexBufferData->curOffset += count;
 
 			return true;
+		}
+
+
+		bool Draw::resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const {
+			const UINT bytesUsed = pVertexBufferData->curOffset * sizeof(Vertex);
+
+			if (newSize < bytesUsed) return false;
+
+			const VertexBufferData oldBufferData = *pVertexBufferData;
+
+			if (!createVertexBufferData(pVertexBufferData, newSize)) return false;
+
+			D3D11_MAPPED_SUBRESOURCE subresource{};
+			
+			if (this->_pContext->Map(pVertexBufferData->pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource) != S_OK) return false;
+
+			pVertexBufferData->pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
+
+			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
+				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
+
+				this->_pContext->Unmap(oldBufferData.pBuffer, 0);
+				oldBufferData.pBuffer->Release();
+			}
+
+			return true;
+		}
+
+
+		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
+			D3D11_BUFFER_DESC bufferDesc{};
+			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			bufferDesc.ByteWidth = size;
+			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pVertexBufferData->pBuffer);
+
+			if (!pVertexBufferData->pBuffer) {
+				pVertexBufferData->pLocalBuffer = nullptr;
+				pVertexBufferData->size = 0;
+				pVertexBufferData->curOffset = 0;
+
+				return false;
+			}
+
+			if (hResult != S_OK) return false;
+
+			pVertexBufferData->pLocalBuffer = nullptr;
+			pVertexBufferData->size = size;
+			pVertexBufferData->curOffset = 0;
+
+			return true;
+		}
+
+
+		void Draw::drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
+			constexpr UINT STRIDE = sizeof(Vertex);
+			constexpr UINT OFFSET = 0;
+			this->_pContext->IASetVertexBuffers(0, 1, &pVertexBufferData->pBuffer, &STRIDE, &OFFSET);
+			this->_pContext->IASetPrimitiveTopology(topology);
+			this->_pContext->Draw(pVertexBufferData->curOffset, 0);
+
+			pVertexBufferData->curOffset = 0;
+
+			return;
 		}
 
 	}
