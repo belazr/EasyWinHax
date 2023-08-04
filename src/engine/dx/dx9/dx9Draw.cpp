@@ -55,6 +55,7 @@ namespace hax {
 
 
 		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZRHW | D3DFVF_DIFFUSE;
+		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
 		
 		void Draw::beginDraw(Engine* pEngine) {
 
@@ -63,7 +64,7 @@ namespace hax {
 
 				if (!this->_pDevice) return;
 
-				if (!createVertexBufferData(&this->_pointListBufferData, 1000)) return;
+				if (!createVertexBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
 
 				this->_isInit = true;
 			}
@@ -77,6 +78,7 @@ namespace hax {
 
 			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
 
+			// locking the buffer is expensive so it is just done once per frame if no resize is necessary
 			this->_pointListBufferData.pBuffer->Lock(0, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
 
 			return;
@@ -88,6 +90,7 @@ namespace hax {
 
 			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
 
+				// draw the whole point list buffer at once
 				if (this->_pDevice->SetStreamSource(0, this->_pointListBufferData.pBuffer, 0, sizeof(Vertex)) == D3D_OK) {
 					this->_pDevice->DrawPrimitive(D3DPT_POINTLIST, 0, this->_pointListBufferData.curOffset);
 					this->_pointListBufferData.curOffset = 0;
@@ -138,20 +141,10 @@ namespace hax {
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
 					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
-					this->drawFontchar(pCurChar, &curPos, color);
+					copyToVertexBuffer(&this->_pointListBufferData, pCurChar->pixel, pCurChar->pixelCount, color, curPos);
 				}
 
 			}
-
-			return;
-		}
-
-
-		void Draw::drawFontchar(const dx::Fontchar* pChar, const Vector2* pos, rgb::Color color) {
-
-			if (!this->_isInit) return;
-
-			copyToVertexBuffer(&this->_pointListBufferData, pChar->pixel, pChar->pixelCount, color, *pos);
 
 			return;
 		}
@@ -177,30 +170,6 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) {
-			const UINT bytesUsed = pVertexBufferData->curOffset * sizeof(Vertex);
-			
-			if (newSize < bytesUsed) return false;
-
-			VertexBufferData const oldBufferData = *pVertexBufferData;
-
-			if (!createVertexBufferData(pVertexBufferData, newSize)) return false;
-			
-			if (pVertexBufferData->pBuffer->Lock(0, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
-
-			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
-				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
-
-				oldBufferData.pBuffer->Unlock();
-				oldBufferData.pBuffer->Release();
-			}
-
-			pVertexBufferData->curOffset = oldBufferData.curOffset;
-
-			return true;
-		}
-
-
 		bool Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
 			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
@@ -216,6 +185,30 @@ namespace hax {
 			}
 
 			pVertexBufferData->curOffset += count;
+
+			return true;
+		}
+
+
+		bool Draw::resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) {
+			const UINT bytesUsed = pVertexBufferData->curOffset * sizeof(Vertex);
+			
+			if (newSize < bytesUsed) return false;
+
+			const VertexBufferData oldBufferData = *pVertexBufferData;
+
+			if (!createVertexBufferData(pVertexBufferData, newSize)) return false;
+			
+			if (pVertexBufferData->pBuffer->Lock(0, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+
+			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
+				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
+
+				oldBufferData.pBuffer->Unlock();
+				oldBufferData.pBuffer->Release();
+			}
+
+			pVertexBufferData->curOffset = oldBufferData.curOffset;
 
 			return true;
 		}
