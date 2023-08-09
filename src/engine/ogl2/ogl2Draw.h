@@ -38,19 +38,20 @@ namespace hax {
 			// Pointer to the Engine object responsible for drawing within the hook.
 			void endDraw(const Engine* pEngine) override;
 
-			// Draws a filled triangle strip. Should be called by an Engine object.
+			// Draws a filled triangle list. Should be called by an Engine object.
 			// 
 			// Parameters:
 			// 
 			// [in] corners:
-			// Screen coordinates of the corners of the triangle strip.
+			// Screen coordinates of the corners of the triangles in the list.
+			// The three corners of the first triangle have to be in clockwise order. For there on the orientation of the triangles has to alternate.
 			// 
 			// [in] count:
-			// Count of the corners of the triangle strip.
+			// Count of the corners of the triangles in the list. Has to be divisble by three.
 			// 
 			// [in]
-			// Color of the triangle strip.
-			void drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) override;
+			// Color of the triangle list.
+			void drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) override;
 
 			// Draws text to the screen. Should be called by an Engine object.
 			//

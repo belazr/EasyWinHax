@@ -41,7 +41,7 @@ namespace hax {
 
 		Draw::Draw() :
 			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{},
-			_pointListBufferData{}, _triangleStripBufferData{}, _viewport {}, _originalTopology{}, _isInit{} {}
+			_pointListBufferData{}, _triangleListBufferData{}, _viewport {}, _originalTopology{}, _isInit{} {}
 
 
 		Draw::~Draw() {
@@ -74,15 +74,15 @@ namespace hax {
 				this->_pointListBufferData.pBuffer->Release();
 			}
 
-			if (this->_triangleStripBufferData.pBuffer) {
-				this->_triangleStripBufferData.pBuffer->Release();
+			if (this->_triangleListBufferData.pBuffer) {
+				this->_triangleListBufferData.pBuffer->Release();
 			}
 
 		}
 
 
 		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
-		constexpr UINT INITIAL_TRIANGLE_STRIP_BUFFER_SIZE = sizeof(Vertex) * 4;
+		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
 
 		void Draw::beginDraw(Engine* pEngine) {
 
@@ -100,7 +100,7 @@ namespace hax {
 
 				if (!this->createVertexBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
 				
-				if (!this->createVertexBufferData(&this->_triangleStripBufferData, INITIAL_TRIANGLE_STRIP_BUFFER_SIZE)) return;
+				if (!this->createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
 				this->_isInit = true;
@@ -115,10 +115,14 @@ namespace hax {
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
 
-			// mapping the buffer is expensive so it is just done once per frame if no resize is necessary
-			D3D11_MAPPED_SUBRESOURCE subresource{};
-			this->_pContext->Map(this->_pointListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
-			this->_pointListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
+			// mapping the buffers is expensive so it is just done once per frame if no resize is necessary
+			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
+			this->_pContext->Map(this->_pointListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresourcePoints);
+			this->_pointListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
+
+			D3D11_MAPPED_SUBRESOURCE subresourceTriangles{};
+			this->_pContext->Map(this->_triangleListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresourceTriangles);
+			this->_triangleListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresourceTriangles.pData);
 
 			return;
 		}
@@ -129,10 +133,13 @@ namespace hax {
 
 			if (!this->_isInit) return;
 
+			// draw the all the buffers at once to save api calls
+			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
+			this->_triangleListBufferData.pLocalBuffer = nullptr;
+			this->drawVertexBuffer(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
 			this->_pointListBufferData.pLocalBuffer = nullptr;
-
-			// draw the whole point list buffer at once
 			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			if (this->_originalTopology) {
@@ -143,22 +150,11 @@ namespace hax {
 		}
 
 
-		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
+		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
-			if (!this->_isInit) return;
-
-			D3D11_MAPPED_SUBRESOURCE subresource{};
+			if (!this->_isInit || count % 3) return;
 			
-			if (this->_pContext->Map(this->_triangleStripBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource) != S_OK) return;
-			
-			this->_triangleStripBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
-			
-			if (!this->copyToVertexBuffer(&this->_triangleStripBufferData, corners, count, color)) return;
-
-			this->_pContext->Unmap(this->_triangleStripBufferData.pBuffer, 0);
-			this->_triangleStripBufferData.pLocalBuffer = nullptr;
-
-			this->drawVertexBuffer(&this->_triangleStripBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			if (!this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color)) return;
 
 			return;
 		}

@@ -72,17 +72,22 @@ namespace hax {
 			pos2 = tmp;
 		}
 
-		Vector2 corners[4]{};
+		Vector2 corners[6]{};
 		corners[0].x = pos1->x - cosAtan;
 		corners[0].y = pos1->y - sinAtan;
 		corners[1].x = pos2->x - cosAtan;
 		corners[1].y = pos2->y - sinAtan;
 		corners[2].x = pos1->x + cosAtan;
 		corners[2].y = pos1->y + sinAtan;
+
 		corners[3].x = pos2->x + cosAtan;
 		corners[3].y = pos2->y + sinAtan;
+		corners[4].x = pos1->x + cosAtan;
+		corners[4].y = pos1->y + sinAtan;
+		corners[5].x = pos2->x - cosAtan;
+		corners[5].y = pos2->y - sinAtan;
 
-		_pDraw->drawTriangleStrip(corners, 4, color);
+		_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 
@@ -103,31 +108,41 @@ namespace hax {
 			pos2 = tmp;
 		}
 
-		Vector2 corners[4]{};
+		Vector2 corners[6]{};
 		corners[0].x = pos1->x - cosAtan - omega * sinAtan;
 		corners[0].y = pos1->y;
 		corners[1].x = pos2->x - cosAtan - omega * sinAtan;
 		corners[1].y = pos2->y;
 		corners[2].x = pos1->x + cosAtan + omega * sinAtan;
 		corners[2].y = pos1->y;
+		
 		corners[3].x = pos2->x + cosAtan + omega * sinAtan;
 		corners[3].y = pos2->y;
+		corners[4].x = pos1->x + cosAtan + omega * sinAtan;
+		corners[4].y = pos1->y;
+		corners[5].x = pos2->x - cosAtan - omega * sinAtan;
+		corners[5].y = pos2->y;
 
-		_pDraw->drawTriangleStrip(corners, 4, color);
+		_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 	void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const {
-		Vector2 corners[4]{};
+		Vector2 corners[6]{};
 		corners[0].x = pos->x;
 		corners[0].y = pos->y;
 		corners[1].x = pos->x + width;
 		corners[1].y = pos->y;
 		corners[2].x = pos->x;
 		corners[2].y = pos->y + height;
+		
 		corners[3].x = pos->x + width;
 		corners[3].y = pos->y + height;
+		corners[4].x = pos->x;
+		corners[4].y = pos->y + height;
+		corners[5].x = pos->x + width;
+		corners[5].y = pos->y;
 
-		_pDraw->drawTriangleStrip(corners, 4, color);
+		_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 	void Engine::drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
