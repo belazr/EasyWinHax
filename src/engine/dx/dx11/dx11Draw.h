@@ -106,7 +106,7 @@ namespace hax {
 		private:
 			bool compileShaders();
 			bool createConstantBuffer();
-			bool copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			void copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const;
 			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;
 			void drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
