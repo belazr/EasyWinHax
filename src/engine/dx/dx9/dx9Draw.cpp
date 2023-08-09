@@ -56,6 +56,7 @@ namespace hax {
 
 		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZRHW | D3DFVF_DIFFUSE;
 		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
+		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
 		
 		void Draw::beginDraw(Engine* pEngine) {
 
@@ -65,6 +66,8 @@ namespace hax {
 				if (!this->_pDevice) return;
 
 				if (!createVertexBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
+
+				if (!createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
 				this->_isInit = true;
 			}
@@ -78,8 +81,9 @@ namespace hax {
 
 			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
 
-			// locking the buffer is expensive so it is just done once per frame if no resize is necessary
+			// locking the buffers is expensive so it is just done once per frame if no resize is necessary
 			this->_pointListBufferData.pBuffer->Lock(0, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
+			this->_triangleListBufferData.pBuffer->Lock(0, this->_triangleListBufferData.size, reinterpret_cast<void**>(&this->_triangleListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
 
 			return;
 		}
@@ -90,11 +94,15 @@ namespace hax {
 
 			if (!this->_isInit) return;
 
+			// draw all the buffers at once to save api calls
 			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
 				this->_pointListBufferData.pLocalBuffer = nullptr;
-
-				// draw the whole point list buffer at once
 				this->drawVertexBuffer(&this->_pointListBufferData, D3DPT_POINTLIST);
+			}
+
+			if (this->_triangleListBufferData.pBuffer->Unlock() == D3D_OK) {
+				this->_triangleListBufferData.pLocalBuffer = nullptr;
+				this->drawVertexBuffer(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
 			}
 			
 			return; 
@@ -105,17 +113,7 @@ namespace hax {
 
 			if (!this->_isInit || count % 3) return;
 			
-			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
-
-			if (!data) return;
-
-			for (UINT i = 0; i < count; i++) {
-				data[i] = { corners[i], color };
-			}
-
-			// triangle count is vertex count / 3
-			this->_pDevice->DrawPrimitiveUP(D3DPT_TRIANGLELIST, count / 3, data, sizeof(Vertex));
-			delete[] data;
+			this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color);
 
 			return;
 		}
@@ -149,12 +147,12 @@ namespace hax {
 		}
 
 
-		bool Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
+		void Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
 			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
 			if (sizeNeeded > pVertexBufferData->size) {
 
-				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return false;
+				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return;
 
 			}
 
@@ -165,7 +163,7 @@ namespace hax {
 
 			pVertexBufferData->curOffset += count;
 
-			return true;
+			return;
 		}
 
 
@@ -236,8 +234,8 @@ namespace hax {
 				return;
 			}
 			
-			if (this->_pDevice->SetStreamSource(0, this->_pointListBufferData.pBuffer, 0, sizeof(Vertex)) == D3D_OK) {
-				this->_pDevice->DrawPrimitive(D3DPT_POINTLIST, 0, primitiveCount);
+			if (this->_pDevice->SetStreamSource(0, pVertexBufferData->pBuffer, 0, sizeof(Vertex)) == D3D_OK) {
+				this->_pDevice->DrawPrimitive(type, 0, primitiveCount);
 				pVertexBufferData->curOffset = 0;
 			}
 
