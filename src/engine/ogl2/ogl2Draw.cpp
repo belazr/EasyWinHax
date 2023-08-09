@@ -64,12 +64,12 @@ namespace hax {
 			return;
 		}
 
-		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
+		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 			
-			if (!this->_isInit) return;
+			if (!this->_isInit || count % 3) return;
 			
 			glColor3ub(UCHAR_R(color), UCHAR_G(color), UCHAR_B(color));
-			glBegin(GL_TRIANGLE_STRIP);
+			glBegin(GL_TRIANGLES);
 
 			for (UINT i = 0; i < count; i++) {
 				glVertex2f(corners[i].x, corners[i].y);

@@ -101,9 +101,9 @@ namespace hax {
 		}
 
 
-		void Draw::drawTriangleStrip(const Vector2 corners[], UINT count, rgb::Color color) {
+		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
-			if (!this->_isInit) return;
+			if (!this->_isInit || count % 3) return;
 			
 			Vertex* const data = reinterpret_cast<Vertex*>(new BYTE[count * sizeof(Vertex)]);
 
@@ -113,8 +113,8 @@ namespace hax {
 				data[i] = { corners[i], color };
 			}
 
-			// triangle count is vertex count - 2
-			this->_pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, count - 2, data, sizeof(Vertex));
+			// triangle count is vertex count / 3
+			this->_pDevice->DrawPrimitiveUP(D3DPT_TRIANGLELIST, count / 3, data, sizeof(Vertex));
 			delete[] data;
 
 			return;
