@@ -71,10 +71,12 @@ namespace hax {
 			}
 
 			if (this->_pointListBufferData.pBuffer) {
+				this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
 				this->_pointListBufferData.pBuffer->Release();
 			}
 
 			if (this->_triangleListBufferData.pBuffer) {
+				this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
 				this->_triangleListBufferData.pBuffer->Release();
 			}
 
@@ -133,14 +135,14 @@ namespace hax {
 
 			if (!this->_isInit) return;
 
-			// draw the all the buffers at once to save api calls
-			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
-			this->_triangleListBufferData.pLocalBuffer = nullptr;
-			this->drawVertexBuffer(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+			// draw all the buffers at once to save api calls
 			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
 			this->_pointListBufferData.pLocalBuffer = nullptr;
 			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
+			this->_triangleListBufferData.pLocalBuffer = nullptr;
+			this->drawVertexBuffer(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			if (this->_originalTopology) {
 				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
@@ -154,7 +156,7 @@ namespace hax {
 
 			if (!this->_isInit || count % 3) return;
 			
-			if (!this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color)) return;
+			this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color);
 
 			return;
 		}
@@ -329,12 +331,12 @@ namespace hax {
 		}
 
 
-		bool Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
+		void Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
 			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
 			if (sizeNeeded > pVertexBufferData->size) {
 
-				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return false;
+				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return;
 
 			}
 
@@ -345,7 +347,7 @@ namespace hax {
 
 			pVertexBufferData->curOffset += count;
 
-			return true;
+			return;
 		}
 
 
