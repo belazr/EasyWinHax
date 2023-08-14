@@ -41,7 +41,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _isInit {} {}
+		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _triangleListBufferData{}, _isInit {} {}
 
 
 		Draw::~Draw() {
