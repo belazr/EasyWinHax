@@ -1,5 +1,7 @@
 #pragma once
+#include "ogl2Vertex.h"
 #include "..\IDraw.h"
+#define GL_GLEXT_PROTOTYPES
 #include <gl\GL.h>
 
 // Class for drawing with OpenGL 2.
@@ -11,12 +13,44 @@ namespace hax {
 
 		typedef BOOL(APIENTRY* twglSwapBuffers)(HDC hDc);
 
+		typedef void(APIENTRY* tglGenBuffers)(GLsizei n, GLuint* buffers);
+		typedef void(APIENTRY* tglBindBuffer)(GLenum target, GLuint buffer);
+		typedef void(APIENTRY* tglBufferData)(GLenum target, uintptr_t size, const GLvoid* data, GLenum usage);
+		typedef void*(APIENTRY* tglMapBuffer)(GLenum target, GLenum access);
+		typedef GLboolean (APIENTRY* tglUnmapBuffer)(GLenum target);
+		typedef void(APIENTRY* tglDeleteBuffers)(GLsizei n, const GLuint* buffers);
+		typedef GLuint(APIENTRY* tglCreateShader)(GLenum shaderType);
+		typedef void(APIENTRY* tglShaderSource)(GLuint shader, GLsizei count, const char** string, const GLint* lenght);
+		typedef void(APIENTRY* tglCompileShader)(GLuint shader);
+
+		typedef struct BufferData {
+			GLuint vertexBufferId;
+			GLuint indexBufferId;
+			Vertex* pLocalVertexBuffer;
+			GLuint* pLocalIndexBuffer;
+			GLsizei size;
+			UINT curOffset;
+		}BufferData;
+
 		class Draw : public IDraw {
 		private:
 			HGLRC _hGameContext;
 			HGLRC _hHookContext;
 			GLint _width;
 			GLint _height;
+
+			tglGenBuffers _pglGenBuffers;
+			tglBindBuffer _pglBindBuffer;
+			tglBufferData _pglBufferData;
+			tglMapBuffer _pglMapBuffer;
+			tglUnmapBuffer _pglUnmapBuffer;
+			tglDeleteBuffers _pglDeleteBuffers;
+			tglCreateShader _pglCreateShader;
+			tglShaderSource _pglShaderSource;
+			tglCompileShader _pglCompileShader;
+
+			BufferData _triangleListBufferData;
+
 			bool _isInit;
 
 		public:
@@ -69,6 +103,10 @@ namespace hax {
 			// [in] color:
 			// Color of the text.
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+
+		private:
+			bool compileShaders();
+			bool createBufferData(BufferData* pVertexBufferData, GLsizei size) const;
 		};
 
 	}

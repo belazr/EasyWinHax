@@ -28,6 +28,7 @@
     <ClInclude Include="src\engine\IDraw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Draw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Font.h" />
+    <ClInclude Include="src\engine\ogl2\ogl2Vertex.h" />
     <ClInclude Include="src\engine\rgb.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
