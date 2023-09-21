@@ -19,16 +19,13 @@ namespace hax {
 		typedef void*(APIENTRY* tglMapBuffer)(GLenum target, GLenum access);
 		typedef GLboolean (APIENTRY* tglUnmapBuffer)(GLenum target);
 		typedef void(APIENTRY* tglDeleteBuffers)(GLsizei n, const GLuint* buffers);
-		typedef GLuint(APIENTRY* tglCreateShader)(GLenum shaderType);
-		typedef void(APIENTRY* tglShaderSource)(GLuint shader, GLsizei count, const char** string, const GLint* lenght);
-		typedef void(APIENTRY* tglCompileShader)(GLuint shader);
 
 		typedef struct BufferData {
 			GLuint vertexBufferId;
 			GLuint indexBufferId;
 			Vertex* pLocalVertexBuffer;
 			GLuint* pLocalIndexBuffer;
-			GLsizei size;
+			UINT size;
 			UINT curOffset;
 		}BufferData;
 
@@ -45,9 +42,6 @@ namespace hax {
 			tglMapBuffer _pglMapBuffer;
 			tglUnmapBuffer _pglUnmapBuffer;
 			tglDeleteBuffers _pglDeleteBuffers;
-			tglCreateShader _pglCreateShader;
-			tglShaderSource _pglShaderSource;
-			tglCompileShader _pglCompileShader;
 
 			BufferData _triangleListBufferData;
 
@@ -105,8 +99,9 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
-			bool compileShaders();
-			bool createBufferData(BufferData* pVertexBufferData, GLsizei size) const;
+			bool getProcAddresses();
+			bool createBufferData(BufferData* pBufferData, UINT size) const;
+			bool resizeBuffers(BufferData* pBufferData, UINT newSize) const;
 		};
 
 	}
