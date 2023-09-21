@@ -341,7 +341,7 @@ namespace hax {
 			}
 
 			for (UINT i = 0; i < count; i++) {
-				Vertex curVertex({ data[i].x + offset.x, data[i].y + offset.y }, color);
+				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
 				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
 			}
 
@@ -358,7 +358,7 @@ namespace hax {
 
 			const VertexBufferData oldBufferData = *pVertexBufferData;
 
-			if (!createVertexBufferData(pVertexBufferData, newSize)) return false;
+			if (!this->createVertexBufferData(pVertexBufferData, newSize)) return false;
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
 			
