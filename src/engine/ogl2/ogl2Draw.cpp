@@ -12,16 +12,19 @@ namespace hax {
 			_pglUnmapBuffer{}, _pglDeleteBuffers {}, _triangleListBufferData{}, _isInit{} {}
 
 
+		constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
+		constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
+
 		Draw::~Draw() {
 
 			if (this->_triangleListBufferData.indexBufferId) {
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, oldBufferData.indexBufferId);
+				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
 				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.indexBufferId);
 			}
 			
 			if (this->_triangleListBufferData.vertexBufferId) {
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, oldBufferData.vertexBufferId);
+				this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_triangleListBufferData.vertexBufferId);
 				this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.vertexBufferId);
 			}
@@ -33,8 +36,6 @@ namespace hax {
 		}
 
 
-		constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
-		constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
 		constexpr GLenum GL_WRITE_ONLY = 0x88B9;
 
 		void Draw::beginDraw(Engine* pEngine) {
