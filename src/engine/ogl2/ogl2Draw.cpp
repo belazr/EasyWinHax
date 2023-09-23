@@ -1,15 +1,19 @@
 #include "ogl2Draw.h"
 #include "ogl2Font.h"
 #include "..\Engine.h"
+#include "..\..\Bench.h"
 #include <Windows.h>
 
 namespace hax {
 
 	namespace ogl2 {
 
+		static Bench bench{ "MakeCurrentContext", 200 };
+
 		Draw::Draw() : _hGameContext{}, _hHookContext{}, _width{}, _height{},
 			_pglGenBuffers{}, _pglBindBuffer{}, _pglBufferData{}, _pglMapBuffer{},
-			_pglUnmapBuffer{}, _pglDeleteBuffers {}, _triangleListBufferData{}, _isInit{} {}
+			_pglUnmapBuffer{}, _pglDeleteBuffers {}, _triangleListBufferData{}, 
+			_lastVertexBufferId{}, _lastIndexBufferId{}, _isInit {} {}
 
 
 		constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
@@ -18,13 +22,11 @@ namespace hax {
 		Draw::~Draw() {
 
 			if (this->_triangleListBufferData.indexBufferId) {
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
 				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.indexBufferId);
 			}
 			
 			if (this->_triangleListBufferData.vertexBufferId) {
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_triangleListBufferData.vertexBufferId);
 				this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.vertexBufferId);
 			}
@@ -35,7 +37,8 @@ namespace hax {
 
 		}
 
-
+		constexpr GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
+		constexpr GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
 		constexpr GLenum GL_WRITE_ONLY = 0x88B9;
 
 		void Draw::beginDraw(Engine* pEngine) {
@@ -50,7 +53,10 @@ namespace hax {
 				
 				if (!this->_hGameContext || !this->_hHookContext) return;
 
-				if (!wglMakeCurrent(hDc, this->_hHookContext)) return;
+				//if (!wglMakeCurrent(hDc, this->_hHookContext)) return;
+
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastVertexBufferId));
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastIndexBufferId));
 
 				constexpr GLsizei INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 4;
 
@@ -58,14 +64,8 @@ namespace hax {
 				
 				this->_isInit = true;
 			}
-
-			wglMakeCurrent(hDc, this->_hHookContext);
-
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
-			this->_triangleListBufferData.pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
-
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_triangleListBufferData.vertexBufferId);
-			this->_triangleListBufferData.pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+			
+			//wglMakeCurrent(hDc, this->_hHookContext);
 
 			GLint viewport[4]{};
 			glGetIntegerv(GL_VIEWPORT, viewport);
@@ -78,38 +78,50 @@ namespace hax {
 			pEngine->setWindowSize(this->_width, this->_height);
 
 			glMatrixMode(GL_PROJECTION);
+			glPushMatrix();
 			glLoadIdentity();
-			glOrtho(0, static_cast<double>(this->_width), static_cast<double>(this->_height), 0, 1, -1);
+			glOrtho(0, static_cast<double>(this->_width), static_cast<double>(this->_height), 0, -1.f, 1.f);
 
 			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
 			glLoadIdentity();
-			glClearColor(0.f, 0.f, 0.f, 1.f);
+
+			this->_triangleListBufferData.pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
+			this->_triangleListBufferData.pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 			return;
 		}
 
 
 		void Draw::endDraw(const Engine* pEngine) {
+			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isInit) return;
 
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glEnableClientState(GL_COLOR_ARRAY);
 
-			// vertex buffer is currently bound
 			this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
+			this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
 			// third argument describes the offset in the Vertext struct, not the actuall address of the buffer
 			glVertexPointer(2, GL_FLOAT, sizeof(Vertex), nullptr);
 			glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
-
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
-			this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-
 			glDrawElements(GL_TRIANGLES, this->_triangleListBufferData.curOffset, GL_UNSIGNED_INT, nullptr);
+			
 			this->_triangleListBufferData.curOffset = 0;
 
-			wglMakeCurrent(reinterpret_cast<HDC>(pEngine->pHookArg), this->_hGameContext);
+			glDisableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_VERTEX_ARRAY);
+
+			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
+			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_lastIndexBufferId);
+
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
 
 			return;
 		}
@@ -213,7 +225,6 @@ namespace hax {
 
 			if (!this->createBufferData(pBufferData, newSize)) return false;
 
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 			pBufferData->pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 			if (oldBufferData.pLocalIndexBuffer) {
@@ -222,9 +233,9 @@ namespace hax {
 				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, oldBufferData.indexBufferId);
 				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &oldBufferData.indexBufferId);
+				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 			}
 
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
 			pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 			if (oldBufferData.pLocalVertexBuffer) {
@@ -233,10 +244,8 @@ namespace hax {
 				this->_pglBindBuffer(GL_ARRAY_BUFFER, oldBufferData.vertexBufferId);
 				this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &oldBufferData.vertexBufferId);
+				this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
 			}
-
-			// bind the new vertex buffer as expected by endDraw()
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
 			
 			return true;
 		}

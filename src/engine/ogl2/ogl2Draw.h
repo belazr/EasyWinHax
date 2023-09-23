@@ -45,6 +45,9 @@ namespace hax {
 
 			BufferData _triangleListBufferData;
 
+			GLuint _lastVertexBufferId;
+			GLuint _lastIndexBufferId;
+
 			bool _isInit;
 
 		public:
