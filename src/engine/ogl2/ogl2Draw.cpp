@@ -8,9 +8,7 @@ namespace hax {
 
 	namespace ogl2 {
 
-		static Bench bench{ "MakeCurrentContext", 200 };
-
-		Draw::Draw() : _hGameContext{}, _hHookContext{}, _width{}, _height{},
+		Draw::Draw() : _width{}, _height{},
 			_pglGenBuffers{}, _pglBindBuffer{}, _pglBufferData{}, _pglMapBuffer{},
 			_pglUnmapBuffer{}, _pglDeleteBuffers {}, _triangleListBufferData{}, 
 			_lastVertexBufferId{}, _lastIndexBufferId{}, _isInit {} {}
@@ -22,17 +20,15 @@ namespace hax {
 		Draw::~Draw() {
 
 			if (this->_triangleListBufferData.indexBufferId) {
+				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
 				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.indexBufferId);
 			}
 			
 			if (this->_triangleListBufferData.vertexBufferId) {
+				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.vertexBufferId);
 				this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pglDeleteBuffers(1, &this->_triangleListBufferData.vertexBufferId);
-			}
-
-			if (this->_hHookContext) {
-				wglDeleteContext(this->_hHookContext);
 			}
 
 		}
@@ -42,40 +38,24 @@ namespace hax {
 		constexpr GLenum GL_WRITE_ONLY = 0x88B9;
 
 		void Draw::beginDraw(Engine* pEngine) {
-			const HDC hDc = reinterpret_cast<HDC>(pEngine->pHookArg);
+			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isInit) {
 
 				if (!this->getProcAddresses()) return;
 
-				this->_hGameContext = wglGetCurrentContext();
-				this->_hHookContext = wglCreateContext(hDc);
-				
-				if (!this->_hGameContext || !this->_hHookContext) return;
-
-				//if (!wglMakeCurrent(hDc, this->_hHookContext)) return;
-
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastVertexBufferId));
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastIndexBufferId));
-
 				constexpr GLsizei INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 4;
 
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastIndexBufferId));
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastVertexBufferId));
+
 				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
+
+				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_lastIndexBufferId);
+				this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
 				
 				this->_isInit = true;
 			}
-			
-			//wglMakeCurrent(hDc, this->_hHookContext);
-
-			GLint viewport[4]{};
-			glGetIntegerv(GL_VIEWPORT, viewport);
-
-			if (this->_width == viewport[2] && this->_height == viewport[3]) return;
-
-			this->_width = viewport[2];
-			this->_height = viewport[3];
-			
-			pEngine->setWindowSize(this->_width, this->_height);
 
 			glMatrixMode(GL_PROJECTION);
 			glPushMatrix();
@@ -86,8 +66,24 @@ namespace hax {
 			glPushMatrix();
 			glLoadIdentity();
 
+			glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastIndexBufferId));
+			glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastVertexBufferId));
+
+			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_triangleListBufferData.indexBufferId);
+			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_triangleListBufferData.vertexBufferId);
+
 			this->_triangleListBufferData.pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 			this->_triangleListBufferData.pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+
+			GLint viewport[4]{};
+			glGetIntegerv(GL_VIEWPORT, viewport);
+
+			if (this->_width == viewport[2] && this->_height == viewport[3]) return;
+
+			this->_width = viewport[2];
+			this->_height = viewport[3];
+			
+			pEngine->setWindowSize(this->_width, this->_height);
 
 			return;
 		}
@@ -114,8 +110,8 @@ namespace hax {
 			glDisableClientState(GL_COLOR_ARRAY);
 			glDisableClientState(GL_VERTEX_ARRAY);
 
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
 			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_lastIndexBufferId);
+			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
 
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
