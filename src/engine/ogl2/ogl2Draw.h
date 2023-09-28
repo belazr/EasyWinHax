@@ -31,8 +31,6 @@ namespace hax {
 
 		class Draw : public IDraw {
 		private:
-			HGLRC _hGameContext;
-			HGLRC _hHookContext;
 			GLint _width;
 			GLint _height;
 
