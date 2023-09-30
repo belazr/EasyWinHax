@@ -31,9 +31,6 @@ namespace hax {
 
 		class Draw : public IDraw {
 		private:
-			GLint _width;
-			GLint _height;
-
 			tglGenBuffers _pglGenBuffers;
 			tglBindBuffer _pglBindBuffer;
 			tglBufferData _pglBufferData;
@@ -41,10 +38,13 @@ namespace hax {
 			tglUnmapBuffer _pglUnmapBuffer;
 			tglDeleteBuffers _pglDeleteBuffers;
 
+			GLint _width;
+			GLint _height;
+
 			BufferData _triangleListBufferData;
 
-			GLuint _lastVertexBufferId;
 			GLuint _lastIndexBufferId;
+			GLuint _lastVertexBufferId;
 
 			bool _isInit;
 
@@ -102,7 +102,9 @@ namespace hax {
 		private:
 			bool getProcAddresses();
 			bool createBufferData(BufferData* pBufferData, UINT size) const;
+			bool createBuffer(GLenum target, GLenum binding, UINT size, GLuint* pId) const;
 			bool resizeBuffers(BufferData* pBufferData, UINT newSize) const;
+			void moveBuffer(GLenum target, BufferData* const pNewBufferData, BufferData* const pOldBufferData) const;
 		};
 
 	}

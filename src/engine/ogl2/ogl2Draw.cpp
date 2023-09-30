@@ -8,14 +8,18 @@ namespace hax {
 
 	namespace ogl2 {
 
-		Draw::Draw() : _width{}, _height{},
-			_pglGenBuffers{}, _pglBindBuffer{}, _pglBufferData{}, _pglMapBuffer{},
-			_pglUnmapBuffer{}, _pglDeleteBuffers {}, _triangleListBufferData{}, 
-			_lastVertexBufferId{}, _lastIndexBufferId{}, _isInit {} {}
+		constexpr static GLenum GL_ARRAY_BUFFER = 0x8892;
+		constexpr static GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
+		constexpr static GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
+		constexpr static GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
+		constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
+		constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
 
+		Draw::Draw() : _pglGenBuffers{}, _pglBindBuffer{}, _pglBufferData{},
+			_pglMapBuffer{}, _pglUnmapBuffer{}, _pglDeleteBuffers {},
+			_width{}, _height{}, _triangleListBufferData{},
+			_lastIndexBufferId{}, _lastVertexBufferId{}, _isInit {} {}
 
-		constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
-		constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
 
 		Draw::~Draw() {
 
@@ -33,9 +37,6 @@ namespace hax {
 
 		}
 
-		constexpr GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
-		constexpr GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
-		constexpr GLenum GL_WRITE_ONLY = 0x88B9;
 
 		void Draw::beginDraw(Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
@@ -46,15 +47,19 @@ namespace hax {
 
 				constexpr GLsizei INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 4;
 
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastIndexBufferId));
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_lastVertexBufferId));
-
 				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
-
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_lastIndexBufferId);
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
 				
 				this->_isInit = true;
+			}
+
+			GLint viewport[4]{};
+			glGetIntegerv(GL_VIEWPORT, viewport);
+
+			if (this->_width != viewport[2] || this->_height != viewport[3]) {
+				this->_width = viewport[2];
+				this->_height = viewport[3];
+
+				pEngine->setWindowSize(this->_width, this->_height);
 			}
 
 			glMatrixMode(GL_PROJECTION);
@@ -75,16 +80,6 @@ namespace hax {
 			this->_triangleListBufferData.pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 			this->_triangleListBufferData.pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
-			GLint viewport[4]{};
-			glGetIntegerv(GL_VIEWPORT, viewport);
-
-			if (this->_width == viewport[2] && this->_height == viewport[3]) return;
-
-			this->_width = viewport[2];
-			this->_height = viewport[3];
-			
-			pEngine->setWindowSize(this->_width, this->_height);
-
 			return;
 		}
 
@@ -94,21 +89,21 @@ namespace hax {
 
 			if (!this->_isInit) return;
 
+			this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
+
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glEnableClientState(GL_COLOR_ARRAY);
-
-			this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
-			this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
 			// third argument describes the offset in the Vertext struct, not the actuall address of the buffer
 			glVertexPointer(2, GL_FLOAT, sizeof(Vertex), nullptr);
 			glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
 			glDrawElements(GL_TRIANGLES, this->_triangleListBufferData.curOffset, GL_UNSIGNED_INT, nullptr);
-			
-			this->_triangleListBufferData.curOffset = 0;
 
 			glDisableClientState(GL_COLOR_ARRAY);
 			glDisableClientState(GL_VERTEX_ARRAY);
+
+			this->_triangleListBufferData.curOffset = 0;
 
 			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_lastIndexBufferId);
 			this->_pglBindBuffer(GL_ARRAY_BUFFER, this->_lastVertexBufferId);
@@ -181,32 +176,37 @@ namespace hax {
 			if (
 				!this->_pglGenBuffers || !this->_pglBindBuffer || !this->_pglBufferData ||
 				!this->_pglMapBuffer || !this->_pglUnmapBuffer || !this->_pglDeleteBuffers
-			) {
-				return false;
-			}
+			) return false;
 
 			return true;
 		}
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, UINT size) const {
-			constexpr GLenum GL_DYNAMIC_DRAW = 0x88E8;
+		bool Draw::createBufferData(BufferData* pBufferData, UINT size) const {			
+			const UINT indexBufferSize = size / sizeof(Vertex) * sizeof(GLuint);
+
+			if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, indexBufferSize, &pBufferData->indexBufferId)) return false;
 			
-			this->_pglGenBuffers(1, &pBufferData->indexBufferId);
-
-			if (!pBufferData->indexBufferId) return false;
-
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
-			this->_pglBufferData(GL_ELEMENT_ARRAY_BUFFER, size / sizeof(Vertex) * sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
-			
-			this->_pglGenBuffers(1, &pBufferData->vertexBufferId);
-
-			if (!pBufferData->vertexBufferId) return false;
-
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
-			this->_pglBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+			if (!this->createBuffer(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER_BINDING, size, &pBufferData->vertexBufferId)) return false;
 			
 			pBufferData->size = size;
+
+			return true;
+		}
+
+		bool Draw::createBuffer(GLenum target, GLenum binding, UINT size, GLuint* pId) const
+		{
+			this->_pglGenBuffers(1, pId);
+
+			if (!*pId) return false;
+
+			GLuint curBufferId{};
+			glGetIntegerv(binding, reinterpret_cast<GLint*>(&curBufferId));
+
+			this->_pglBindBuffer(target, *pId);
+			this->_pglBufferData(target, size, nullptr, GL_DYNAMIC_DRAW);
+			
+			this->_pglBindBuffer(target, curBufferId);
 
 			return true;
 		}
@@ -221,10 +221,12 @@ namespace hax {
 
 			if (!this->createBufferData(pBufferData, newSize)) return false;
 
+			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 			pBufferData->pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 			if (oldBufferData.pLocalIndexBuffer) {
-				memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, bytesUsedVertex / sizeof(Vertex) * sizeof(GLuint));
+				const UINT bytesUsedIndex = pBufferData->curOffset * sizeof(GLuint);
+				memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, bytesUsedIndex);
 
 				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, oldBufferData.indexBufferId);
 				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -232,6 +234,7 @@ namespace hax {
 				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 			}
 
+			this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
 			pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 			if (oldBufferData.pLocalVertexBuffer) {
