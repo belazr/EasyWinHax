@@ -18,22 +18,22 @@ namespace hax {
 			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 			swapChainDesc.SampleDesc.Count = 1;
 
-			ID3D11Device* _pDevice = nullptr;
-			IDXGISwapChain* _pSwapChain = nullptr;
+			ID3D11Device* pDevice = nullptr;
+			IDXGISwapChain* pSwapChain = nullptr;
 
-			HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &swapChainDesc, &_pSwapChain, &_pDevice, nullptr, nullptr);
+			HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, nullptr, nullptr);
 
-			if (hResult != S_OK || !_pDevice || !_pSwapChain) return false;
+			if (hResult != S_OK || !pDevice || !pSwapChain) return false;
 
-			if (memcpy_s(pSwapChainVTable, size, *reinterpret_cast<void**>(_pSwapChain), size)) {
-				_pDevice->Release();
-				_pSwapChain->Release();
+			if (memcpy_s(pSwapChainVTable, size, *reinterpret_cast<void**>(pSwapChain), size)) {
+				pDevice->Release();
+				pSwapChain->Release();
 
 				return false;
 			}
 
-			_pDevice->Release();
-			_pSwapChain->Release();
+			pDevice->Release();
+			pSwapChain->Release();
 
 			return true;
 		}

@@ -9,13 +9,13 @@ namespace hax {
 		TrampHook::TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size) :
 			_hProc(hProc), _origin(origin), _size(size), _detour{}, _detourOriginCall{}, _gateway{}, _hooked{}
 		{
-			_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (_detour && shell) {
+			if (this->_detour && shell) {
 
-				if (WriteProcessMemory(hProc, _detour, shell, shellSize, nullptr)) {
+				if (WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr)) {
 					// scan for the origin call in the shell code injected into the target
-					_detourOriginCall = mem::ex::findSigAddress(hProc, _detour, shellSize, originCallPattern);
+					_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
 				}
 
 			}
@@ -33,13 +33,13 @@ namespace hax {
 				this->_origin = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hMod, funcName));
 			}
 
-			_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (_detour && shell) {
+			if (this->_detour && shell) {
 
 				if (WriteProcessMemory(this->_hProc, this->_detour, shell, shellSize, nullptr)) {
 					// scan for the origin call in the shell code injected into the target
-					this->_detourOriginCall = mem::ex::findSigAddress(hProc, _detour, shellSize, originCallPattern);
+					this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
 				}
 
 			}
@@ -95,7 +95,7 @@ namespace hax {
 			this->_hooked = false;
 			delete[] stolen;
 
-			return VirtualFreeEx(this->_hProc, _gateway, 0, MEM_RELEASE);
+			return VirtualFreeEx(this->_hProc, this->_gateway, 0, MEM_RELEASE);
 		}
 
 
@@ -171,7 +171,7 @@ namespace hax {
 					
 			this->_hooked = false;
 
-			return VirtualFree(_gateway, 0, MEM_RELEASE);
+			return VirtualFree(this->_gateway, 0, MEM_RELEASE);
 		}
 
 

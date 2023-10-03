@@ -37,7 +37,7 @@ namespace hax {
 		const size_t read = fread_s(this->_pBytes, this->_size, sizeof(BYTE), this->_size, pFile);
 		this->_errno = fclose(pFile);
 		
-		if (this->_errno || read != _size) {
+		if (this->_errno || read != this->_size) {
 			
 			return false;
 		}

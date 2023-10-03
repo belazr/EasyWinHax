@@ -17,14 +17,14 @@ namespace hax {
 
 				if (this->_isWow64Proc) {
 					// saves original IAT entry
-					ReadProcessMemory(this->_hProc, _pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
+					ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
 				}
 				else {
 
 					#ifdef _WIN64
 
 					// saves original IAT entry
-					ReadProcessMemory(this->_hProc, _pIatEntry, &this->_origin, sizeof(uint64_t), nullptr);
+					ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint64_t), nullptr);
 					
 					#endif // _WIN64
 
@@ -55,9 +55,9 @@ namespace hax {
 
 			}
 
-			_detour = static_cast<BYTE*>(VirtualAllocEx(this->_hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+			this->_detour = static_cast<BYTE*>(VirtualAllocEx(this->_hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (_detour && shell) {
+			if (this->_detour && shell) {
 				WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr);
 			}
 
@@ -173,7 +173,7 @@ namespace hax {
 
 			if (this->_pIatEntry) {
 				// saves original IAT entry
-				_origin = *reinterpret_cast<BYTE**>(_pIatEntry);
+				this->_origin = *reinterpret_cast<BYTE**>(this->_pIatEntry);
 			}
 
 		}

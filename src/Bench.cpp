@@ -10,7 +10,7 @@ namespace hax {
 
 
 	Bench::~Bench() {
-		delete[] _durations;
+		delete[] this->_durations;
 	}
 
 

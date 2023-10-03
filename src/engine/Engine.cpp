@@ -8,14 +8,14 @@ namespace hax {
 	void Engine::beginDraw(void* pArg) {
 		this->pHookArg = pArg;
 
-		_pDraw->beginDraw(this);
+		this->_pDraw->beginDraw(this);
 
 		return;
 	}
 
 
 	void Engine::endDraw() {
-		_pDraw->endDraw(this);
+		this->_pDraw->endDraw(this);
 
 		return;
 	}
@@ -87,7 +87,7 @@ namespace hax {
 		corners[5].x = pos2->x - cosAtan;
 		corners[5].y = pos2->y - sinAtan;
 
-		_pDraw->drawTriangleList(corners, 6, color);
+		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 
@@ -123,7 +123,7 @@ namespace hax {
 		corners[5].x = pos2->x - cosAtan - omega * sinAtan;
 		corners[5].y = pos2->y;
 
-		_pDraw->drawTriangleList(corners, 6, color);
+		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 	void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const {
@@ -142,11 +142,11 @@ namespace hax {
 		corners[5].x = pos->x + width;
 		corners[5].y = pos->y;
 
-		_pDraw->drawTriangleList(corners, 6, color);
+		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
 	void Engine::drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
-		_pDraw->drawString(pFont, origin, text, color);
+		this->_pDraw->drawString(pFont, origin, text, color);
 	}
 
 	void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const {
