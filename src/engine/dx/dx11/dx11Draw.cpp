@@ -40,7 +40,7 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{},
+			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
 			_pointListBufferData{}, _triangleListBufferData{}, _viewport {}, _originalTopology{}, _isInit{} {}
 
 
@@ -104,7 +104,16 @@ namespace hax {
 				
 				if (!this->createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
+				ID3D11Texture2D* pBackBuffer = nullptr;
+				pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
+
+				if (!pBackBuffer) return;
+
+				this->_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &this->_pRenderTargetView);
+				pBackBuffer->Release();
+
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
+
 				this->_isInit = true;
 			}
 
@@ -116,6 +125,7 @@ namespace hax {
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
+			this->_pContext->OMSetRenderTargets(1, &this->_pRenderTargetView, nullptr);
 
 			// mapping the buffers is expensive so it is just done once per frame if no resize is necessary
 			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
