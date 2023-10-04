@@ -70,6 +70,10 @@ namespace hax {
 				this->_pConstantBuffer->Release();
 			}
 
+			if (this->_pRenderTargetView) {
+				this->_pRenderTargetView->Release();
+			}
+
 			if (this->_pointListBufferData.pBuffer) {
 				this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
 				this->_pointListBufferData.pBuffer->Release();
