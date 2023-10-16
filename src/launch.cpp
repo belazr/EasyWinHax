@@ -426,15 +426,15 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
 				const uint32_t oldEip{ wow64Context.Eip };
 				*reinterpret_cast<uint32_t*>(localShell + 0x01) = oldEip;
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 				*reinterpret_cast<uint32_t*>(localShell + 0x0A) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
@@ -511,12 +511,12 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = reinterpret_cast<uint32_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint32_t>(pFunc);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 				*reinterpret_cast<uint32_t*>(localShell + 0x08) = reinterpret_cast<uint32_t>(pLaunchDataEx);
 				*reinterpret_cast<uint32_t*>(localShell + 0x2C) = reinterpret_cast<uint32_t>(pHookData->pCallNextHookEx) - (reinterpret_cast<uint32_t>(pShellCode) + 0x30);
 
@@ -566,18 +566,18 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 				*reinterpret_cast<uint32_t*>(localShell + 0x04) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				const size_t lenStolen{ 10 };
-				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x1A, lenStolen);
+				constexpr size_t LEN_STOLEN{ 10 };
+				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x1A, LEN_STOLEN);
 
 				if (!pGateway) return false;
 
@@ -590,10 +590,10 @@ namespace hax {
 
 				const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
-				BYTE* const stolen = new BYTE[lenStolen]{};
+				BYTE* const stolen = new BYTE[LEN_STOLEN]{};
 
 				// read the stolen bytes from the gateway
-				if (!ReadProcessMemory(hProc, pGateway, stolen, lenStolen, nullptr)) {
+				if (!ReadProcessMemory(hProc, pGateway, stolen, LEN_STOLEN, nullptr)) {
 					// if gateway gets deallocated here, the process will crash
 					delete[] stolen;
 
@@ -601,7 +601,7 @@ namespace hax {
 				}
 
 				// patch the stolen bytes back
-				if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, lenStolen)) {
+				if (!mem::ex::patch(hProc, pNtUserBeginPaint, stolen, LEN_STOLEN)) {
 					// if gateway gets deallocated here, the process will crash
 					delete[] stolen;
 
@@ -639,8 +639,8 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
@@ -654,7 +654,7 @@ namespace hax {
 
 				if (!pRtlQueueApcWow64Thread) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 
 				if (pRtlQueueApcWow64Thread(hThread, pShellCode, pLaunchDataEx, nullptr, nullptr) != STATUS_SUCCESS) return false;
 
@@ -698,14 +698,14 @@ namespace hax {
 
 				if (memcpy_s(localShell, sizeof(localShell), CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 				HANDLE hThread{};
 
 				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
@@ -863,14 +863,14 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				*reinterpret_cast<uint64_t*>(localShell + 0x3A) = reinterpret_cast<uint64_t>(pHookData->pCallNextHookEx);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
@@ -919,8 +919,8 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
@@ -930,8 +930,8 @@ namespace hax {
 					return false;
 				}
 
-				const size_t lenStolen{ 8 };
-				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x32, lenStolen);
+				constexpr size_t LEN_STOLEN{ 8 };
+				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x32, LEN_STOLEN);
 
 				if (!pGateway) return false;
 
@@ -942,13 +942,13 @@ namespace hax {
 					EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&processId));
 				}
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 				const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
-				BYTE* const pStolen = new BYTE[lenStolen]{};
+				BYTE* const pStolen = new BYTE[LEN_STOLEN]{};
 
 				// read the stolen bytes from the gateway
-				if (!ReadProcessMemory(hProc, pGateway, pStolen, lenStolen, nullptr)) {
+				if (!ReadProcessMemory(hProc, pGateway, pStolen, LEN_STOLEN, nullptr)) {
 					// if gateway gets deallocated here, the process will crash
 					delete[] pStolen;
 
@@ -956,7 +956,7 @@ namespace hax {
 				}
 
 				// patch the stolen bytes back
-				if (!mem::ex::patch(hProc, pNtUserBeginPaint, pStolen, lenStolen)) {
+				if (!mem::ex::patch(hProc, pNtUserBeginPaint, pStolen, LEN_STOLEN)) {
 					// if gateway gets deallocated here, the process will crash
 					delete[] pStolen;
 
@@ -992,14 +992,14 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
 				
-				const ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
+				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
 
 				if (!QueueUserAPC(reinterpret_cast<PAPCFUNC>(pShellCode), hThread, reinterpret_cast<ULONG_PTR>(pLaunchDataEx))) return false;
 
