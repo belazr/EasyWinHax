@@ -9,7 +9,7 @@ namespace hax {
 
 	namespace launch {
 		// how long to wait for return value of launched function in milliseconds
-		constexpr DWORD LAUNCH_TIMEOUT{ 5000 };
+		constexpr DWORD LAUNCH_TIMEOUT = 5000ul;
 
 		typedef struct HookData {
 			DWORD processId;
@@ -64,10 +64,10 @@ namespace hax {
 
 			if (!pNtCreateThreadEx) return false;
 
-			BOOL isWow64{};
+			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success{};
+			bool success = false;
 
 			if (isWow64) {
 
@@ -126,10 +126,10 @@ namespace hax {
 				return false;
 			}
 
-			BOOL isWow64{};
+			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success{};
+			bool success = false;
 
 			if (isWow64) {
 
@@ -186,10 +186,10 @@ namespace hax {
 			hookData.pHookFunc = reinterpret_cast<HOOKPROC>(pShellCode);
 			hookData.pCallNextHookEx = pCallNextHookEx;
 
-			BOOL isWow64{};
+			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success{};
+			bool success = false;
 
 			// installing hook only possible from process with matching architechture
 			if (isWow64) {
@@ -234,10 +234,10 @@ namespace hax {
 
 			if (!pShellCode) return false;
 
-			BOOL isWow64{};
+			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success{};
+			bool success = false;
 
 			if (isWow64) {
 
@@ -276,7 +276,7 @@ namespace hax {
 				return false;
 			}
 
-			DWORD threadId{};
+			DWORD threadId = 0ul;
 
 			// iterate in reverse to avoid threadpool worker threads
 			for (LONG i = procEntry.threadCount - 1; i >= 0; i--) {
@@ -311,10 +311,10 @@ namespace hax {
 				return false;
 			}
 
-			BOOL isWow64{};
+			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success{};
+			bool success = false;
 
 			if (isWow64) {
 
@@ -364,7 +364,7 @@ namespace hax {
 			}LaunchData;
 
 			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet) {
-				HANDLE hThread{};
+				HANDLE hThread = nullptr;
 
 				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
 
@@ -426,15 +426,15 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
-				const uint32_t oldEip{ wow64Context.Eip };
+				const uint32_t oldEip = wow64Context.Eip;
 				*reinterpret_cast<uint32_t*>(localShell + 0x01) = oldEip;
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				*reinterpret_cast<uint32_t*>(localShell + 0x0A) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
@@ -511,12 +511,12 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint32_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint32_t>(pFunc);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				*reinterpret_cast<uint32_t*>(localShell + 0x08) = reinterpret_cast<uint32_t>(pLaunchDataEx);
 				*reinterpret_cast<uint32_t*>(localShell + 0x2C) = reinterpret_cast<uint32_t>(pHookData->pCallNextHookEx) - (reinterpret_cast<uint32_t>(pShellCode) + 0x30);
 
@@ -566,17 +566,17 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				*reinterpret_cast<uint32_t*>(localShell + 0x04) = LOW_DWORD(pLaunchDataEx);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				constexpr size_t LEN_STOLEN{ 10 };
+				constexpr size_t LEN_STOLEN = 10;
 				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x1A, LEN_STOLEN);
 
 				if (!pGateway) return false;
@@ -639,8 +639,8 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
@@ -654,7 +654,7 @@ namespace hax {
 
 				if (!pRtlQueueApcWow64Thread) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
 				if (pRtlQueueApcWow64Thread(hThread, pShellCode, pLaunchDataEx, nullptr, nullptr) != STATUS_SUCCESS) return false;
 
@@ -698,15 +698,15 @@ namespace hax {
 
 				if (memcpy_s(localShell, sizeof(localShell), CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
-				HANDLE hThread{};
+				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
+				HANDLE hThread = nullptr;
 
 				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
 
@@ -776,12 +776,12 @@ namespace hax {
 
 				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return false;
 				
-				constexpr ptrdiff_t launchDataOffset{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + launchDataOffset) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				const uint64_t oldRip{ context.Rip };
+				const uint64_t oldRip = context.Rip;
 				// save old rip at pRet for convenience
 				// it is used before it is overwritten by the return value
 				pLaunchData->pRet = oldRip;
@@ -811,7 +811,7 @@ namespace hax {
 					return false;
 				}
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + launchDataOffset) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
 				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
 
@@ -863,14 +863,14 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				*reinterpret_cast<uint64_t*>(localShell + 0x3A) = reinterpret_cast<uint64_t>(pHookData->pCallNextHookEx);
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
@@ -919,8 +919,8 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
@@ -930,7 +930,7 @@ namespace hax {
 					return false;
 				}
 
-				constexpr size_t LEN_STOLEN{ 8 };
+				constexpr size_t LEN_STOLEN = 8;
 				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, pShellCode + 0x32, LEN_STOLEN);
 
 				if (!pGateway) return false;
@@ -942,7 +942,7 @@ namespace hax {
 					EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&processId));
 				}
 
-				const LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
 				BYTE* const pStolen = new BYTE[LEN_STOLEN]{};
@@ -992,14 +992,14 @@ namespace hax {
 				
 				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
 				
-				constexpr ptrdiff_t LAUNCH_DATA_OFFSET{ sizeof(localShell) - sizeof(LaunchData) };
-				LaunchData* const pLaunchData{ reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET) };
+				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
+				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
-				LaunchData* const pLaunchDataEx{ reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET) };
+				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
 				if (!QueueUserAPC(reinterpret_cast<PAPCFUNC>(pShellCode), hThread, reinterpret_cast<ULONG_PTR>(pLaunchDataEx))) return false;
 
@@ -1017,7 +1017,7 @@ namespace hax {
 
 		// check via flag if shell code has been executed
 		static bool checkShellCodeFlag(HANDLE hProc, const void* pFlag) {
-			bool flag{};
+			bool flag = false;
 			const ULONGLONG start = GetTickCount64();
 
 			do {
@@ -1034,11 +1034,11 @@ namespace hax {
 
 		// set WNDPROC hook in the thread of a window of the target process
 		static BOOL CALLBACK setHookCallback(HWND hWnd, LPARAM lParam) {
-			HookData* const pHookCallbackData{ reinterpret_cast<HookData*>(lParam) };
+			HookData* const pHookCallbackData = reinterpret_cast<HookData*>(lParam);
 
 			if (pHookCallbackData->hHook) return TRUE;
 
-			DWORD curProcId{};
+			DWORD curProcId = 0ul;
 			const DWORD curThreadId = GetWindowThreadProcessId(hWnd, &curProcId);
 
 			if (!curThreadId || !curProcId) return TRUE;
@@ -1068,12 +1068,12 @@ namespace hax {
 
 		// resize window to trigger NtUserBeginPaint
 		static BOOL CALLBACK resizeCallback(HWND hWnd, LPARAM lParam) {
-			DWORD curProcId{};
+			DWORD curProcId = 0ul;
 			GetWindowThreadProcessId(hWnd, &curProcId);
 
 			if (!curProcId) return TRUE;
 
-			const DWORD processId{ *reinterpret_cast<DWORD*>(lParam) };
+			const DWORD processId = *reinterpret_cast<DWORD*>(lParam);
 
 			if (curProcId != processId) return TRUE;
 
@@ -1091,7 +1091,7 @@ namespace hax {
 
 			if (!GetWindowPlacement(hWnd, &wndPlacement)) return TRUE;
 
-			const UINT oldShowCmd{ wndPlacement.showCmd };
+			const UINT oldShowCmd = wndPlacement.showCmd;
 
 			if (oldShowCmd == SW_MINIMIZE || oldShowCmd == SW_SHOWMINIMIZED || oldShowCmd == SW_SHOWMINNOACTIVE) {
 				wndPlacement.showCmd = SW_RESTORE;

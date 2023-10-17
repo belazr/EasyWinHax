@@ -26,7 +26,7 @@ namespace hax {
 
 		// ASM:
 		// nop
-		constexpr BYTE NOP{ 0x90 };
+		constexpr BYTE NOP = 0x90;
 
 		// ASM:
 		// jmp 0x00000000
@@ -241,7 +241,7 @@ namespace hax {
 
 
 			bool patch(HANDLE hProc, BYTE* dst, const BYTE src[], size_t size) {
-				DWORD protect = 0;
+				DWORD protect = 0ul;
 
 				if (!VirtualProtectEx(hProc, dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
@@ -287,7 +287,7 @@ namespace hax {
 					// scan only if commited and accessable
 					if (!VirtualQueryEx(hProc, &base[i], &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
 
-					DWORD oldProtect = 0;
+					DWORD oldProtect = 0ul;
 
 					if (!VirtualProtectEx(hProc, mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &oldProtect)) continue;
 
@@ -518,7 +518,7 @@ namespace hax {
 
 
 			bool patch(BYTE* dst, const BYTE src[], size_t size) {
-				DWORD protect = 0;
+				DWORD protect = 0ul;
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
