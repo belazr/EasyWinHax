@@ -328,7 +328,7 @@ namespace hax {
 
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
-			DWORD processId = 0;
+			DWORD processId = 0ul;
 			GetWindowThreadProcessId(hWnd, &processId);
 
 			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;

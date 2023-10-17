@@ -124,8 +124,9 @@ namespace hax {
 			for (ULONG i = 0; i < pSysHandleInfoBuffer->NumberOfHandles; i++) {
 				const SYSTEM_HANDLE_TABLE_ENTRY_INFO curHandleInfo = pSysHandleInfoBuffer->Handles[i];
 
-				// check if handle is process handle
-				if (curHandleInfo.ObjectTypeIndex != 0x07) continue;
+				constexpr UCHAR PROCESS_TYPE = 7;
+				
+				if (curHandleInfo.ObjectTypeIndex != PROCESS_TYPE) continue;
 
 				// pointless if caller process is owner process
 				if (curHandleInfo.UniqueProcessId == curProcessId) continue;
@@ -246,17 +247,17 @@ namespace hax {
 					return nullptr;
 				}
 
-				DWORD funcRva = 0;
+				DWORD funcRva = 0ul;
 				// export by ordinal if everything but the lowest word of name param is zero
-				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) & 0xFFFFFFFFFFFF0000) == 0;
+				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0;
 
 				if (byOrdinal) {
-					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & 0xFFFF) - exportDir.Base);
+					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & MAXWORD) - exportDir.Base);
 					funcRva = pExportFunctionTable[index];
 				}
 				else {
 
-					for (DWORD i = 0; i < exportDir.NumberOfNames; i++) {
+					for (DWORD i = 0ul; i < exportDir.NumberOfNames; i++) {
 						char curFuncName[MAX_PATH]{};
 
 						if (!mem::ex::copyRemoteString(hProc, curFuncName, pBase + pExportNameTable[i], MAX_PATH)) continue;
@@ -407,7 +408,7 @@ namespace hax {
 				// make sure it is a a vaild pe header
 				if (dosHeader.e_magic != IMAGE_DOS_SIGNATURE) return false;
 
-				DWORD ntSig = 0;
+				DWORD ntSig = 0ul;
 
 				if (!ReadProcessMemory(hProc, pBase + dosHeader.e_lfanew, &ntSig, sizeof(ntSig), nullptr)) return false;
 
@@ -737,17 +738,17 @@ namespace hax {
 
 				if (!pExportOrdinalTable) return nullptr;
 
-				DWORD funcRva = 0;
+				DWORD funcRva = 0ul;
 				// export by ordinal if everything but the lowest word of name param is zero
-				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) & 0xFFFFFFFFFFFF0000) == 0;
+				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0;
 
 				if (byOrdinal) {
-					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & 0xFFFF) - pExportDir->Base);
+					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & MAXWORD) - pExportDir->Base);
 					funcRva = pExportFunctionTable[index];
 				}
 				else {
 
-					for (DWORD i = 0; i < pExportDir->NumberOfNames; i++) {
+					for (DWORD i = 0ul; i < pExportDir->NumberOfNames; i++) {
 						const char* const curFuncName = reinterpret_cast<const char*>(pBase + pExportNameTable[i]);
 
 						if (!_stricmp(funcName, curFuncName)) {

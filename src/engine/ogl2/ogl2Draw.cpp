@@ -200,7 +200,7 @@ namespace hax {
 
 			if (!*pId) return false;
 
-			GLuint curBufferId{};
+			GLuint curBufferId = 0u;
 			glGetIntegerv(binding, reinterpret_cast<GLint*>(&curBufferId));
 
 			this->_pglBindBuffer(target, *pId);
