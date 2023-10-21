@@ -2,7 +2,6 @@
 #include "dx11Vertex.h"
 #include "..\..\Engine.h"
 #include <d3dcompiler.h>
-#include <DirectXMath.h>
 
 namespace hax {
 
@@ -303,7 +302,17 @@ namespace hax {
 
 			if (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height) return false;
 
-			DirectX::XMMATRIX ortho = DirectX::XMMatrixOrthographicOffCenterLH(0, curViewport.Width, curViewport.Height, 0, 0.f, 1.f);
+			const float viewLeft = static_cast<const float>(curViewport.TopLeftX);
+			const float viewRight = static_cast<const float>(curViewport.TopLeftX + curViewport.Width);
+			const float viewTop = static_cast<const float>(curViewport.TopLeftY);
+			const float viewBottom = static_cast<const float>(curViewport.TopLeftY + curViewport.Height);
+
+			const float ortho[][4] {
+				{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
+				{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
+				{ 0.f, 0.f, .5f, 0.f },
+				{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+			};
 
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
