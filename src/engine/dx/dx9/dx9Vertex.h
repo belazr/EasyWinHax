@@ -17,7 +17,8 @@ namespace hax {
 			Vertex() = delete;
 
 		public:
-			Vertex(Vector2 coordinates, hax::rgb::Color color) : _coordinates{ coordinates.x, coordinates.y, 1.f }, _color{ color }, _rhw{ 1.f } {}
+			Vertex(Vector2 coordinates, hax::rgb::Color color) :
+				_coordinates{ coordinates.x, coordinates.y, 1.f }, _rhw{ 1.f }, _color{ static_cast<rgb::Color>(UCHAR_A(color) << 24 | UCHAR_R(color) << 16 | UCHAR_G(color) << 8 | UCHAR_B(color)) } {}
 		};
 
 	}
