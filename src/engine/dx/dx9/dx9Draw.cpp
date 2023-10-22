@@ -1,7 +1,6 @@
 #include "dx9Draw.h"
 #include "dx9Vertex.h"
 #include "..\..\Engine.h"
-#include "..\..\..\Bench.h"
 
 namespace hax {
 
@@ -41,7 +40,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _triangleListBufferData{}, _isInit {} {}
+		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _world{}, _view{}, _projection{}, _identity{}, _ortho{}, _lightingState{}, _fvf{}, _isInit {} {}
 
 
 		Draw::~Draw() {
@@ -54,7 +53,7 @@ namespace hax {
 		}
 
 
-		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZRHW | D3DFVF_DIFFUSE;
+		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
 		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
 		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
 		
@@ -72,13 +71,18 @@ namespace hax {
 				this->_isInit = true;
 			}
 
-			D3DVIEWPORT9 viewport{};
-			HRESULT const res = this->_pDevice->GetViewport(&viewport);
-
-			if (res == D3D_OK) {
-				pEngine->setWindowSize(viewport.Width, viewport.Height);
+			if (this->saveMatricies()) {
+				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
+			this->_pDevice->SetTransform(D3DTS_WORLD, &this->_identity);
+			this->_pDevice->SetTransform(D3DTS_VIEW, &this->_identity);
+			this->_pDevice->SetTransform(D3DTS_PROJECTION, &this->_ortho);
+
+			this->_pDevice->GetRenderState(D3DRS_LIGHTING, &this->_lightingState);
+			this->_pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+			
+			this->_pDevice->GetFVF(&this->_fvf);
 			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
 
 			// locking the buffers is expensive so it is just done once per frame if no resize is necessary
@@ -104,6 +108,14 @@ namespace hax {
 				this->_triangleListBufferData.pLocalBuffer = nullptr;
 				this->drawVertexBuffer(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
 			}
+
+			this->_pDevice->SetFVF(this->_fvf);
+
+			this->_pDevice->SetRenderState(D3DRS_LIGHTING, this->_lightingState);
+
+			this->_pDevice->SetTransform(D3DTS_WORLD, &this->_world);
+			this->_pDevice->SetTransform(D3DTS_VIEW, &this->_view);
+			this->_pDevice->SetTransform(D3DTS_PROJECTION, &this->_projection);
 			
 			return; 
 		}
@@ -144,6 +156,40 @@ namespace hax {
 			}
 
 			return;
+		}
+
+
+		bool Draw::saveMatricies() {
+			D3DVIEWPORT9 curViewport{};
+			const HRESULT res = this->_pDevice->GetViewport(&curViewport);
+
+			if (res != D3D_OK || (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height)) return false;
+
+			this->_pDevice->GetTransform(D3DTS_WORLD, &this->_world);
+			this->_pDevice->GetTransform(D3DTS_VIEW, &this->_view);
+			this->_pDevice->GetTransform(D3DTS_PROJECTION, &this->_projection);
+
+			this->_identity = { { { 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f } } };
+
+			const float viewLeft = static_cast<const float>(curViewport.X);
+			const float viewRight = static_cast<const float>(curViewport.X + curViewport.Width);
+			const float viewTop = static_cast<const float>(curViewport.Y);
+			const float viewBottom = static_cast<const float>(curViewport.Y + curViewport.Height);
+
+			this->_ortho = {
+				{
+					{
+						2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f,
+						0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f,
+						0.f, 0.f, .5f, 0.f,
+						(viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f
+					}
+				}
+			};
+
+			this->_viewport = curViewport;
+
+			return true;
 		}
 
 

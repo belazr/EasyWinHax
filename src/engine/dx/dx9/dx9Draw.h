@@ -41,6 +41,15 @@ namespace hax {
 			VertexBufferData _pointListBufferData;
 			VertexBufferData _triangleListBufferData;
 
+			D3DVIEWPORT9 _viewport;
+			D3DMATRIX _world;
+			D3DMATRIX _view;
+			D3DMATRIX _projection;
+			D3DMATRIX _identity;
+			D3DMATRIX _ortho;
+			DWORD _lightingState;
+			DWORD _fvf;
+
 			bool _isInit;
 
 		public:
@@ -95,6 +104,7 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 			
 		private:
+			bool saveMatricies();
 			void copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const;
 			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;
