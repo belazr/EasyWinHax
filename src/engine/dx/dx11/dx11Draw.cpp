@@ -9,18 +9,18 @@ namespace hax {
 
 		bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size) {
 			DXGI_SWAP_CHAIN_DESC swapChainDesc{};
-			swapChainDesc.BufferCount = 1;
+			swapChainDesc.BufferCount = 1u;
 			swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			swapChainDesc.OutputWindow = GetDesktopWindow();
 			swapChainDesc.Windowed = TRUE;
 			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-			swapChainDesc.SampleDesc.Count = 1;
+			swapChainDesc.SampleDesc.Count = 1u;
 
 			ID3D11Device* pDevice = nullptr;
 			IDXGISwapChain* pSwapChain = nullptr;
 
-			HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, nullptr, nullptr);
+			HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0u, nullptr, 0u, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, nullptr, nullptr);
 
 			if (hResult != S_OK || !pDevice || !pSwapChain) return false;
 
@@ -74,12 +74,12 @@ namespace hax {
 			}
 
 			if (this->_pointListBufferData.pBuffer) {
-				this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
+				this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0u);
 				this->_pointListBufferData.pBuffer->Release();
 			}
 
 			if (this->_triangleListBufferData.pBuffer) {
-				this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
+				this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0u);
 				this->_triangleListBufferData.pBuffer->Release();
 			}
 
@@ -108,7 +108,7 @@ namespace hax {
 				if (!this->createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
 				ID3D11Texture2D* pBackBuffer = nullptr;
-				pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
+				pSwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
 
 				if (!pBackBuffer) return;
 
@@ -124,19 +124,19 @@ namespace hax {
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
-			this->_pContext->VSSetConstantBuffers(0, 1, &this->_pConstantBuffer);
-			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0);
+			this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
+			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
-			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0);
-			this->_pContext->OMSetRenderTargets(1, &this->_pRenderTargetView, nullptr);
+			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
+			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 
 			// mapping the buffers is expensive so it is just done once per frame if no resize is necessary
 			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
-			this->_pContext->Map(this->_pointListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresourcePoints);
+			this->_pContext->Map(this->_pointListBufferData.pBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints);
 			this->_pointListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
 
 			D3D11_MAPPED_SUBRESOURCE subresourceTriangles{};
-			this->_pContext->Map(this->_triangleListBufferData.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresourceTriangles);
+			this->_pContext->Map(this->_triangleListBufferData.pBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourceTriangles);
 			this->_triangleListBufferData.pLocalBuffer = reinterpret_cast<Vertex*>(subresourceTriangles.pData);
 
 			return;
@@ -149,11 +149,11 @@ namespace hax {
 			if (!this->_isInit) return;
 
 			// draw all the buffers at once to save api calls
-			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0);
+			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0u);
 			this->_pointListBufferData.pLocalBuffer = nullptr;
 			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0);
+			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0u);
 			this->_triangleListBufferData.pLocalBuffer = nullptr;
 			this->drawVertexBuffer(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -167,7 +167,7 @@ namespace hax {
 
 		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
-			if (!this->_isInit || count % 3) return;
+			if (!this->_isInit || count % 3u) return;
 			
 			this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color);
 
@@ -193,7 +193,7 @@ namespace hax {
 
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
+					const Vector2 curPos{ pos->x + (pDxFont->width + 1.f) * i, pos->y - pDxFont->height };
 					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->pixel, pCurChar->pixelCount, color, curPos);
 				}
 
@@ -232,7 +232,7 @@ namespace hax {
 
 		bool Draw::compileShaders() {
 			ID3D10Blob* pCompiledVertexShader = nullptr;
-			HRESULT hResult = D3DCompile(shader, sizeof(shader), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledVertexShader, nullptr);
+			HRESULT hResult = D3DCompile(shader, sizeof(shader), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0u, &pCompiledVertexShader, nullptr);
 
 			if (hResult != S_OK || !pCompiledVertexShader) return false;
 
@@ -245,8 +245,8 @@ namespace hax {
 			}
 
 			D3D11_INPUT_ELEMENT_DESC inputElementDesc[2]{
-				{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-				{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+				{"POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u},
+				{"COLOR", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u}
 			};
 
 			hResult = this->_pDevice->CreateInputLayout(inputElementDesc, sizeof(inputElementDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), pCompiledVertexShader->GetBufferPointer(), pCompiledVertexShader->GetBufferSize(), &this->_pVertexLayout);
@@ -256,7 +256,7 @@ namespace hax {
 			if (hResult != S_OK) return false;
 
 			ID3D10Blob* pCompiledPixelShader = nullptr;
-			hResult = D3DCompile(shader, sizeof(shader), 0, nullptr, nullptr, "mainPS", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pCompiledPixelShader, nullptr);
+			hResult = D3DCompile(shader, sizeof(shader), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0u, &pCompiledPixelShader, nullptr);
 
 			if (hResult != S_OK || !pCompiledPixelShader) return false;
 
@@ -295,9 +295,9 @@ namespace hax {
 				curViewport.Height = static_cast<FLOAT>(windowRect.bottom);
 				curViewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
 				curViewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
-				curViewport.MinDepth = 0.0f;
-				curViewport.MaxDepth = 1.0f;
-				this->_pContext->RSSetViewports(1, &curViewport);
+				curViewport.MinDepth = 0.f;
+				curViewport.MaxDepth = 1.f;
+				this->_pContext->RSSetViewports(1u, &curViewport);
 			}
 
 			if (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height) return false;
@@ -363,7 +363,7 @@ namespace hax {
 
 			}
 
-			for (UINT i = 0; i < count; i++) {
+			for (UINT i = 0u; i < count; i++) {
 				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
 				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
 			}
@@ -385,14 +385,14 @@ namespace hax {
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
 			
-			if (this->_pContext->Map(pVertexBufferData->pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource) != S_OK) return false;
+			if (this->_pContext->Map(pVertexBufferData->pBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource) != S_OK) return false;
 
 			pVertexBufferData->pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
 
 			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
 				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
 
-				this->_pContext->Unmap(oldBufferData.pBuffer, 0);
+				this->_pContext->Unmap(oldBufferData.pBuffer, 0u);
 				oldBufferData.pBuffer->Release();
 			}
 
@@ -411,8 +411,8 @@ namespace hax {
 
 			if (!pVertexBufferData->pBuffer) {
 				pVertexBufferData->pLocalBuffer = nullptr;
-				pVertexBufferData->size = 0;
-				pVertexBufferData->curOffset = 0;
+				pVertexBufferData->size = 0u;
+				pVertexBufferData->curOffset = 0u;
 
 				return false;
 			}
@@ -421,7 +421,7 @@ namespace hax {
 
 			pVertexBufferData->pLocalBuffer = nullptr;
 			pVertexBufferData->size = size;
-			pVertexBufferData->curOffset = 0;
+			pVertexBufferData->curOffset = 0u;
 
 			return true;
 		}
@@ -429,12 +429,12 @@ namespace hax {
 
 		void Draw::drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
 			constexpr UINT STRIDE = sizeof(Vertex);
-			constexpr UINT OFFSET = 0;
-			this->_pContext->IASetVertexBuffers(0, 1, &pVertexBufferData->pBuffer, &STRIDE, &OFFSET);
+			constexpr UINT OFFSET = 0u;
+			this->_pContext->IASetVertexBuffers(0u, 1u, &pVertexBufferData->pBuffer, &STRIDE, &OFFSET);
 			this->_pContext->IASetPrimitiveTopology(topology);
-			this->_pContext->Draw(pVertexBufferData->curOffset, 0);
+			this->_pContext->Draw(pVertexBufferData->curOffset, 0u);
 
-			pVertexBufferData->curOffset = 0;
+			pVertexBufferData->curOffset = 0u;
 
 			return;
 		}

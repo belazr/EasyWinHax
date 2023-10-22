@@ -86,8 +86,8 @@ namespace hax {
 			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
 
 			// locking the buffers is expensive so it is just done once per frame if no resize is necessary
-			this->_pointListBufferData.pBuffer->Lock(0, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
-			this->_triangleListBufferData.pBuffer->Lock(0, this->_triangleListBufferData.size, reinterpret_cast<void**>(&this->_triangleListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
+			this->_pointListBufferData.pBuffer->Lock(0u, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
+			this->_triangleListBufferData.pBuffer->Lock(0u, this->_triangleListBufferData.size, reinterpret_cast<void**>(&this->_triangleListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
 
 			return;
 		}
@@ -149,7 +149,7 @@ namespace hax {
 
 				if (pCurChar && pCurChar->pixel) {
 					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pDxFont->width + 1) * i, pos->y - pDxFont->height };
+					const Vector2 curPos{ pos->x + (pDxFont->width + 1.f) * i, pos->y - pDxFont->height };
 					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->pixel, pCurChar->pixelCount, color, curPos);
 				}
 
@@ -202,7 +202,7 @@ namespace hax {
 
 			}
 
-			for (UINT i = 0; i < count; i++) {
+			for (UINT i = 0u; i < count; i++) {
 				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
 				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
 			}
@@ -222,7 +222,7 @@ namespace hax {
 
 			if (!this->createVertexBufferData(pVertexBufferData, newSize)) return false;
 			
-			if (pVertexBufferData->pBuffer->Lock(0, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+			if (pVertexBufferData->pBuffer->Lock(0u, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
 
 			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
 				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
@@ -240,8 +240,8 @@ namespace hax {
 
 			if (!pVertexBufferData->pBuffer) {
 				pVertexBufferData->pLocalBuffer = nullptr;
-				pVertexBufferData->size = 0;
-				pVertexBufferData->curOffset = 0;
+				pVertexBufferData->size = 0u;
+				pVertexBufferData->curOffset = 0u;
 
 				return false;
 			}
@@ -250,14 +250,14 @@ namespace hax {
 
 			pVertexBufferData->pLocalBuffer = nullptr;
 			pVertexBufferData->size = size;
-			pVertexBufferData->curOffset = 0;
+			pVertexBufferData->curOffset = 0u;
 
 			return true;
 		}
 
 
 		void Draw::drawVertexBuffer(VertexBufferData* pVertexBufferData, D3DPRIMITIVETYPE type) const {
-			UINT primitiveCount = 0;
+			UINT primitiveCount = 0u;
 
 			switch (type) {
 			case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
@@ -280,9 +280,9 @@ namespace hax {
 				return;
 			}
 			
-			if (this->_pDevice->SetStreamSource(0, pVertexBufferData->pBuffer, 0, sizeof(Vertex)) == D3D_OK) {
-				this->_pDevice->DrawPrimitive(type, 0, primitiveCount);
-				pVertexBufferData->curOffset = 0;
+			if (this->_pDevice->SetStreamSource(0u, pVertexBufferData->pBuffer, 0u, sizeof(Vertex)) == D3D_OK) {
+				this->_pDevice->DrawPrimitive(type, 0u, primitiveCount);
+				pVertexBufferData->curOffset = 0u;
 			}
 
 		}
