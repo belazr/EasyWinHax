@@ -40,7 +40,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _world{}, _view{}, _projection{}, _identity{}, _ortho{}, _lightingState{}, _fvf{}, _isInit {} {}
+		Draw::Draw() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData {}, _triangleListBufferData{}, _viewport{}, _isInit {} {}
 
 
 		Draw::~Draw() {
@@ -68,22 +68,27 @@ namespace hax {
 
 				if (!createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
+				constexpr D3DVERTEXELEMENT9 vertexElements[]{
+					{ 0, 0,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0 },
+					{ 0, 8, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+					D3DDECL_END()
+				};
+
+				this->_pDevice->CreateVertexDeclaration(vertexElements, &this->_pVertexDeclaration);
+
 				this->_isInit = true;
 			}
 
-			if (this->saveMatricies()) {
+			D3DVIEWPORT9 curViewport{};
+			this->_pDevice->GetViewport(&curViewport);
+
+			if (this->_viewport.Width != curViewport.Width || this->_viewport.Height != curViewport.Height) {
+				this->_viewport = curViewport;
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
-
-			this->_pDevice->SetTransform(D3DTS_WORLD, &this->_identity);
-			this->_pDevice->SetTransform(D3DTS_VIEW, &this->_identity);
-			this->_pDevice->SetTransform(D3DTS_PROJECTION, &this->_ortho);
-
-			this->_pDevice->GetRenderState(D3DRS_LIGHTING, &this->_lightingState);
-			this->_pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 			
-			this->_pDevice->GetFVF(&this->_fvf);
-			this->_pDevice->SetFVF(D3DFVF_CUSTOM);
+			this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration);
+			this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration);
 
 			// locking the buffers is expensive so it is just done once per frame if no resize is necessary
 			this->_pointListBufferData.pBuffer->Lock(0u, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
@@ -109,13 +114,7 @@ namespace hax {
 				this->drawVertexBuffer(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
 			}
 
-			this->_pDevice->SetFVF(this->_fvf);
-
-			this->_pDevice->SetRenderState(D3DRS_LIGHTING, this->_lightingState);
-
-			this->_pDevice->SetTransform(D3DTS_WORLD, &this->_world);
-			this->_pDevice->SetTransform(D3DTS_VIEW, &this->_view);
-			this->_pDevice->SetTransform(D3DTS_PROJECTION, &this->_projection);
+			this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
 			
 			return; 
 		}
@@ -156,40 +155,6 @@ namespace hax {
 			}
 
 			return;
-		}
-
-
-		bool Draw::saveMatricies() {
-			D3DVIEWPORT9 curViewport{};
-			const HRESULT res = this->_pDevice->GetViewport(&curViewport);
-
-			if (res != D3D_OK || (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height)) return false;
-
-			this->_pDevice->GetTransform(D3DTS_WORLD, &this->_world);
-			this->_pDevice->GetTransform(D3DTS_VIEW, &this->_view);
-			this->_pDevice->GetTransform(D3DTS_PROJECTION, &this->_projection);
-
-			this->_identity = { { { 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f } } };
-
-			const float viewLeft = static_cast<const float>(curViewport.X);
-			const float viewRight = static_cast<const float>(curViewport.X + curViewport.Width);
-			const float viewTop = static_cast<const float>(curViewport.Y);
-			const float viewBottom = static_cast<const float>(curViewport.Y + curViewport.Height);
-
-			this->_ortho = {
-				{
-					{
-						2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f,
-						0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f,
-						0.f, 0.f, .5f, 0.f,
-						(viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f
-					}
-				}
-			};
-
-			this->_viewport = curViewport;
-
-			return true;
 		}
 
 
