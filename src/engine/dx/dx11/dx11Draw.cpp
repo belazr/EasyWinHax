@@ -192,8 +192,8 @@ namespace hax {
 				const dx::Fontchar* pCurChar = &pDxFont->chars[index];
 
 				if (pCurChar && pCurChar->pixel) {
-					// current char x coordinate is offset by width of previously drawn chars plus one pixel spacing per char
-					const Vector2 curPos{ pos->x + (pDxFont->width + 1.f) * i, pos->y - pDxFont->height };
+					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
+					const Vector2 curPos{ pos->x + (pDxFont->width + 2.f) * i, pos->y - pDxFont->height };
 					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->pixel, pCurChar->pixelCount, color, curPos);
 				}
 
