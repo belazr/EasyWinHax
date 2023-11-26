@@ -1,7 +1,6 @@
 #include "ogl2Draw.h"
 #include "ogl2Font.h"
 #include "..\Engine.h"
-#include "..\..\Bench.h"
 #include <Windows.h>
 
 namespace hax {
@@ -39,7 +38,6 @@ namespace hax {
 
 
 		void Draw::beginDraw(Engine* pEngine) {
-			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isInit) {
 
@@ -153,7 +151,7 @@ namespace hax {
 			
 			if (!pOgl2Font || strLen > 100) return;
 
-			glColor3ub(UCHAR_R(color), UCHAR_G(color), UCHAR_B(color));
+			glColor3ub(COLOR_UCHAR_R(color), COLOR_UCHAR_G(color), COLOR_UCHAR_B(color));
 			glRasterPos2f(pos->x, pos->y);
 			glPushAttrib(GL_LIST_BIT);
 			glListBase(pOgl2Font->displayLists - 32);

@@ -1,6 +1,5 @@
 #pragma once
-#include "dx9Vertex.h"
-#include "..\font\dxFonts.h"
+#include "..\..\Vertex.h"
 #include "..\..\IDraw.h"
 #include <d3d9.h>
 

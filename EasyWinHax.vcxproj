@@ -19,8 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\engine\dx\dx11\dx11Vertex.h" />
-    <ClInclude Include="src\engine\dx\dx9\dx9Vertex.h" />
     <ClInclude Include="src\engine\dx\dx11\dx11Draw.h" />
     <ClInclude Include="src\engine\dx\font\dxFonts.h" />
     <ClInclude Include="src\engine\Engine.h" />
@@ -28,8 +26,8 @@
     <ClInclude Include="src\engine\IDraw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Draw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Font.h" />
-    <ClInclude Include="src\engine\ogl2\ogl2Vertex.h" />
     <ClInclude Include="src\engine\rgb.h" />
+    <ClInclude Include="src\engine\Vertex.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
     <ClInclude Include="src\FileLoader.h" />

@@ -1,5 +1,5 @@
 #include "dx11Draw.h"
-#include "dx11Vertex.h"
+#include "..\font\dxFonts.h"
 #include "..\..\Engine.h"
 #include <d3dcompiler.h>
 
