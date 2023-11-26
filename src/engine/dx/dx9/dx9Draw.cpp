@@ -1,5 +1,5 @@
 #include "dx9Draw.h"
-#include "dx9Vertex.h"
+#include "..\font\dxFonts.h"
 #include "..\..\Engine.h"
 
 namespace hax {
@@ -168,7 +168,7 @@ namespace hax {
 			}
 
 			for (UINT i = 0u; i < count; i++) {
-				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
+				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, COLOR_ABGR_TO_ARGB(color)};
 				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
 			}
 

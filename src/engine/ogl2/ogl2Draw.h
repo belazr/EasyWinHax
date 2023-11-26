@@ -1,5 +1,5 @@
 #pragma once
-#include "ogl2Vertex.h"
+#include "..\Vertex.h"
 #include "..\IDraw.h"
 #define GL_GLEXT_PROTOTYPES
 #include <gl\GL.h>

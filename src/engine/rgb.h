@@ -12,10 +12,13 @@ namespace hax {
 		#define COLOR_ABGR(a,b,g,r) (static_cast<Color>(((((a) & 0xFF) << 24) | (((b) & 0xFF) << 16) | (((g) & 0xFF) << 8) | ((r) & 0xFF))))
 		
 		// Macros to extract the ABGR values from a DWORD
-		#define UCHAR_A(color) (static_cast<unsigned char>(color >> 24))
-		#define UCHAR_B(color) (static_cast<unsigned char>(color >> 16))
-		#define UCHAR_G(color) (static_cast<unsigned char>(color >> 8))
-		#define UCHAR_R(color) (static_cast<unsigned char>(color))
+		#define COLOR_UCHAR_A(color) (static_cast<unsigned char>(color >> 24))
+		#define COLOR_UCHAR_B(color) (static_cast<unsigned char>(color >> 16))
+		#define COLOR_UCHAR_G(color) (static_cast<unsigned char>(color >> 8))
+		#define COLOR_UCHAR_R(color) (static_cast<unsigned char>(color))
+
+		// Macro to convert ABGR Color values to ARGB Color values
+		#define COLOR_ABGR_TO_ARGB(abgr) (static_cast<rgb::Color>(COLOR_UCHAR_A(color) << 24 | COLOR_UCHAR_R(color) << 16 | COLOR_UCHAR_G(color) << 8 | COLOR_UCHAR_B(color)))
 
 		constexpr Color red = COLOR_ABGR(255, 0, 0, 255);
 		constexpr Color orange = COLOR_ABGR(255, 0, 127, 255);
