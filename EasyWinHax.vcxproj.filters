@@ -48,7 +48,7 @@
     <ClInclude Include="src\launch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\font\dxFonts.h">
+    <ClInclude Include="src\engine\dx\font\dxFont.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\Engine.h">

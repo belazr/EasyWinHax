@@ -17,7 +17,7 @@
 #include "engine\rgb.h"
 
 // Headers for DirectX
-#include "engine\dx\font\dxFonts.h"
+#include "engine\dx\font\dxFont.h"
 
 // Headers for DirectX 9
 #pragma comment(lib, "d3d9.lib")

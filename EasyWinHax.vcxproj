@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\dx\dx11\dx11Draw.h" />
-    <ClInclude Include="src\engine\dx\font\dxFonts.h" />
+    <ClInclude Include="src\engine\dx\font\dxFont.h" />
     <ClInclude Include="src\engine\Engine.h" />
     <ClInclude Include="src\engine\dx\dx9\dx9Draw.h" />
     <ClInclude Include="src\engine\IDraw.h" />
