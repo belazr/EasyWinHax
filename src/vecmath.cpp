@@ -46,9 +46,9 @@ namespace hax {
 		}
 
 
-		static bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight);
+		static bool clipToScreen(const Vector4* clip, Vector2* screen, float screenWidth, float screenHeight);
 
-		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float windowWidth, float windowHeight) {
+		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float screenWidth, float screenHeight) {
 			// matrix-vector product, multiplying world coordinates by projection matrix (column-major) = clip coordinates
 			const Vector4 clip{
 				world->x * matrix[0] + world->y * matrix[4] + world->z * matrix[8] + matrix[12],
@@ -59,11 +59,11 @@ namespace hax {
 
 			if (clip.w < 0.1f) return false;
 
-			return clipToScreen(&clip, screen, windowWidth, windowHeight);
+			return clipToScreen(&clip, screen, screenWidth, screenHeight);
 		}
 
 
-		bool worldToScreenRow(const Vector3* world, Vector2* screen, const float matrix[16], float windowWidth, float windowHeight) {
+		bool worldToScreenRow(const Vector3* world, Vector2* screen, const float matrix[16], float screenWidth, float screenHeight) {
 			// matrix-vector product, multiplying world coordinates by projection matrix (row-major) = clip coordinates
 			const Vector4 clip{
 				world->x * matrix[0] + world->y * matrix[1] + world->z * matrix[2] + matrix[3],
@@ -74,21 +74,21 @@ namespace hax {
 
 			if (clip.w < 0.1f) return false;
 
-			return clipToScreen(&clip, screen, windowWidth, windowHeight);
+			return clipToScreen(&clip, screen, screenWidth, screenHeight);
 		}
 
 
-		static bool clipToScreen(const Vector4* clip, Vector2* screen, float windowWidth, float windowHeight) {
+		static bool clipToScreen(const Vector4* clip, Vector2* screen, float screenWidth, float screenHeight) {
 			// perspective division -> normalized device coordinates
 			const Vector3 clip3d{ clip->x, clip->y, clip->z };
 			const Vector3 ndc = divide(clip3d, clip->w);
 
 			// transform to window coordinates
-			screen->x = (windowWidth / 2.f * ndc.x) + (ndc.x + windowWidth / 2.f);
-			screen->y = -(windowHeight / 2.f * ndc.y) + (ndc.y + windowHeight / 2.f);
+			screen->x = (screenWidth / 2.f * ndc.x) + (ndc.x + screenWidth / 2.f);
+			screen->y = -(screenHeight / 2.f * ndc.y) + (ndc.y + screenHeight / 2.f);
 
 			// check if is on screen
-			if (screen->x > windowWidth || screen->x < 0.f || screen->y > windowHeight || screen->y < 0.f) return false;
+			if (screen->x > screenWidth || screen->x < 0.f || screen->y > screenHeight || screen->y < 0.f) return false;
 
 			return true;
 

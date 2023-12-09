@@ -308,11 +308,17 @@ namespace hax {
 		// Screen coordinates the point should be drawn to. In general in pixels but depending on the projection matrix.
 		// 
 		// [in] matrix:
-		// The projection matrix of the 3d engine.
+		// The projection matrix of the 3D engine.
+		// 
+		// [in] screenWidth:
+		// Current width of the screen in pixels.
+		// 
+		// [in] screenHeight:
+		// Current height of the screen in pixels.
 		// 
 		// Return:
 		// Returns true if point at the world coordinates is on screen, false if it is off screen.
-		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float windowWidth, float windowHeight);
+		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float screenWidth, float screenHeight);
 
 		// Calculates two dimensional screen coordinates from three dimensional world coordinates.
 		// It uses the projection matrix of a 3d engine. The matrix has to be row major (eg DirectX 9).
@@ -326,11 +332,17 @@ namespace hax {
 		// Screen coordinates the point should be drawn to. In general in pixels but depending on the projection matrix.
 		// 
 		// [in] matrix:
-		// The projection matrix of the 3d engine.
+		// The projection matrix of the 3D engine.
+		// 
+		// [in] screenWidth:
+		// Current width of the screen in pixels.
+		// 
+		// [in] screenHeight:
+		// Current height of the screen in pixels.
 		// 
 		// Return:
 		// Returns true if point at the world coordinates is on screen, false if it is off screen.
-		bool worldToScreenRow(const Vector3* world, Vector2* screen, const float matrix[16], float windowWidth, float windowHeight);
+		bool worldToScreenRow(const Vector3* world, Vector2* screen, const float matrix[16], float screenWidth, float screenHeight);
 
 	}
 
