@@ -253,25 +253,29 @@ namespace hax {
 			}
 
 
-			void* getVitualFunction(HANDLE hProc, const void* pInterface, size_t index) {
+			void* getVirtualFunction(HANDLE hProc, const void* pInterface, size_t index) {
 				void* const * pVTable = nullptr;
 
-				if (!ReadProcessMemory(hProc, pInterface, &pVTable, sizeof(void**), 0)) return nullptr;
+				if (!ReadProcessMemory(hProc, pInterface, &pVTable, sizeof(void**), 0u)) return nullptr;
 
 				void* const * const pFuncAddress = pVTable + index;
 
 				if (!pFuncAddress) return nullptr;
 
-				return *(pFuncAddress);
+				void* funcAddress = nullptr;
+
+				if (!ReadProcessMemory(hProc, pFuncAddress, &funcAddress, sizeof(void*), 0u))
+
+				return funcAddress;
 			}
 
 
 			BYTE* getMultiLevelPointer(HANDLE hProc, const BYTE* base, const size_t offsets[], size_t size) {
 				BYTE* address = const_cast<BYTE*>(base);
 
-				for (size_t i = 0; i < size; i++) {
+				for (size_t i = 0u; i < size; i++) {
 
-					if (!ReadProcessMemory(hProc, address, &address, sizeof(BYTE*), 0)) return nullptr;
+					if (!ReadProcessMemory(hProc, address, &address, sizeof(BYTE*), 0u)) return nullptr;
 
 					address += offsets[i];
 				}
@@ -282,7 +286,7 @@ namespace hax {
 
 			BYTE* findSigAddress(HANDLE hProc, const BYTE* base, size_t size, const char* signature) {
 				// size of byte string signature of format "DE AD"
-				const size_t sigSize = (strlen(signature) + 1) / 3;
+				const size_t sigSize = (strlen(signature) + 1u) / 3u;
 				int* const sig = new int[sigSize] {};
 
 				if (!helper::bytestringToInt(signature, sig, sigSize)) {
@@ -553,7 +557,7 @@ namespace hax {
 			}
 
 
-			void* getVitualFunction(const void* pInterface, size_t index) {
+			void* getVirtualFunction(const void* pInterface, size_t index) {
 				void* const* pVTable = *reinterpret_cast<void***>(const_cast<void*>(pInterface));
 
 				void* const* const pFuncAddress = pVTable + index;

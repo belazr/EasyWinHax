@@ -196,7 +196,7 @@ namespace hax {
 			// 
 			// Return:
 			// The address of the virtual function or nullpointer on failure.
-			void* getVitualFunction(HANDLE hProc, const void* pInterface, size_t index);
+			void* getVirtualFunction(HANDLE hProc, const void* pInterface, size_t index);
 
 			// Gets the address pointed to by a multi level pointer within the virtual address space of an external process.
 			// 
@@ -432,7 +432,7 @@ namespace hax {
 			// 
 			// Return:
 			// The address of the virtual function or nullpointer on failure.
-			void* getVitualFunction(const void* pInterface, size_t index);
+			void* getVirtualFunction(const void* pInterface, size_t index);
 
 			// Gets the address pointed to by a multi level pointer within the virtual address space of the caller process.
 			// 
