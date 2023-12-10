@@ -297,12 +297,12 @@ namespace hax {
 		Vector3 shiftByAngle(Vector3 origin, float pitch, float yaw, float distance);
 
 		// Calculates two dimensional screen coordinates from three dimensional world coordinates.
-		// It uses the projection matrix of a 3d engine. The matrix has to be column major (eg OpenGL).
+		// It uses the projection matrix of a 3d engine. The matrix has to be column major (e.g. OpenGL).
 		// 
 		// Parameters:
 		// 
 		// [in] world:
-		// Three dimensional coordinates.
+		// Three dimensional world coordinates.
 		// 
 		// [out] screen:
 		// Screen coordinates the point should be drawn to. In general in pixels but depending on the projection matrix.
@@ -321,12 +321,12 @@ namespace hax {
 		bool worldToScreenCol(const Vector3* world, Vector2* screen, const float matrix[16], float screenWidth, float screenHeight);
 
 		// Calculates two dimensional screen coordinates from three dimensional world coordinates.
-		// It uses the projection matrix of a 3d engine. The matrix has to be row major (eg DirectX 9).
+		// It uses the projection matrix of a 3d engine. The matrix has to be row major (e.g. DirectX).
 		// 
 		// Parameters:
 		// 
 		// [in] world:
-		// Three dimensional coordinates.
+		// Three dimensional world coordinates.
 		// 
 		// [out] screen:
 		// Screen coordinates the point should be drawn to. In general in pixels but depending on the projection matrix.
