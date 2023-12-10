@@ -174,11 +174,29 @@ namespace hax {
 			// The buffer that should be patched into the external process. Has to be allocated in the virtual memory of the caller process.
 			// 
 			// [in] size:
-			// Size of the source buffer. Beware of buffer overflow.
+			// Size of the source buffer.
 			// 
 			// Return:
 			// True on success, false on failure.
 			bool patch(HANDLE hProc, BYTE* dst, const BYTE src[], size_t size);
+
+			// Gets the address of a virtual function within the virtual address space of an external process.
+			// 
+			// Parameters:
+			// 
+			// [in] hProc:
+			// Handle to the target process.
+			// Needs at least PROCESS_VM_READ access rights.
+			// 
+			// [in] pInterface:
+			// The pointer to the interface with the v-table containg the target function.
+			// 
+			// [in] index:
+			// Index of the target function in the v-table.
+			// 
+			// Return:
+			// The address of the virtual function or nullpointer on failure.
+			void* getVitualFunction(HANDLE hProc, const void* pInterface, size_t index);
 
 			// Gets the address pointed to by a multi level pointer within the virtual address space of an external process.
 			// 
@@ -189,13 +207,13 @@ namespace hax {
 			// Needs at least PROCESS_VM_READ access rights.
 			// 
 			// [in] base:
-			// The address of the base pointer within the virtual address space of the target process. This is typically a static address.
+			// The base pointer within the virtual address space of the target process. This is typically a static address.
 			// 
 			// [in] src:
 			// Buffer for the offsets.
 			// 
 			// [in] size:
-			// Size of the offset buffer. Beware of buffer overflow.
+			// Size of the offset buffer.
 			// 
 			// Return:
 			// The address pointed to by dereferencing the multi level pointer or nullpointer on failure.
@@ -396,24 +414,38 @@ namespace hax {
 			// The buffer that should be patched into the target process. Has to be allocated in the virtual memory of the caller process.
 			// 
 			// [in] size:
-			// Size of the source buffer. Beware of buffer overflow.
+			// Size of the source buffer.
 			// 
 			// Return:
 			// True on success, false on failure.
 			bool patch(BYTE* dst, const BYTE src[], size_t size);
+
+			// Gets the address of a virtual function within the virtual address space of an external process.
+			// 
+			// Parameters:
+			// 
+			// [in] pInterface:
+			// The pointer to the interface with the v-table containg the target function.
+			// 
+			// [in] index:
+			// Index of the target function in the v-table.
+			// 
+			// Return:
+			// The address of the virtual function or nullpointer on failure.
+			void* getVitualFunction(const void* pInterface, size_t index);
 
 			// Gets the address pointed to by a multi level pointer within the virtual address space of the caller process.
 			// 
 			// Parameters:
 			// 
 			// [in] base:
-			// The address of the base pointer within the virtual address space of the caller process. This is typically a static address.
+			// The base pointer within the virtual address space of the caller process. This is typically a static address.
 			// 
-			// [in] src:
+			// [in] offsets:
 			// Buffer for the offsets.
 			// 
 			// [in] size:
-			// Size of the offset buffer. Beware of buffer overflow.
+			// Size of the offset buffer.
 			// 
 			// Return:
 			// The address pointed to by dereferencing the multi level pointer or nullpointer on failure.
