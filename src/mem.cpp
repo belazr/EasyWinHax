@@ -253,6 +253,19 @@ namespace hax {
 			}
 
 
+			void* getVitualFunction(HANDLE hProc, const void* pInterface, size_t index) {
+				void* const * pVTable = nullptr;
+
+				if (!ReadProcessMemory(hProc, pInterface, &pVTable, sizeof(void**), 0)) return nullptr;
+
+				void* const * const pFuncAddress = pVTable + index;
+
+				if (!pFuncAddress) return nullptr;
+
+				return *(pFuncAddress);
+			}
+
+
 			BYTE* getMultiLevelPointer(HANDLE hProc, const BYTE* base, const size_t offsets[], size_t size) {
 				BYTE* address = const_cast<BYTE*>(base);
 
@@ -517,6 +530,16 @@ namespace hax {
 			#endif
 
 
+			bool nop(BYTE* dst, size_t size) {
+				BYTE* const nops = new BYTE[size]{};
+				memset(nops, NOP, size);
+				bool result = patch(dst, nops, size);
+				delete[] nops;
+
+				return result;
+			}
+
+
 			bool patch(BYTE* dst, const BYTE src[], size_t size) {
 				DWORD protect = 0ul;
 
@@ -530,13 +553,14 @@ namespace hax {
 			}
 
 
-			bool nop(BYTE* dst, size_t size) {
-				BYTE* const nops = new BYTE[size]{};
-				memset(nops, NOP, size);
-				bool result = patch(dst, nops, size);
-				delete[] nops;
+			void* getVitualFunction(const void* pInterface, size_t index) {
+				void* const* pVTable = *reinterpret_cast<void***>(const_cast<void*>(pInterface));
 
-				return result;
+				void* const* const pFuncAddress = pVTable + index;
+
+				if (!pFuncAddress) return nullptr;
+
+				return *(pFuncAddress);
 			}
 
 
