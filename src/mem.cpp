@@ -264,7 +264,7 @@ namespace hax {
 
 				void* funcAddress = nullptr;
 
-				if (!ReadProcessMemory(hProc, pFuncAddress, &funcAddress, sizeof(void*), 0u))
+				if (!ReadProcessMemory(hProc, pFuncAddress, &funcAddress, sizeof(void*), 0u)) return nullptr;
 
 				return funcAddress;
 			}
