@@ -159,6 +159,27 @@ namespace hax {
 		}
 
 
+		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
+			const HRESULT hResult = this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pVertexBufferData->pBuffer, nullptr);
+
+			if (!pVertexBufferData->pBuffer) {
+				pVertexBufferData->pLocalBuffer = nullptr;
+				pVertexBufferData->size = 0u;
+				pVertexBufferData->curOffset = 0u;
+
+				return false;
+			}
+
+			if (hResult != D3D_OK) return false;
+
+			pVertexBufferData->pLocalBuffer = nullptr;
+			pVertexBufferData->size = size;
+			pVertexBufferData->curOffset = 0u;
+
+			return true;
+		}
+
+
 		void Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
 			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
@@ -196,27 +217,6 @@ namespace hax {
 				oldBufferData.pBuffer->Unlock();
 				oldBufferData.pBuffer->Release();
 			}
-
-			return true;
-		}
-
-
-		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
-			const HRESULT hResult = this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pVertexBufferData->pBuffer, nullptr);
-
-			if (!pVertexBufferData->pBuffer) {
-				pVertexBufferData->pLocalBuffer = nullptr;
-				pVertexBufferData->size = 0u;
-				pVertexBufferData->curOffset = 0u;
-
-				return false;
-			}
-
-			if (hResult != D3D_OK) return false;
-
-			pVertexBufferData->pLocalBuffer = nullptr;
-			pVertexBufferData->size = size;
-			pVertexBufferData->curOffset = 0u;
 
 			return true;
 		}
