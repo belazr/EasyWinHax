@@ -107,6 +107,8 @@ namespace hax {
 				
 				if (!this->createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
+				if (!this->createConstantBuffer()) return;
+
 				ID3D11Texture2D* pBackBuffer = nullptr;
 				pSwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
 
@@ -120,7 +122,12 @@ namespace hax {
 				this->_isInit = true;
 			}
 
-			if (createConstantBuffer()) {
+			D3D11_VIEWPORT curViewport{};
+			this->getCurrentViewport(&curViewport);
+
+			if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
+				this->_viewport = curViewport;
+				this->updateConstantBuffer();
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
@@ -273,85 +280,101 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		bool Draw::createConstantBuffer() {
+		void Draw::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
 			D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
 			UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
 
 			this->_pContext->RSGetViewports(&viewportCount, viewports);
 
-			D3D11_VIEWPORT curViewport = viewports[0];
+			*pViewport = viewports[0];
 
-			if (!viewportCount || !curViewport.Width) {
+			if (!viewportCount || !pViewport->Width) {
 				HWND hMainWnd = nullptr;
 
 				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
 
-				if (!hMainWnd) return false;
+				if (!hMainWnd) return;
 
 				RECT windowRect{};
 
-				if (!GetClientRect(hMainWnd, &windowRect)) return false;
+				if (!GetClientRect(hMainWnd, &windowRect)) return;
 
-				curViewport.Width = static_cast<FLOAT>(windowRect.right);
-				curViewport.Height = static_cast<FLOAT>(windowRect.bottom);
-				curViewport.TopLeftX = static_cast<FLOAT>(windowRect.left);
-				curViewport.TopLeftY = static_cast<FLOAT>(windowRect.top);
-				curViewport.MinDepth = 0.f;
-				curViewport.MaxDepth = 1.f;
-				this->_pContext->RSSetViewports(1u, &curViewport);
+				pViewport->Width = static_cast<FLOAT>(windowRect.right);
+				pViewport->Height = static_cast<FLOAT>(windowRect.bottom);
+				pViewport->TopLeftX = static_cast<FLOAT>(windowRect.left);
+				pViewport->TopLeftY = static_cast<FLOAT>(windowRect.top);
+				pViewport->MinDepth = 0.f;
+				pViewport->MaxDepth = 1.f;
+				this->_pContext->RSSetViewports(1u, pViewport);
 			}
 
-			if (this->_viewport.Width == curViewport.Width && this->_viewport.Height == curViewport.Height) return false;
+			return;
+		}
 
-			const float viewLeft = static_cast<const float>(curViewport.TopLeftX);
-			const float viewRight = static_cast<const float>(curViewport.TopLeftX + curViewport.Width);
-			const float viewTop = static_cast<const float>(curViewport.TopLeftY);
-			const float viewBottom = static_cast<const float>(curViewport.TopLeftY + curViewport.Height);
 
-			const float ortho[][4] {
+		bool Draw::createConstantBuffer() {
+			D3D11_BUFFER_DESC bufferDesc{};
+			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			bufferDesc.ByteWidth = 16 * sizeof(float);
+			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer);
+
+			if (hResult != S_OK || !this->_pConstantBuffer) return false;
+
+			return true;
+		}
+
+
+		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
+			D3D11_BUFFER_DESC bufferDesc{};
+			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			bufferDesc.ByteWidth = size;
+			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pVertexBufferData->pBuffer);
+
+			if (!pVertexBufferData->pBuffer) {
+				pVertexBufferData->pLocalBuffer = nullptr;
+				pVertexBufferData->size = 0u;
+				pVertexBufferData->curOffset = 0u;
+
+				return false;
+			}
+
+			if (hResult != S_OK) return false;
+
+			pVertexBufferData->pLocalBuffer = nullptr;
+			pVertexBufferData->size = size;
+			pVertexBufferData->curOffset = 0u;
+
+			return true;
+		}
+
+
+		void Draw::updateConstantBuffer() const {
+			const float viewLeft = this->_viewport.TopLeftX;
+			const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
+			const float viewTop = this->_viewport.TopLeftY;
+			const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
+
+			const float ortho[][4]{
 				{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
 				{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
 				{ 0.f, 0.f, .5f, 0.f },
 				{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
 			};
 
-			D3D11_BUFFER_DESC bufferDesc{};
-			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			bufferDesc.ByteWidth = sizeof(ortho);
-			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-			D3D11_SUBRESOURCE_DATA subresourceData{};
-			subresourceData.pSysMem = &ortho;
-
-			if (this->_pConstantBuffer) {
-				this->_pConstantBuffer->Release();
-			}
-
-			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, &subresourceData, &this->_pConstantBuffer);
-
-			if (hResult != S_OK || !this->_pConstantBuffer) return false;
-
-			this->_viewport = curViewport;
-
-			return true;
-		}
-
-
-		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
-			DWORD processId = 0ul;
-			GetWindowThreadProcessId(hWnd, &processId);
-
-			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
-
-			char className[MAX_PATH]{};
+			D3D11_MAPPED_SUBRESOURCE subresource{};
+			this->_pContext->Map(this->_pConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource);
 			
-			if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
-
-			if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
-
-			*reinterpret_cast<HWND*>(lParam) = hWnd;
-
-			return FALSE;
+			memcpy(subresource.pData, ortho, sizeof(ortho));
+			
+			this->_pContext->Unmap(this->_pConstantBuffer, 0u);
+			
+			return;
 		}
 
 
@@ -385,7 +408,7 @@ namespace hax {
 			if (!this->createVertexBufferData(pVertexBufferData, newSize)) return false;
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
-			
+
 			if (this->_pContext->Map(pVertexBufferData->pBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource) != S_OK) return false;
 
 			pVertexBufferData->pLocalBuffer = reinterpret_cast<Vertex*>(subresource.pData);
@@ -401,33 +424,6 @@ namespace hax {
 		}
 
 
-		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
-			D3D11_BUFFER_DESC bufferDesc{};
-			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			bufferDesc.ByteWidth = size;
-			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pVertexBufferData->pBuffer);
-
-			if (!pVertexBufferData->pBuffer) {
-				pVertexBufferData->pLocalBuffer = nullptr;
-				pVertexBufferData->size = 0u;
-				pVertexBufferData->curOffset = 0u;
-
-				return false;
-			}
-
-			if (hResult != S_OK) return false;
-
-			pVertexBufferData->pLocalBuffer = nullptr;
-			pVertexBufferData->size = size;
-			pVertexBufferData->curOffset = 0u;
-
-			return true;
-		}
-
-
 		void Draw::drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
 			constexpr UINT STRIDE = sizeof(Vertex);
 			constexpr UINT OFFSET = 0u;
@@ -438,6 +434,24 @@ namespace hax {
 			pVertexBufferData->curOffset = 0u;
 
 			return;
+		}
+
+
+		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
+			DWORD processId = 0ul;
+			GetWindowThreadProcessId(hWnd, &processId);
+
+			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+			char className[MAX_PATH]{};
+			
+			if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+			if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+			*reinterpret_cast<HWND*>(lParam) = hWnd;
+
+			return FALSE;
 		}
 
 	}
