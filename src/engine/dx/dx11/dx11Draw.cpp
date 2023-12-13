@@ -90,9 +90,9 @@ namespace hax {
 		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
 
 		void Draw::beginDraw(Engine* pEngine) {
+			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg);
 
 			if (!this->_isInit) {
-				IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg);
 				const HRESULT hResult = pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice));
 
 				if (hResult != S_OK || !this->_pDevice) return;
@@ -109,14 +109,6 @@ namespace hax {
 
 				if (!this->createConstantBuffer()) return;
 
-				ID3D11Texture2D* pBackBuffer = nullptr;
-				pSwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
-
-				if (!pBackBuffer) return;
-
-				this->_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &this->_pRenderTargetView);
-				pBackBuffer->Release();
-
 				this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
 
 				this->_isInit = true;
@@ -131,11 +123,23 @@ namespace hax {
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
+			// the render target view is released every frame in endDraw() so there is no leftover reference to the backbuffer
+			// so it has to be created every frame as well
+			// this is done so resolution changes do not break rendering
+			ID3D11Texture2D* pBackBuffer = nullptr;
+			pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer));
+
+			if (!pBackBuffer) return;
+
+			this->_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &this->_pRenderTargetView);
+			
+			pBackBuffer->Release();
+
+			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 			this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
-			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 
 			// mapping the buffers is expensive so it is just done once per frame if no resize is necessary
 			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
@@ -166,6 +170,11 @@ namespace hax {
 
 			if (this->_originalTopology) {
 				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
+			}
+
+			if (this->_pRenderTargetView) {
+				this->_pRenderTargetView->Release();
+				this->_pRenderTargetView = nullptr;
 			}
 			
 			return;
