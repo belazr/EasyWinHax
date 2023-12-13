@@ -181,6 +181,9 @@ namespace hax {
 
 
 		void Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
+			
+			if (!pVertexBufferData->pLocalBuffer) return;
+			
 			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
 			if (sizeNeeded > pVertexBufferData->size) {

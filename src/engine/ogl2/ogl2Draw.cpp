@@ -117,7 +117,7 @@ namespace hax {
 
 		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 			
-			if (!this->_isInit || count % 3) return;
+			if (!this->_isInit || count % 3 || !this->_triangleListBufferData.pLocalVertexBuffer) return;
 			
 			const UINT sizeNeeded = (this->_triangleListBufferData.curOffset + count) * sizeof(Vertex);
 
