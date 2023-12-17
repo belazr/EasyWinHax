@@ -19,12 +19,19 @@ namespace hax {
 			PFN_vkGetPhysicalDeviceQueueFamilyProperties _pVkGetPhysicalDeviceQueueFamilyProperties;
 			PFN_vkCreateDevice _pVkCreateDevice;
 			PFN_vkDestroyDevice _pVkDestroyDevice;
+			PFN_vkGetSwapchainImagesKHR _pVkGetSwapchainImagesKHR;
+			PFN_vkCreateCommandPool _pVkCreateCommandPool;
+			PFN_vkAllocateCommandBuffers _pVkAllocateCommandBuffers;
 
 			VkAllocationCallbacks* _pAllocator;
 			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
 			VkDevice _hDevice;
+
+			VkImage* _pImages;
+			VkCommandPool* _pCommandPools;
+			VkCommandBuffer* _pCommandBuffers;
 
 			bool _isInit;
 
@@ -85,6 +92,7 @@ namespace hax {
 			bool selectGpu();
 			bool getQueueFamily();
 			bool createDevice();
+			bool createRenderTarget(VkSwapchainKHR swapchain);
 		};
 
 	}
