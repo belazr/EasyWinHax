@@ -35,3 +35,6 @@
 
 #include "engine\ogl2\ogl2Draw.h"
 #include "engine\ogl2\ogl2Font.h"
+
+// Headers for Vulkan
+#include "engine\vulkan\vkDraw.h"

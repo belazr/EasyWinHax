@@ -1,4 +1,5 @@
 #pragma once
+#define VK_NO_PROTOTYPES
 #include "include\vulkan.h"
 #include "..\IDraw.h"
 
@@ -10,6 +11,22 @@ namespace hax {
 
 		class Draw : public IDraw {
 		private:
+			HMODULE _hVulkan;
+
+			PFN_vkDestroyInstance _pVkDestroyInstance;
+			PFN_vkEnumeratePhysicalDevices _pVkEnumeratePhysicalDevices;
+			PFN_vkGetPhysicalDeviceProperties _pVkGetPhysicalDeviceProperties;
+			PFN_vkGetPhysicalDeviceQueueFamilyProperties _pVkGetPhysicalDeviceQueueFamilyProperties;
+			PFN_vkCreateDevice _pVkCreateDevice;
+			PFN_vkDestroyDevice _pVkDestroyDevice;
+
+			VkAllocationCallbacks* _pAllocator;
+			VkInstance _hInstance;
+			VkPhysicalDevice _hPhysicalDevice;
+			uint32_t _queueFamily;
+			VkDevice _hDevice;
+
+			bool _isInit;
 
 		public:
 			Draw();
@@ -62,6 +79,12 @@ namespace hax {
 			// Color of the text.
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
+		private:
+			bool getProcAddresses();
+			bool createInstance();
+			bool selectGpu();
+			bool getQueueFamily();
+			bool createDevice();
 		};
 
 	}
