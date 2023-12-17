@@ -60,7 +60,7 @@ namespace hax {
 		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->_isInit) {
-				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg);
+				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1);
 
 				if (!this->_pDevice) return;
 
