@@ -8,14 +8,20 @@ namespace hax {
 
 		Draw::Draw() : _hVulkan{}, _pVkDestroyInstance{}, _pVkEnumeratePhysicalDevices{}, _pVkGetPhysicalDeviceProperties{},
 			_pVkGetPhysicalDeviceQueueFamilyProperties{}, _pVkCreateDevice{}, _pVkDestroyDevice{}, _pVkGetSwapchainImagesKHR{},
-			_pVkCreateCommandPool{}, _pVkDestroyCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{}, _pVkCreateRenderPass {},
-			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{},
+			_pVkCreateCommandPool{}, _pVkDestroyCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{},
+			_pVkCreateImageView{}, _pVkDestroyImageView{}, _pVkCreateFramebuffer {}, _pVkDestroyFramebuffer{},
+			_pVkCreateRenderPass{}, _pVkDestroyRenderPass{},
+			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{},
 			_pImageData{},
 			_isInit{} {}
 
 
 		Draw::~Draw() {
-			freeImageData();
+			destroyImageData();
+
+			if (this->_pVkDestroyRenderPass && this->_hDevice && this->_hRenderPass) {
+				this->_pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, this->_pAllocator);
+			}
 
 			if (this->_pVkDestroyDevice && this->_hDevice) {
 				this->_pVkDestroyDevice(this->_hDevice, this->_pAllocator);
@@ -51,11 +57,9 @@ namespace hax {
 
 			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
 				
-				if (!this->createCommandPoolAndBuffers(pPresentInfo->pSwapchains[i])) return;
+				if (!this->createRenderPass()) return;
 
-				VkRenderPass renderPass{};
-
-				if (!this->createRenderPass(&renderPass)) return;
+				if (!this->createImageData(pPresentInfo->pSwapchains[i])) return;
 
 			}
 
@@ -114,13 +118,20 @@ namespace hax {
 			this->_pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyCommandPool"));
 			this->_pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkAllocateCommandBuffers"));
 			this->_pVkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkFreeCommandBuffers"));
+			this->_pVkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateImageView"));
+			this->_pVkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyImageView"));
+			this->_pVkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateFramebuffer"));
+			this->_pVkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyFramebuffer"));
 			this->_pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateRenderPass"));
+			this->_pVkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyRenderPass"));
 
 			if (
 				!this->_pVkDestroyInstance || !this->_pVkEnumeratePhysicalDevices || !this->_pVkGetPhysicalDeviceProperties ||
 				!this->_pVkGetPhysicalDeviceQueueFamilyProperties || !this->_pVkCreateDevice || !this->_pVkDestroyDevice ||
 				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkDestroyCommandPool ||
-				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateRenderPass
+				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateRenderPass ||
+				!this->_pVkDestroyRenderPass || !this->_pVkCreateImageView || !this->_pVkDestroyImageView ||
+				!this->_pVkCreateFramebuffer || !this->_pVkDestroyFramebuffer
 			) return false;
 
 			return true;
@@ -206,79 +217,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createCommandPoolAndBuffers(VkSwapchainKHR hSwapchain) {
-			uint32_t imageCount = 0u;
-
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
-
-			if (!imageCount) return false;
-
-			if (imageCount != this->_imageCount) {
-				freeImageData();
-
-				this->_imageCount = imageCount;
-			}
-
-			if (!this->_pImageData) {
-				this->_pImageData = new ImageData[this->_imageCount]{};
-			}
-
-			VkImage* pImages = new VkImage[this->_imageCount]{};
-
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
-				delete[] pImages;
-
-				return false;
-			}
-
-			for (uint32_t i = 0; i < this->_imageCount; ++i) {
-				this->_pImageData[i].hImage = pImages[i];
-
-				VkCommandPoolCreateInfo createInfo{};
-				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				createInfo.queueFamilyIndex = this->_queueFamily;
-
-				this->_pVkCreateCommandPool(this->_hDevice, &createInfo, this->_pAllocator, &this->_pImageData[i].hCommandPool);
-
-				VkCommandBufferAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
-				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandBufferCount = 1;
-
-				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer);
-			}
-
-			return true;
-		}
-
-
-		void Draw::freeImageData() {
-
-			if (this->_pImageData) {
-
-				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-
-					if (this->_pImageData[i].hCommandBuffer) {
-						this->_pVkFreeCommandBuffers(this->_hDevice, this->_pImageData[i].hCommandPool, 1, &this->_pImageData[i].hCommandBuffer);
-					}
-					
-					if (this->_pImageData[i].hCommandPool) {
-						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, this->_pAllocator);
-					}
-
-				}
-
-				delete[] this->_pImageData;
-				this->_pImageData = nullptr;
-			}
-
-			return;
-		}
-
-
-		bool Draw::createRenderPass(VkRenderPass* pRenderPass) const {
+		bool Draw::createRenderPass() {
 			VkAttachmentDescription attachment{};
 			attachment.format = VK_FORMAT_B8G8R8A8_UNORM;
 			attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -305,7 +244,111 @@ namespace hax {
 			info.subpassCount = 1u;
 			info.pSubpasses = &subpass;
 
-			return this->_pVkCreateRenderPass(this->_hDevice, &info, this->_pAllocator, pRenderPass) == VkResult::VK_SUCCESS;
+			return this->_pVkCreateRenderPass(this->_hDevice, &info, this->_pAllocator, &this->_hRenderPass) == VkResult::VK_SUCCESS;
+		}
+
+
+		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
+			uint32_t imageCount = 0u;
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+
+			if (!imageCount) return false;
+
+			if (imageCount != this->_imageCount) {
+				destroyImageData();
+
+				this->_imageCount = imageCount;
+			}
+
+			VkImage* pImages = new VkImage[this->_imageCount]{};
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
+				delete[] pImages;
+
+				return false;
+			}
+
+			VkImageSubresourceRange imageRange{};
+			imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageRange.baseMipLevel = 0u;
+			imageRange.levelCount = 1u;
+			imageRange.baseArrayLayer = 0u;
+			imageRange.layerCount = 1u;
+
+			VkImageViewCreateInfo imageViewInfo{};
+			imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			imageViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			imageViewInfo.subresourceRange = imageRange;
+
+			VkFramebufferCreateInfo frameBufferInfo = {};
+			frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			frameBufferInfo.renderPass = this->_hRenderPass;
+			frameBufferInfo.attachmentCount = 1;
+			frameBufferInfo.layers = 1;
+
+			for (uint32_t i = 0; i < this->_imageCount; ++i) {
+				VkCommandPoolCreateInfo createInfo{};
+				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+				createInfo.queueFamilyIndex = this->_queueFamily;
+
+				this->_pVkCreateCommandPool(this->_hDevice, &createInfo, this->_pAllocator, &this->_pImageData[i].hCommandPool);
+
+				VkCommandBufferAllocateInfo allocInfo{};
+				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
+				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+				allocInfo.commandBufferCount = 1;
+
+				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer);
+
+				imageViewInfo.image = pImages[i];
+				
+				if (this->_pVkCreateImageView(this->_hDevice, &imageViewInfo, this->_pAllocator, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
+
+				frameBufferInfo.pAttachments = &this->_pImageData[i].hImageView;
+				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferInfo, this->_pAllocator, &this->_pImageData[i].hFrameBuffer);
+			}
+
+			delete[] pImages;
+
+			return true;
+		}
+
+
+		void Draw::destroyImageData() {
+
+			if (!this->_pVkFreeCommandBuffers || !this->_pVkDestroyCommandPool) return;
+
+			if (this->_pImageData) {
+
+				for (uint32_t i = 0u; i < this->_imageCount; i++) {
+
+					if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
+						this->_pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, this->_pAllocator);
+					}
+					
+					if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
+						this->_pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, this->_pAllocator);
+					}
+
+					if (this->_pImageData[i].hCommandBuffer != VK_NULL_HANDLE) {
+						this->_pVkFreeCommandBuffers(this->_hDevice, this->_pImageData[i].hCommandPool, 1, &this->_pImageData[i].hCommandBuffer);
+					}
+					
+					if (this->_pImageData[i].hCommandPool != VK_NULL_HANDLE) {
+						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, this->_pAllocator);
+					}
+
+				}
+
+				delete[] this->_pImageData;
+				this->_pImageData = nullptr;
+			}
+
+			return;
 		}
 
 	}
