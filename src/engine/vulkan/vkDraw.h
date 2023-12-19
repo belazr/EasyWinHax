@@ -22,6 +22,7 @@ namespace hax {
 			PFN_vkGetSwapchainImagesKHR _pVkGetSwapchainImagesKHR;
 			PFN_vkCreateCommandPool _pVkCreateCommandPool;
 			PFN_vkAllocateCommandBuffers _pVkAllocateCommandBuffers;
+			PFN_vkCreateRenderPass _pVkCreateRenderPass;
 
 			VkAllocationCallbacks* _pAllocator;
 			VkInstance _hInstance;
@@ -92,7 +93,8 @@ namespace hax {
 			bool selectGpu();
 			bool getQueueFamily();
 			bool createDevice();
-			bool createRenderTarget(VkSwapchainKHR swapchain);
+			bool createCommandPoolAndBuffers(VkSwapchainKHR hSwapchain);
+			bool createRenderPass(VkRenderPass* pRenderPass) const;
 		};
 
 	}

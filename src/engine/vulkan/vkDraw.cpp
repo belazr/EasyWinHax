@@ -8,9 +8,9 @@ namespace hax {
 
 		Draw::Draw() : _hVulkan{}, _pVkDestroyInstance{}, _pVkEnumeratePhysicalDevices{}, _pVkGetPhysicalDeviceProperties{},
 			_pVkGetPhysicalDeviceQueueFamilyProperties{}, _pVkCreateDevice{}, _pVkDestroyDevice{}, _pVkGetSwapchainImagesKHR{},
-			_pVkCreateCommandPool{}, _pVkAllocateCommandBuffers{},
+			_pVkCreateCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkCreateRenderPass{},
 			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{},
-			_pImages{}, _pCommandPools{},
+			_pImages{}, _pCommandPools{}, _pCommandBuffers{},
 			_isInit{} {}
 
 
@@ -62,7 +62,11 @@ namespace hax {
 
 			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
 				
-				if (!this->createRenderTarget(pPresentInfo->pSwapchains[i])) return;
+				if (!this->createCommandPoolAndBuffers(pPresentInfo->pSwapchains[i])) return;
+
+				VkRenderPass renderPass{};
+
+				if (!this->createRenderPass(&renderPass)) return;
 
 			}
 
@@ -119,11 +123,13 @@ namespace hax {
 			this->_pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(this->_hInstance, "vkGetSwapchainImagesKHR"));
 			this->_pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateCommandPool"));
 			this->_pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkAllocateCommandBuffers"));
+			this->_pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateRenderPass"));
 
 			if (
 				!this->_pVkDestroyInstance || !this->_pVkEnumeratePhysicalDevices || !this->_pVkGetPhysicalDeviceProperties ||
 				!this->_pVkGetPhysicalDeviceQueueFamilyProperties || !this->_pVkCreateDevice || !this->_pVkDestroyDevice ||
-				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkAllocateCommandBuffers
+				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkAllocateCommandBuffers ||
+				!this->_pVkCreateRenderPass
 			) return false;
 
 			return true;
@@ -209,10 +215,10 @@ namespace hax {
 		}
 
 
-		bool Draw::createRenderTarget(VkSwapchainKHR swapchain) {
+		bool Draw::createCommandPoolAndBuffers(VkSwapchainKHR hSwapchain) {
 			uint32_t imageCount = 0u;
 
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, swapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
 
 			if (!imageCount) return false;
 
@@ -226,7 +232,7 @@ namespace hax {
 				this->_pCommandPools = new VkCommandPool[bufferSize]{};
 			}
 
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, swapchain, &imageCount, this->_pImages) != VkResult::VK_SUCCESS) return false;
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, this->_pImages) != VkResult::VK_SUCCESS) return false;
 
 			for (uint32_t i = 0; i < bufferSize; ++i) {
 				VkCommandPoolCreateInfo createInfo{};
@@ -245,6 +251,38 @@ namespace hax {
 				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pCommandBuffers[i]);
 			}
 
+			return true;
+		}
+
+
+		bool Draw::createRenderPass(VkRenderPass* pRenderPass) const {
+			VkAttachmentDescription attachment{};
+			attachment.format = VK_FORMAT_B8G8R8A8_UNORM;
+			attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+			VkAttachmentReference colorAttachment{};
+			colorAttachment.attachment = 0u;
+			colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+			VkSubpassDescription subpass{};
+			subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpass.colorAttachmentCount = 1u;
+			subpass.pColorAttachments = &colorAttachment;
+
+			VkRenderPassCreateInfo info{};
+			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			info.attachmentCount = 1u;
+			info.pAttachments = &attachment;
+			info.subpassCount = 1u;
+			info.pSubpasses = &subpass;
+
+			return this->_pVkCreateRenderPass(this->_hDevice, &info, this->_pAllocator, pRenderPass) == VkResult::VK_SUCCESS;
 		}
 
 	}
