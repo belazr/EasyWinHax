@@ -8,9 +8,9 @@ namespace hax {
 
 		Draw::Draw() : _hVulkan{}, _pVkDestroyInstance{}, _pVkEnumeratePhysicalDevices{}, _pVkGetPhysicalDeviceProperties{},
 			_pVkGetPhysicalDeviceQueueFamilyProperties{}, _pVkCreateDevice{}, _pVkDestroyDevice{}, _pVkGetSwapchainImagesKHR{},
-			_pVkCreateCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkCreateRenderPass{},
+			_pVkCreateCommandPool{}, _pVkDestroyCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{}, _pVkCreateRenderPass {},
 			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{},
-			_pImages{}, _pCommandPools{}, _pCommandBuffers{},
+			_pImageData{},
 			_isInit{} {}
 
 
@@ -122,14 +122,16 @@ namespace hax {
 			this->_pVkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyDevice"));
 			this->_pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(this->_hInstance, "vkGetSwapchainImagesKHR"));
 			this->_pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateCommandPool"));
+			this->_pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyCommandPool"));
 			this->_pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkAllocateCommandBuffers"));
+			this->_pVkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkFreeCommandBuffers"));
 			this->_pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateRenderPass"));
 
 			if (
 				!this->_pVkDestroyInstance || !this->_pVkEnumeratePhysicalDevices || !this->_pVkGetPhysicalDeviceProperties ||
 				!this->_pVkGetPhysicalDeviceQueueFamilyProperties || !this->_pVkCreateDevice || !this->_pVkDestroyDevice ||
-				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkAllocateCommandBuffers ||
-				!this->_pVkCreateRenderPass
+				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkDestroyCommandPool ||
+				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateRenderPass
 			) return false;
 
 			return true;
@@ -222,36 +224,68 @@ namespace hax {
 
 			if (!imageCount) return false;
 
-			const uint32_t bufferSize = imageCount;
+			if (imageCount != this->_imageCount) {
+				freeImageData();
 
-			if (!this->_pImages) {
-				this->_pImages = new VkImage[bufferSize]{};
-			}
-			
-			if (!this->_pCommandPools) {
-				this->_pCommandPools = new VkCommandPool[bufferSize]{};
+				this->_imageCount = imageCount;
 			}
 
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, this->_pImages) != VkResult::VK_SUCCESS) return false;
+			if (!this->_pImageData) {
+				this->_pImageData = new ImageData[this->_imageCount]{};
+			}
 
-			for (uint32_t i = 0; i < bufferSize; ++i) {
+			VkImage* pImages = new VkImage[this->_imageCount]{};
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, this->_pImages) != VkResult::VK_SUCCESS) {
+				delete[] pImages;
+
+				return false;
+			}
+
+			for (uint32_t i = 0; i < this->_imageCount; ++i) {
+				this->_pImageData[i].hImage = pImages[i];
+
 				VkCommandPoolCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 				createInfo.queueFamilyIndex = this->_queueFamily;
 
-				this->_pVkCreateCommandPool(this->_hDevice, &createInfo, this->_pAllocator, &this->_pCommandPools[i]);
+				this->_pVkCreateCommandPool(this->_hDevice, &createInfo, this->_pAllocator, &this->_pImageData[i].hCommandPool);
 
 				VkCommandBufferAllocateInfo allocInfo{};
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.commandPool = this->_pCommandPools[i];
+				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
 				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 				allocInfo.commandBufferCount = 1;
 
-				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pCommandBuffers[i]);
+				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer);
 			}
 
 			return true;
+		}
+
+
+		void Draw::freeImageData() {
+
+			if (this->_pImageData) {
+
+				for (uint32_t i = 0u; i < this->_imageCount; i++) {
+
+					if (this->_pImageData[i].hCommandBuffer) {
+						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, 1, this->_pImageData[i].hCommandBuffer);
+					}
+					
+					if (this->_pImageData[i].hCommandPool) {
+						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, this->_pAllocator);
+					}
+
+				}
+
+				delete[] this->_pImageData;
+				this->_pImageData = nullptr;
+			}
+
+			return;
 		}
 
 
