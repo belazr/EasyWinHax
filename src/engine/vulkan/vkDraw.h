@@ -103,7 +103,7 @@ namespace hax {
 			bool createCommandPoolAndBuffers(VkSwapchainKHR hSwapchain);
 			void freeImageData();
 			bool createRenderPass(VkRenderPass* pRenderPass) const;
-			bool createImageViews() const
+			bool createImageViews() const;
 		};
 
 	}

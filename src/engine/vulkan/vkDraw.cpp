@@ -15,18 +15,7 @@ namespace hax {
 
 
 		Draw::~Draw() {
-
-			if (this->_pCommandBuffers) {
-				delete[] this->_pCommandBuffers;
-			}
-
-			if (this->_pCommandPools) {
-				delete[] this->_pCommandPools;
-			}
-
-			if (this->_pImages) {
-				delete[] this->_pImages;
-			}
+			freeImageData();
 
 			if (this->_pVkDestroyDevice && this->_hDevice) {
 				this->_pVkDestroyDevice(this->_hDevice, this->_pAllocator);
@@ -236,7 +225,7 @@ namespace hax {
 
 			VkImage* pImages = new VkImage[this->_imageCount]{};
 
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, this->_pImages) != VkResult::VK_SUCCESS) {
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
 				delete[] pImages;
 
 				return false;
@@ -272,7 +261,7 @@ namespace hax {
 				for (uint32_t i = 0u; i < this->_imageCount; i++) {
 
 					if (this->_pImageData[i].hCommandBuffer) {
-						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, 1, this->_pImageData[i].hCommandBuffer);
+						this->_pVkFreeCommandBuffers(this->_hDevice, this->_pImageData[i].hCommandPool, 1, &this->_pImageData[i].hCommandBuffer);
 					}
 					
 					if (this->_pImageData[i].hCommandPool) {
