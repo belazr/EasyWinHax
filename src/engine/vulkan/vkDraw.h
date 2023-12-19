@@ -10,9 +10,10 @@ namespace hax {
 		typedef VkResult(__stdcall* tvkQueuePresentKHR)(VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
 
 		typedef struct ImageData{
-			VkImage hImage;
 			VkCommandPool hCommandPool;
 			VkCommandBuffer hCommandBuffer;
+			VkImageView hImageView;
+			VkFramebuffer hFrameBuffer;
 		}ImageData;
 
 		class Draw : public IDraw {
@@ -30,13 +31,19 @@ namespace hax {
 			PFN_vkDestroyCommandPool _pVkDestroyCommandPool;
 			PFN_vkAllocateCommandBuffers _pVkAllocateCommandBuffers;
 			PFN_vkFreeCommandBuffers _pVkFreeCommandBuffers;
+			PFN_vkCreateImageView _pVkCreateImageView;
+			PFN_vkDestroyImageView _pVkDestroyImageView;
+			PFN_vkCreateFramebuffer _pVkCreateFramebuffer;
+			PFN_vkDestroyFramebuffer _pVkDestroyFramebuffer;
 			PFN_vkCreateRenderPass _pVkCreateRenderPass;
+			PFN_vkDestroyRenderPass _pVkDestroyRenderPass;
 
 			VkAllocationCallbacks* _pAllocator;
 			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
 			VkDevice _hDevice;
+			VkRenderPass _hRenderPass;
 
 			ImageData* _pImageData;
 			uint32_t _imageCount;
@@ -100,10 +107,9 @@ namespace hax {
 			bool selectGpu();
 			bool getQueueFamily();
 			bool createDevice();
-			bool createCommandPoolAndBuffers(VkSwapchainKHR hSwapchain);
-			void freeImageData();
-			bool createRenderPass(VkRenderPass* pRenderPass) const;
-			bool createImageViews() const;
+			bool createRenderPass();
+			bool createImageData(VkSwapchainKHR hSwapchain);
+			void destroyImageData();
 		};
 
 	}
