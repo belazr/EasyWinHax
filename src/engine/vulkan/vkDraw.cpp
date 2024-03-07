@@ -1,18 +1,195 @@
 #include "vkDraw.h"
 #include "..\Engine.h"
 #include "..\..\proc.h"
+#include "..\..\hooks\TrampHook.h"
 
 namespace hax {
 
 	namespace vk {
+
+		static hax::in::TrampHook* pAcquireHook;
+		static HANDLE hSemaphore;
+		static VkDevice hDevice;
+
+		VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+			hDevice = device;
+
+			ReleaseSemaphore(hSemaphore, 1, nullptr);
+			pAcquireHook->disable();
+			const PFN_vkAcquireNextImageKHR pAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pAcquireHook->getOrigin());
+
+			return pAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+		}
+
+
+		static VkDevice createDummyDevice(HMODULE hVulkan);
+
+		bool getVulkanInitData(VulkanInitData* initData) {
+			const HMODULE hVulkan = hax::proc::in::getModuleHandle("vulkan-1.dll");
+
+			if (!hVulkan) return false;
+
+			const VkDevice hDummyDevice = createDummyDevice(hVulkan);
+
+			if (!hDummyDevice) return false;
+
+			PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetDeviceProcAddr"));
+
+			if (!pVkGetDeviceProcAddr) return false;
+
+			initData->pVkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkQueuePresentKHR"));
+
+			PFN_vkAcquireNextImageKHR pVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkAcquireNextImageKHR"));
+
+			hSemaphore = CreateSemaphoreA(nullptr, 0, 1, nullptr);
+
+			if (hSemaphore) {
+				pAcquireHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pVkAcquireNextImageKHR), reinterpret_cast<BYTE*>(hkvkAcquireNextImageKHR), 0xC);
+				pAcquireHook->enable();
+				WaitForSingleObject(hSemaphore, INFINITE);
+				delete pAcquireHook;
+			}
+
+			initData->hDevice = hDevice;
+
+			return true;
+		}
+
+
+		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan);
+		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
+
+		static VkDevice createDummyDevice(HMODULE hVulkan) {
+			const VkPhysicalDevice hPhysicalDevice = getPhysicalDevice(hVulkan);
+
+			if (hPhysicalDevice == VK_NULL_HANDLE) return VK_NULL_HANDLE;
+
+			const uint32_t queueFamily = getQueueFamily(hVulkan, hPhysicalDevice);
+
+			if (queueFamily == 0xFFFFFFFF) return VK_NULL_HANDLE;
+
+			constexpr const char* EXTENSION = "VK_KHR_swapchain";
+			constexpr float QUEUE_PRIORITY = 1.f;
+
+			VkDeviceQueueCreateInfo queueInfo = {};
+			queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueInfo.queueFamilyIndex = queueFamily;
+			queueInfo.queueCount = 1;
+			queueInfo.pQueuePriorities = &QUEUE_PRIORITY;
+
+			VkDeviceCreateInfo createInfo0 = {};
+			createInfo0.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+			createInfo0.queueCreateInfoCount = 1u;
+			createInfo0.pQueueCreateInfos = &queueInfo;
+			createInfo0.enabledExtensionCount = 1u;
+			createInfo0.ppEnabledExtensionNames = &EXTENSION;
+
+			PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
+
+			if (!pVkCreateDevice) return VK_NULL_HANDLE;
+
+			VkDevice hDummyDevice = VK_NULL_HANDLE;
+
+			if (pVkCreateDevice(hPhysicalDevice, &createInfo0, nullptr, &hDummyDevice) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			return hDummyDevice;
+		}
+
+
+		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
+			const PFN_vkGetPhysicalDeviceQueueFamilyProperties pVkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceQueueFamilyProperties"));
+			
+			uint32_t propertiesCount = 0u;
+			pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &propertiesCount, nullptr);
+
+			if (!propertiesCount) return false;
+
+			const uint32_t bufferSize = propertiesCount;
+			VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[bufferSize]{};
+
+			pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &propertiesCount, pProperties);
+
+			uint32_t queueFamily = 0xFFFFFFFF;
+
+			for (uint32_t i = 0u; i < bufferSize; i++) {
+
+				if (pProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+					queueFamily = i;
+					break;
+				}
+
+			}
+
+			delete[] pProperties;
+
+			return queueFamily;
+		}
+
+		static VkInstance createInstance(HMODULE hVulkan);
+
+		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan) {
+			const VkInstance hInstance = createInstance(hVulkan);
+			const PFN_vkEnumeratePhysicalDevices pVkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(hax::proc::in::getProcAddress(hVulkan, "vkEnumeratePhysicalDevices"));
+			const PFN_vkGetPhysicalDeviceProperties pVkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(hax::proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceProperties"));
+			
+			uint32_t gpuCount = 0u;
+
+			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			if (!gpuCount) return VK_NULL_HANDLE;
+
+			const uint32_t bufferSize = gpuCount;
+			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
+
+			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
+			
+			for (uint32_t i = 0u; i < bufferSize; i++) {
+				VkPhysicalDeviceProperties properties{};
+				pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
+
+				if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+					hPhysicalDevice = pPhysicalDevices[i];
+					break;
+				}
+			}
+
+			delete[] pPhysicalDevices;
+
+			return hPhysicalDevice;
+		}
+
+
+		static VkInstance createInstance(HMODULE hVulkan) {
+			PFN_vkCreateInstance pVkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(proc::in::getProcAddress(hVulkan, "vkCreateInstance"));
+
+			if (!pVkCreateInstance) return VK_NULL_HANDLE;
+
+			constexpr const char* EXTENSION = "VK_KHR_surface";
+
+			VkInstanceCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+			createInfo.enabledExtensionCount = 1u;
+			createInfo.ppEnabledExtensionNames = &EXTENSION;
+
+			VkInstance hInstance = VK_NULL_HANDLE;
+
+			if (pVkCreateInstance(&createInfo, nullptr, &hInstance) != VkResult::VK_SUCCESS) {
+				return VK_NULL_HANDLE;
+			}
+
+			return hInstance;
+		}
+
 
 		Draw::Draw() : _hVulkan{}, _pVkDestroyInstance{}, _pVkEnumeratePhysicalDevices{}, _pVkGetPhysicalDeviceProperties{},
 			_pVkGetPhysicalDeviceQueueFamilyProperties{}, _pVkCreateDevice{}, _pVkDestroyDevice{}, _pVkGetSwapchainImagesKHR{},
 			_pVkCreateCommandPool{}, _pVkDestroyCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{},
 			_pVkCreateImageView{}, _pVkDestroyImageView{}, _pVkCreateFramebuffer {}, _pVkDestroyFramebuffer{},
 			_pVkCreateRenderPass{}, _pVkDestroyRenderPass{},
-			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{},
-			_pImageData{},
+			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice {}, _hRenderPass{},
+			_pImageData{}, _imageCount{},
 			_isInit{} {}
 
 
@@ -21,10 +198,6 @@ namespace hax {
 
 			if (this->_pVkDestroyRenderPass && this->_hDevice && this->_hRenderPass) {
 				this->_pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, this->_pAllocator);
-			}
-
-			if (this->_pVkDestroyDevice && this->_hDevice) {
-				this->_pVkDestroyDevice(this->_hDevice, this->_pAllocator);
 			}
 			
 			if (this->_pVkDestroyInstance && this->_hInstance) {
@@ -37,23 +210,16 @@ namespace hax {
 		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->_isInit) {
-				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
-
-				if (!this->_hVulkan) return;
-
-				if (!this->createInstance()) return;
 
 				if (!this->getProcAddresses()) return;
 
-				if (!this->selectGpu()) return;
-
-				if (!this->getQueueFamily()) return;
-
-				if (!this->createDevice()) return;
-
 				this->_isInit = true;
 			}
+
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
+			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
+
+			if (!pPresentInfo || !this->_hDevice) return;
 
 			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
 				
@@ -83,22 +249,6 @@ namespace hax {
 		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
 			return;
-		}
-
-
-		bool Draw::createInstance() {
-			PFN_vkCreateInstance pVkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(proc::in::getProcAddress(this->_hVulkan, "vkCreateInstance"));
-
-			if (!pVkCreateInstance) return false;
-
-			constexpr const char* EXTENSION = "VK_KHR_surface";
-
-			VkInstanceCreateInfo createInfo {};
-			createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-			createInfo.enabledExtensionCount = 1u;
-			createInfo.ppEnabledExtensionNames = &EXTENSION;
-
-			return pVkCreateInstance(&createInfo, this->_pAllocator, &this->_hInstance) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -135,85 +285,6 @@ namespace hax {
 			) return false;
 
 			return true;
-		}
-
-
-		bool Draw::selectGpu() {
-			uint32_t gpuCount = 0u;
-
-			if (this->_pVkEnumeratePhysicalDevices(this->_hInstance, &gpuCount, nullptr) != VkResult::VK_SUCCESS) return false;
-
-			if (!gpuCount) return false;
-
-			const uint32_t bufferSize = gpuCount;
-			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
-
-			if (this->_pVkEnumeratePhysicalDevices(this->_hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return false;
-
-			for (uint32_t i = 0u; i < bufferSize; i++) {
-				VkPhysicalDeviceProperties properties{};
-				this->_pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
-
-				if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-					this->_hPhysicalDevice = pPhysicalDevices[i];
-					break;
-				}
-			}
-
-			delete[] pPhysicalDevices;
-
-			return true;
-		}
-
-
-		bool Draw::getQueueFamily() {
-			uint32_t propertiesCount = 0u;
-			this->_pVkGetPhysicalDeviceQueueFamilyProperties(this->_hPhysicalDevice, &propertiesCount, nullptr);
-
-			if (!propertiesCount) return false;
-
-			const uint32_t bufferSize = propertiesCount;
-			VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[bufferSize]{};
-
-			this->_pVkGetPhysicalDeviceQueueFamilyProperties(this->_hPhysicalDevice, &propertiesCount, pProperties);
-
-			this->_queueFamily = 0xFFFFFFFF;
-
-			for (uint32_t i = 0u; i < bufferSize; i++) {
-
-				if (pProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-					this->_queueFamily = i;
-					break;
-				}
-
-			}
-
-			delete[] pProperties;
-
-			if (this->_queueFamily == 0xFFFFFFFF) return false;
-
-			return true;
-		}
-
-
-		bool Draw::createDevice() {
-			constexpr const char* EXTENSION = "VK_KHR_swapchain";
-			constexpr float QUEUE_PRIORITY = 1.f;
-
-			VkDeviceQueueCreateInfo queueInfo = {};
-			queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueInfo.queueFamilyIndex = this->_queueFamily;
-			queueInfo.queueCount = 1;
-			queueInfo.pQueuePriorities = &QUEUE_PRIORITY;
-
-			VkDeviceCreateInfo createInfo = {};
-			createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-			createInfo.queueCreateInfoCount = 1u;
-			createInfo.pQueueCreateInfos = &queueInfo;
-			createInfo.enabledExtensionCount = 1u;
-			createInfo.ppEnabledExtensionNames = &EXTENSION;
-
-			return this->_pVkCreateDevice(this->_hPhysicalDevice, &createInfo, this->_pAllocator, &this->_hDevice) == VkResult::VK_SUCCESS;
 		}
 
 

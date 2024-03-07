@@ -7,7 +7,13 @@ namespace hax {
 	
 	namespace vk {
 
-		typedef VkResult(__stdcall* tvkQueuePresentKHR)(VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
+		typedef struct VulkanInitData {
+			PFN_vkQueuePresentKHR pVkQueuePresentKHR;
+			VkDevice hDevice;
+		}VulkanInitData;
+
+		bool getVulkanInitData(VulkanInitData* initData);
+
 
 		typedef struct ImageData{
 			VkCommandPool hCommandPool;
@@ -103,10 +109,6 @@ namespace hax {
 
 		private:
 			bool getProcAddresses();
-			bool createInstance();
-			bool selectGpu();
-			bool getQueueFamily();
-			bool createDevice();
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			void destroyImageData();

@@ -94,6 +94,7 @@ namespace hax {
 	public:
 		void* pHookArg1;
 		const void* pHookArg2;
+		void* pHookArg3;
 		float fWindowWidth;
 		float fWindowHeight;
 
@@ -122,7 +123,7 @@ namespace hax {
 		// For DirectX 9 EndScene hooks pass nothing.
 		// For DirectX 11 Present hooks pass nothing.
 		// For Vulkan QueuePresentKHR hooks pass the VkPresentInfoKHR.
-		void beginDraw(void* pArg1, const void* pArg2 = nullptr);
+		void beginDraw(void* pArg1, const void* pArg2 = nullptr, void* pArg3 = nullptr);
 		
 		// Ends drawing within a hook. Has to be called after any drawing calls.
 		void endDraw();

@@ -2,12 +2,13 @@
 
 namespace hax {
 
-	Engine::Engine(IDraw* pDraw) : _pDraw{ pDraw }, pHookArg1{ nullptr }, pHookArg2{ nullptr }, fWindowWidth {}, fWindowHeight{} {}
+	Engine::Engine(IDraw* pDraw) : _pDraw{ pDraw }, pHookArg1{}, pHookArg2{}, pHookArg3{}, fWindowWidth {}, fWindowHeight{} {}
 
 
-	void Engine::beginDraw(void* pArg1, const void* pArg2) {
+	void Engine::beginDraw(void* pArg1, const void* pArg2, void* pArg3) {
 		this->pHookArg1 = pArg1;
 		this->pHookArg2 = pArg2;
+		this->pHookArg3 = pArg3;
 
 		this->_pDraw->beginDraw(this);
 
