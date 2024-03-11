@@ -13,10 +13,9 @@ namespace hax {
 
 		VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
 			hDevice = device;
-
-			ReleaseSemaphore(hSemaphore, 1, nullptr);
 			pAcquireHook->disable();
 			const PFN_vkAcquireNextImageKHR pAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pAcquireHook->getOrigin());
+			ReleaseSemaphore(hSemaphore, 1, nullptr);
 
 			return pAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
 		}
