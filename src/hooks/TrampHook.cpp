@@ -127,13 +127,26 @@ namespace hax {
 
 	namespace in {
 
-		TrampHook::TrampHook(BYTE* origin, const BYTE* detour, size_t size) :
-			_origin(origin), _detour(detour), _size(size), _gateway(nullptr), _hooked(false) {}
+		TrampHook::TrampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) :
+			_origin(origin), _detour(detour), _size(size), _gateway(nullptr), _hooked(false), _relativeAddressOffset(relativeAddressOffset), _relativeAddress(0) {
+			const int32_t* const pRelativeAddress = reinterpret_cast<int32_t*>(this->_origin + this->_relativeAddressOffset);
+
+			if (this->_relativeAddressOffset != SIZE_MAX && pRelativeAddress) {
+				this->_relativeAddress = *pRelativeAddress;
+			}
+		
+		}
 
 
-		TrampHook::TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size) :
-			_origin(nullptr), _detour(detour), _size(size), _gateway(nullptr), _hooked(false)
+		TrampHook::TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size, size_t relativeAddressOffset) :
+			_origin(nullptr), _detour(detour), _size(size), _gateway(nullptr), _hooked(false), _relativeAddressOffset(relativeAddressOffset), _relativeAddress(0)
 		{
+			const int32_t* const pRelativeAddress = reinterpret_cast<int32_t*>(this->_origin + this->_relativeAddressOffset);
+			
+			if (this->_relativeAddressOffset != SIZE_MAX && pRelativeAddress) {
+				this->_relativeAddress = *pRelativeAddress;
+			}
+			
 			const HMODULE hMod = proc::in::getModuleHandle(modName);
 
 			if (hMod) {
@@ -152,7 +165,7 @@ namespace hax {
 
 			if (this->_hooked || !this->_origin || !this->_detour) return false;
 
-			this->_gateway = mem::in::trampHook(this->_origin, this->_detour, this->_size);
+			this->_gateway = mem::in::trampHook(this->_origin, this->_detour, this->_size, this->_relativeAddressOffset);
 
 			if (!this->_gateway) return false;
 
@@ -168,6 +181,13 @@ namespace hax {
 
 			// patch the stolen bytes back
 			if (!mem::in::patch(this->_origin, this->_gateway, this->_size)) return false;
+
+			// patch the saved relative address back
+			if (this->_relativeAddress) {
+
+				if (!mem::in::patch(this->_origin + this->_relativeAddressOffset, reinterpret_cast<BYTE*>(&this->_relativeAddress), sizeof(this->_relativeAddress))) return false;
+
+			}
 					
 			this->_hooked = false;
 

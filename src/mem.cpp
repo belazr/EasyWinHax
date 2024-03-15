@@ -377,7 +377,12 @@ namespace hax {
 
 		namespace in {
 
-			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size) {
+			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) {
+
+				if (relativeAddressOffset + sizeof(uint32_t) > size)
+				{
+					return nullptr;
+				}
 
 				// allocate memory for the gateway
 				#ifdef _WIN64
@@ -400,6 +405,25 @@ namespace hax {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
+				}
+
+				// correct the relative address
+				if (relativeAddressOffset != SIZE_MAX) {
+
+					const int32_t oldRelativeAddress = *reinterpret_cast<int32_t*>(origin + relativeAddressOffset);
+					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
+
+					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
+
+						return nullptr;
+					}
+					
+					if (memcpy_s(gateway + relativeAddressOffset, sizeof(uint32_t), &correctedRelativeAddress, sizeof(uint32_t))) {
+						VirtualFree(gateway, 0, MEM_RELEASE);
+
+						return nullptr;
+					}
+
 				}
 
 				// relative jump from the gateway to the origin
