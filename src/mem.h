@@ -55,7 +55,7 @@ namespace hax {
 			// Number of bytes that get overwritten by the jump at the beginning of the origin function.
 			// The overwritten instructions get executed by the gateway right before executing the origin function.
 			// Has to be at least five! Only complete instructions should be overwritten!
-			// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
+			// It is necessary to look at the disassembly of the origin function to determine when the first complete instruction finishes after the first five bytes.
 			// 
 			// Return:
 			// Pointer to the gateway within the virtual address space of the target process or nullptr on failure (eg because of architecture incompatibility)
@@ -316,13 +316,18 @@ namespace hax {
 			// Number of bytes that get overwritten by the jump at the beginning of the origin function.
 			// The overwritten instructions get executed by the gateway right before executing the origin function.
 			// Has to be at least five! Only complete instructions should be overwritten!
-			// It is necessary to look at the disassembly of the origin function to find out when the first complete instruction finishes after the first five bytes.
+			// It is necessary to look at the disassembly of the origin function to determine when the first complete instruction finishes after the first five bytes.
+			// 
+			// [in] relativeAddressOffset:
+			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
+			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will be ignored.
 			// 
 			// Return:
 			// Pointer to the gateway. This address should be called by the detour function with the same calling convention as the origin function.
 			// The stolen bytes of the orgin function are located here.
 			// Call VirtualFree on the return value to free the memory in the process.
-			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size);
+			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			#ifdef _WIN64
 
