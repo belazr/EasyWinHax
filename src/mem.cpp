@@ -379,7 +379,7 @@ namespace hax {
 
 			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) {
 
-				if (relativeAddressOffset + sizeof(uint32_t) > size)
+				if (relativeAddressOffset != SIZE_MAX && relativeAddressOffset + sizeof(uint32_t) > size)
 				{
 					return nullptr;
 				}
