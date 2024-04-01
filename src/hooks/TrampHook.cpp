@@ -6,16 +6,23 @@ namespace hax {
 
 	namespace ex {
 
-		TrampHook::TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size) :
-			_hProc(hProc), _origin(origin), _size(size), _detour{}, _detourOriginCall{}, _gateway{}, _hooked{}
+		TrampHook::TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset) :
+			_hProc(hProc), _origin(origin), _size(size), _detour{}, _detourOriginCall{}, _gateway{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{}, _hooked{}
 		{
+			// save the original relative address to patch it back later
+			if (this->_relativeAddressOffset != SIZE_MAX && this->_origin + this->_relativeAddressOffset) {
+
+				if (!ReadProcessMemory(hProc, this->_origin + this->_relativeAddressOffset, &this->_relativeAddress, sizeof(this->_relativeAddress), nullptr)) return;
+
+			}
+			
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (this->_detour && shell) {
 
 				if (WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr)) {
 					// scan for the origin call in the shell code injected into the target
-					_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
+					this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
 				}
 
 			}
@@ -24,10 +31,18 @@ namespace hax {
 
 
 		TrampHook::TrampHook(
-			HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
-		) : _hProc(hProc), _size(size), _origin{}, _detour{}, _detourOriginCall{}, _gateway{}, _hooked{}
+			HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset
+		) : _hProc(hProc), _size(size), _origin{}, _detour{}, _detourOriginCall{}, _gateway{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{}, _hooked{}
 		{
-			HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
+			
+			// save the original relative address to patch it back later
+			if (this->_relativeAddressOffset != SIZE_MAX && this->_origin + this->_relativeAddressOffset) {
+
+				if (!ReadProcessMemory(hProc, this->_origin + this->_relativeAddressOffset, &this->_relativeAddress, sizeof(this->_relativeAddress), nullptr)) return;
+
+			}
+			
+			const HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
 
 			if (hMod) {
 				this->_origin = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hMod, funcName));
@@ -62,7 +77,7 @@ namespace hax {
 			if (this->_hooked || !this->_origin || !this->_detour || !this->_detourOriginCall) return false;
 
 			// install the trampoline hook
-			this->_gateway = mem::ex::trampHook(this->_hProc, this->_origin, this->_detour, this->_detourOriginCall, this->_size);
+			this->_gateway = mem::ex::trampHook(this->_hProc, this->_origin, this->_detour, this->_detourOriginCall - this->_detour, this->_size, this->_relativeAddressOffset);
 
 			if (!this->_gateway) return false;
 
@@ -85,6 +100,17 @@ namespace hax {
 				return false;
 			}
 
+			// patch the saved relative address back
+			if (this->_relativeAddress) {
+
+				if (memcpy_s(stolen + this->_relativeAddressOffset, sizeof(this->_relativeAddress), &this->_relativeAddress, sizeof(this->_relativeAddress))) {
+					delete[] stolen;
+
+					return false;
+				}
+
+			}
+
 			// patch the stolen bytes back
 			if (!mem::ex::patch(this->_hProc, this->_origin, stolen, this->_size)) {
 				delete[] stolen;
@@ -92,8 +118,8 @@ namespace hax {
 				return false;
 			}
 
-			this->_hooked = false;
 			delete[] stolen;
+			this->_hooked = false;
 
 			return VirtualFreeEx(this->_hProc, this->_gateway, 0, MEM_RELEASE);
 		}
@@ -128,7 +154,7 @@ namespace hax {
 	namespace in {
 
 		TrampHook::TrampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) :
-			_origin(origin), _detour(detour), _size(size), _gateway(nullptr), _hooked(false), _relativeAddressOffset(relativeAddressOffset), _relativeAddress(0) {
+			_origin(origin), _detour(detour), _size(size), _gateway{}, _hooked{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{} {
 			const int32_t* const pRelativeAddress = reinterpret_cast<int32_t*>(this->_origin + this->_relativeAddressOffset);
 
 			if (this->_relativeAddressOffset != SIZE_MAX && pRelativeAddress) {
@@ -139,7 +165,7 @@ namespace hax {
 
 
 		TrampHook::TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size, size_t relativeAddressOffset) :
-			_origin(nullptr), _detour(detour), _size(size), _gateway(nullptr), _hooked(false), _relativeAddressOffset(relativeAddressOffset), _relativeAddress(0)
+			_origin{}, _detour(detour), _size(size), _gateway{}, _hooked{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{}
 		{
 			const int32_t* const pRelativeAddress = reinterpret_cast<int32_t*>(this->_origin + this->_relativeAddressOffset);
 			
