@@ -102,13 +102,7 @@ namespace hax {
 
 			// patch the saved relative address back
 			if (this->_relativeAddress) {
-
-				if (memcpy_s(stolen + this->_relativeAddressOffset, sizeof(this->_relativeAddress), &this->_relativeAddress, sizeof(this->_relativeAddress))) {
-					delete[] stolen;
-
-					return false;
-				}
-
+				*reinterpret_cast<uint32_t*>(stolen + this->_relativeAddressOffset) = this->_relativeAddress;
 			}
 
 			// patch the stolen bytes back
@@ -205,16 +199,29 @@ namespace hax {
 
 			if (!this->_hooked || !this->_origin || !this->_gateway) return false;
 
-			// patch the stolen bytes back
-			if (!mem::in::patch(this->_origin, this->_gateway, this->_size)) return false;
+			// overwritten/stolen bytes
+			BYTE* const stolen = new BYTE[this->_size]{};
+
+			// read the stolen bytes from the gateway
+			if (memcpy_s(stolen, this->_size, this->_gateway, this->_size)) {
+				delete[] stolen;
+
+				return false;
+			}
 
 			// patch the saved relative address back
 			if (this->_relativeAddress) {
-
-				if (!mem::in::patch(this->_origin + this->_relativeAddressOffset, reinterpret_cast<BYTE*>(&this->_relativeAddress), sizeof(this->_relativeAddress))) return false;
-
+				*reinterpret_cast<uint32_t*>(stolen + this->_relativeAddressOffset) = this->_relativeAddress;
 			}
-					
+
+			// patch the stolen bytes back
+			if (!mem::in::patch(this->_origin, stolen, this->_size)) {
+				delete[] stolen;
+
+				return false;
+			}
+
+			delete[] stolen;
 			this->_hooked = false;
 
 			return VirtualFree(this->_gateway, 0, MEM_RELEASE);
