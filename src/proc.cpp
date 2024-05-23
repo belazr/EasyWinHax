@@ -9,29 +9,41 @@ namespace hax {
 		template <typename ITYPE>
 		static ITYPE* getSystemInformation(SYSTEM_INFORMATION_CLASS infoClass);
 
-		DWORD getProcessId(const char* processName) {
+		bool getProcessIds(const char* processName, DWORD* pIds, size_t* pSize) {
+			
+			if (!pSize) return false;
+
 			const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
-			if (!pSysProcInfoBuffer) return 0;
+			if (!pSysProcInfoBuffer) return false;
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-			wchar_t wProcessName[MAX_PATH];
+			wchar_t wProcessName[MAX_PATH]{};
 			MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, processName, -1, wProcessName, MAX_PATH);
-			DWORD processId = 0;
 
-			do {
+			const size_t bufferSize = *pSize;
+			*pSize = 0u;
 
-				if (pCurSysProcInfo->ImageName.Buffer && !_wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName)) {
-					processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+			for (
+				const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+				pCurSysProcInfo->NextEntryOffset;
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset)
+			) {
+			
+				if (!pCurSysProcInfo->ImageName.Buffer || _wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName)) continue;
+
+				if (pIds) {
+					
+					if (*pSize + 1 > bufferSize) return false;
+
+					pIds[*pSize] = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
 				}
 
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!processId && pCurSysProcInfo->NextEntryOffset);
+				(*pSize)++;
+			}
 
 			delete[] pSysProcInfoBuffer;
 
-			return processId;
+			return true;
 		}
 
 

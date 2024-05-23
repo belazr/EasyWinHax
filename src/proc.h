@@ -42,10 +42,20 @@ namespace hax {
 		// [in] processName:
 		// Name of the process.
 		// 
+		// [in] pIds
+		// Pointer of the memory location, where the process IDs should be written to.
+		// Pass a nullptr to query how many process IDs there are for a given process name.
+		// 
+		// [in/out] pSize
+		// If pIds is not nullptr:
+		// How many process IDs pIds can hold on input.
+		// How many process IDs were written to pIds on output.
+		// If pIds is nullptr:
+		// How many processes have the name processName.
+		// 
 		// Return:
-		// Process id of the process, 0 on failure or no process was found.
-		// If there are multiple proccesses with the same name, the id of one of them is returned.
-		DWORD getProcessId(const char* processName);
+		// True on success, false on failure or if the buffer was too small.
+		bool getProcessIds(const char* processName, DWORD* pIds, size_t* pSize);
 
 		// Gets a process entry struct by process ID.
 		// 
@@ -71,9 +81,8 @@ namespace hax {
 		// [out] pThreadEntries:
 		// Address of a buffer for the ThreadEntry structs.
 		// 
-		// [in]
-		// size:
-		// Size of the buffer in ThreadEntry structs.
+		// [in] size:
+		// How many thread entries pThreadEntries can hold.
 		// 
 		// Return:
 		// True on success, false on failure or if the buffer was too small.
