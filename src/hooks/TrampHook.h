@@ -26,6 +26,8 @@ namespace hax {
 			BYTE* _detourOriginCall;
 			BYTE* _gateway;
 			const size_t _size;
+			const size_t _relativeAddressOffset;
+			uint32_t _relativeAddress;
 			bool _hooked;
 
 		public:
@@ -55,7 +57,12 @@ namespace hax {
 			// The overwritten instructions get executed by the gateway right before executing the origin function.
 			// Has to be at least five! Only complete instructions should be overwritten!
 			// It is necessary to look at the disassembly of the origin function to determine when the first complete instruction finishes after the first five bytes.
-			TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size);
+			//			
+			// [in] relativeAddressOffset:
+			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
+			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
+			TrampHook(HANDLE hProc, BYTE* origin, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relatvieAddressOffset = SIZE_MAX);
 
 			// Injects shell code into the target process and initializes members. Used to hook a exported function of a module of the target process by module name and export name.
 			// Hooks the beginning of the function, not the import address table, import directory or export directory!
@@ -86,8 +93,13 @@ namespace hax {
 			// The overwritten instructions get executed by the gateway right before executing the origin function.
 			// Has to be at least five! Only complete instructions should be overwritten!
 			// It is necessary to look at the disassembly of the origin function to determine when the first complete instruction finishes after the first five bytes.
+			//			
+			// [in] relativeAddressOffset:
+			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
+			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
 			TrampHook(
-				HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size
+				HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset = SIZE_MAX
 			);
 
 			~TrampHook();
@@ -159,7 +171,7 @@ namespace hax {
 			// [in] relativeAddressOffset:
 			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
 			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
-			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will be ignored.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
 			TrampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			// Initializes members. Used to hook a exported function of a module of the target process by module name and export name.
@@ -185,7 +197,7 @@ namespace hax {
 			// [in] relativeAddressOffset:
 			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
 			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
-			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will be ignored.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
 			TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			~TrampHook();

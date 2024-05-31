@@ -48,7 +48,7 @@ namespace hax {
 			// Has to use the same calling convention as the origin function for uninterrupted process execution.
 			// 
 			// [in] originCall:
-			// Address of the call of the origin function call within the detour function. The call should be of the same calling convention as the origin function.
+			// Offset of the call of the origin function call within the detour function. The call should be of the same calling convention as the origin function.
 			// Can be null if there is no call to the origin function in the detour.
 			// 
 			// [in] size:
@@ -57,12 +57,17 @@ namespace hax {
 			// Has to be at least five! Only complete instructions should be overwritten!
 			// It is necessary to look at the disassembly of the origin function to determine when the first complete instruction finishes after the first five bytes.
 			// 
+			// [in] relativeAddressOffset:
+			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
+			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
+			//
 			// Return:
 			// Pointer to the gateway within the virtual address space of the target process or nullptr on failure (eg because of architecture incompatibility)
 			// This address is called by the detour function at the address given by originCall.
 			// The stolen bytes of the orgin function are located here.
 			// Call VirtualFreeEx on the return value to free the memory in the target process.
-			BYTE* trampHook(HANDLE hProc, BYTE* origin, const BYTE* detour, BYTE* originCall, size_t size);
+			BYTE* trampHook(HANDLE hProc, BYTE* origin, BYTE* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			#ifdef _WIN64
 
@@ -321,7 +326,7 @@ namespace hax {
 			// [in] relativeAddressOffset:
 			// The offset of a relative Address if there is one in the first <size> bytes of the origin function.
 			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
-			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will be ignored.
+			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
 			// 
 			// Return:
 			// Pointer to the gateway. This address should be called by the detour function with the same calling convention as the origin function.
