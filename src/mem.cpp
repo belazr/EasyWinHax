@@ -34,7 +34,13 @@ namespace hax {
 
 		namespace ex {
 
-			BYTE* trampHook(HANDLE hProc, BYTE* origin, const BYTE* detour, BYTE* originCall, size_t size) {
+			BYTE* trampHook(HANDLE hProc, BYTE* origin, BYTE* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset) {
+
+				if (relativeAddressOffset != SIZE_MAX && relativeAddressOffset + sizeof(uint32_t) > size)
+				{
+					return nullptr;
+				}
+
 				BYTE* gateway = nullptr;
 				size_t targetPtrSize = 0;
 
@@ -62,15 +68,11 @@ namespace hax {
 
 				if (!gateway) return nullptr;
 
-				if (originCall) {
+				// overwrite the origin call placeholder
+				if (!WriteProcessMemory(hProc, detour + originCallOffset, &gateway, targetPtrSize, nullptr)) {
+					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
-					// overwrite the origin call placeholder
-					if (!WriteProcessMemory(hProc, originCall, &gateway, targetPtrSize, nullptr)) {
-						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
-
-						return nullptr;
-					}
-
+					return nullptr;
 				}
 
 				// write the overwritten bytes of the origin to the gateway
@@ -91,6 +93,32 @@ namespace hax {
 				}
 
 				delete[] stolen;
+
+				// correct the relative address
+				if (relativeAddressOffset != SIZE_MAX) {
+
+					int32_t oldRelativeAddress = 0;
+
+					if (!ReadProcessMemory(hProc, origin + relativeAddressOffset, &oldRelativeAddress, sizeof(oldRelativeAddress), nullptr)) {
+						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
+
+						return nullptr;
+					}
+
+					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
+
+					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
+
+						return nullptr;
+					}
+
+					if (!WriteProcessMemory(hProc, gateway + relativeAddressOffset, &correctedRelativeAddress, sizeof(uint32_t), nullptr)) {
+						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
+
+						return nullptr;
+					}
+
+				}
 
 				// relative jump from the gateway to the origin
 				if (!relJmp(hProc, gateway + size, origin + sizeof(X86_JUMP), sizeof(X86_JUMP))) {
@@ -379,7 +407,7 @@ namespace hax {
 
 			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) {
 
-				if (relativeAddressOffset + sizeof(uint32_t) > size)
+				if (relativeAddressOffset != SIZE_MAX && relativeAddressOffset + sizeof(uint32_t) > size)
 				{
 					return nullptr;
 				}
@@ -406,6 +434,23 @@ namespace hax {
 
 					return nullptr;
 				}
+
+				// correct the relative address
+				if (relativeAddressOffset != SIZE_MAX) {
+
+					const int32_t oldRelativeAddress = *reinterpret_cast<int32_t*>(origin + relativeAddressOffset);
+					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
+
+					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
+
+						return nullptr;
+					}
+					
+					if (memcpy_s(gateway + relativeAddressOffset, sizeof(uint32_t), &correctedRelativeAddress, sizeof(uint32_t))) {
+						VirtualFree(gateway, 0, MEM_RELEASE);
+
+						return nullptr;
+					}
 
 				// correct the relative address
 				if (relativeAddressOffset != SIZE_MAX) {
