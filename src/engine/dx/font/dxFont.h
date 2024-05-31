@@ -422,6 +422,9 @@ namespace hax {
 				case '°':
 					index = CharIndex::DEGREES;
 					break;
+				default:
+					index = CharIndex::ASTERISK;
+					break;
 				}
 
 				return index;
