@@ -24,14 +24,6 @@ namespace hax {
 
 		class Draw : public IDraw {
 		private:
-			HMODULE _hVulkan;
-
-			PFN_vkDestroyInstance _pVkDestroyInstance;
-			PFN_vkEnumeratePhysicalDevices _pVkEnumeratePhysicalDevices;
-			PFN_vkGetPhysicalDeviceProperties _pVkGetPhysicalDeviceProperties;
-			PFN_vkGetPhysicalDeviceQueueFamilyProperties _pVkGetPhysicalDeviceQueueFamilyProperties;
-			PFN_vkCreateDevice _pVkCreateDevice;
-			PFN_vkDestroyDevice _pVkDestroyDevice;
 			PFN_vkGetSwapchainImagesKHR _pVkGetSwapchainImagesKHR;
 			PFN_vkCreateCommandPool _pVkCreateCommandPool;
 			PFN_vkDestroyCommandPool _pVkDestroyCommandPool;
@@ -43,9 +35,10 @@ namespace hax {
 			PFN_vkDestroyFramebuffer _pVkDestroyFramebuffer;
 			PFN_vkCreateRenderPass _pVkCreateRenderPass;
 			PFN_vkDestroyRenderPass _pVkDestroyRenderPass;
+			PFN_vkResetCommandBuffer _pVkResetCommandBuffer;
+			PFN_vkBeginCommandBuffer _pVkBeginCommandBuffer;
+			PFN_vkCmdBeginRenderPass _pVkCmdBeginRenderPass;
 
-			VkAllocationCallbacks* _pAllocator;
-			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
 			VkDevice _hDevice;
@@ -108,7 +101,7 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
-			bool getProcAddresses();
+			bool getProcAddresses(HMODULE hVulkan, VkInstance hInstance);
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			void destroyImageData();
