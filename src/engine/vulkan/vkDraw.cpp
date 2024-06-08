@@ -11,7 +11,7 @@ namespace hax {
 		static HANDLE hSemaphore;
 		static VkDevice hDevice;
 
-		VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+		static VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
 			hDevice = device;
 			pAcquireHook->disable();
 			const PFN_vkAcquireNextImageKHR pAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pAcquireHook->getOrigin());
@@ -21,16 +21,32 @@ namespace hax {
 		}
 
 
-		static VkDevice createDummyDevice(HMODULE hVulkan);
+		static VkInstance createInstance(HMODULE hVulkan);
+		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan, VkInstance hInstance);
+		static VkDevice createDummyDevice(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
 
 		bool getVulkanInitData(VulkanInitData* initData) {
 			const HMODULE hVulkan = hax::proc::in::getModuleHandle("vulkan-1.dll");
 
 			if (!hVulkan) return false;
 
-			const VkDevice hDummyDevice = createDummyDevice(hVulkan);
+			const PFN_vkDestroyDevice pVkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(proc::in::getProcAddress(hVulkan, "vkDestroyDevice"));
+			const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(hVulkan, "vkDestroyInstance"));
 
-			if (!hDummyDevice) return false;
+			if (!pVkDestroyDevice || !pVkDestroyInstance) return false;
+
+			const VkInstance hInstance = createInstance(hVulkan);
+
+			if (hInstance == VK_NULL_HANDLE) return false;
+
+			VkPhysicalDevice hPhysicalDevice = getPhysicalDevice(hVulkan, hInstance);
+			//pVkDestroyInstance(hInstance, nullptr);
+
+			if (hPhysicalDevice == VK_NULL_HANDLE) return false;
+
+			const VkDevice hDummyDevice = createDummyDevice(hVulkan, hPhysicalDevice);
+
+			if (hDummyDevice == VK_NULL_HANDLE) return false;
 
 			PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetDeviceProcAddr"));
 
@@ -47,22 +63,71 @@ namespace hax {
 				pAcquireHook->enable();
 				WaitForSingleObject(hSemaphore, INFINITE);
 				delete pAcquireHook;
+				initData->hDevice = hDevice;
 			}
-
-			initData->hDevice = hDevice;
 
 			return true;
 		}
 
 
-		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan);
+		static VkInstance createInstance(HMODULE hVulkan) {
+			const PFN_vkCreateInstance pVkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(proc::in::getProcAddress(hVulkan, "vkCreateInstance"));
+
+			if (!pVkCreateInstance) return VK_NULL_HANDLE;
+
+			constexpr const char* EXTENSION = "VK_KHR_surface";
+
+			VkInstanceCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+			createInfo.enabledExtensionCount = 1u;
+			createInfo.ppEnabledExtensionNames = &EXTENSION;
+
+			VkInstance hInstance = VK_NULL_HANDLE;
+
+			if (pVkCreateInstance(&createInfo, nullptr, &hInstance) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			return hInstance;
+		}
+
+
+		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan, VkInstance hInstance) {
+			const PFN_vkEnumeratePhysicalDevices pVkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(hax::proc::in::getProcAddress(hVulkan, "vkEnumeratePhysicalDevices"));
+			const PFN_vkGetPhysicalDeviceProperties pVkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(hax::proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceProperties"));
+			
+			if (!pVkEnumeratePhysicalDevices || !pVkGetPhysicalDeviceProperties) return VK_NULL_HANDLE;
+			
+			uint32_t gpuCount = 0u;
+
+			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			if (!gpuCount) return VK_NULL_HANDLE;
+
+			const uint32_t bufferSize = gpuCount;
+			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
+
+			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
+
+			for (uint32_t i = 0u; i < bufferSize; i++) {
+				VkPhysicalDeviceProperties properties{};
+				pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
+
+				if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+					hPhysicalDevice = pPhysicalDevices[i];
+					break;
+				}
+			}
+
+			delete[] pPhysicalDevices;
+
+			return hPhysicalDevice;
+		}
+
+
 		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
 
-		static VkDevice createDummyDevice(HMODULE hVulkan) {
-			const VkPhysicalDevice hPhysicalDevice = getPhysicalDevice(hVulkan);
-
-			if (hPhysicalDevice == VK_NULL_HANDLE) return VK_NULL_HANDLE;
-
+		static VkDevice createDummyDevice(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
 			const uint32_t queueFamily = getQueueFamily(hVulkan, hPhysicalDevice);
 
 			if (queueFamily == 0xFFFFFFFF) return VK_NULL_HANDLE;
@@ -83,7 +148,7 @@ namespace hax {
 			createInfo0.enabledExtensionCount = 1u;
 			createInfo0.ppEnabledExtensionNames = &EXTENSION;
 
-			PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
+			const PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
 
 			if (!pVkCreateDevice) return VK_NULL_HANDLE;
 
@@ -97,11 +162,13 @@ namespace hax {
 
 		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
 			const PFN_vkGetPhysicalDeviceQueueFamilyProperties pVkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceQueueFamilyProperties"));
+
+			if (!pVkGetPhysicalDeviceQueueFamilyProperties) return 0xFFFFFFFF;
 			
 			uint32_t propertiesCount = 0u;
 			pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &propertiesCount, nullptr);
 
-			if (!propertiesCount) return false;
+			if (!propertiesCount) return 0xFFFFFFFF;
 
 			const uint32_t bufferSize = propertiesCount;
 			VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[bufferSize]{};
@@ -124,70 +191,12 @@ namespace hax {
 			return queueFamily;
 		}
 
-		static VkInstance createInstance(HMODULE hVulkan);
 
-		static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan) {
-			const VkInstance hInstance = createInstance(hVulkan);
-			const PFN_vkEnumeratePhysicalDevices pVkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(hax::proc::in::getProcAddress(hVulkan, "vkEnumeratePhysicalDevices"));
-			const PFN_vkGetPhysicalDeviceProperties pVkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(hax::proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceProperties"));
-			
-			uint32_t gpuCount = 0u;
-
-			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
-
-			if (!gpuCount) return VK_NULL_HANDLE;
-
-			const uint32_t bufferSize = gpuCount;
-			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
-
-			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
-
-			VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
-			
-			for (uint32_t i = 0u; i < bufferSize; i++) {
-				VkPhysicalDeviceProperties properties{};
-				pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
-
-				if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-					hPhysicalDevice = pPhysicalDevices[i];
-					break;
-				}
-			}
-
-			delete[] pPhysicalDevices;
-
-			return hPhysicalDevice;
-		}
-
-
-		static VkInstance createInstance(HMODULE hVulkan) {
-			PFN_vkCreateInstance pVkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(proc::in::getProcAddress(hVulkan, "vkCreateInstance"));
-
-			if (!pVkCreateInstance) return VK_NULL_HANDLE;
-
-			constexpr const char* EXTENSION = "VK_KHR_surface";
-
-			VkInstanceCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-			createInfo.enabledExtensionCount = 1u;
-			createInfo.ppEnabledExtensionNames = &EXTENSION;
-
-			VkInstance hInstance = VK_NULL_HANDLE;
-
-			if (pVkCreateInstance(&createInfo, nullptr, &hInstance) != VkResult::VK_SUCCESS) {
-				return VK_NULL_HANDLE;
-			}
-
-			return hInstance;
-		}
-
-
-		Draw::Draw() : _hVulkan{}, _pVkDestroyInstance{}, _pVkEnumeratePhysicalDevices{}, _pVkGetPhysicalDeviceProperties{},
-			_pVkGetPhysicalDeviceQueueFamilyProperties{}, _pVkCreateDevice{}, _pVkDestroyDevice{}, _pVkGetSwapchainImagesKHR{},
-			_pVkCreateCommandPool{}, _pVkDestroyCommandPool{}, _pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{},
-			_pVkCreateImageView{}, _pVkDestroyImageView{}, _pVkCreateFramebuffer {}, _pVkDestroyFramebuffer{},
-			_pVkCreateRenderPass{}, _pVkDestroyRenderPass{},
-			_pAllocator{}, _hInstance{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice {}, _hRenderPass{},
+		Draw::Draw() : _pVkGetSwapchainImagesKHR{}, _pVkCreateCommandPool{}, _pVkDestroyCommandPool{},
+			_pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{}, _pVkCreateImageView{}, _pVkDestroyImageView{},
+			_pVkCreateFramebuffer{}, _pVkDestroyFramebuffer{}, _pVkCreateRenderPass{}, _pVkDestroyRenderPass{},
+			_pVkResetCommandBuffer{}, _pVkBeginCommandBuffer{}, _pVkCmdBeginRenderPass{},
+			_hPhysicalDevice{}, _queueFamily{}, _hDevice {}, _hRenderPass{},
 			_pImageData{}, _imageCount{},
 			_isInit{} {}
 
@@ -196,21 +205,41 @@ namespace hax {
 			destroyImageData();
 
 			if (this->_pVkDestroyRenderPass && this->_hDevice && this->_hRenderPass) {
-				this->_pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, this->_pAllocator);
+				this->_pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
 			}
 			
-			if (this->_pVkDestroyInstance && this->_hInstance) {
-				this->_pVkDestroyInstance(this->_hInstance, this->_pAllocator);
-			}
-
 		}
 
 
 		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->_isInit) {
+				const HMODULE hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
-				if (!this->getProcAddresses()) return;
+				if (!hVulkan) return;
+
+				const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(hVulkan, "vkDestroyInstance"));
+
+				if (!pVkDestroyInstance) return;
+
+				const VkInstance hInstance = createInstance(hVulkan);
+
+				if (hInstance == VK_NULL_HANDLE) return;
+
+				if (!this->getProcAddresses(hVulkan, hInstance)) {
+					pVkDestroyInstance(hInstance, nullptr);
+
+					return;
+				}
+
+				this->_hPhysicalDevice = getPhysicalDevice(hVulkan, hInstance);
+				pVkDestroyInstance(hInstance, nullptr);
+
+				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return;
+
+				this->_queueFamily = getQueueFamily(hVulkan, this->_hPhysicalDevice);
+
+				if (this->_queueFamily == 0xFFFFFFFF) return;
 
 				this->_isInit = true;
 			}
@@ -226,6 +255,26 @@ namespace hax {
 
 				if (!this->createImageData(pPresentInfo->pSwapchains[i])) return;
 
+				const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[i]];
+
+				if (curImageData.hCommandBuffer == VK_NULL_HANDLE) return;
+				
+				if (this->_pVkResetCommandBuffer(curImageData.hCommandBuffer, 0) != VkResult::VK_SUCCESS) return;
+
+				VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
+				cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+				cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+				if (this->_pVkBeginCommandBuffer(curImageData.hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
+
+				VkRenderPassBeginInfo renderPassBeginInfo = {};
+				renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+				renderPassBeginInfo.renderPass = this->_hRenderPass;
+				renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
+				renderPassBeginInfo.renderArea.extent.width = 1366;
+				renderPassBeginInfo.renderArea.extent.height = 768;
+
+				this->_pVkCmdBeginRenderPass(curImageData.hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			}
 
 			return;
@@ -251,36 +300,32 @@ namespace hax {
 		}
 
 
-		bool Draw::getProcAddresses() {
-			PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetInstanceProcAddr"));
-
+		bool Draw::getProcAddresses(HMODULE hVulkan, VkInstance hInstance) {
+			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetInstanceProcAddr"));
+			
 			if (!pVkGetInstanceProcAddr) return false;
 
-			this->_pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyInstance"));
-			this->_pVkEnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(pVkGetInstanceProcAddr(this->_hInstance, "vkEnumeratePhysicalDevices"));
-			this->_pVkGetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(pVkGetInstanceProcAddr(this->_hInstance, "vkGetPhysicalDeviceProperties"));
-			this->_pVkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(pVkGetInstanceProcAddr(this->_hInstance, "vkGetPhysicalDeviceQueueFamilyProperties"));
-			this->_pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateDevice"));
-			this->_pVkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyDevice"));
-			this->_pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(this->_hInstance, "vkGetSwapchainImagesKHR"));
-			this->_pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateCommandPool"));
-			this->_pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyCommandPool"));
-			this->_pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkAllocateCommandBuffers"));
-			this->_pVkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(pVkGetInstanceProcAddr(this->_hInstance, "vkFreeCommandBuffers"));
-			this->_pVkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateImageView"));
-			this->_pVkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyImageView"));
-			this->_pVkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateFramebuffer"));
-			this->_pVkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyFramebuffer"));
-			this->_pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkCreateRenderPass"));
-			this->_pVkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(pVkGetInstanceProcAddr(this->_hInstance, "vkDestroyRenderPass"));
+			this->_pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(hInstance, "vkGetSwapchainImagesKHR"));
+			this->_pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkCreateCommandPool"));
+			this->_pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkDestroyCommandPool"));
+			this->_pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(hInstance, "vkAllocateCommandBuffers"));
+			this->_pVkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(pVkGetInstanceProcAddr(hInstance, "vkFreeCommandBuffers"));
+			this->_pVkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(pVkGetInstanceProcAddr(hInstance, "vkCreateImageView"));
+			this->_pVkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(pVkGetInstanceProcAddr(hInstance, "vkDestroyImageView"));
+			this->_pVkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(pVkGetInstanceProcAddr(hInstance, "vkCreateFramebuffer"));
+			this->_pVkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(pVkGetInstanceProcAddr(hInstance, "vkDestroyFramebuffer"));
+			this->_pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkCreateRenderPass"));
+			this->_pVkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkDestroyRenderPass"));
+			this->_pVkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(pVkGetInstanceProcAddr(hInstance, "vkResetCommandBuffer"));
+			this->_pVkBeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(pVkGetInstanceProcAddr(hInstance, "vkBeginCommandBuffer"));
+			this->_pVkCmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkCmdBeginRenderPass"));
 
 			if (
-				!this->_pVkDestroyInstance || !this->_pVkEnumeratePhysicalDevices || !this->_pVkGetPhysicalDeviceProperties ||
-				!this->_pVkGetPhysicalDeviceQueueFamilyProperties || !this->_pVkCreateDevice || !this->_pVkDestroyDevice ||
 				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkDestroyCommandPool ||
 				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateRenderPass ||
 				!this->_pVkDestroyRenderPass || !this->_pVkCreateImageView || !this->_pVkDestroyImageView ||
-				!this->_pVkCreateFramebuffer || !this->_pVkDestroyFramebuffer
+				!this->_pVkCreateFramebuffer || !this->_pVkDestroyFramebuffer || !this->_pVkResetCommandBuffer ||
+				!this->_pVkBeginCommandBuffer || !this->_pVkCmdBeginRenderPass
 			) return false;
 
 			return true;
@@ -314,7 +359,7 @@ namespace hax {
 			info.subpassCount = 1u;
 			info.pSubpasses = &subpass;
 
-			return this->_pVkCreateRenderPass(this->_hDevice, &info, this->_pAllocator, &this->_hRenderPass) == VkResult::VK_SUCCESS;
+			return this->_pVkCreateRenderPass(this->_hDevice, &info, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -331,7 +376,11 @@ namespace hax {
 				this->_imageCount = imageCount;
 			}
 
-			VkImage* pImages = new VkImage[this->_imageCount]{};
+			if (!this->_pImageData) {
+				this->_pImageData = new ImageData[this->_imageCount]{};
+			}
+
+			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
 				delete[] pImages;
@@ -364,7 +413,7 @@ namespace hax {
 				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 				createInfo.queueFamilyIndex = this->_queueFamily;
 
-				this->_pVkCreateCommandPool(this->_hDevice, &createInfo, this->_pAllocator, &this->_pImageData[i].hCommandPool);
+				if (this->_pVkCreateCommandPool(this->_hDevice, &createInfo, nullptr, &this->_pImageData[i].hCommandPool) != VkResult::VK_SUCCESS) continue;
 
 				VkCommandBufferAllocateInfo allocInfo{};
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -372,14 +421,14 @@ namespace hax {
 				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 				allocInfo.commandBufferCount = 1;
 
-				this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer);
+				if (this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) continue;
 
 				imageViewInfo.image = pImages[i];
 				
-				if (this->_pVkCreateImageView(this->_hDevice, &imageViewInfo, this->_pAllocator, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
+				if (this->_pVkCreateImageView(this->_hDevice, &imageViewInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
 
 				frameBufferInfo.pAttachments = &this->_pImageData[i].hImageView;
-				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferInfo, this->_pAllocator, &this->_pImageData[i].hFrameBuffer);
+				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
 			}
 
 			delete[] pImages;
@@ -397,11 +446,11 @@ namespace hax {
 				for (uint32_t i = 0u; i < this->_imageCount; i++) {
 
 					if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
-						this->_pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, this->_pAllocator);
+						this->_pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
 					}
 					
 					if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
-						this->_pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, this->_pAllocator);
+						this->_pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
 					}
 
 					if (this->_pImageData[i].hCommandBuffer != VK_NULL_HANDLE) {
@@ -409,7 +458,7 @@ namespace hax {
 					}
 					
 					if (this->_pImageData[i].hCommandPool != VK_NULL_HANDLE) {
-						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, this->_pAllocator);
+						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, nullptr);
 					}
 
 				}
