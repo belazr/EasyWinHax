@@ -42,6 +42,8 @@ namespace hax {
 			PFN_vkDestroyShaderModule _pVkDestroyShaderModule;
 			PFN_vkCreatePipelineLayout _pVkCreatePipelineLayout;
 			PFN_vkDestroyPipelineLayout _pVkDestroyPipelineLayout;
+			PFN_vkCreateDescriptorSetLayout _pVkCreateDescriptorSetLayout;
+			PFN_vkDestroyDescriptorSetLayout _pVkDestroyDescriptorSetLayout;
 			PFN_vkCreateGraphicsPipelines _pVkCreateGraphicsPipelines;
 			PFN_vkDestroyPipeline _pVkDestroyPipeline;
 

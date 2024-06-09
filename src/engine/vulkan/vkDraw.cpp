@@ -196,7 +196,9 @@ namespace hax {
 			_pVkAllocateCommandBuffers{}, _pVkFreeCommandBuffers{}, _pVkCreateImageView{}, _pVkDestroyImageView{},
 			_pVkCreateFramebuffer{}, _pVkDestroyFramebuffer{}, _pVkCreateRenderPass{}, _pVkDestroyRenderPass{},
 			_pVkResetCommandBuffer{}, _pVkBeginCommandBuffer{}, _pVkCmdBeginRenderPass{}, _pVkCreateShaderModule{},
-			_pVkDestroyShaderModule{},
+			_pVkDestroyShaderModule{}, _pVkCreateDescriptorSetLayout{}, _pVkDestroyDescriptorSetLayout{},
+			_pVkCreatePipelineLayout{}, _pVkDestroyPipelineLayout{}, _pVkCreateGraphicsPipelines{},
+			_pVkDestroyPipeline{},
 			_hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{}, _hShaderModuleVert{}, _hShaderModuleFrag{},
 			_hDescriptorSetLayout{}, _hPipelineLayout {}, _hPipeline{},
 			_pImageData{}, _imageCount{},
@@ -206,22 +208,38 @@ namespace hax {
 		Draw::~Draw() {
 			destroyImageData();
 
-			if (this->_pVkDestroyRenderPass && this->_hDevice && this->_hRenderPass != VK_NULL_HANDLE) {
+			if (this->_pVkDestroyRenderPass && this->_hDevice != VK_NULL_HANDLE && this->_hRenderPass != VK_NULL_HANDLE) {
 				this->_pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
 			}
 
-			if (this->_pVkDestroyShaderModule && this->_hDevice && this->_hShaderModuleVert != VK_NULL_HANDLE) {
+			if (this->_pVkDestroyShaderModule && this->_hDevice != VK_NULL_HANDLE && this->_hShaderModuleVert != VK_NULL_HANDLE) {
 				this->_pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleVert, nullptr);
 			}
 
-			if (this->_pVkDestroyShaderModule && this->_hDevice && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
+			if (this->_pVkDestroyShaderModule && this->_hDevice != VK_NULL_HANDLE && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
 				this->_pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
+			}
+
+			if (this->_pVkDestroyPipelineLayout && this->_hDevice != VK_NULL_HANDLE && this->_hPipelineLayout != VK_NULL_HANDLE) {
+				this->_pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
+			}
+
+			if (this->_pVkDestroyDescriptorSetLayout && this->_hDevice != VK_NULL_HANDLE && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
+				this->_pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
+			}
+
+			if (this->_pVkDestroyPipeline && this->_hDevice != VK_NULL_HANDLE && this->_hPipeline != VK_NULL_HANDLE) {
+				this->_pVkDestroyPipeline(this->_hDevice, this->_hPipeline, nullptr);
 			}
 			
 		}
 
 
 		void Draw::beginDraw(Engine* pEngine) {
+			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
+			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
+
+			if (!pPresentInfo || !this->_hDevice) return;
 
 			if (!this->_isInit) {
 				const HMODULE hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
@@ -251,19 +269,18 @@ namespace hax {
 
 				if (this->_queueFamily == 0xFFFFFFFF) return;
 
+				if (!this->createRenderPass()) return;
+
+				if (!this->createPipeline()) return;
+
 				this->_isInit = true;
 			}
 
-			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
-			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
-
-			if (!pPresentInfo || !this->_hDevice) return;
-
 			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
 				
-				if (!this->createRenderPass()) return;
-
-				if (!this->createImageData(pPresentInfo->pSwapchains[i])) return;
+				if (!this->_pImageData) {
+					if (!this->createImageData(pPresentInfo->pSwapchains[i])) return;
+				}
 
 				const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[i]];
 
@@ -285,8 +302,6 @@ namespace hax {
 				renderPassBeginInfo.renderArea.extent.height = 768;
 
 				this->_pVkCmdBeginRenderPass(curImageData.hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-				if (!this->createPipeline()) return;
 			}
 
 			return;
@@ -335,17 +350,20 @@ namespace hax {
 			this->_pVkDestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(pVkGetInstanceProcAddr(hInstance, "vkDestroyShaderModule"));
 			this->_pVkCreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(pVkGetInstanceProcAddr(hInstance, "vkCreatePipelineLayout"));
 			this->_pVkDestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipelineLayout"));
+			this->_pVkCreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(pVkGetInstanceProcAddr(hInstance, "vkCreateDescriptorSetLayout"));
+			this->_pVkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(pVkGetInstanceProcAddr(hInstance, "vkDestroyDescriptorSetLayout"));
 			this->_pVkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(pVkGetInstanceProcAddr(hInstance, "vkCreateGraphicsPipelines"));
 			this->_pVkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipeline"));
 
 			if (
 				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkDestroyCommandPool ||
-				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateRenderPass ||
-				!this->_pVkDestroyRenderPass || !this->_pVkCreateImageView || !this->_pVkDestroyImageView ||
-				!this->_pVkCreateFramebuffer || !this->_pVkDestroyFramebuffer || !this->_pVkResetCommandBuffer ||
+				!this->_pVkAllocateCommandBuffers || !this->_pVkFreeCommandBuffers || !this->_pVkCreateImageView ||
+				!this->_pVkDestroyImageView || !this->_pVkCreateFramebuffer || !this->_pVkDestroyFramebuffer ||
+				!this->_pVkCreateRenderPass || !this->_pVkDestroyRenderPass || !this->_pVkResetCommandBuffer ||
 				!this->_pVkBeginCommandBuffer || !this->_pVkCmdBeginRenderPass || !this->_pVkCreateShaderModule ||
 				!this->_pVkDestroyShaderModule || !this->_pVkCreatePipelineLayout || !this->_pVkDestroyPipelineLayout ||
-				!this->_pVkCreateGraphicsPipelines || !this->_pVkDestroyPipeline
+				!this->_pVkCreateDescriptorSetLayout || !this->_pVkDestroyDescriptorSetLayout || !this->_pVkCreateGraphicsPipelines ||
+				!this->_pVkDestroyPipeline
 			) return false;
 
 			return true;
@@ -353,107 +371,33 @@ namespace hax {
 
 
 		bool Draw::createRenderPass() {
-			VkAttachmentDescription attachment{};
-			attachment.format = VK_FORMAT_B8G8R8A8_UNORM;
-			attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-			attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			VkAttachmentDescription attachmentDesc{};
+			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
+			attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+			attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 			VkAttachmentReference colorAttachment{};
 			colorAttachment.attachment = 0u;
 			colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-			VkSubpassDescription subpass{};
-			subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpass.colorAttachmentCount = 1u;
-			subpass.pColorAttachments = &colorAttachment;
+			VkSubpassDescription subpassDesc{};
+			subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpassDesc.colorAttachmentCount = 1u;
+			subpassDesc.pColorAttachments = &colorAttachment;
 
-			VkRenderPassCreateInfo info{};
-			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-			info.attachmentCount = 1u;
-			info.pAttachments = &attachment;
-			info.subpassCount = 1u;
-			info.pSubpasses = &subpass;
+			VkRenderPassCreateInfo renderPassCreateInfo{};
+			renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			renderPassCreateInfo.attachmentCount = 1u;
+			renderPassCreateInfo.pAttachments = &attachmentDesc;
+			renderPassCreateInfo.subpassCount = 1u;
+			renderPassCreateInfo.pSubpasses = &subpassDesc;
 
-			return this->_pVkCreateRenderPass(this->_hDevice, &info, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
-		}
-
-
-		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
-			uint32_t imageCount = 0u;
-
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
-
-			if (!imageCount) return false;
-
-			if (imageCount != this->_imageCount) {
-				destroyImageData();
-
-				this->_imageCount = imageCount;
-			}
-
-			if (!this->_pImageData) {
-				this->_pImageData = new ImageData[this->_imageCount]{};
-			}
-
-			VkImage* const pImages = new VkImage[this->_imageCount]{};
-
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
-				delete[] pImages;
-
-				return false;
-			}
-
-			VkImageSubresourceRange imageRange{};
-			imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageRange.baseMipLevel = 0u;
-			imageRange.levelCount = 1u;
-			imageRange.baseArrayLayer = 0u;
-			imageRange.layerCount = 1u;
-
-			VkImageViewCreateInfo imageViewInfo{};
-			imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			imageViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-			imageViewInfo.subresourceRange = imageRange;
-
-			VkFramebufferCreateInfo frameBufferInfo = {};
-			frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			frameBufferInfo.renderPass = this->_hRenderPass;
-			frameBufferInfo.attachmentCount = 1;
-			frameBufferInfo.layers = 1;
-
-			for (uint32_t i = 0; i < this->_imageCount; ++i) {
-				VkCommandPoolCreateInfo createInfo{};
-				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				createInfo.queueFamilyIndex = this->_queueFamily;
-
-				if (this->_pVkCreateCommandPool(this->_hDevice, &createInfo, nullptr, &this->_pImageData[i].hCommandPool) != VkResult::VK_SUCCESS) continue;
-
-				VkCommandBufferAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
-				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandBufferCount = 1;
-
-				if (this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) continue;
-
-				imageViewInfo.image = pImages[i];
-				
-				if (this->_pVkCreateImageView(this->_hDevice, &imageViewInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
-
-				frameBufferInfo.pAttachments = &this->_pImageData[i].hImageView;
-				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
-			}
-
-			delete[] pImages;
-
-			return true;
+			return this->_pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -532,7 +476,7 @@ namespace hax {
 			blendInfo.attachmentCount = 1;
 			blendInfo.pAttachments = &colorAttachment;
 
-			VkDynamicState dynamicStates[2]{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+			constexpr VkDynamicState dynamicStates[]{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
 			VkPipelineDynamicStateCreateInfo dynamicState{};
 			dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -698,7 +642,7 @@ namespace hax {
 		bool Draw::createPipelineLayout()
 		{
 			
-			if (this->_hDescriptorSetLayout != VK_NULL_HANDLE)
+			if (this->_hDescriptorSetLayout == VK_NULL_HANDLE)
 			{
 				VkDescriptorSetLayoutBinding binding{};
 				binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -709,9 +653,12 @@ namespace hax {
 				descCreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 				descCreateinfo.bindingCount = 1;
 				descCreateinfo.pBindings = &binding;
+
+				if (!this->_pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) != VkResult::VK_SUCCESS) return false;
+
 			}
 
-			if (this->_hPipelineLayout != VK_NULL_HANDLE)
+			if (this->_hPipelineLayout == VK_NULL_HANDLE)
 			{
 				VkPushConstantRange pushConstants{};
 				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -735,34 +682,108 @@ namespace hax {
 		}
 
 
+		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
+			
+			if (this->_pImageData) {
+				destroyImageData();
+			}
+
+			uint32_t imageCount = 0u;
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+
+			if (!imageCount) return false;
+
+			if (imageCount != this->_imageCount) {
+				delete[] this->_pImageData;
+				this->_pImageData = nullptr;
+
+				this->_imageCount = imageCount;
+			}
+
+			if (!this->_pImageData) {
+				this->_pImageData = new ImageData[this->_imageCount]{};
+			}
+
+			VkImage* const pImages = new VkImage[this->_imageCount]{};
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
+				delete[] pImages;
+
+				return false;
+			}
+
+			VkImageSubresourceRange imageRange{};
+			imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageRange.baseMipLevel = 0u;
+			imageRange.levelCount = 1u;
+			imageRange.baseArrayLayer = 0u;
+			imageRange.layerCount = 1u;
+
+			VkImageViewCreateInfo imageViewCreateInfo{};
+			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			imageViewCreateInfo.subresourceRange = imageRange;
+
+			VkFramebufferCreateInfo frameBufferCreateInfo = {};
+			frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			frameBufferCreateInfo.renderPass = this->_hRenderPass;
+			frameBufferCreateInfo.attachmentCount = 1;
+			frameBufferCreateInfo.layers = 1;
+
+			for (uint32_t i = 0; i < this->_imageCount; ++i) {
+				VkCommandPoolCreateInfo createInfo{};
+				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+				createInfo.queueFamilyIndex = this->_queueFamily;
+
+				if (this->_pVkCreateCommandPool(this->_hDevice, &createInfo, nullptr, &this->_pImageData[i].hCommandPool) != VkResult::VK_SUCCESS) continue;
+
+				VkCommandBufferAllocateInfo allocInfo{};
+				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
+				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+				allocInfo.commandBufferCount = 1;
+
+				if (this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) continue;
+
+				imageViewCreateInfo.image = pImages[i];
+
+				if (this->_pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
+
+				frameBufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
+				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
+			}
+
+			delete[] pImages;
+
+			return true;
+		}
+
+
 		void Draw::destroyImageData() {
 
 			if (!this->_pVkFreeCommandBuffers || !this->_pVkDestroyCommandPool) return;
 
-			if (this->_pImageData) {
+			for (uint32_t i = 0u; i < this->_imageCount; i++) {
 
-				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-
-					if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
-						this->_pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
-					}
+				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
+					this->_pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
+				}
 					
-					if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
-						this->_pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
-					}
-
-					if (this->_pImageData[i].hCommandBuffer != VK_NULL_HANDLE) {
-						this->_pVkFreeCommandBuffers(this->_hDevice, this->_pImageData[i].hCommandPool, 1, &this->_pImageData[i].hCommandBuffer);
-					}
-					
-					if (this->_pImageData[i].hCommandPool != VK_NULL_HANDLE) {
-						this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, nullptr);
-					}
-
+				if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
+					this->_pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
 				}
 
-				delete[] this->_pImageData;
-				this->_pImageData = nullptr;
+				if (this->_pImageData[i].hCommandBuffer != VK_NULL_HANDLE) {
+					this->_pVkFreeCommandBuffers(this->_hDevice, this->_pImageData[i].hCommandPool, 1, &this->_pImageData[i].hCommandBuffer);
+				}
+					
+				if (this->_pImageData[i].hCommandPool != VK_NULL_HANDLE) {
+					this->_pVkDestroyCommandPool(this->_hDevice, this->_pImageData[i].hCommandPool, nullptr);
+				}
+
 			}
 
 			return;
