@@ -114,12 +114,13 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
-			bool getProcAddresses(HMODULE hVulkan, VkInstance hInstance);
+			bool getInstanceProcAddresses(HMODULE hVulkan, VkInstance hInstance);
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			bool createPipeline();
-			bool createShaderModules();
+			bool createShaderModule(VkShaderModule* pShaderModule, const uint32_t shader[], size_t size);
 			bool createPipelineLayout();
+			bool createDescriptorSetLayout();
 			void destroyImageData();
 		};
 
