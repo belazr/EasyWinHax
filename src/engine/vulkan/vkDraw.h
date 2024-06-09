@@ -38,11 +38,22 @@ namespace hax {
 			PFN_vkResetCommandBuffer _pVkResetCommandBuffer;
 			PFN_vkBeginCommandBuffer _pVkBeginCommandBuffer;
 			PFN_vkCmdBeginRenderPass _pVkCmdBeginRenderPass;
+			PFN_vkCreateShaderModule _pVkCreateShaderModule;
+			PFN_vkDestroyShaderModule _pVkDestroyShaderModule;
+			PFN_vkCreatePipelineLayout _pVkCreatePipelineLayout;
+			PFN_vkDestroyPipelineLayout _pVkDestroyPipelineLayout;
+			PFN_vkCreateGraphicsPipelines _pVkCreateGraphicsPipelines;
+			PFN_vkDestroyPipeline _pVkDestroyPipeline;
 
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
 			VkDevice _hDevice;
 			VkRenderPass _hRenderPass;
+			VkShaderModule _hShaderModuleVert;
+			VkShaderModule _hShaderModuleFrag;
+			VkDescriptorSetLayout _hDescriptorSetLayout;
+			VkPipelineLayout _hPipelineLayout;
+			VkPipeline _hPipeline;
 
 			ImageData* _pImageData;
 			uint32_t _imageCount;
@@ -104,6 +115,9 @@ namespace hax {
 			bool getProcAddresses(HMODULE hVulkan, VkInstance hInstance);
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
+			bool createPipeline();
+			bool createShaderModules();
+			bool createPipelineLayout();
 			void destroyImageData();
 		};
 
