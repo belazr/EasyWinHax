@@ -32,9 +32,8 @@ namespace hax {
 			if (!hVulkan) return false;
 
 			const PFN_vkDestroyDevice pVkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(proc::in::getProcAddress(hVulkan, "vkDestroyDevice"));
-			const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(hVulkan, "vkDestroyInstance"));
 
-			if (!pVkDestroyDevice || !pVkDestroyInstance) return false;
+			if (!pVkDestroyDevice) return false;
 
 			const VkInstance hInstance = createInstance(hVulkan);
 
@@ -54,7 +53,9 @@ namespace hax {
 
 			initData->pVkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkQueuePresentKHR"));
 
-			PFN_vkAcquireNextImageKHR pVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkAcquireNextImageKHR"));
+			const PFN_vkAcquireNextImageKHR pVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkAcquireNextImageKHR"));
+
+			pVkDestroyDevice(hDummyDevice, nullptr);
 
 			hSemaphore = CreateSemaphoreA(nullptr, 0, 1, nullptr);
 
@@ -102,14 +103,16 @@ namespace hax {
 
 			if (!gpuCount) return VK_NULL_HANDLE;
 
-			const uint32_t bufferSize = gpuCount * sizeof(VkPhysicalDevice);
-			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
+			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[gpuCount]{};
 
 			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
 			VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
 
-			for (uint32_t i = 0u; i < bufferSize; i++) {
+			#pragma warning(push)
+			#pragma warning(disable:6385)
+
+			for (uint32_t i = 0u; i < gpuCount; i++) {
 				VkPhysicalDeviceProperties properties{};
 				pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
 
@@ -118,6 +121,8 @@ namespace hax {
 					break;
 				}
 			}
+
+			#pragma warning(pop)
 
 			delete[] pPhysicalDevices;
 
@@ -128,33 +133,34 @@ namespace hax {
 		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
 
 		static VkDevice createDummyDevice(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
+			const PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
+
+			if (!pVkCreateDevice) return VK_NULL_HANDLE;
+			
 			const uint32_t queueFamily = getQueueFamily(hVulkan, hPhysicalDevice);
 
 			if (queueFamily == 0xFFFFFFFF) return VK_NULL_HANDLE;
 
-			constexpr const char* EXTENSION = "VK_KHR_swapchain";
 			constexpr float QUEUE_PRIORITY = 1.f;
 
-			VkDeviceQueueCreateInfo queueInfo = {};
-			queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueInfo.queueFamilyIndex = queueFamily;
-			queueInfo.queueCount = 1;
-			queueInfo.pQueuePriorities = &QUEUE_PRIORITY;
+			VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
+			deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			deviceQueueCreateInfo.queueFamilyIndex = queueFamily;
+			deviceQueueCreateInfo.queueCount = 1;
+			deviceQueueCreateInfo.pQueuePriorities = &QUEUE_PRIORITY;
 
-			VkDeviceCreateInfo createInfo0 = {};
-			createInfo0.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-			createInfo0.queueCreateInfoCount = 1u;
-			createInfo0.pQueueCreateInfos = &queueInfo;
-			createInfo0.enabledExtensionCount = 1u;
-			createInfo0.ppEnabledExtensionNames = &EXTENSION;
+			constexpr const char* EXTENSION = "VK_KHR_swapchain";
 
-			const PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
-
-			if (!pVkCreateDevice) return VK_NULL_HANDLE;
+			VkDeviceCreateInfo deviceCreateInfo{};
+			deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+			deviceCreateInfo.queueCreateInfoCount = 1u;
+			deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+			deviceCreateInfo.enabledExtensionCount = 1u;
+			deviceCreateInfo.ppEnabledExtensionNames = &EXTENSION;
 
 			VkDevice hDummyDevice = VK_NULL_HANDLE;
 
-			if (pVkCreateDevice(hPhysicalDevice, &createInfo0, nullptr, &hDummyDevice) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+			if (pVkCreateDevice(hPhysicalDevice, &deviceCreateInfo, nullptr, &hDummyDevice) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
 			return hDummyDevice;
 		}
@@ -220,12 +226,12 @@ namespace hax {
 				this->_pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
 			}
 
-			if (this->_pVkDestroyPipelineLayout && this->_hDevice != VK_NULL_HANDLE && this->_hPipelineLayout != VK_NULL_HANDLE) {
-				this->_pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
-			}
-
 			if (this->_pVkDestroyDescriptorSetLayout && this->_hDevice != VK_NULL_HANDLE && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
 				this->_pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
+			}
+
+			if (this->_pVkDestroyPipelineLayout && this->_hDevice != VK_NULL_HANDLE && this->_hPipelineLayout != VK_NULL_HANDLE) {
+				this->_pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
 			}
 
 			if (this->_pVkDestroyPipeline && this->_hDevice != VK_NULL_HANDLE && this->_hPipeline != VK_NULL_HANDLE) {
@@ -254,7 +260,7 @@ namespace hax {
 
 				if (hInstance == VK_NULL_HANDLE) return;
 
-				if (!this->getProcAddresses(hVulkan, hInstance)) {
+				if (!this->getInstanceProcAddresses(hVulkan, hInstance)) {
 					pVkDestroyInstance(hInstance, nullptr);
 
 					return;
@@ -269,19 +275,24 @@ namespace hax {
 
 				if (this->_queueFamily == 0xFFFFFFFF) return;
 
-				if (!this->createRenderPass()) return;
+				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
-				if (!this->createPipeline()) return;
+					if (!this->createRenderPass()) return;
+
+				}
+				
+				if (this->_hPipeline == VK_NULL_HANDLE) {
+
+					if (!this->createPipeline()) return;
+
+				}
 
 				this->_isInit = true;
 			}
 
-			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
-				
-				if (!this->_pImageData) {
-					if (!this->createImageData(pPresentInfo->pSwapchains[i])) return;
-				}
+			if (!this->createImageData(pPresentInfo->pSwapchains[0])) return;
 
+			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
 				const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[i]];
 
 				if (curImageData.hCommandBuffer == VK_NULL_HANDLE) return;
@@ -327,7 +338,7 @@ namespace hax {
 		}
 
 
-		bool Draw::getProcAddresses(HMODULE hVulkan, VkInstance hInstance) {
+		bool Draw::getInstanceProcAddresses(HMODULE hVulkan, VkInstance hInstance) {
 			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetInstanceProcAddr"));
 			
 			if (!pVkGetInstanceProcAddr) return false;
@@ -400,112 +411,6 @@ namespace hax {
 			return this->_pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
 		}
 
-
-		bool Draw::createPipeline() {
-
-			if (!this->createShaderModules()) return false;
-
-			if (!this->createPipelineLayout()) return false;
-
-			VkPipelineShaderStageCreateInfo stageCreateInfo[2]{};
-			stageCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			stageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-			stageCreateInfo[0].module = this->_hShaderModuleVert;
-			stageCreateInfo[0].pName = "main";
-			stageCreateInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			stageCreateInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-			stageCreateInfo[1].module = this->_hShaderModuleFrag;
-			stageCreateInfo[1].pName = "main";
-
-			VkVertexInputBindingDescription bindingDesc{};
-			bindingDesc.stride = sizeof(Vertex);
-			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-			VkVertexInputAttributeDescription attributeDesc[2]{};
-			attributeDesc[0].location = 0u;
-			attributeDesc[0].binding = bindingDesc.binding;
-			attributeDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
-			attributeDesc[0].offset = 0;
-			attributeDesc[1].location = 1;
-			attributeDesc[1].binding = bindingDesc.binding;
-			attributeDesc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
-			attributeDesc[1].offset = sizeof(Vector2);
-
-			VkPipelineVertexInputStateCreateInfo vertexInfo{};
-			vertexInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			vertexInfo.vertexBindingDescriptionCount = 1;
-			vertexInfo.pVertexBindingDescriptions = &bindingDesc;
-			vertexInfo.vertexAttributeDescriptionCount = 2;
-			vertexInfo.pVertexAttributeDescriptions = attributeDesc;
-
-			VkPipelineInputAssemblyStateCreateInfo iaInfo{};
-			iaInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-			iaInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-			VkPipelineViewportStateCreateInfo viewportInfo{};
-			viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-			viewportInfo.viewportCount = 1;
-			viewportInfo.scissorCount = 1;
-
-			VkPipelineRasterizationStateCreateInfo rasterInfo{};
-			rasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-			rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
-			rasterInfo.cullMode = VK_CULL_MODE_NONE;
-			rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-			rasterInfo.lineWidth = 1.f;
-
-			VkPipelineMultisampleStateCreateInfo multisampleInfo{};
-			multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-			multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-			VkPipelineColorBlendAttachmentState colorAttachment{};
-			colorAttachment.blendEnable = VK_TRUE;
-			colorAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			colorAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			colorAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-			colorAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-			colorAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			colorAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-			colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-			VkPipelineDepthStencilStateCreateInfo depthInfo{};
-			depthInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-
-			VkPipelineColorBlendStateCreateInfo blendInfo{};
-			blendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-			blendInfo.attachmentCount = 1;
-			blendInfo.pAttachments = &colorAttachment;
-
-			constexpr VkDynamicState dynamicStates[]{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-
-			VkPipelineDynamicStateCreateInfo dynamicState{};
-			dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-			dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
-			dynamicState.pDynamicStates = dynamicStates;
-
-			VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
-			pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-			pipelineCreateInfo.flags = 0;
-			pipelineCreateInfo.stageCount = 2;
-			pipelineCreateInfo.pStages = stageCreateInfo;
-			pipelineCreateInfo.pVertexInputState = &vertexInfo;
-			pipelineCreateInfo.pInputAssemblyState = &iaInfo;
-			pipelineCreateInfo.pViewportState = &viewportInfo;
-			pipelineCreateInfo.pRasterizationState = &rasterInfo;
-			pipelineCreateInfo.pMultisampleState = &multisampleInfo;
-			pipelineCreateInfo.pDepthStencilState = &depthInfo;
-			pipelineCreateInfo.pColorBlendState = &blendInfo;
-			pipelineCreateInfo.pDynamicState = &dynamicState;
-			pipelineCreateInfo.layout = this->_hPipelineLayout;
-			pipelineCreateInfo.renderPass = this->_hRenderPass;
-			pipelineCreateInfo.subpass = 0;
-
-			if (this->_pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &this->_hPipeline) != VkResult::VK_SUCCESS) return false;
-
-			return true;
-		}
-
-
 		// glsl_shader.vert, compiled with:
 		// # glslangValidator -V -x -o glsl_shader.vert.u32 glsl_shader.vert
 		/*
@@ -525,7 +430,6 @@ namespace hax {
 			gl_Position = vec4(aPos * pc.uScale + pc.uTranslate, 0, 1);
 		}
 		*/
-
 		static constexpr uint32_t GLSL_SHADER_VERT[] =
 		{
 			0x07230203,0x00010000,0x00080001,0x0000002e,0x00000000,0x00020011,0x00000001,0x0006000b,
@@ -612,149 +516,247 @@ namespace hax {
 			0x00010038
 		};
 
-		bool Draw::createShaderModules() {
+		bool Draw::createPipeline() {
 
-			if (this->_hShaderModuleVert == VK_NULL_HANDLE)
-			{
-				VkShaderModuleCreateInfo vertCreateInfo{};
-				vertCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-				vertCreateInfo.codeSize = sizeof(GLSL_SHADER_VERT);
-				vertCreateInfo.pCode = GLSL_SHADER_VERT;
+			if (this->_hShaderModuleVert == VK_NULL_HANDLE) {
 				
-				if (this->_pVkCreateShaderModule(this->_hDevice, &vertCreateInfo, nullptr, &this->_hShaderModuleVert) != VkResult::VK_SUCCESS) return false;
+				if (!this->createShaderModule(&this->_hShaderModuleVert, GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT))) return false;
+
 			}
 
-			if (this->_hShaderModuleFrag == VK_NULL_HANDLE)
-			{
-				VkShaderModuleCreateInfo fragCreateInfo{};
-				fragCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-				fragCreateInfo.codeSize = sizeof(GLSL_SHADER_FRAG);
-				fragCreateInfo.pCode = GLSL_SHADER_FRAG;
-				
-				if (this->_pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &this->_hShaderModuleFrag) != VkResult::VK_SUCCESS) return false;
+			if (this->_hShaderModuleFrag == VK_NULL_HANDLE) {
+
+				if (!this->createShaderModule(&this->_hShaderModuleFrag, GLSL_SHADER_FRAG, sizeof(GLSL_SHADER_FRAG))) return false;
+
+			}
 			
+			if (this->_hPipelineLayout == VK_NULL_HANDLE) {
+
+				if (!this->createPipelineLayout()) return false;
+
 			}
 
-			return true;
+			VkPipelineShaderStageCreateInfo stageCreateInfo[2]{};
+			stageCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			stageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+			stageCreateInfo[0].module = this->_hShaderModuleVert;
+			stageCreateInfo[0].pName = "main";
+			stageCreateInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			stageCreateInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+			stageCreateInfo[1].module = this->_hShaderModuleFrag;
+			stageCreateInfo[1].pName = "main";
+
+			VkVertexInputBindingDescription bindingDesc{};
+			bindingDesc.stride = sizeof(Vertex);
+			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			VkVertexInputAttributeDescription attributeDesc[2]{};
+			attributeDesc[0].location = 0u;
+			attributeDesc[0].binding = bindingDesc.binding;
+			attributeDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDesc[0].offset = 0u;
+			attributeDesc[1].location = 1u;
+			attributeDesc[1].binding = bindingDesc.binding;
+			attributeDesc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+			attributeDesc[1].offset = sizeof(Vector2);
+
+			VkPipelineVertexInputStateCreateInfo vertexInfo{};
+			vertexInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+			vertexInfo.vertexBindingDescriptionCount = 1u;
+			vertexInfo.pVertexBindingDescriptions = &bindingDesc;
+			vertexInfo.vertexAttributeDescriptionCount = 2u;
+			vertexInfo.pVertexAttributeDescriptions = attributeDesc;
+
+			VkPipelineInputAssemblyStateCreateInfo iaInfo{};
+			iaInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+			iaInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+			VkPipelineViewportStateCreateInfo viewportInfo{};
+			viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+			viewportInfo.viewportCount = 1u;
+			viewportInfo.scissorCount = 1u;
+
+			VkPipelineRasterizationStateCreateInfo rasterInfo{};
+			rasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+			rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
+			rasterInfo.cullMode = VK_CULL_MODE_NONE;
+			rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+			rasterInfo.lineWidth = 1.f;
+
+			VkPipelineMultisampleStateCreateInfo multisampleInfo{};
+			multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+			multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+			VkPipelineColorBlendAttachmentState colorAttachment{};
+			colorAttachment.blendEnable = VK_TRUE;
+			colorAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+			colorAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			colorAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+			colorAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+			colorAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			colorAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+			colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+			VkPipelineDepthStencilStateCreateInfo depthInfo{};
+			depthInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+			VkPipelineColorBlendStateCreateInfo blendInfo{};
+			blendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+			blendInfo.attachmentCount = 1u;
+			blendInfo.pAttachments = &colorAttachment;
+
+			constexpr VkDynamicState dynamicStates[]{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+			VkPipelineDynamicStateCreateInfo dynamicState{};
+			dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+			dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
+			dynamicState.pDynamicStates = dynamicStates;
+
+			VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+			pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+			pipelineCreateInfo.flags = 0u;
+			pipelineCreateInfo.stageCount = 2u;
+			pipelineCreateInfo.pStages = stageCreateInfo;
+			pipelineCreateInfo.pVertexInputState = &vertexInfo;
+			pipelineCreateInfo.pInputAssemblyState = &iaInfo;
+			pipelineCreateInfo.pViewportState = &viewportInfo;
+			pipelineCreateInfo.pRasterizationState = &rasterInfo;
+			pipelineCreateInfo.pMultisampleState = &multisampleInfo;
+			pipelineCreateInfo.pDepthStencilState = &depthInfo;
+			pipelineCreateInfo.pColorBlendState = &blendInfo;
+			pipelineCreateInfo.pDynamicState = &dynamicState;
+			pipelineCreateInfo.layout = this->_hPipelineLayout;
+			pipelineCreateInfo.renderPass = this->_hRenderPass;
+			pipelineCreateInfo.subpass = 0u;
+
+			return this->_pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &this->_hPipeline) == VkResult::VK_SUCCESS;
+		}
+
+
+		bool Draw::createShaderModule(VkShaderModule* pShaderModule, const uint32_t shader[], size_t size) {
+			VkShaderModuleCreateInfo fragCreateInfo{};
+			fragCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			fragCreateInfo.codeSize = size;
+			fragCreateInfo.pCode = shader;
+
+			return this->_pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, pShaderModule) == VkResult::VK_SUCCESS;
 		}
 
 
 		bool Draw::createPipelineLayout()
 		{
-			
-			if (this->_hDescriptorSetLayout == VK_NULL_HANDLE)
-			{
-				VkDescriptorSetLayoutBinding binding{};
-				binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				binding.descriptorCount = 1;
-				binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-				VkDescriptorSetLayoutCreateInfo descCreateinfo{};
-				descCreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				descCreateinfo.bindingCount = 1;
-				descCreateinfo.pBindings = &binding;
-
-				if (!this->_pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) != VkResult::VK_SUCCESS) return false;
+			if (this->_hDescriptorSetLayout == VK_NULL_HANDLE) {
+					
+				if (!this->createDescriptorSetLayout()) return false;
 
 			}
 
-			if (this->_hPipelineLayout == VK_NULL_HANDLE)
-			{
-				VkPushConstantRange pushConstants{};
-				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-				pushConstants.offset = sizeof(float) * 0;
-				pushConstants.size = sizeof(float) * 4;
-				
-				VkDescriptorSetLayout setLayout = this->_hDescriptorSetLayout;
-				
-				VkPipelineLayoutCreateInfo layoutCreateInfo{};
-				layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-				layoutCreateInfo.setLayoutCount = 1;
-				layoutCreateInfo.pSetLayouts = &setLayout;
-				layoutCreateInfo.pushConstantRangeCount = 1;
-				layoutCreateInfo.pPushConstantRanges = &pushConstants;
-				
-				if (!this->_pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) != VkResult::VK_SUCCESS) return false;
+			VkPushConstantRange pushConstants{};
+			pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+			pushConstants.offset = sizeof(float) * 0;
+			pushConstants.size = sizeof(float) * 4;
 
-			}
-			
-			return true;
+			VkPipelineLayoutCreateInfo layoutCreateInfo{};
+			layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			layoutCreateInfo.setLayoutCount = 1;
+			layoutCreateInfo.pSetLayouts = &this->_hDescriptorSetLayout;
+			layoutCreateInfo.pushConstantRangeCount = 1;
+			layoutCreateInfo.pPushConstantRanges = &pushConstants;
+				
+			return this->_pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) == VkResult::VK_SUCCESS;
+		}
+
+
+		bool Draw::createDescriptorSetLayout()
+		{
+			VkDescriptorSetLayoutBinding binding{};
+			binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			binding.descriptorCount = 1;
+			binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+			VkDescriptorSetLayoutCreateInfo descCreateinfo{};
+			descCreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			descCreateinfo.bindingCount = 1;
+			descCreateinfo.pBindings = &binding;
+
+			return this->_pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) == VkResult::VK_SUCCESS;
 		}
 
 
 		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
-			
+			uint32_t curImageCount = 0u;
+
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+
+			if (!curImageCount) return false;
+
+			if (curImageCount == this->_imageCount) return true;
+
 			if (this->_pImageData) {
-				destroyImageData();
+				this->destroyImageData();
 			}
 
-			uint32_t imageCount = 0u;
-
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
-
-			if (!imageCount) return false;
-
-			if (imageCount != this->_imageCount) {
-				delete[] this->_pImageData;
-				this->_pImageData = nullptr;
-
-				this->_imageCount = imageCount;
-			}
-
-			if (!this->_pImageData) {
-				this->_pImageData = new ImageData[this->_imageCount]{};
-			}
-
+			this->_pImageData = new ImageData[curImageCount]{};
+			this->_imageCount = curImageCount;
+			
 			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
-			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS) {
+			if (this->_pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &this->_imageCount, pImages) != VkResult::VK_SUCCESS) {
 				delete[] pImages;
 
 				return false;
 			}
 
-			VkImageSubresourceRange imageRange{};
-			imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageRange.baseMipLevel = 0u;
-			imageRange.levelCount = 1u;
-			imageRange.baseArrayLayer = 0u;
-			imageRange.layerCount = 1u;
+			VkCommandPoolCreateInfo commandPoolCreateInfo{};
+			commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			commandPoolCreateInfo.queueFamilyIndex = this->_queueFamily;
+
+			VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+			commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			commandBufferAllocInfo.commandBufferCount = 1;
+			
+			VkImageSubresourceRange imageSubresourceRange{};
+			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageSubresourceRange.baseMipLevel = 0u;
+			imageSubresourceRange.levelCount = 1u;
+			imageSubresourceRange.baseArrayLayer = 0u;
+			imageSubresourceRange.layerCount = 1u;
 
 			VkImageViewCreateInfo imageViewCreateInfo{};
 			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-			imageViewCreateInfo.subresourceRange = imageRange;
+			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
 
-			VkFramebufferCreateInfo frameBufferCreateInfo = {};
-			frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			frameBufferCreateInfo.renderPass = this->_hRenderPass;
-			frameBufferCreateInfo.attachmentCount = 1;
-			frameBufferCreateInfo.layers = 1;
+			VkFramebufferCreateInfo framebufferCreateInfo{};
+			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCreateInfo.renderPass = this->_hRenderPass;
+			framebufferCreateInfo.attachmentCount = 1;
+			framebufferCreateInfo.layers = 1;
 
-			for (uint32_t i = 0; i < this->_imageCount; ++i) {
-				VkCommandPoolCreateInfo createInfo{};
-				createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-				createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				createInfo.queueFamilyIndex = this->_queueFamily;
+			#pragma warning(push)
+			#pragma warning(disable:6385)
 
-				if (this->_pVkCreateCommandPool(this->_hDevice, &createInfo, nullptr, &this->_pImageData[i].hCommandPool) != VkResult::VK_SUCCESS) continue;
+			for (uint32_t i = 0; i < this->_imageCount; i++) {
 
-				VkCommandBufferAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				allocInfo.commandPool = this->_pImageData[i].hCommandPool;
-				allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				allocInfo.commandBufferCount = 1;
+				if (this->_pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_pImageData[i].hCommandPool) != VkResult::VK_SUCCESS) continue;
 
-				if (this->_pVkAllocateCommandBuffers(this->_hDevice, &allocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) continue;
+				commandBufferAllocInfo.commandPool = this->_pImageData[i].hCommandPool;
+
+				if (this->_pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) continue;
 
 				imageViewCreateInfo.image = pImages[i];
 
 				if (this->_pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
 
-				frameBufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
-				this->_pVkCreateFramebuffer(this->_hDevice, &frameBufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
+				framebufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
+				this->_pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
 			}
+
+			#pragma warning(pop)
 
 			delete[] pImages;
 
@@ -763,8 +765,6 @@ namespace hax {
 
 
 		void Draw::destroyImageData() {
-
-			if (!this->_pVkFreeCommandBuffers || !this->_pVkDestroyCommandPool) return;
 
 			for (uint32_t i = 0u; i < this->_imageCount; i++) {
 
@@ -785,6 +785,9 @@ namespace hax {
 				}
 
 			}
+
+			delete[] this->_pImageData;
+			this->_pImageData = nullptr;
 
 			return;
 		}
