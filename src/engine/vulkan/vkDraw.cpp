@@ -102,7 +102,7 @@ namespace hax {
 
 			if (!gpuCount) return VK_NULL_HANDLE;
 
-			const uint32_t bufferSize = gpuCount;
+			const uint32_t bufferSize = gpuCount * sizeof(VkPhysicalDevice);
 			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[bufferSize]{};
 
 			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
