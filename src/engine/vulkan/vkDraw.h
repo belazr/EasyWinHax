@@ -46,6 +46,7 @@ namespace hax {
 			PFN_vkDestroyDescriptorSetLayout _pVkDestroyDescriptorSetLayout;
 			PFN_vkCreateGraphicsPipelines _pVkCreateGraphicsPipelines;
 			PFN_vkDestroyPipeline _pVkDestroyPipeline;
+			PFN_vkCmdBindPipeline _pVkCmdBindPipeline;
 
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
