@@ -204,7 +204,7 @@ namespace hax {
 			_pVkResetCommandBuffer{}, _pVkBeginCommandBuffer{}, _pVkCmdBeginRenderPass{}, _pVkCreateShaderModule{},
 			_pVkDestroyShaderModule{}, _pVkCreateDescriptorSetLayout{}, _pVkDestroyDescriptorSetLayout{},
 			_pVkCreatePipelineLayout{}, _pVkDestroyPipelineLayout{}, _pVkCreateGraphicsPipelines{},
-			_pVkDestroyPipeline{},
+			_pVkDestroyPipeline{}, _pVkCmdBindPipeline{},
 			_hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{}, _hShaderModuleVert{}, _hShaderModuleFrag{},
 			_hDescriptorSetLayout{}, _hPipelineLayout {}, _hPipeline{},
 			_pImageData{}, _imageCount{},
@@ -313,6 +313,7 @@ namespace hax {
 				renderPassBeginInfo.renderArea.extent.height = 768;
 
 				this->_pVkCmdBeginRenderPass(curImageData.hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+				this->_pVkCmdBindPipeline(curImageData.hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 			}
 
 			return;
@@ -365,6 +366,7 @@ namespace hax {
 			this->_pVkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(pVkGetInstanceProcAddr(hInstance, "vkDestroyDescriptorSetLayout"));
 			this->_pVkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(pVkGetInstanceProcAddr(hInstance, "vkCreateGraphicsPipelines"));
 			this->_pVkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipeline"));
+			this->_pVkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(pVkGetInstanceProcAddr(hInstance, "vkCmdBindPipeline"));
 
 			if (
 				!this->_pVkGetSwapchainImagesKHR || !this->_pVkCreateCommandPool || !this->_pVkDestroyCommandPool ||
@@ -374,7 +376,7 @@ namespace hax {
 				!this->_pVkBeginCommandBuffer || !this->_pVkCmdBeginRenderPass || !this->_pVkCreateShaderModule ||
 				!this->_pVkDestroyShaderModule || !this->_pVkCreatePipelineLayout || !this->_pVkDestroyPipelineLayout ||
 				!this->_pVkCreateDescriptorSetLayout || !this->_pVkDestroyDescriptorSetLayout || !this->_pVkCreateGraphicsPipelines ||
-				!this->_pVkDestroyPipeline
+				!this->_pVkDestroyPipeline || !this->_pVkCmdBindPipeline
 			) return false;
 
 			return true;
