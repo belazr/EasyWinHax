@@ -15,38 +15,44 @@ namespace hax {
 		bool getVulkanInitData(VulkanInitData* initData);
 
 
-		typedef struct ImageData{
-			VkCommandPool hCommandPool;
-			VkCommandBuffer hCommandBuffer;
-			VkImageView hImageView;
-			VkFramebuffer hFrameBuffer;
-		}ImageData;
+
 
 		class Draw : public IDraw {
 		private:
-			PFN_vkGetSwapchainImagesKHR _pVkGetSwapchainImagesKHR;
-			PFN_vkCreateCommandPool _pVkCreateCommandPool;
-			PFN_vkDestroyCommandPool _pVkDestroyCommandPool;
-			PFN_vkAllocateCommandBuffers _pVkAllocateCommandBuffers;
-			PFN_vkFreeCommandBuffers _pVkFreeCommandBuffers;
-			PFN_vkCreateImageView _pVkCreateImageView;
-			PFN_vkDestroyImageView _pVkDestroyImageView;
-			PFN_vkCreateFramebuffer _pVkCreateFramebuffer;
-			PFN_vkDestroyFramebuffer _pVkDestroyFramebuffer;
-			PFN_vkCreateRenderPass _pVkCreateRenderPass;
-			PFN_vkDestroyRenderPass _pVkDestroyRenderPass;
-			PFN_vkResetCommandBuffer _pVkResetCommandBuffer;
-			PFN_vkBeginCommandBuffer _pVkBeginCommandBuffer;
-			PFN_vkCmdBeginRenderPass _pVkCmdBeginRenderPass;
-			PFN_vkCreateShaderModule _pVkCreateShaderModule;
-			PFN_vkDestroyShaderModule _pVkDestroyShaderModule;
-			PFN_vkCreatePipelineLayout _pVkCreatePipelineLayout;
-			PFN_vkDestroyPipelineLayout _pVkDestroyPipelineLayout;
-			PFN_vkCreateDescriptorSetLayout _pVkCreateDescriptorSetLayout;
-			PFN_vkDestroyDescriptorSetLayout _pVkDestroyDescriptorSetLayout;
-			PFN_vkCreateGraphicsPipelines _pVkCreateGraphicsPipelines;
-			PFN_vkDestroyPipeline _pVkDestroyPipeline;
-			PFN_vkCmdBindPipeline _pVkCmdBindPipeline;
+			typedef struct Functions {
+				PFN_vkGetSwapchainImagesKHR pVkGetSwapchainImagesKHR;
+				PFN_vkCreateCommandPool pVkCreateCommandPool;
+				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
+				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
+				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
+				PFN_vkCreateImageView pVkCreateImageView;
+				PFN_vkDestroyImageView pVkDestroyImageView;
+				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
+				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
+				PFN_vkCreateRenderPass pVkCreateRenderPass;
+				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
+				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
+				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
+				PFN_vkCmdBeginRenderPass pVkCmdBeginRenderPass;
+				PFN_vkCreateShaderModule pVkCreateShaderModule;
+				PFN_vkDestroyShaderModule pVkDestroyShaderModule;
+				PFN_vkCreatePipelineLayout pVkCreatePipelineLayout;
+				PFN_vkDestroyPipelineLayout pVkDestroyPipelineLayout;
+				PFN_vkCreateDescriptorSetLayout pVkCreateDescriptorSetLayout;
+				PFN_vkDestroyDescriptorSetLayout pVkDestroyDescriptorSetLayout;
+				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
+				PFN_vkDestroyPipeline pVkDestroyPipeline;
+				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
+			};
+			
+			typedef struct ImageData {
+				VkCommandPool hCommandPool;
+				VkCommandBuffer hCommandBuffer;
+				VkImageView hImageView;
+				VkFramebuffer hFrameBuffer;
+			}ImageData;
+
+			Functions _f;
 
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
