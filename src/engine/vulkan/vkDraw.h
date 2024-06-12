@@ -43,7 +43,7 @@ namespace hax {
 				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
 				PFN_vkDestroyPipeline pVkDestroyPipeline;
 				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
-			};
+			}Functions;
 			
 			typedef struct ImageData {
 				VkCommandPool hCommandPool;
@@ -52,7 +52,10 @@ namespace hax {
 				VkFramebuffer hFrameBuffer;
 			}ImageData;
 
-			Functions _f;
+			union {
+				Functions _f;
+				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
+			};
 
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
