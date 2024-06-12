@@ -201,38 +201,55 @@ namespace hax {
 		Draw::Draw() :
 			_f{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{},
-			_hPipelineLayout {}, _hPipeline{},
-			_pImageData{}, _imageCount{},
+			_hPipelineLayout{}, _hPipeline{},
+			_pImageData{}, _imageCount{}, _triangleBufferData{},
 			_isInit{} {}
 
 
 		Draw::~Draw() {
 			destroyImageData();
 
-			if (this->_f.pVkDestroyRenderPass && this->_hDevice != VK_NULL_HANDLE && this->_hRenderPass != VK_NULL_HANDLE) {
+			if (this->_hDevice == VK_NULL_HANDLE) return;
+
+			if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
 			}
 
-			if (this->_f.pVkDestroyShaderModule && this->_hDevice != VK_NULL_HANDLE && this->_hShaderModuleVert != VK_NULL_HANDLE) {
+			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleVert != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleVert, nullptr);
 			}
 
-			if (this->_f.pVkDestroyShaderModule && this->_hDevice != VK_NULL_HANDLE && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
+			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
 			}
 
-			if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDevice != VK_NULL_HANDLE && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
+			if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
 			}
 
-			if (this->_f.pVkDestroyPipelineLayout && this->_hDevice != VK_NULL_HANDLE && this->_hPipelineLayout != VK_NULL_HANDLE) {
+			if (this->_f.pVkDestroyPipelineLayout && this->_hPipelineLayout != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
 			}
 
-			if (this->_f.pVkDestroyPipeline && this->_hDevice != VK_NULL_HANDLE && this->_hPipeline != VK_NULL_HANDLE) {
+			if (this->_f.pVkDestroyPipeline && this->_hPipeline != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipeline, nullptr);
 			}
 			
+			if (this->_f.pVkDestroyBuffer && this->_triangleBufferData.hVertexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, this->_triangleBufferData.hVertexBuffer, nullptr);
+			}
+
+			if (this->_f.pVkFreeMemory && this->_triangleBufferData.hVertexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkFreeMemory(this->_hDevice, this->_triangleBufferData.hVertexMemory, nullptr);
+			}
+
+			if (this->_f.pVkDestroyBuffer && this->_triangleBufferData.hIndexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, this->_triangleBufferData.hIndexBuffer, nullptr);
+			}
+
+			if (this->_f.pVkFreeMemory && this->_triangleBufferData.hIndexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkFreeMemory(this->_hDevice, this->_triangleBufferData.hIndexMemory, nullptr);
+			}
 		}
 
 
@@ -281,6 +298,8 @@ namespace hax {
 					if (!this->createPipeline()) return;
 
 				}
+
+				if (!this->createBufferData(&this->_triangleBufferData, 3)) return;
 
 				this->_isInit = true;
 			}
@@ -339,6 +358,7 @@ namespace hax {
 			
 			if (!pVkGetInstanceProcAddr) return false;
 
+			this->_f.pVkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(pVkGetInstanceProcAddr(hInstance, "vkGetPhysicalDeviceMemoryProperties"));
 			this->_f.pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(hInstance, "vkGetSwapchainImagesKHR"));
 			this->_f.pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkCreateCommandPool"));
 			this->_f.pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkDestroyCommandPool"));
@@ -362,6 +382,12 @@ namespace hax {
 			this->_f.pVkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(pVkGetInstanceProcAddr(hInstance, "vkCreateGraphicsPipelines"));
 			this->_f.pVkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipeline"));
 			this->_f.pVkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(pVkGetInstanceProcAddr(hInstance, "vkCmdBindPipeline"));
+			this->_f.pVkCreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(pVkGetInstanceProcAddr(hInstance, "vkCreateBuffer"));
+			this->_f.pVkGetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(pVkGetInstanceProcAddr(hInstance, "vkGetBufferMemoryRequirements"));
+			this->_f.pVkAllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(pVkGetInstanceProcAddr(hInstance, "vkAllocateMemory"));
+			this->_f.pVkBindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(pVkGetInstanceProcAddr(hInstance, "vkBindBufferMemory"));
+			this->_f.pVkDestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(pVkGetInstanceProcAddr(hInstance, "vkDestroyBuffer"));
+			this->_f.pVkFreeMemory = reinterpret_cast<PFN_vkFreeMemory>(pVkGetInstanceProcAddr(hInstance, "vkFreeMemory"));
 
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
@@ -676,6 +702,93 @@ namespace hax {
 		}
 
 
+		bool Draw::createBufferData(BufferData* pBufferData, size_t vertexCount) {
+			
+			if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
+				pBufferData->vertexBufferSize = 0ull;
+			}
+
+			if (pBufferData->hVertexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hVertexMemory, nullptr);
+			}
+
+			VkDeviceSize vertexBufferSize = vertexCount * sizeof(Vertex);
+
+			if (!this->createBuffer(&pBufferData->hVertexBuffer, &pBufferData->hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
+
+			pBufferData->vertexBufferSize = vertexBufferSize;
+
+			if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
+				pBufferData->indexBufferSize = 0ull;
+			}
+
+			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
+			}
+
+			VkDeviceSize indexBufferSize = vertexCount * sizeof(uint32_t);
+
+			if (!this->createBuffer(&pBufferData->hIndexBuffer, &pBufferData->hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
+
+			pBufferData->indexBufferSize = indexBufferSize;
+			
+			return true;
+		}
+
+		bool Draw::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
+
+			if (!this->_bufferAlignment) {
+				this->_bufferAlignment = 256ull;
+			}
+			
+			const VkDeviceSize sizeAligned = (((*pSize) - 1ull) / this->_bufferAlignment + 1ull) * this->_bufferAlignment;
+
+			VkBufferCreateInfo bufferCreateinfo{};
+			bufferCreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+			bufferCreateinfo.size = sizeAligned;
+			bufferCreateinfo.usage = usage;
+			bufferCreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+			if (!this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateinfo, nullptr, phBuffer) == VkResult::VK_SUCCESS) return false;
+
+			VkMemoryRequirements memoryReq{};
+			this->_f.pVkGetBufferMemoryRequirements(this->_hDevice, *phBuffer, &memoryReq);
+			this->_bufferAlignment = memoryReq.alignment;
+			
+			VkMemoryAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			allocInfo.allocationSize = memoryReq.size;
+			allocInfo.memoryTypeIndex = this->getMemoryTypeIndex(memoryReq.memoryTypeBits);
+			
+			if (!this->_f.pVkAllocateMemory(this->_hDevice, &allocInfo, nullptr, phMemory) == VkResult::VK_SUCCESS) return false;
+
+			if (!this->_f.pVkBindBufferMemory(this->_hDevice, *phBuffer, *phMemory, 0) == VkResult::VK_SUCCESS) return false;
+
+			*pSize = memoryReq.size;
+
+			return true;
+		}
+
+
+		uint32_t Draw::getMemoryTypeIndex(uint32_t typeBits) const {
+			VkPhysicalDeviceMemoryProperties memoryProperties{};
+
+			this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &memoryProperties);
+
+			for (uint32_t i = 0u; i < memoryProperties.memoryTypeCount; i++) {
+
+				if ((memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
+					return i;
+				}
+			}
+
+
+			return 0xFFFFFFFF;
+		}
+
+
 		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
 			uint32_t curImageCount = 0u;
 
@@ -758,7 +871,7 @@ namespace hax {
 
 		void Draw::destroyImageData() {
 
-			for (uint32_t i = 0u; i < this->_imageCount; i++) {
+			for (uint32_t i = 0u; i < this->_imageCount && this->_hDevice != VK_NULL_HANDLE; i++) {
 
 				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
