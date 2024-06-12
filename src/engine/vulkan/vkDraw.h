@@ -1,7 +1,9 @@
 #pragma once
+#include "..\Vertex.h"
+#include "..\IDraw.h"
+
 #define VK_NO_PROTOTYPES
 #include "include\vulkan.h"
-#include "..\IDraw.h"
 
 namespace hax {
 	
@@ -14,12 +16,10 @@ namespace hax {
 
 		bool getVulkanInitData(VulkanInitData* initData);
 
-
-
-
 		class Draw : public IDraw {
 		private:
 			typedef struct Functions {
+				PFN_vkGetPhysicalDeviceMemoryProperties pVkGetPhysicalDeviceMemoryProperties;
 				PFN_vkGetSwapchainImagesKHR pVkGetSwapchainImagesKHR;
 				PFN_vkCreateCommandPool pVkCreateCommandPool;
 				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
@@ -43,6 +43,12 @@ namespace hax {
 				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
 				PFN_vkDestroyPipeline pVkDestroyPipeline;
 				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
+				PFN_vkDestroyBuffer pVkDestroyBuffer;
+				PFN_vkFreeMemory pVkFreeMemory;
+				PFN_vkCreateBuffer pVkCreateBuffer;
+				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
+				PFN_vkAllocateMemory pVkAllocateMemory;
+				PFN_vkBindBufferMemory pVkBindBufferMemory;
 			}Functions;
 			
 			typedef struct ImageData {
@@ -52,6 +58,20 @@ namespace hax {
 				VkFramebuffer hFrameBuffer;
 			}ImageData;
 
+			typedef struct BufferData {
+				VkBuffer hVertexBuffer;
+				VkBuffer hIndexBuffer;
+				VkDeviceMemory hVertexMemory;
+				VkDeviceMemory hIndexMemory;
+				VkDeviceSize vertexBufferSize;
+				VkDeviceSize indexBufferSize;
+				VkDeviceSize alignment;
+				Vertex* pLocalVertexBuffer;
+				Vertex* pLocalIndexBuffer;
+				size_t vertexCount;
+				size_t curOffset;
+			}VertexBufferData;
+
 			union {
 				Functions _f;
 				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
@@ -59,6 +79,7 @@ namespace hax {
 
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamily;
+			uint32_t _memoryTypeIndex;
 			VkDevice _hDevice;
 			VkRenderPass _hRenderPass;
 			VkShaderModule _hShaderModuleVert;
@@ -66,9 +87,12 @@ namespace hax {
 			VkDescriptorSetLayout _hDescriptorSetLayout;
 			VkPipelineLayout _hPipelineLayout;
 			VkPipeline _hPipeline;
+			VkDeviceSize _bufferAlignment;
 
 			ImageData* _pImageData;
 			uint32_t _imageCount;
+
+			BufferData _triangleBufferData;
 
 			bool _isInit;
 
@@ -131,6 +155,9 @@ namespace hax {
 			bool createShaderModule(VkShaderModule* pShaderModule, const uint32_t shader[], size_t size);
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
+			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
+			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
+			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 			void destroyImageData();
 		};
 
