@@ -363,16 +363,11 @@ namespace hax {
 			this->_f.pVkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipeline"));
 			this->_f.pVkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(pVkGetInstanceProcAddr(hInstance, "vkCmdBindPipeline"));
 
-			if (
-				!this->_f.pVkGetSwapchainImagesKHR || !this->_f.pVkCreateCommandPool || !this->_f.pVkDestroyCommandPool ||
-				!this->_f.pVkAllocateCommandBuffers || !this->_f.pVkFreeCommandBuffers || !this->_f.pVkCreateImageView ||
-				!this->_f.pVkDestroyImageView || !this->_f.pVkCreateFramebuffer || !this->_f.pVkDestroyFramebuffer ||
-				!this->_f.pVkCreateRenderPass || !this->_f.pVkDestroyRenderPass || !this->_f.pVkResetCommandBuffer ||
-				!this->_f.pVkBeginCommandBuffer || !this->_f.pVkCmdBeginRenderPass || !this->_f.pVkCreateShaderModule ||
-				!this->_f.pVkDestroyShaderModule || !this->_f.pVkCreatePipelineLayout || !this->_f.pVkDestroyPipelineLayout ||
-				!this->_f.pVkCreateDescriptorSetLayout || !this->_f.pVkDestroyDescriptorSetLayout || !this->_f.pVkCreateGraphicsPipelines ||
-				!this->_f.pVkDestroyPipeline || !this->_f.pVkCmdBindPipeline
-			) return false;
+			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
+				
+				if (!(this->_fPtrs[i])) return false;
+
+			}
 
 			return true;
 		}
