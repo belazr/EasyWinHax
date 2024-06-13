@@ -199,9 +199,9 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hPhysicalDevice{}, _queueFamily{}, _hDevice{}, _hRenderPass{},
+			_f{}, _hPhysicalDevice{}, _queueFamily{}, _memoryTypeIndex{}, _hDevice {}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{},
-			_hPipelineLayout{}, _hPipeline{},
+			_hPipelineLayout{}, _hPipeline{}, _bufferAlignment{}, _hCurCommandBuffer{},
 			_pImageData{}, _imageCount{}, _triangleListBufferData{},
 			_isInit{} {}
 
@@ -382,6 +382,8 @@ namespace hax {
 			
 			this->_f.pVkCmdEndRenderPass(this->_hCurCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_hCurCommandBuffer);
+
+			constexpr VkPipelineStageFlags stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
 			return;
 		}
