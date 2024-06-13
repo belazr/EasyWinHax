@@ -52,6 +52,8 @@ namespace hax {
 				PFN_vkMapMemory pVkMapMemory;
 				PFN_vkUnmapMemory pVkUnmapMemory;
 				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
+				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
+				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 			}Functions;
 			
 			typedef struct ImageData {
@@ -91,6 +93,7 @@ namespace hax {
 			VkPipelineLayout _hPipelineLayout;
 			VkPipeline _hPipeline;
 			VkDeviceSize _bufferAlignment;
+			VkCommandBuffer _hCurCommandBuffer;
 
 			ImageData* _pImageData;
 			uint32_t _imageCount;

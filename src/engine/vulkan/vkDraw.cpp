@@ -310,14 +310,16 @@ namespace hax {
 				const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[i]];
 
 				if (curImageData.hCommandBuffer == VK_NULL_HANDLE) return;
+
+				this->_hCurCommandBuffer = curImageData.hCommandBuffer;
 				
-				if (this->_f.pVkResetCommandBuffer(curImageData.hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
+				if (this->_f.pVkResetCommandBuffer(this->_hCurCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
 
 				VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
 				cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-				if (this->_f.pVkBeginCommandBuffer(curImageData.hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
+				if (this->_f.pVkBeginCommandBuffer(this->_hCurCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
 
 				VkRenderPassBeginInfo renderPassBeginInfo = {};
 				renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -326,8 +328,7 @@ namespace hax {
 				renderPassBeginInfo.renderArea.extent.width = 1366u;
 				renderPassBeginInfo.renderArea.extent.height = 768u;
 
-				this->_f.pVkCmdBeginRenderPass(curImageData.hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-				this->_f.pVkCmdBindPipeline(curImageData.hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
+				this->_f.pVkCmdBeginRenderPass(this->_hCurCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 				BufferData* const tbd = &this->_triangleListBufferData;
 
@@ -353,7 +354,16 @@ namespace hax {
 			if(this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return;
 			
 			this->_f.pVkUnmapMemory(this->_hDevice, this->_triangleListBufferData.hVertexMemory);
+			this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
+			
 			this->_f.pVkUnmapMemory(this->_hDevice, this->_triangleListBufferData.hIndexMemory);
+			this->_triangleListBufferData.pLocalIndexBuffer = nullptr;
+			
+			this->_f.pVkCmdBindPipeline(this->_hCurCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
+
+			constexpr VkDeviceSize offset = 0;
+			this->_f.pVkCmdBindVertexBuffers(this->_hCurCommandBuffer, 0u, 1u, &this->_triangleListBufferData.hVertexBuffer, &offset);
+			this->_f.pVkCmdBindIndexBuffer(this->_hCurCommandBuffer, this->_triangleListBufferData.hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
 
 			return;
 		}
@@ -434,6 +444,8 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, MapMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, UnmapMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FlushMappedMemoryRanges);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindVertexBuffers);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
 
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
