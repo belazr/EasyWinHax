@@ -49,6 +49,9 @@ namespace hax {
 				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
 				PFN_vkAllocateMemory pVkAllocateMemory;
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
+				PFN_vkMapMemory pVkMapMemory;
+				PFN_vkUnmapMemory pVkUnmapMemory;
+				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
 			}Functions;
 			
 			typedef struct ImageData {
@@ -67,9 +70,9 @@ namespace hax {
 				VkDeviceSize indexBufferSize;
 				VkDeviceSize alignment;
 				Vertex* pLocalVertexBuffer;
-				Vertex* pLocalIndexBuffer;
-				size_t vertexCount;
-				size_t curOffset;
+				uint32_t* pLocalIndexBuffer;
+				uint32_t vertexCount;
+				uint32_t curOffset;
 			}VertexBufferData;
 
 			union {
@@ -92,7 +95,7 @@ namespace hax {
 			ImageData* _pImageData;
 			uint32_t _imageCount;
 
-			BufferData _triangleBufferData;
+			BufferData _triangleListBufferData;
 
 			bool _isInit;
 
