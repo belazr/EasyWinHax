@@ -342,52 +342,52 @@ namespace hax {
 
 		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 
-
 			return;
 		}
 
 
 		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
-
+			
 			return;
 		}
 
+
+		#define ASSIGN_PROC_ADDRESS(instance, pGetProcAddress, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pGetProcAddress(instance, "vk"#f))
 
 		bool Draw::getInstanceProcAddresses(HMODULE hVulkan, VkInstance hInstance) {
 			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetInstanceProcAddr"));
 			
 			if (!pVkGetInstanceProcAddr) return false;
 
-			this->_f.pVkGetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(pVkGetInstanceProcAddr(hInstance, "vkGetPhysicalDeviceMemoryProperties"));
-			this->_f.pVkGetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(pVkGetInstanceProcAddr(hInstance, "vkGetSwapchainImagesKHR"));
-			this->_f.pVkCreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkCreateCommandPool"));
-			this->_f.pVkDestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(pVkGetInstanceProcAddr(hInstance, "vkDestroyCommandPool"));
-			this->_f.pVkAllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(pVkGetInstanceProcAddr(hInstance, "vkAllocateCommandBuffers"));
-			this->_f.pVkFreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(pVkGetInstanceProcAddr(hInstance, "vkFreeCommandBuffers"));
-			this->_f.pVkCreateImageView = reinterpret_cast<PFN_vkCreateImageView>(pVkGetInstanceProcAddr(hInstance, "vkCreateImageView"));
-			this->_f.pVkDestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(pVkGetInstanceProcAddr(hInstance, "vkDestroyImageView"));
-			this->_f.pVkCreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(pVkGetInstanceProcAddr(hInstance, "vkCreateFramebuffer"));
-			this->_f.pVkDestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(pVkGetInstanceProcAddr(hInstance, "vkDestroyFramebuffer"));
-			this->_f.pVkCreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkCreateRenderPass"));
-			this->_f.pVkDestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkDestroyRenderPass"));
-			this->_f.pVkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(pVkGetInstanceProcAddr(hInstance, "vkResetCommandBuffer"));
-			this->_f.pVkBeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(pVkGetInstanceProcAddr(hInstance, "vkBeginCommandBuffer"));
-			this->_f.pVkCmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(pVkGetInstanceProcAddr(hInstance, "vkCmdBeginRenderPass"));
-			this->_f.pVkCreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(pVkGetInstanceProcAddr(hInstance, "vkCreateShaderModule"));
-			this->_f.pVkDestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(pVkGetInstanceProcAddr(hInstance, "vkDestroyShaderModule"));
-			this->_f.pVkCreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(pVkGetInstanceProcAddr(hInstance, "vkCreatePipelineLayout"));
-			this->_f.pVkDestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipelineLayout"));
-			this->_f.pVkCreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(pVkGetInstanceProcAddr(hInstance, "vkCreateDescriptorSetLayout"));
-			this->_f.pVkDestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(pVkGetInstanceProcAddr(hInstance, "vkDestroyDescriptorSetLayout"));
-			this->_f.pVkCreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(pVkGetInstanceProcAddr(hInstance, "vkCreateGraphicsPipelines"));
-			this->_f.pVkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(pVkGetInstanceProcAddr(hInstance, "vkDestroyPipeline"));
-			this->_f.pVkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(pVkGetInstanceProcAddr(hInstance, "vkCmdBindPipeline"));
-			this->_f.pVkCreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(pVkGetInstanceProcAddr(hInstance, "vkCreateBuffer"));
-			this->_f.pVkGetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(pVkGetInstanceProcAddr(hInstance, "vkGetBufferMemoryRequirements"));
-			this->_f.pVkAllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(pVkGetInstanceProcAddr(hInstance, "vkAllocateMemory"));
-			this->_f.pVkBindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(pVkGetInstanceProcAddr(hInstance, "vkBindBufferMemory"));
-			this->_f.pVkDestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(pVkGetInstanceProcAddr(hInstance, "vkDestroyBuffer"));
-			this->_f.pVkFreeMemory = reinterpret_cast<PFN_vkFreeMemory>(pVkGetInstanceProcAddr(hInstance, "vkFreeMemory"));
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetPhysicalDeviceMemoryProperties);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetSwapchainImagesKHR);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateCommandPool);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyCommandPool);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, AllocateCommandBuffers);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeCommandBuffers);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateImageView);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyImageView);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateFramebuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyFramebuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateRenderPass);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyRenderPass);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetCommandBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BeginCommandBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBeginRenderPass);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyShaderModule);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreatePipelineLayout);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyPipelineLayout);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateDescriptorSetLayout);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyDescriptorSetLayout);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateGraphicsPipelines);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyPipeline);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindPipeline);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetBufferMemoryRequirements);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, AllocateMemory);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BindBufferMemory);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeMemory);
 
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
