@@ -55,6 +55,7 @@ namespace hax {
 				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
+				PFN_vkCmdSetScissor pVkCmdSetScissor;
 			}Functions;
 			
 			typedef struct ImageData {

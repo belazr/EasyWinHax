@@ -253,6 +253,9 @@ namespace hax {
 		}
 
 
+		#define TEST_WIDTH 1366
+		#define TEST_HEIGHT 768
+
 		void Draw::beginDraw(Engine* pEngine) {
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
@@ -325,8 +328,8 @@ namespace hax {
 				renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 				renderPassBeginInfo.renderPass = this->_hRenderPass;
 				renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
-				renderPassBeginInfo.renderArea.extent.width = 1366u;
-				renderPassBeginInfo.renderArea.extent.height = 768u;
+				renderPassBeginInfo.renderArea.extent.width = TEST_WIDTH;
+				renderPassBeginInfo.renderArea.extent.height = TEST_HEIGHT;
 
 				this->_f.pVkCmdBeginRenderPass(this->_hCurCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -368,11 +371,14 @@ namespace hax {
 			VkViewport viewport{};
 			viewport.x = 0;
 			viewport.y = 0;
-			viewport.width = 1366.f;
-			viewport.height = 768.f;
+			viewport.width = TEST_WIDTH;
+			viewport.height = TEST_HEIGHT;
 			viewport.minDepth = 0.f;
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCurCommandBuffer, 0u, 1u, &viewport);
+
+			VkRect2D scissor = { { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
+			this->_f.pVkCmdSetScissor(this->_hCurCommandBuffer, 0u, 1u, &scissor);
 
 			return;
 		}
@@ -456,6 +462,7 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindVertexBuffers);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetViewport);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetScissor);
 			
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
