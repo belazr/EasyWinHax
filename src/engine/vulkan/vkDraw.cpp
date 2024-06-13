@@ -365,6 +365,15 @@ namespace hax {
 			this->_f.pVkCmdBindVertexBuffers(this->_hCurCommandBuffer, 0u, 1u, &this->_triangleListBufferData.hVertexBuffer, &offset);
 			this->_f.pVkCmdBindIndexBuffer(this->_hCurCommandBuffer, this->_triangleListBufferData.hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
 
+			VkViewport viewport{};
+			viewport.x = 0;
+			viewport.y = 0;
+			viewport.width = 1366.f;
+			viewport.height = 768.f;
+			viewport.minDepth = 0.f;
+			viewport.maxDepth = 1.f;
+			this->_f.pVkCmdSetViewport(this->_hCurCommandBuffer, 0u, 1u, &viewport);
+
 			return;
 		}
 
@@ -446,7 +455,8 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FlushMappedMemoryRanges);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindVertexBuffers);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
-
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetViewport);
+			
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
 				if (!(this->_fPtrs[i])) return false;
