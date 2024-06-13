@@ -58,6 +58,8 @@ namespace hax {
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
 				PFN_vkCmdSetScissor pVkCmdSetScissor;
+				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
+				PFN_vkQueueSubmit pVkQueueSubmit;
 			}Functions;
 			
 			typedef struct ImageData {
@@ -87,7 +89,7 @@ namespace hax {
 			};
 
 			VkPhysicalDevice _hPhysicalDevice;
-			uint32_t _queueFamily;
+			uint32_t _queueFamilyIndex;
 			uint32_t _memoryTypeIndex;
 			VkDevice _hDevice;
 			VkRenderPass _hRenderPass;

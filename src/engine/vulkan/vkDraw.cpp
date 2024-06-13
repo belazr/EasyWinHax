@@ -130,14 +130,14 @@ namespace hax {
 		}
 
 
-		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
+		static uint32_t getGraphicsQueueFamilyIndex(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
 
 		static VkDevice createDummyDevice(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
 			const PFN_vkCreateDevice pVkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(proc::in::getProcAddress(hVulkan, "vkCreateDevice"));
 
 			if (!pVkCreateDevice) return VK_NULL_HANDLE;
 			
-			const uint32_t queueFamily = getQueueFamily(hVulkan, hPhysicalDevice);
+			const uint32_t queueFamily = getGraphicsQueueFamilyIndex(hVulkan, hPhysicalDevice);
 
 			if (queueFamily == 0xFFFFFFFF) return VK_NULL_HANDLE;
 
@@ -146,7 +146,7 @@ namespace hax {
 			VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
 			deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			deviceQueueCreateInfo.queueFamilyIndex = queueFamily;
-			deviceQueueCreateInfo.queueCount = 1;
+			deviceQueueCreateInfo.queueCount = 1u;
 			deviceQueueCreateInfo.pQueuePriorities = &QUEUE_PRIORITY;
 
 			constexpr const char* EXTENSION = "VK_KHR_swapchain";
@@ -166,7 +166,7 @@ namespace hax {
 		}
 
 
-		static uint32_t getQueueFamily(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
+		static uint32_t getGraphicsQueueFamilyIndex(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
 			const PFN_vkGetPhysicalDeviceQueueFamilyProperties pVkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceQueueFamilyProperties"));
 
 			if (!pVkGetPhysicalDeviceQueueFamilyProperties) return 0xFFFFFFFF;
@@ -199,7 +199,7 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hPhysicalDevice{}, _queueFamily{}, _memoryTypeIndex{}, _hDevice {}, _hRenderPass{},
+			_f{}, _hPhysicalDevice{}, _queueFamilyIndex{}, _memoryTypeIndex{}, _hDevice {}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{},
 			_hPipelineLayout{}, _hPipeline{}, _bufferAlignment{}, _hCurCommandBuffer{},
 			_pImageData{}, _imageCount{}, _triangleListBufferData{},
@@ -286,9 +286,9 @@ namespace hax {
 
 				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return;
 
-				this->_queueFamily = getQueueFamily(hVulkan, this->_hPhysicalDevice);
+				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(hVulkan, this->_hPhysicalDevice);
 
-				if (this->_queueFamily == 0xFFFFFFFF) return;
+				if (this->_queueFamilyIndex == 0xFFFFFFFF) return;
 
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
@@ -383,7 +383,19 @@ namespace hax {
 			this->_f.pVkCmdEndRenderPass(this->_hCurCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_hCurCommandBuffer);
 
-			constexpr VkPipelineStageFlags stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			VkQueue hQueue = VK_NULL_HANDLE;
+			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_queueFamilyIndex, 0u, &hQueue);
+
+			if (hQueue == VK_NULL_HANDLE) return;
+
+			constexpr VkPipelineStageFlags stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.pWaitDstStageMask = &stageMask;
+			submitInfo.commandBufferCount = 1u;
+			submitInfo.pCommandBuffers = &this->_hCurCommandBuffer;
+
+			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, VK_NULL_HANDLE);
 
 			return;
 		}
@@ -470,6 +482,8 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetViewport);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetScissor);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetDeviceQueue);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, QueueSubmit);
 			
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
@@ -898,7 +912,7 @@ namespace hax {
 			VkCommandPoolCreateInfo commandPoolCreateInfo{};
 			commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 			commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			commandPoolCreateInfo.queueFamilyIndex = this->_queueFamily;
+			commandPoolCreateInfo.queueFamilyIndex = this->_queueFamilyIndex;
 
 			VkCommandBufferAllocateInfo commandBufferAllocInfo{};
 			commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
