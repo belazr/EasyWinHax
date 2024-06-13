@@ -379,6 +379,9 @@ namespace hax {
 
 			VkRect2D scissor = { { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
 			this->_f.pVkCmdSetScissor(this->_hCurCommandBuffer, 0u, 1u, &scissor);
+			
+			this->_f.pVkCmdEndRenderPass(this->_hCurCommandBuffer);
+			this->_f.pVkEndCommandBuffer(this->_hCurCommandBuffer);
 
 			return;
 		}
@@ -438,9 +441,6 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyFramebuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateRenderPass);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyRenderPass);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetCommandBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BeginCommandBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBeginRenderPass);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateShaderModule);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyShaderModule);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreatePipelineLayout);
@@ -456,6 +456,11 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BindBufferMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyBuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeMemory);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetCommandBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BeginCommandBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, EndCommandBuffer);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBeginRenderPass);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdEndRenderPass);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, MapMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, UnmapMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FlushMappedMemoryRanges);

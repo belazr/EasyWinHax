@@ -31,9 +31,6 @@ namespace hax {
 				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
 				PFN_vkCreateRenderPass pVkCreateRenderPass;
 				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
-				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
-				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
-				PFN_vkCmdBeginRenderPass pVkCmdBeginRenderPass;
 				PFN_vkCreateShaderModule pVkCreateShaderModule;
 				PFN_vkDestroyShaderModule pVkDestroyShaderModule;
 				PFN_vkCreatePipelineLayout pVkCreatePipelineLayout;
@@ -49,6 +46,11 @@ namespace hax {
 				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
 				PFN_vkAllocateMemory pVkAllocateMemory;
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
+				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
+				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
+				PFN_vkEndCommandBuffer pVkEndCommandBuffer;
+				PFN_vkCmdBeginRenderPass pVkCmdBeginRenderPass;
+				PFN_vkCmdEndRenderPass pVkCmdEndRenderPass;
 				PFN_vkMapMemory pVkMapMemory;
 				PFN_vkUnmapMemory pVkUnmapMemory;
 				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
