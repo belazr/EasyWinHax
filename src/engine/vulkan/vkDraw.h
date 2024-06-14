@@ -57,6 +57,8 @@ namespace hax {
 				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
+				PFN_vkCmdPushConstants pVkCmdPushConstants;
+				PFN_vkCmdDrawIndexed pVkCmdDrawIndexed;
 				PFN_vkCmdSetScissor pVkCmdSetScissor;
 				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
 				PFN_vkQueueSubmit pVkQueueSubmit;
@@ -79,7 +81,6 @@ namespace hax {
 				VkDeviceSize alignment;
 				Vertex* pLocalVertexBuffer;
 				uint32_t* pLocalIndexBuffer;
-				uint32_t vertexCount;
 				uint32_t curOffset;
 			}VertexBufferData;
 
