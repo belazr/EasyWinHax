@@ -57,7 +57,6 @@ namespace hax {
 				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
-				PFN_vkCmdPushConstants pVkCmdPushConstants;
 				PFN_vkCmdDrawIndexed pVkCmdDrawIndexed;
 				PFN_vkCmdSetScissor pVkCmdSetScissor;
 				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
@@ -165,7 +164,7 @@ namespace hax {
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			bool createPipeline();
-			bool createShaderModule(VkShaderModule* pShaderModule, const uint32_t shader[], size_t size);
+			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
 			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
