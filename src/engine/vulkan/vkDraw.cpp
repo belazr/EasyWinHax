@@ -377,8 +377,18 @@ namespace hax {
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCurCommandBuffer, 0u, 1u, &viewport);
 
-			VkRect2D scissor = { { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
+			float scale[2]{ 2.0f / TEST_WIDTH, 2.0f / TEST_HEIGHT };
+			this->_f.pVkCmdPushConstants(this->_hCurCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
+
+			float translate[2]{ -1.f, -1.f };			
+			this->_f.pVkCmdPushConstants(this->_hCurCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+
+			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
 			this->_f.pVkCmdSetScissor(this->_hCurCommandBuffer, 0u, 1u, &scissor);
+
+			this->_f.pVkCmdDrawIndexed(this->_hCurCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 0u, 0u, 0u);
+
+			this->_triangleListBufferData.curOffset = 0;
 			
 			this->_f.pVkCmdEndRenderPass(this->_hCurCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_hCurCommandBuffer);
@@ -389,6 +399,7 @@ namespace hax {
 			if (hQueue == VK_NULL_HANDLE) return;
 
 			constexpr VkPipelineStageFlags stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pWaitDstStageMask = &stageMask;
@@ -430,8 +441,6 @@ namespace hax {
 
 			this->_triangleListBufferData.curOffset += count;
 
-			return;
-			
 			return;
 		}
 
@@ -481,6 +490,8 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindVertexBuffers);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetViewport);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdPushConstants);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdDrawIndexed);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetScissor);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetDeviceQueue);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, QueueSubmit);
@@ -671,7 +682,7 @@ namespace hax {
 			attributeDesc[0].offset = 0u;
 			attributeDesc[1].location = 1u;
 			attributeDesc[1].binding = bindingDesc.binding;
-			attributeDesc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+			attributeDesc[1].format = VK_FORMAT_R32G32_SFLOAT;
 			attributeDesc[1].offset = sizeof(Vector2);
 
 			VkPipelineVertexInputStateCreateInfo vertexInfo{};
@@ -723,7 +734,7 @@ namespace hax {
 
 			VkPipelineDynamicStateCreateInfo dynamicState{};
 			dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-			dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
+			dynamicState.dynamicStateCount = _countof(dynamicStates);
 			dynamicState.pDynamicStates = dynamicStates;
 
 			VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
@@ -935,8 +946,8 @@ namespace hax {
 			VkFramebufferCreateInfo framebufferCreateInfo{};
 			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferCreateInfo.renderPass = this->_hRenderPass;
-			framebufferCreateInfo.attachmentCount = 1;
-			framebufferCreateInfo.layers = 1;
+			framebufferCreateInfo.attachmentCount = 1u;
+			framebufferCreateInfo.layers = 1u;
 
 			#pragma warning(push)
 			#pragma warning(disable:6385)
