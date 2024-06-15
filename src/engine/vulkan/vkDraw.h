@@ -47,6 +47,9 @@ namespace hax {
 				PFN_vkAllocateMemory pVkAllocateMemory;
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
 				PFN_vkCreateFence pVkCreateFence;
+				PFN_vkDestroyFence pVkDestroyFence;
+				PFN_vkCreateSemaphore pVkCreateSemaphore;
+				PFN_vkDestroySemaphore pVkDestroySemaphore;
 				PFN_vkWaitForFences pVkWaitForFences;
 				PFN_vkResetFences pVkResetFences;
 				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
@@ -102,13 +105,13 @@ namespace hax {
 			VkPipeline _hPipeline;
 			VkCommandPool _hCommandPool;
 			VkCommandBuffer _hCommandBuffer;
-			VkDeviceSize _bufferAlignment;
 			VkFence _hFence;
-
-			ImageData* _pImageData;
-			uint32_t _imageCount;
+			VkSemaphore _hSemaphore;
+			VkDeviceSize _bufferAlignment;
 
 			BufferData _triangleListBufferData;
+			ImageData* _pImageData;
+			uint32_t _imageCount;
 
 			bool _isInit;
 

@@ -258,6 +258,14 @@ namespace hax {
 			if (this->_f.pVkFreeMemory && this->_triangleListBufferData.hIndexMemory != VK_NULL_HANDLE) {
 				this->_f.pVkFreeMemory(this->_hDevice, this->_triangleListBufferData.hIndexMemory, nullptr);
 			}
+
+			if (this->_f.pVkDestroyFence && this->_hFence != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyFence(this->_hDevice, this->_hFence, nullptr);
+			}
+
+			if (this->_f.pVkDestroySemaphore && this->_hSemaphore != VK_NULL_HANDLE) {
+				this->_f.pVkDestroySemaphore(this->_hDevice, this->_hSemaphore, nullptr);
+			}
 		}
 
 
@@ -320,12 +328,20 @@ namespace hax {
 
 				
 				if (this->_hFence == VK_NULL_HANDLE) {
-					VkFenceCreateInfo createFenceInfo{};
-					createFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-					createFenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+					VkFenceCreateInfo fenceCreateInfo{};
+					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+					fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-					if (this->_f.pVkCreateFence(this->_hDevice, &createFenceInfo, nullptr, &this->_hFence) != VkResult::VK_SUCCESS) return;
+					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_hFence) != VkResult::VK_SUCCESS) return;
 
+				}
+
+				if (this->_hSemaphore == VK_NULL_HANDLE) {
+					VkSemaphoreCreateInfo semaphoreCreateInfo{};
+					semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+					if (this->_f.pVkCreateSemaphore(this->_hDevice, &semaphoreCreateInfo, nullptr, &this->_hSemaphore) != VkResult::VK_SUCCESS) return;
+					
 				}
 				
 				this->_isInit = true;
@@ -353,7 +369,6 @@ namespace hax {
 				renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
 				renderPassBeginInfo.renderArea.extent.width = TEST_WIDTH;
 				renderPassBeginInfo.renderArea.extent.height = TEST_HEIGHT;
-
 				this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 				BufferData* const tbd = &this->_triangleListBufferData;
@@ -411,7 +426,7 @@ namespace hax {
 			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
 			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
 
-			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 0u, 0u, 0u);
+			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 1u, 0u, 0u);
 
 			this->_triangleListBufferData.curOffset = 0;
 			
@@ -430,6 +445,13 @@ namespace hax {
 			submitInfo.pWaitDstStageMask = &stageMask;
 			submitInfo.commandBufferCount = 1u;
 			submitInfo.pCommandBuffers = &this->_hCommandBuffer;
+			submitInfo.pWaitSemaphores = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2)->pWaitSemaphores;
+			submitInfo.waitSemaphoreCount = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2)->waitSemaphoreCount;
+			submitInfo.pSignalSemaphores = &this->_hSemaphore;
+			submitInfo.signalSemaphoreCount = 1u;
+
+			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->pWaitSemaphores = &this->_hSemaphore;
+			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->waitSemaphoreCount = 1u;;
 
 			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_hFence);
 
@@ -505,6 +527,9 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyBuffer);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeMemory);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateFence);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyFence);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateSemaphore);
+			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroySemaphore);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, WaitForFences);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetFences);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetCommandBuffer);
@@ -523,7 +548,7 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdDrawIndexed);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetDeviceQueue);
 			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, QueueSubmit);
-			
+
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
 				if (!(this->_fPtrs[i])) return false;
@@ -536,7 +561,7 @@ namespace hax {
 
 		bool Draw::createRenderPass() {
 			VkAttachmentDescription attachmentDesc{};
-			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
+			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UINT;
 			attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 			attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -739,7 +764,7 @@ namespace hax {
 			attributeDesc[0].offset = 0u;
 			attributeDesc[1].location = 1u;
 			attributeDesc[1].binding = bindingDesc.binding;
-			attributeDesc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+			attributeDesc[1].format = VK_FORMAT_B8G8R8A8_UINT;
 			attributeDesc[1].offset = sizeof(Vector2);
 
 			VkPipelineVertexInputStateCreateInfo vertexInfo{};
@@ -1009,7 +1034,7 @@ namespace hax {
 			VkImageViewCreateInfo imageViewCreateInfo{};
 			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UINT;
 			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
 
 			VkFramebufferCreateInfo framebufferCreateInfo{};
