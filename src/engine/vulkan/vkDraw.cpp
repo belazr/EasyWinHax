@@ -426,7 +426,7 @@ namespace hax {
 			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
 			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
 
-			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 1u, 0u, 0u);
+			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 0u, 0u, 0u);
 
 			this->_triangleListBufferData.curOffset = 0;
 			
