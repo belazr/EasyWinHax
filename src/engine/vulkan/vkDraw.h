@@ -93,6 +93,9 @@ namespace hax {
 				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 			};
 
+			HMODULE _hVulkan;
+
+			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamilyIndex;
 			uint32_t _memoryTypeIndex;
@@ -167,7 +170,7 @@ namespace hax {
 			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
-			bool getInstanceProcAddresses(HMODULE hVulkan, VkInstance hInstance);
+			bool getProcAddresses();
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			bool createPipeline();

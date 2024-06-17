@@ -199,17 +199,26 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hPhysicalDevice{}, _queueFamilyIndex{}, _memoryTypeIndex{}, _hDevice {}, _hRenderPass{},
+			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _queueFamilyIndex{}, _memoryTypeIndex{}, _hDevice{}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{},
-			_hPipelineLayout{}, _hPipeline{}, _bufferAlignment{}, _hCommandBuffer{}, _hFence{},
+			_hPipelineLayout{}, _hPipeline{}, _bufferAlignment{}, _hCommandPool{}, _hCommandBuffer{}, _hFence{}, _hSemaphore{},
 			_pImageData{}, _imageCount{}, _triangleListBufferData{},
 			_isInit{} {}
 
 
 		Draw::~Draw() {
-			destroyImageData();
+			
+			if (!this->_hVulkan) return;
+
+			const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(this->_hVulkan, "vkDestroyInstance"));
+
+			if (pVkDestroyInstance && this->_hInstance != VK_NULL_HANDLE) {
+				pVkDestroyInstance(this->_hInstance, nullptr);
+			}
 
 			if (this->_hDevice == VK_NULL_HANDLE) return;
+
+			destroyImageData();
 
 			if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
@@ -279,30 +288,23 @@ namespace hax {
 			if (!pPresentInfo || !this->_hDevice) return;
 
 			if (!this->_isInit) {
-				const HMODULE hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
+				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
-				if (!hVulkan) return;
+				if (!this->_hVulkan) return;
 
-				const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(hVulkan, "vkDestroyInstance"));
-
-				if (!pVkDestroyInstance) return;
-
-				const VkInstance hInstance = createInstance(hVulkan);
-
-				if (hInstance == VK_NULL_HANDLE) return;
-
-				if (!this->getInstanceProcAddresses(hVulkan, hInstance)) {
-					pVkDestroyInstance(hInstance, nullptr);
-
-					return;
+				if (this->_hInstance == VK_NULL_HANDLE) {
+					this->_hInstance = createInstance(this->_hVulkan);
 				}
 
-				this->_hPhysicalDevice = getPhysicalDevice(hVulkan, hInstance);
-				pVkDestroyInstance(hInstance, nullptr);
+				if (this->_hInstance == VK_NULL_HANDLE) return;
+				
+				if (!this->getProcAddresses()) return;
+
+				this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
 
 				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return;
 
-				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(hVulkan, this->_hPhysicalDevice);
+				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
 
 				if (this->_queueFamilyIndex == 0xFFFFFFFF) return;
 
@@ -451,7 +453,7 @@ namespace hax {
 			submitInfo.signalSemaphoreCount = 1u;
 
 			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->pWaitSemaphores = &this->_hSemaphore;
-			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->waitSemaphoreCount = 1u;;
+			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->waitSemaphoreCount = 1u;
 
 			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_hFence);
 
@@ -492,62 +494,63 @@ namespace hax {
 		}
 
 
-		#define ASSIGN_PROC_ADDRESS(instance, pGetProcAddress, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pGetProcAddress(instance, "vk"#f))
+		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
 
-		bool Draw::getInstanceProcAddresses(HMODULE hVulkan, VkInstance hInstance) {
-			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetInstanceProcAddr"));
+		bool Draw::getProcAddresses() {
+			const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddress = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
+			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddress = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetInstanceProcAddr"));
 			
-			if (!pVkGetInstanceProcAddr) return false;
+			if (!pVkGetDeviceProcAddress || !pVkGetInstanceProcAddress) return false;
 
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetPhysicalDeviceMemoryProperties);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetSwapchainImagesKHR);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateCommandPool);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyCommandPool);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, AllocateCommandBuffers);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeCommandBuffers);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateImageView);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyImageView);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateFramebuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyFramebuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateRenderPass);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyRenderPass);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateShaderModule);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyShaderModule);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreatePipelineLayout);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyPipelineLayout);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateDescriptorSetLayout);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyDescriptorSetLayout);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateGraphicsPipelines);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyPipeline);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindPipeline);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetBufferMemoryRequirements);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, AllocateMemory);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BindBufferMemory);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FreeMemory);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateFence);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroyFence);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CreateSemaphore);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, DestroySemaphore);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, WaitForFences);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetFences);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, ResetCommandBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, BeginCommandBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, EndCommandBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBeginRenderPass);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdEndRenderPass);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, MapMemory);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, UnmapMemory);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, FlushMappedMemoryRanges);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindVertexBuffers);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdBindIndexBuffer);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetViewport);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdPushConstants);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdSetScissor);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, CmdDrawIndexed);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, GetDeviceQueue);
-			ASSIGN_PROC_ADDRESS(hInstance, pVkGetInstanceProcAddr, QueueSubmit);
+			ASSIGN_PROC_ADDRESS(Instance, GetPhysicalDeviceMemoryProperties);
+			ASSIGN_PROC_ADDRESS(Device, GetSwapchainImagesKHR);
+			ASSIGN_PROC_ADDRESS(Device, CreateCommandPool);
+			ASSIGN_PROC_ADDRESS(Device, DestroyCommandPool);
+			ASSIGN_PROC_ADDRESS(Device, AllocateCommandBuffers);
+			ASSIGN_PROC_ADDRESS(Device, FreeCommandBuffers);
+			ASSIGN_PROC_ADDRESS(Device, CreateImageView);
+			ASSIGN_PROC_ADDRESS(Device, DestroyImageView);
+			ASSIGN_PROC_ADDRESS(Device, CreateFramebuffer);
+			ASSIGN_PROC_ADDRESS(Device, DestroyFramebuffer);
+			ASSIGN_PROC_ADDRESS(Device, CreateRenderPass);
+			ASSIGN_PROC_ADDRESS(Device, DestroyRenderPass);
+			ASSIGN_PROC_ADDRESS(Device, CreateShaderModule);
+			ASSIGN_PROC_ADDRESS(Device, DestroyShaderModule);
+			ASSIGN_PROC_ADDRESS(Device, CreatePipelineLayout);
+			ASSIGN_PROC_ADDRESS(Device, DestroyPipelineLayout);
+			ASSIGN_PROC_ADDRESS(Device, CreateDescriptorSetLayout);
+			ASSIGN_PROC_ADDRESS(Device, DestroyDescriptorSetLayout);
+			ASSIGN_PROC_ADDRESS(Device, CreateGraphicsPipelines);
+			ASSIGN_PROC_ADDRESS(Device, DestroyPipeline);
+			ASSIGN_PROC_ADDRESS(Device, CmdBindPipeline);
+			ASSIGN_PROC_ADDRESS(Device, CreateBuffer);
+			ASSIGN_PROC_ADDRESS(Device, GetBufferMemoryRequirements);
+			ASSIGN_PROC_ADDRESS(Device, AllocateMemory);
+			ASSIGN_PROC_ADDRESS(Device, BindBufferMemory);
+			ASSIGN_PROC_ADDRESS(Device, DestroyBuffer);
+			ASSIGN_PROC_ADDRESS(Device, FreeMemory);
+			ASSIGN_PROC_ADDRESS(Device, CreateFence);
+			ASSIGN_PROC_ADDRESS(Device, DestroyFence);
+			ASSIGN_PROC_ADDRESS(Device, CreateSemaphore);
+			ASSIGN_PROC_ADDRESS(Device, DestroySemaphore);
+			ASSIGN_PROC_ADDRESS(Device, WaitForFences);
+			ASSIGN_PROC_ADDRESS(Device, ResetFences);
+			ASSIGN_PROC_ADDRESS(Device, ResetCommandBuffer);
+			ASSIGN_PROC_ADDRESS(Device, BeginCommandBuffer);
+			ASSIGN_PROC_ADDRESS(Device, EndCommandBuffer);
+			ASSIGN_PROC_ADDRESS(Device, CmdBeginRenderPass);
+			ASSIGN_PROC_ADDRESS(Device, CmdEndRenderPass);
+			ASSIGN_PROC_ADDRESS(Device, MapMemory);
+			ASSIGN_PROC_ADDRESS(Device, UnmapMemory);
+			ASSIGN_PROC_ADDRESS(Device, FlushMappedMemoryRanges);
+			ASSIGN_PROC_ADDRESS(Device, CmdBindVertexBuffers);
+			ASSIGN_PROC_ADDRESS(Device, CmdBindIndexBuffer);
+			ASSIGN_PROC_ADDRESS(Device, CmdSetViewport);
+			ASSIGN_PROC_ADDRESS(Device, CmdPushConstants);
+			ASSIGN_PROC_ADDRESS(Device, CmdSetScissor);
+			ASSIGN_PROC_ADDRESS(Device, CmdDrawIndexed);
+			ASSIGN_PROC_ADDRESS(Device, GetDeviceQueue);
+			ASSIGN_PROC_ADDRESS(Device, QueueSubmit);
 
 			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
