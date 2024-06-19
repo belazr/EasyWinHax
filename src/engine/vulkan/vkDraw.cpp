@@ -564,7 +564,7 @@ namespace hax {
 
 		bool Draw::createRenderPass() {
 			VkAttachmentDescription attachmentDesc{};
-			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UINT;
+			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
 			attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 			attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -767,7 +767,7 @@ namespace hax {
 			attributeDesc[0].offset = 0u;
 			attributeDesc[1].location = 1u;
 			attributeDesc[1].binding = bindingDesc.binding;
-			attributeDesc[1].format = VK_FORMAT_B8G8R8A8_UINT;
+			attributeDesc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
 			attributeDesc[1].offset = sizeof(Vector2);
 
 			VkPipelineVertexInputStateCreateInfo vertexInfo{};
@@ -1037,7 +1037,7 @@ namespace hax {
 			VkImageViewCreateInfo imageViewCreateInfo{};
 			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UINT;
+			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
 			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
 
 			VkFramebufferCreateInfo framebufferCreateInfo{};
