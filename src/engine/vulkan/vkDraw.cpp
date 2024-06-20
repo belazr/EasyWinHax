@@ -199,9 +199,9 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _queueFamilyIndex{}, _memoryTypeIndex{}, _hDevice{}, _hRenderPass{},
-			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{},
-			_hPipelineLayout{}, _hPipeline{}, _bufferAlignment{}, _hCommandPool{}, _hCommandBuffer{}, _hFence{}, _hSemaphore{},
+			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _queueFamilyIndex{0xFFFFFFFF}, _hDevice{}, _hRenderPass{},
+			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hPipeline{},
+			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
 			_pImageData{}, _imageCount{}, _triangleListBufferData{},
 			_isInit{} {}
 
@@ -218,7 +218,8 @@ namespace hax {
 
 			if (this->_hDevice == VK_NULL_HANDLE) return;
 
-			destroyImageData();
+			this->destroyImageData();
+			this->destroyBufferData(&this->_triangleListBufferData);
 
 			if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
@@ -251,35 +252,17 @@ namespace hax {
 			if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyCommandPool(this->_hDevice, this->_hCommandPool, nullptr);
 			}
-			
-			if (this->_f.pVkDestroyBuffer && this->_triangleListBufferData.hVertexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, this->_triangleListBufferData.hVertexBuffer, nullptr);
-			}
-
-			if (this->_f.pVkFreeMemory && this->_triangleListBufferData.hVertexMemory != VK_NULL_HANDLE) {
-				this->_f.pVkFreeMemory(this->_hDevice, this->_triangleListBufferData.hVertexMemory, nullptr);
-			}
-
-			if (this->_f.pVkDestroyBuffer && this->_triangleListBufferData.hIndexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, this->_triangleListBufferData.hIndexBuffer, nullptr);
-			}
-
-			if (this->_f.pVkFreeMemory && this->_triangleListBufferData.hIndexMemory != VK_NULL_HANDLE) {
-				this->_f.pVkFreeMemory(this->_hDevice, this->_triangleListBufferData.hIndexMemory, nullptr);
-			}
 
 			if (this->_f.pVkDestroyFence && this->_hFence != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyFence(this->_hDevice, this->_hFence, nullptr);
-			}
-
-			if (this->_f.pVkDestroySemaphore && this->_hSemaphore != VK_NULL_HANDLE) {
-				this->_f.pVkDestroySemaphore(this->_hDevice, this->_hSemaphore, nullptr);
 			}
 		}
 
 
 		#define TEST_WIDTH 1366
 		#define TEST_HEIGHT 768
+		constexpr size_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
+		constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99;
 
 		void Draw::beginDraw(Engine* pEngine) {
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
@@ -304,10 +287,6 @@ namespace hax {
 
 				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return;
 
-				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
-
-				if (this->_queueFamilyIndex == 0xFFFFFFFF) return;
-
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
 					if (!this->createRenderPass()) return;
@@ -320,15 +299,22 @@ namespace hax {
 
 				}
 
+				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+
+				if (this->_queueFamilyIndex == 0xFFFFFFFF) return;
+
 				if (this->_hCommandBuffer == VK_NULL_HANDLE) {
 
 					if (!this->createCommandBuffer()) return;
 
 				}
 
-				if (!this->createBufferData(&this->_triangleListBufferData, 3u)) return;
+				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
 
-				
+				this->destroyBufferData(&this->_triangleListBufferData);
+
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
+
 				if (this->_hFence == VK_NULL_HANDLE) {
 					VkFenceCreateInfo fenceCreateInfo{};
 					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -336,14 +322,6 @@ namespace hax {
 
 					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_hFence) != VkResult::VK_SUCCESS) return;
 
-				}
-
-				if (this->_hSemaphore == VK_NULL_HANDLE) {
-					VkSemaphoreCreateInfo semaphoreCreateInfo{};
-					semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-					if (this->_f.pVkCreateSemaphore(this->_hDevice, &semaphoreCreateInfo, nullptr, &this->_hSemaphore) != VkResult::VK_SUCCESS) return;
-					
 				}
 				
 				this->_isInit = true;
@@ -447,48 +425,23 @@ namespace hax {
 			submitInfo.pWaitDstStageMask = &stageMask;
 			submitInfo.commandBufferCount = 1u;
 			submitInfo.pCommandBuffers = &this->_hCommandBuffer;
-			submitInfo.pWaitSemaphores = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2)->pWaitSemaphores;
-			submitInfo.waitSemaphoreCount = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2)->waitSemaphoreCount;
-			submitInfo.pSignalSemaphores = &this->_hSemaphore;
-			submitInfo.signalSemaphoreCount = 1u;
-
-			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->pWaitSemaphores = &this->_hSemaphore;
-			const_cast<VkPresentInfoKHR*>(reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2))->waitSemaphoreCount = 1u;
 
 			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_hFence);
 
 			return;
 		}
 
+		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
-		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+			if (!this->_isInit || count % 3) return;
+
+			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
 			return;
 		}
 
 
-		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
-			Vector2 test[]{
-				{ 100, 100 },
-				{ 200, 100 },
-				{ 200, 200 }
-			};
-
-			corners = test;
-			count = _countof(test);
-			
-			if (!this->_isInit || count % 3 || !this->_triangleListBufferData.pLocalVertexBuffer) return;
-
-			for (UINT i = 0; i < count; i++) {
-				const uint32_t curIndex = this->_triangleListBufferData.curOffset + i;
-
-				Vertex curVertex{ { corners[i].x, corners[i].y }, color };
-				memcpy(&(this->_triangleListBufferData.pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
-
-				this->_triangleListBufferData.pLocalIndexBuffer[curIndex] = curIndex;
-			}
-
-			this->_triangleListBufferData.curOffset += count;
+		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 
 			return;
 		}
@@ -531,8 +484,6 @@ namespace hax {
 			ASSIGN_PROC_ADDRESS(Device, FreeMemory);
 			ASSIGN_PROC_ADDRESS(Device, CreateFence);
 			ASSIGN_PROC_ADDRESS(Device, DestroyFence);
-			ASSIGN_PROC_ADDRESS(Device, CreateSemaphore);
-			ASSIGN_PROC_ADDRESS(Device, DestroySemaphore);
 			ASSIGN_PROC_ADDRESS(Device, WaitForFences);
 			ASSIGN_PROC_ADDRESS(Device, ResetFences);
 			ASSIGN_PROC_ADDRESS(Device, ResetCommandBuffer);
@@ -917,30 +868,13 @@ namespace hax {
 
 
 		bool Draw::createBufferData(BufferData* pBufferData, size_t vertexCount) {
+			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 			
-			if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
-				pBufferData->vertexBufferSize = 0ull;
-			}
-
-			if (pBufferData->hVertexMemory != VK_NULL_HANDLE) {
-				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hVertexMemory, nullptr);
-			}
-
 			VkDeviceSize vertexBufferSize = vertexCount * sizeof(Vertex);
 
 			if (!this->createBuffer(&pBufferData->hVertexBuffer, &pBufferData->hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
 			pBufferData->vertexBufferSize = vertexBufferSize;
-
-			if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
-				pBufferData->indexBufferSize = 0ull;
-			}
-
-			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
-				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
-			}
 
 			VkDeviceSize indexBufferSize = vertexCount * sizeof(uint32_t);
 
@@ -951,12 +885,44 @@ namespace hax {
 			return true;
 		}
 
-		bool Draw::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
 
-			if (!this->_bufferAlignment) {
-				this->_bufferAlignment = 256ull;
+		void Draw::destroyBufferData(BufferData* pBufferData) const {
+
+			if (!this->_f.pVkDestroyBuffer || !this->_f.pVkUnmapMemory || !this->_f.pVkFreeMemory) return;
+
+			if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
+				pBufferData->hVertexBuffer = VK_NULL_HANDLE;
 			}
-			
+
+			if (pBufferData->hVertexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hVertexMemory);
+				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hVertexMemory, nullptr);
+				pBufferData->hVertexMemory = VK_NULL_HANDLE;
+			}
+
+			if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
+				pBufferData->hIndexBuffer = VK_NULL_HANDLE;
+			}
+
+			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
+				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
+				pBufferData->hIndexMemory = VK_NULL_HANDLE;
+			}
+
+			pBufferData->vertexBufferSize = 0ull;
+			pBufferData->pLocalVertexBuffer = nullptr;
+			pBufferData->indexBufferSize = 0ull;
+			pBufferData->pLocalIndexBuffer = nullptr;
+			pBufferData->curOffset = 0;
+
+			return;
+		}
+
+
+		bool Draw::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
 			const VkDeviceSize sizeAligned = (((*pSize) - 1ull) / this->_bufferAlignment + 1ull) * this->_bufferAlignment;
 
 			VkBufferCreateInfo bufferCreateinfo{};
@@ -987,13 +953,10 @@ namespace hax {
 
 
 		uint32_t Draw::getMemoryTypeIndex(uint32_t typeBits) const {
-			VkPhysicalDeviceMemoryProperties memoryProperties{};
+			
+			for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
 
-			this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &memoryProperties);
-
-			for (uint32_t i = 0u; i < memoryProperties.memoryTypeCount; i++) {
-
-				if ((memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
+				if ((_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
 					return i;
 				}
 			}
@@ -1084,6 +1047,61 @@ namespace hax {
 			this->_pImageData = nullptr;
 
 			return;
+		}
+
+
+		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
+
+			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
+
+			const size_t newVertexCount = pBufferData->curOffset + count;
+
+			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
+
+				if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
+
+			}
+
+			for (UINT i = 0u; i < count; i++) {
+				const uint32_t curIndex = pBufferData->curOffset + i;
+
+				Vertex curVertex{ { data[i].x, data[i].y }, color };
+				memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
+
+				pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
+			}
+
+			pBufferData->curOffset += count;
+
+			return;
+		}
+
+
+		bool Draw::resizeBufferData(BufferData* pBufferData, size_t newVertexCount) {
+
+			if (newVertexCount <= pBufferData->curOffset) return true;
+
+			BufferData oldBufferData = *pBufferData;
+
+			if (!this->createBufferData(pBufferData, newVertexCount)) return false;
+
+			if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			if (oldBufferData.pLocalVertexBuffer) {
+				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, oldBufferData.vertexBufferSize);
+			}
+
+			if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			if (oldBufferData.pLocalIndexBuffer) {
+				memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, oldBufferData.indexBufferSize);
+			}
+
+			pBufferData->curOffset = oldBufferData.curOffset;
+
+			this->destroyBufferData(&oldBufferData);
+
+			return true;
 		}
 
 	}
