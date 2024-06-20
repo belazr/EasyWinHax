@@ -48,8 +48,6 @@ namespace hax {
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
 				PFN_vkCreateFence pVkCreateFence;
 				PFN_vkDestroyFence pVkDestroyFence;
-				PFN_vkCreateSemaphore pVkCreateSemaphore;
-				PFN_vkDestroySemaphore pVkDestroySemaphore;
 				PFN_vkWaitForFences pVkWaitForFences;
 				PFN_vkResetFences pVkResetFences;
 				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
@@ -82,11 +80,10 @@ namespace hax {
 				VkDeviceMemory hIndexMemory;
 				VkDeviceSize vertexBufferSize;
 				VkDeviceSize indexBufferSize;
-				VkDeviceSize alignment;
 				Vertex* pLocalVertexBuffer;
 				uint32_t* pLocalIndexBuffer;
 				uint32_t curOffset;
-			}VertexBufferData;
+			}BufferData;
 
 			union {
 				Functions _f;
@@ -98,7 +95,6 @@ namespace hax {
 			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _queueFamilyIndex;
-			uint32_t _memoryTypeIndex;
 			VkDevice _hDevice;
 			VkRenderPass _hRenderPass;
 			VkShaderModule _hShaderModuleVert;
@@ -108,8 +104,8 @@ namespace hax {
 			VkPipeline _hPipeline;
 			VkCommandPool _hCommandPool;
 			VkCommandBuffer _hCommandBuffer;
+			VkPhysicalDeviceMemoryProperties _memoryProperties;
 			VkFence _hFence;
-			VkSemaphore _hSemaphore;
 			VkDeviceSize _bufferAlignment;
 
 			BufferData _triangleListBufferData;
@@ -173,15 +169,18 @@ namespace hax {
 			bool getProcAddresses();
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
+			void destroyImageData();
 			bool createPipeline();
 			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
 			bool createCommandBuffer();
 			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
+			void destroyBufferData(BufferData* pBufferData) const;
 			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
 			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
-			void destroyImageData();
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
+			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
 		};
 
 	}
