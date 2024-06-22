@@ -199,7 +199,7 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _queueFamilyIndex{0xFFFFFFFF}, _hDevice{}, _hRenderPass{},
+			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _graphicsQueueFamilyIndex{0xFFFFFFFF}, _hDevice{}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hPipeline{},
 			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
 			_pImageData{}, _imageCount{}, _triangleListBufferData{},
@@ -261,8 +261,8 @@ namespace hax {
 
 		#define TEST_WIDTH 1366
 		#define TEST_HEIGHT 768
-		constexpr size_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
-		constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99;
+		static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+		static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
 		void Draw::beginDraw(Engine* pEngine) {
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
@@ -299,9 +299,9 @@ namespace hax {
 
 				}
 
-				this->_queueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
 
-				if (this->_queueFamilyIndex == 0xFFFFFFFF) return;
+				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return;
 
 				if (this->_hCommandBuffer == VK_NULL_HANDLE) {
 
@@ -313,7 +313,7 @@ namespace hax {
 
 				this->destroyBufferData(&this->_triangleListBufferData);
 
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return;
 
 				if (this->_hFence == VK_NULL_HANDLE) {
 					VkFenceCreateInfo fenceCreateInfo{};
@@ -332,31 +332,36 @@ namespace hax {
 
 			if (!this->createImageData(pPresentInfo->pSwapchains[0])) return;
 
-			for (uint32_t i = 0u; i < pPresentInfo->swapchainCount; i++) {
-				const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[i]];
+			const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[0]];
 				
-				if (this->_f.pVkResetCommandBuffer(this->_hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
+			if (this->_f.pVkResetCommandBuffer(this->_hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
 
-				VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
-				cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-				cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+			VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
+			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-				if (this->_f.pVkBeginCommandBuffer(this->_hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
+			if (this->_f.pVkBeginCommandBuffer(this->_hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
 
-				VkRenderPassBeginInfo renderPassBeginInfo = {};
-				renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-				renderPassBeginInfo.renderPass = this->_hRenderPass;
-				renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
-				renderPassBeginInfo.renderArea.extent.width = TEST_WIDTH;
-				renderPassBeginInfo.renderArea.extent.height = TEST_HEIGHT;
-				this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			VkRenderPassBeginInfo renderPassBeginInfo = {};
+			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassBeginInfo.renderPass = this->_hRenderPass;
+			renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
+			renderPassBeginInfo.renderArea.extent.width = TEST_WIDTH;
+			renderPassBeginInfo.renderArea.extent.height = TEST_HEIGHT;
+			this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-				BufferData* const tbd = &this->_triangleListBufferData;
+			BufferData* const tbd = &this->_triangleListBufferData;
+
+			if (!tbd->pLocalVertexBuffer) {
 
 				if (this->_f.pVkMapMemory(this->_hDevice, tbd->hVertexMemory, 0ull, tbd->vertexBufferSize, 0ull, reinterpret_cast<void**>(&tbd->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return;
-				
+			
+			}
+			
+			if (!tbd->pLocalIndexBuffer) {
+
 				if (this->_f.pVkMapMemory(this->_hDevice, tbd->hIndexMemory, 0ull, tbd->indexBufferSize, 0ull, reinterpret_cast<void**>(&tbd->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return;
-				
+
 			}
 
 			return;
@@ -366,55 +371,31 @@ namespace hax {
 		void Draw::endDraw(const Engine* pEngine) {
 			
 			if (!this->_isInit) return;
-			
-			VkMappedMemoryRange ranges[2]{};
-			ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			ranges[0].memory = this->_triangleListBufferData.hVertexMemory;
-			ranges[0].size = VK_WHOLE_SIZE;
-			ranges[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			ranges[1].memory = this->_triangleListBufferData.hIndexMemory;
-			ranges[1].size = VK_WHOLE_SIZE;
-			
-			if(this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return;
-			
-			this->_f.pVkUnmapMemory(this->_hDevice, this->_triangleListBufferData.hVertexMemory);
-			this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
-			
-			this->_f.pVkUnmapMemory(this->_hDevice, this->_triangleListBufferData.hIndexMemory);
-			this->_triangleListBufferData.pLocalIndexBuffer = nullptr;
-			
-			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
-
-			constexpr VkDeviceSize offset = 0;
-			this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_triangleListBufferData.hVertexBuffer, &offset);
-			this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_triangleListBufferData.hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
 
 			VkViewport viewport{};
-			viewport.x = 0;
-			viewport.y = 0;
+			viewport.x = 0.f;
+			viewport.y = 0.f;
 			viewport.width = TEST_WIDTH;
 			viewport.height = TEST_HEIGHT;
 			viewport.minDepth = 0.f;
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCommandBuffer, 0u, 1u, &viewport);
 
+			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
+			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
+
 			float scale[]{ 2.f / TEST_WIDTH, 2.f / TEST_HEIGHT };
 			float translate[2]{ -1.f, -1.f };
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
-			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
-			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
-
-			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_triangleListBufferData.curOffset, 1u, 0u, 0u, 0u);
-
-			this->_triangleListBufferData.curOffset = 0;
+			this->drawBufferData(&this->_triangleListBufferData);
 			
 			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_hCommandBuffer);
 
 			VkQueue hQueue = VK_NULL_HANDLE;
-			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_queueFamilyIndex, 0u, &hQueue);
+			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &hQueue);
 
 			if (hQueue == VK_NULL_HANDLE) return;
 
@@ -849,7 +830,7 @@ namespace hax {
 				VkCommandPoolCreateInfo commandPoolCreateInfo{};
 				commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 				commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				commandPoolCreateInfo.queueFamilyIndex = this->_queueFamilyIndex;
+				commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
 
 				if (this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) != VkResult::VK_SUCCESS) return false;
 
@@ -1102,6 +1083,37 @@ namespace hax {
 			this->destroyBufferData(&oldBufferData);
 
 			return true;
+		}
+
+
+		void Draw::drawBufferData(BufferData* pBufferData) const {
+			VkMappedMemoryRange ranges[2]{};
+			ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+			ranges[0].memory = pBufferData->hVertexMemory;
+			ranges[0].size = VK_WHOLE_SIZE;
+			ranges[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+			ranges[1].memory = pBufferData->hIndexMemory;
+			ranges[1].size = VK_WHOLE_SIZE;
+
+			if (this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return;
+
+			this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hVertexMemory);
+			pBufferData->pLocalVertexBuffer = nullptr;
+
+			this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
+			pBufferData->pLocalIndexBuffer = nullptr;
+
+			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
+			
+			constexpr VkDeviceSize offset = 0ull;
+			this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &pBufferData->hVertexBuffer, &offset);
+			this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, pBufferData->hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
+
+			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, pBufferData->curOffset, 1u, 0u, 0u, 0u);
+
+			pBufferData->curOffset = 0u;
+
+			return;
 		}
 
 	}
