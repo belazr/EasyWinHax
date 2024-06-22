@@ -15,7 +15,7 @@
 #include "engine\IDraw.h"
 #include "engine\Vertex.h"
 #include "engine\rgb.h"
-#include "engine\font\dxFont.h"
+#include "engine\font\Font.h"
 
 // Headers for DirectX 9
 #pragma comment(lib, "d3d9.lib")
