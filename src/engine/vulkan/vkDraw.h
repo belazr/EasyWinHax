@@ -94,7 +94,7 @@ namespace hax {
 
 			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
-			uint32_t _queueFamilyIndex;
+			uint32_t _graphicsQueueFamilyIndex;
 			VkDevice _hDevice;
 			VkRenderPass _hRenderPass;
 			VkShaderModule _hShaderModuleVert;
@@ -181,6 +181,7 @@ namespace hax {
 			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
+			void drawBufferData(BufferData* pBufferData) const;
 		};
 
 	}
