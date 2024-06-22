@@ -101,7 +101,8 @@ namespace hax {
 			VkShaderModule _hShaderModuleFrag;
 			VkDescriptorSetLayout _hDescriptorSetLayout;
 			VkPipelineLayout _hPipelineLayout;
-			VkPipeline _hPipeline;
+			VkPipeline _hTriangleListPipeline;
+			VkPipeline _hPointListPipeline;
 			VkCommandPool _hCommandPool;
 			VkCommandBuffer _hCommandBuffer;
 			VkPhysicalDeviceMemoryProperties _memoryProperties;
@@ -109,6 +110,7 @@ namespace hax {
 			VkDeviceSize _bufferAlignment;
 
 			BufferData _triangleListBufferData;
+			BufferData _pointListBufferData;
 			ImageData* _pImageData;
 			uint32_t _imageCount;
 
@@ -170,7 +172,7 @@ namespace hax {
 			bool createRenderPass();
 			bool createImageData(VkSwapchainKHR hSwapchain);
 			void destroyImageData();
-			bool createPipeline();
+			bool createPipeline(VkPipeline* phPipeline, VkPrimitiveTopology topology);
 			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();

@@ -1,6 +1,7 @@
 #include "vkDraw.h"
 #include "..\Engine.h"
 #include "..\Vertex.h"
+#include "..\font\Font.h"
 #include "..\..\proc.h"
 #include "..\..\hooks\TrampHook.h"
 
@@ -200,49 +201,59 @@ namespace hax {
 
 		Draw::Draw() :
 			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _graphicsQueueFamilyIndex{0xFFFFFFFF}, _hDevice{}, _hRenderPass{},
-			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hPipeline{},
+			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{},
 			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
-			_pImageData{}, _imageCount{}, _triangleListBufferData{},
+			_pImageData{}, _imageCount{}, _triangleListBufferData{}, _pointListBufferData{},
 			_isInit{} {}
 
 
 		Draw::~Draw() {
 			
-			if (!this->_hVulkan) return;
+			if (this->_hVulkan) {
+				const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(this->_hVulkan, "vkDestroyInstance"));
 
-			const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(this->_hVulkan, "vkDestroyInstance"));
+				if (pVkDestroyInstance && this->_hInstance != VK_NULL_HANDLE) {
+					pVkDestroyInstance(this->_hInstance, nullptr);
+				}
 
-			if (pVkDestroyInstance && this->_hInstance != VK_NULL_HANDLE) {
-				pVkDestroyInstance(this->_hInstance, nullptr);
 			}
 
 			if (this->_hDevice == VK_NULL_HANDLE) return;
 
 			this->destroyImageData();
+
+			if (this->_f.pVkDestroyFence && this->_hFence != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyFence(this->_hDevice, this->_hFence, nullptr);
+			}
+
 			this->destroyBufferData(&this->_triangleListBufferData);
 
-			if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
-			}
+			if (this->_f.pVkDestroyPipeline) {
 
-			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleVert != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleVert, nullptr);
-			}
+				if (this->_hPointListPipeline != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPointListPipeline, nullptr);
+				}
 
-			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
-			}
+				if (this->_hTriangleListPipeline != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyPipeline(this->_hDevice, this->_hTriangleListPipeline, nullptr);
+				}
 
-			if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
 			}
 
 			if (this->_f.pVkDestroyPipelineLayout && this->_hPipelineLayout != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
 			}
 
-			if (this->_f.pVkDestroyPipeline && this->_hPipeline != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipeline, nullptr);
+			if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
+			}
+
+			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
+			}
+
+			if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleVert != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleVert, nullptr);
 			}
 
 			if (this->_f.pVkFreeCommandBuffers && this->_hCommandBuffer != VK_NULL_HANDLE) {
@@ -253,9 +264,10 @@ namespace hax {
 				this->_f.pVkDestroyCommandPool(this->_hDevice, this->_hCommandPool, nullptr);
 			}
 
-			if (this->_f.pVkDestroyFence && this->_hFence != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyFence(this->_hDevice, this->_hFence, nullptr);
+			if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
 			}
+
 		}
 
 
@@ -292,12 +304,6 @@ namespace hax {
 					if (!this->createRenderPass()) return;
 
 				}
-				
-				if (this->_hPipeline == VK_NULL_HANDLE) {
-
-					if (!this->createPipeline()) return;
-
-				}
 
 				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
 
@@ -308,12 +314,28 @@ namespace hax {
 					if (!this->createCommandBuffer()) return;
 
 				}
+				
+				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
+
+					if (!this->createPipeline(&this->_hTriangleListPipeline, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)) return;
+
+				}
+
+				if (this->_hPointListPipeline == VK_NULL_HANDLE) {
+
+					if (!this->createPipeline(&this->_hPointListPipeline, VK_PRIMITIVE_TOPOLOGY_POINT_LIST)) return;
+
+				}
 
 				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
 
 				this->destroyBufferData(&this->_triangleListBufferData);
 
 				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return;
+
+				this->destroyBufferData(&this->_pointListBufferData);
+
+				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return;
 
 				if (this->_hFence == VK_NULL_HANDLE) {
 					VkFenceCreateInfo fenceCreateInfo{};
@@ -364,6 +386,20 @@ namespace hax {
 
 			}
 
+			BufferData* const pbd = &this->_pointListBufferData;
+
+			if (!pbd->pLocalVertexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pbd->hVertexMemory, 0ull, pbd->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pbd->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return;
+
+			}
+
+			if (!pbd->pLocalIndexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pbd->hIndexMemory, 0ull, pbd->indexBufferSize, 0ull, reinterpret_cast<void**>(&pbd->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return;
+
+			}
+
 			return;
 		}
 
@@ -389,7 +425,11 @@ namespace hax {
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
+			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
 			this->drawBufferData(&this->_triangleListBufferData);
+
+			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPointListPipeline);
+			this->drawBufferData(&this->_pointListBufferData);
 			
 			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_hCommandBuffer);
@@ -423,6 +463,29 @@ namespace hax {
 
 
 		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+			
+			if (!this->_isInit || !pFont) return;
+
+			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
+
+			const size_t size = strlen(text);
+
+			for (size_t i = 0; i < size; i++) {
+				const char c = text[i];
+
+				if (c == ' ') continue;
+
+				const font::CharIndex index = font::charToCharIndex(c);
+				const font::Char* pCurChar = &pCurFont->chars[index];
+
+				if (pCurChar) {
+					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
+					const Vector2 curPos{ pos->x + (pCurFont->width + 2.f) * i, pos->y - pCurFont->height };
+					this->copyToBufferData(&this->_pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+					this->copyToBufferData(&this->_pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+				}
+
+			}
 
 			return;
 		}
@@ -658,7 +721,7 @@ namespace hax {
 			0x38, 0x00, 0x01, 0x00
 		};
 
-		bool Draw::createPipeline() {
+		bool Draw::createPipeline(VkPipeline* phPipeline, VkPrimitiveTopology topology) {
 
 			if (this->_hShaderModuleVert == VK_NULL_HANDLE) {
 				
@@ -711,7 +774,7 @@ namespace hax {
 
 			VkPipelineInputAssemblyStateCreateInfo iaInfo{};
 			iaInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-			iaInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			iaInfo.topology = topology;
 
 			VkPipelineViewportStateCreateInfo viewportInfo{};
 			viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -771,7 +834,7 @@ namespace hax {
 			pipelineCreateInfo.renderPass = this->_hRenderPass;
 			pipelineCreateInfo.subpass = 0u;
 
-			return this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &this->_hPipeline) == VkResult::VK_SUCCESS;
+			return this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, phPipeline) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -1046,7 +1109,7 @@ namespace hax {
 			for (UINT i = 0u; i < count; i++) {
 				const uint32_t curIndex = pBufferData->curOffset + i;
 
-				Vertex curVertex{ { data[i].x, data[i].y }, color };
+				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
 				memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
 
 				pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
@@ -1102,8 +1165,6 @@ namespace hax {
 
 			this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
 			pBufferData->pLocalIndexBuffer = nullptr;
-
-			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 			
 			constexpr VkDeviceSize offset = 0ull;
 			this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &pBufferData->hVertexBuffer, &offset);
