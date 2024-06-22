@@ -48,7 +48,7 @@
     <ClInclude Include="src\launch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\font\dxFont.h">
+    <ClInclude Include="src\engine\font\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\Engine.h">
@@ -110,13 +110,13 @@
     <ClCompile Include="src\launch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\font\dxLargeFont.cpp">
+    <ClCompile Include="src\engine\font\LargeFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\font\dxMediumFont.cpp">
+    <ClCompile Include="src\engine\font\MediumFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\font\dxTinyFont.cpp">
+    <ClCompile Include="src\engine\font\TinyFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\Engine.cpp">

@@ -1,5 +1,5 @@
 #include "dx11Draw.h"
-#include "..\font\dxFont.h"
+#include "..\..\font\Font.h"
 #include "..\..\Engine.h"
 #include <d3dcompiler.h>
 
@@ -195,7 +195,7 @@ namespace hax {
 			
 			if (!this->_isInit || !pFont) return;
 
-			const dx::font::Font* const pDxFont = reinterpret_cast<const dx::font::Font*>(pFont);
+			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -204,12 +204,12 @@ namespace hax {
 
 				if (c == ' ') continue;
 
-				const dx::font::CharIndex index = dx::font::charToCharIndex(c);
-				const dx::font::Char* pCurChar = &pDxFont->chars[index];
+				const font::CharIndex index = font::charToCharIndex(c);
+				const font::Char* pCurChar = &pCurFont->chars[index];
 
 				if (pCurChar) {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-					const Vector2 curPos{ pos->x + (pDxFont->width + 2.f) * i, pos->y - pDxFont->height };
+					const Vector2 curPos{ pos->x + (pCurFont->width + 2.f) * i, pos->y - pCurFont->height };
 					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
 					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 				}
