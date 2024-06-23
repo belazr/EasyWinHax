@@ -360,7 +360,33 @@ namespace hax {
 			
 			if(!GetClientRect(this->_hMainWindow, &this->_windowRect)) return;
 
-			if (!this->createImageData(pPresentInfo->pSwapchains[0])) return;
+			const VkSwapchainKHR hSwapchain = pPresentInfo->pSwapchains[0];
+			uint32_t curImageCount = 0u;
+
+			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return;
+
+			if (!curImageCount) return;
+
+			if (curImageCount != this->_imageCount) {
+				
+				if (this->_pImageData) {
+					this->destroyImageData();
+					delete[] this->_pImageData;
+					this->_pImageData = nullptr;
+					this->_imageCount = 0;
+				}
+
+				this->_pImageData = new ImageData[curImageCount];
+				this->_imageCount = curImageCount;
+				
+				if (!this->createImageData(hSwapchain)) {
+					delete[] this->_pImageData;
+					this->_pImageData = nullptr;
+					this->_imageCount = 0;
+					
+					return;
+				}
+			}
 
 			const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[0]];
 				
@@ -413,6 +439,7 @@ namespace hax {
 
 
 		void Draw::endDraw(const Engine* pEngine) {
+			UNREFERENCED_PARAMETER(pEngine);
 			
 			if (!this->_isInit) return;
 
@@ -425,7 +452,7 @@ namespace hax {
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCommandBuffer, 0u, 1u, &viewport);
 
-			const VkRect2D scissor{ { 0, 0 }, { this->_windowRect.right, this->_windowRect.bottom } };
+			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
 			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
 
 			float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
@@ -968,7 +995,7 @@ namespace hax {
 			pBufferData->pLocalVertexBuffer = nullptr;
 			pBufferData->indexBufferSize = 0ull;
 			pBufferData->pLocalIndexBuffer = nullptr;
-			pBufferData->curOffset = 0;
+			pBufferData->curOffset = 0u;
 
 			return;
 		}
@@ -1019,21 +1046,6 @@ namespace hax {
 
 
 		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
-			uint32_t curImageCount = 0u;
-
-			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return false;
-
-			if (!curImageCount) return false;
-
-			if (curImageCount == this->_imageCount) return true;
-
-			if (this->_pImageData) {
-				this->destroyImageData();
-			}
-
-			this->_pImageData = new ImageData[curImageCount]{};
-			this->_imageCount = curImageCount;
-			
 			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &this->_imageCount, pImages) != VkResult::VK_SUCCESS) {
@@ -1094,9 +1106,6 @@ namespace hax {
 				}
 
 			}
-
-			delete[] this->_pImageData;
-			this->_pImageData = nullptr;
 
 			return;
 		}
