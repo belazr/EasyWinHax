@@ -439,6 +439,7 @@ namespace hax {
 
 
 		void Draw::endDraw(const Engine* pEngine) {
+			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			
 			if (!this->_isInit || !pPresentInfo) return;
@@ -469,10 +470,10 @@ namespace hax {
 			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);			
 			this->_f.pVkEndCommandBuffer(this->_hCommandBuffer);
 
-			VkQueue hQueue = VK_NULL_HANDLE;
-			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &hQueue);
+			VkQueue hFirstGraphicsQueue = VK_NULL_HANDLE;
+			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &hFirstGraphicsQueue);
 
-			if (hQueue == VK_NULL_HANDLE) return;
+			if (hFirstGraphicsQueue != hQueue) return;
 
 			constexpr VkPipelineStageFlags stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			
@@ -1153,13 +1154,13 @@ namespace hax {
 			if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 			if (oldBufferData.pLocalVertexBuffer) {
-				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, oldBufferData.vertexBufferSize);
+				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, static_cast<size_t>(oldBufferData.vertexBufferSize));
 			}
 
 			if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 			if (oldBufferData.pLocalIndexBuffer) {
-				memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, oldBufferData.indexBufferSize);
+				memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, static_cast<size_t>(oldBufferData.indexBufferSize));
 			}
 
 			pBufferData->curOffset = oldBufferData.curOffset;
