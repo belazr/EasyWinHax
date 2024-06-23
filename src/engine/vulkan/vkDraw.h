@@ -111,6 +111,8 @@ namespace hax {
 
 			BufferData _triangleListBufferData;
 			BufferData _pointListBufferData;
+			HWND _hMainWindow;
+			RECT _windowRect;
 			ImageData* _pImageData;
 			uint32_t _imageCount;
 
