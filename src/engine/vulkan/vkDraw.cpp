@@ -200,10 +200,10 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _graphicsQueueFamilyIndex{0xFFFFFFFF}, _hDevice{}, _hRenderPass{},
+			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hDevice{}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{},
 			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
-			_pImageData{}, _imageCount{}, _triangleListBufferData{}, _pointListBufferData{},
+			_triangleListBufferData{}, _pointListBufferData{}, _hMainWindow{}, _windowRect{}, _pImageData {}, _imageCount{},
 			_isInit{} {}
 
 
@@ -276,6 +276,8 @@ namespace hax {
 		static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 		static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
+		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
+
 		void Draw::beginDraw(Engine* pEngine) {
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
@@ -283,6 +285,10 @@ namespace hax {
 			if (!pPresentInfo || !this->_hDevice) return;
 
 			if (!this->_isInit) {
+				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+
+				if (!this->_hMainWindow) return;
+
 				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
 				if (!this->_hVulkan) return;
@@ -351,6 +357,8 @@ namespace hax {
 
 			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_hFence, VK_TRUE, ~0ull);
 			this->_f.pVkResetFences(this->_hDevice, 1u, &this->_hFence);
+			
+			if(!GetClientRect(this->_hMainWindow, &this->_windowRect)) return;
 
 			if (!this->createImageData(pPresentInfo->pSwapchains[0])) return;
 
@@ -368,8 +376,8 @@ namespace hax {
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBeginInfo.renderPass = this->_hRenderPass;
 			renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
-			renderPassBeginInfo.renderArea.extent.width = TEST_WIDTH;
-			renderPassBeginInfo.renderArea.extent.height = TEST_HEIGHT;
+			renderPassBeginInfo.renderArea.extent.width = this->_windowRect.right;
+			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
 			this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			BufferData* const tbd = &this->_triangleListBufferData;
@@ -411,16 +419,16 @@ namespace hax {
 			VkViewport viewport{};
 			viewport.x = 0.f;
 			viewport.y = 0.f;
-			viewport.width = TEST_WIDTH;
-			viewport.height = TEST_HEIGHT;
+			viewport.width = static_cast<float>(this->_windowRect.right);
+			viewport.height = static_cast<float>(this->_windowRect.bottom);
 			viewport.minDepth = 0.f;
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCommandBuffer, 0u, 1u, &viewport);
 
-			VkRect2D scissor{ { 0, 0 }, { TEST_WIDTH, TEST_HEIGHT } };
+			const VkRect2D scissor{ { 0, 0 }, { this->_windowRect.right, this->_windowRect.bottom } };
 			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
 
-			float scale[]{ 2.f / TEST_WIDTH, 2.f / TEST_HEIGHT };
+			float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
 			float translate[2]{ -1.f, -1.f };
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
@@ -431,7 +439,7 @@ namespace hax {
 			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPointListPipeline);
 			this->drawBufferData(&this->_pointListBufferData);
 			
-			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);
+			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);			
 			this->_f.pVkEndCommandBuffer(this->_hCommandBuffer);
 
 			VkQueue hQueue = VK_NULL_HANDLE;
@@ -1175,6 +1183,24 @@ namespace hax {
 			pBufferData->curOffset = 0u;
 
 			return;
+		}
+
+
+		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
+			DWORD processId = 0ul;
+			GetWindowThreadProcessId(hWnd, &processId);
+
+			if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+			char className[MAX_PATH]{};
+
+			if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+			if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+			*reinterpret_cast<HWND*>(lParam) = hWnd;
+
+			return FALSE;
 		}
 
 	}
