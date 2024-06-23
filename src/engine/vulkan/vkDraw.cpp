@@ -439,9 +439,9 @@ namespace hax {
 
 
 		void Draw::endDraw(const Engine* pEngine) {
-			UNREFERENCED_PARAMETER(pEngine);
+			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			
-			if (!this->_isInit) return;
+			if (!this->_isInit || !pPresentInfo) return;
 
 			VkViewport viewport{};
 			viewport.x = 0.f;
@@ -481,6 +481,10 @@ namespace hax {
 			submitInfo.pWaitDstStageMask = &stageMask;
 			submitInfo.commandBufferCount = 1u;
 			submitInfo.pCommandBuffers = &this->_hCommandBuffer;
+			submitInfo.pWaitSemaphores = pPresentInfo->pWaitSemaphores;
+			submitInfo.waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+			submitInfo.pSignalSemaphores = pPresentInfo->pWaitSemaphores;
+			submitInfo.signalSemaphoreCount = pPresentInfo->waitSemaphoreCount;
 
 			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_hFence);
 
