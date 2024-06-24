@@ -360,6 +360,8 @@ namespace hax {
 			
 			if(!GetClientRect(this->_hMainWindow, &this->_windowRect)) return;
 
+			this->destroyImageData();
+
 			const VkSwapchainKHR hSwapchain = pPresentInfo->pSwapchains[0];
 			uint32_t curImageCount = 0u;
 
@@ -370,23 +372,14 @@ namespace hax {
 			if (curImageCount != this->_imageCount) {
 				
 				if (this->_pImageData) {
-					this->destroyImageData();
 					delete[] this->_pImageData;
-					this->_pImageData = nullptr;
-					this->_imageCount = 0;
 				}
 
 				this->_pImageData = new ImageData[curImageCount];
 				this->_imageCount = curImageCount;
-				
-				if (!this->createImageData(hSwapchain)) {
-					delete[] this->_pImageData;
-					this->_pImageData = nullptr;
-					this->_imageCount = 0;
-					
-					return;
-				}
 			}
+
+			if (!this->createImageData(hSwapchain)) return;
 
 			const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[0]];
 				
@@ -453,13 +446,13 @@ namespace hax {
 			viewport.maxDepth = 1.f;
 			this->_f.pVkCmdSetViewport(this->_hCommandBuffer, 0u, 1u, &viewport);
 
-			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
-			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
-
 			float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
 			float translate[2]{ -1.f, -1.f };
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 			this->_f.pVkCmdPushConstants(this->_hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
+
+			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
+			this->_f.pVkCmdSetScissor(this->_hCommandBuffer, 0u, 1u, &scissor);
 
 			this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
 			this->drawBufferData(&this->_triangleListBufferData);
@@ -1084,10 +1077,12 @@ namespace hax {
 			for (uint32_t i = 0; i < this->_imageCount; i++) {
 				imageViewCreateInfo.image = pImages[i];
 
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) continue;
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) return false;
 
 				framebufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
-				this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer);
+
+				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
+
 			}
 
 			#pragma warning(pop)
@@ -1104,10 +1099,12 @@ namespace hax {
 
 				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
+					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
 				}
 					
 				if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
+					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
 				}
 
 			}
@@ -1191,7 +1188,6 @@ namespace hax {
 			constexpr VkDeviceSize offset = 0ull;
 			this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &pBufferData->hVertexBuffer, &offset);
 			this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, pBufferData->hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
-
 			this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, pBufferData->curOffset, 1u, 0u, 0u, 0u);
 
 			pBufferData->curOffset = 0u;
