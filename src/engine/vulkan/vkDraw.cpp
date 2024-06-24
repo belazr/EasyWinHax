@@ -200,10 +200,12 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hVulkan{}, _hInstance {}, _hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hDevice{}, _hRenderPass{},
-			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{},
-			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
-			_triangleListBufferData{}, _pointListBufferData{}, _hMainWindow{}, _windowRect{}, _pImageData {}, _imageCount{},
+			_f{}, _hVulkan{}, _hDevice{}, _hInstance{}, _hPhysicalDevice{},
+			_graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hFirstGraphicsQueue{}, _hRenderPass{},
+			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
+			_hTriangleListPipeline{}, _hPointListPipeline{}, _hCommandPool{}, _hCommandBuffer{},
+			_memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull }, _triangleListBufferData{}, _pointListBufferData{},
+			_hMainWindow{}, _windowRect{}, _pImageData {}, _imageCount{},
 			_isInit{}, _beginSuccess{} {}
 
 
@@ -318,6 +320,10 @@ namespace hax {
 					if (!this->createCommandBuffer()) return;
 
 				}
+
+				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
+
+				if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return;
 				
 				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
 
@@ -463,10 +469,7 @@ namespace hax {
 			this->_f.pVkCmdEndRenderPass(this->_hCommandBuffer);			
 			this->_f.pVkEndCommandBuffer(this->_hCommandBuffer);
 
-			VkQueue hFirstGraphicsQueue = VK_NULL_HANDLE;
-			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &hFirstGraphicsQueue);
-
-			if (hFirstGraphicsQueue != hQueue) return;
+			if (hQueue != this->_hFirstGraphicsQueue) return;
 
 			constexpr VkPipelineStageFlags stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			
