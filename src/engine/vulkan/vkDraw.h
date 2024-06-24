@@ -117,6 +117,7 @@ namespace hax {
 			uint32_t _imageCount;
 
 			bool _isInit;
+			bool _beginSuccess;
 
 		public:
 			Draw();
