@@ -204,7 +204,7 @@ namespace hax {
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{},
 			_hCommandPool{}, _hCommandBuffer{}, _memoryProperties{}, _hFence{}, _bufferAlignment{ 4ull },
 			_triangleListBufferData{}, _pointListBufferData{}, _hMainWindow{}, _windowRect{}, _pImageData {}, _imageCount{},
-			_isInit{} {}
+			_isInit{}, _beginSuccess{} {}
 
 
 		Draw::~Draw() {
@@ -271,8 +271,6 @@ namespace hax {
 		}
 
 
-		#define TEST_WIDTH 1366
-		#define TEST_HEIGHT 768
 		static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 		static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
@@ -427,6 +425,8 @@ namespace hax {
 
 			}
 
+			this->_beginSuccess = true;
+
 			return;
 		}
 
@@ -435,7 +435,7 @@ namespace hax {
 			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			
-			if (!this->_isInit || !pPresentInfo) return;
+			if (!this->_beginSuccess || !pPresentInfo) return;
 
 			VkViewport viewport{};
 			viewport.x = 0.f;
@@ -497,7 +497,7 @@ namespace hax {
 
 		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
-			if (!this->_isInit || !pFont) return;
+			if (!this->_beginSuccess || !pFont) return;
 
 			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
 
