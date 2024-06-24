@@ -92,10 +92,11 @@ namespace hax {
 
 			HMODULE _hVulkan;
 
+			VkDevice _hDevice;
 			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _graphicsQueueFamilyIndex;
-			VkDevice _hDevice;
+			VkQueue _hFirstGraphicsQueue;
 			VkRenderPass _hRenderPass;
 			VkShaderModule _hShaderModuleVert;
 			VkShaderModule _hShaderModuleFrag;
