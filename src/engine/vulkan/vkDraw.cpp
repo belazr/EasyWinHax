@@ -222,7 +222,7 @@ namespace hax {
 
 			if (this->_hDevice == VK_NULL_HANDLE) return;
 
-			this->destroyImageData();
+			this->destroyImageDataArray();
 
 			if (this->_f.pVkDestroyFence && this->_hFence != VK_NULL_HANDLE) {
 				this->_f.pVkDestroyFence(this->_hDevice, this->_hFence, nullptr);
@@ -361,10 +361,6 @@ namespace hax {
 
 			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_hFence, VK_TRUE, ~0ull);
 			this->_f.pVkResetFences(this->_hDevice, 1u, &this->_hFence);
-			
-			if(!GetClientRect(this->_hMainWindow, &this->_windowRect)) return;
-
-			this->destroyImageData();
 
 			const VkSwapchainKHR hSwapchain = pPresentInfo->pSwapchains[0];
 			uint32_t curImageCount = 0u;
@@ -373,19 +369,24 @@ namespace hax {
 
 			if (!curImageCount) return;
 
-			if (curImageCount != this->_imageCount) {
-				
+			RECT curWindowRect{};
+
+			if (!GetClientRect(this->_hMainWindow, &curWindowRect)) return;
+
+			if (curImageCount != this->_imageCount || curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
+
 				if (this->_pImageData) {
-					delete[] this->_pImageData;
+					this->destroyImageDataArray();
+				}
+				
+				if (!this->createImageDataArray(hSwapchain, curImageCount)) {
+					this->destroyImageDataArray();
+
+					return;
 				}
 
-				this->_pImageData = new ImageData[curImageCount];
-				this->_imageCount = curImageCount;
+				this->_windowRect = curWindowRect;
 			}
-
-			if (!this->createImageData(hSwapchain)) return;
-
-			const ImageData curImageData = this->_pImageData[pPresentInfo->pImageIndices[0]];
 				
 			if (this->_f.pVkResetCommandBuffer(this->_hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
 
@@ -395,10 +396,12 @@ namespace hax {
 
 			if (this->_f.pVkBeginCommandBuffer(this->_hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
 
+			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
+
 			VkRenderPassBeginInfo renderPassBeginInfo = {};
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBeginInfo.renderPass = this->_hRenderPass;
-			renderPassBeginInfo.framebuffer = curImageData.hFrameBuffer;
+			renderPassBeginInfo.framebuffer = pCurImageData->hFrameBuffer;
 			renderPassBeginInfo.renderArea.extent.width = this->_windowRect.right;
 			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
 			this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1046,15 +1049,18 @@ namespace hax {
 		}
 
 
-		bool Draw::createImageData(VkSwapchainKHR hSwapchain) {
-			VkImage* const pImages = new VkImage[this->_imageCount]{};
+		bool Draw::createImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
+			this->_pImageData = new ImageData[imageCount]{};
+			this->_imageCount = imageCount;
 
-			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &this->_imageCount, pImages) != VkResult::VK_SUCCESS) {
+			VkImage* const pImages = new VkImage[imageCount]{};
+
+			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
 				delete[] pImages;
 
 				return false;
 			}
-			
+
 			VkImageSubresourceRange imageSubresourceRange{};
 			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			imageSubresourceRange.baseMipLevel = 0u;
@@ -1074,9 +1080,6 @@ namespace hax {
 			framebufferCreateInfo.attachmentCount = 1u;
 			framebufferCreateInfo.layers = 1u;
 
-			#pragma warning(push)
-			#pragma warning(disable:6385)
-
 			for (uint32_t i = 0; i < this->_imageCount; i++) {
 				imageViewCreateInfo.image = pImages[i];
 
@@ -1088,28 +1091,36 @@ namespace hax {
 
 			}
 
-			#pragma warning(pop)
-
 			delete[] pImages;
 
 			return true;
 		}
 
 
-		void Draw::destroyImageData() {
+		void Draw::destroyImageDataArray() {
 
 			for (uint32_t i = 0u; i < this->_imageCount && this->_hDevice != VK_NULL_HANDLE; i++) {
+				this->destroyImageData(&this->_pImageData[i]);
+			}
 
-				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
-					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
-				}
-					
-				if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
-					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
-				}
+			delete[] this->_pImageData;
+			this->_pImageData = nullptr;
+			this->_imageCount = 0u;
 
+			return;
+		}
+
+
+		void Draw::destroyImageData(ImageData* pImageData) const {
+
+			if (pImageData->hFrameBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyFramebuffer(this->_hDevice, pImageData->hFrameBuffer, nullptr);
+				pImageData->hFrameBuffer = VK_NULL_HANDLE;
+			}
+
+			if (pImageData->hImageView != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyImageView(this->_hDevice, pImageData->hImageView, nullptr);
+				pImageData->hImageView = VK_NULL_HANDLE;
 			}
 
 			return;

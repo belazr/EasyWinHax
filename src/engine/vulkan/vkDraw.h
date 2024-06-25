@@ -174,8 +174,6 @@ namespace hax {
 		private:
 			bool getProcAddresses();
 			bool createRenderPass();
-			bool createImageData(VkSwapchainKHR hSwapchain);
-			void destroyImageData();
 			bool createPipeline(VkPipeline* phPipeline, VkPrimitiveTopology topology);
 			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
 			bool createPipelineLayout();
@@ -185,6 +183,9 @@ namespace hax {
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
 			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
+			bool createImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
+			void destroyImageDataArray();
+			void destroyImageData(ImageData* pImageData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
 			void drawBufferData(BufferData* pBufferData) const;
