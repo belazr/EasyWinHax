@@ -280,83 +280,14 @@ namespace hax {
 
 		void Draw::beginDraw(Engine* pEngine) {
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
-			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
+			
 
-			if (!pPresentInfo || !this->_hDevice) return;
+			if (!pPresentInfo) return;
 
 			if (!this->_isInit) {
-				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+				this->_isInit = this->initialize(pEngine);
 
-				if (!this->_hMainWindow) return;
-
-				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
-
-				if (!this->_hVulkan) return;
-
-				if (this->_hInstance == VK_NULL_HANDLE) {
-					this->_hInstance = createInstance(this->_hVulkan);
-				}
-
-				if (this->_hInstance == VK_NULL_HANDLE) return;
-				
-				if (!this->getProcAddresses()) return;
-
-				this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
-
-				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return;
-
-				if (this->_hRenderPass == VK_NULL_HANDLE) {
-
-					if (!this->createRenderPass()) return;
-
-				}
-
-				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
-
-				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return;
-
-				if (this->_hCommandBuffer == VK_NULL_HANDLE) {
-
-					if (!this->createCommandBuffer()) return;
-
-				}
-
-				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
-
-				if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return;
-				
-				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
-
-					if (!this->createPipeline(&this->_hTriangleListPipeline, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)) return;
-
-				}
-
-				if (this->_hPointListPipeline == VK_NULL_HANDLE) {
-
-					if (!this->createPipeline(&this->_hPointListPipeline, VK_PRIMITIVE_TOPOLOGY_POINT_LIST)) return;
-
-				}
-
-				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return;
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return;
-
-				if (this->_hFence == VK_NULL_HANDLE) {
-					VkFenceCreateInfo fenceCreateInfo{};
-					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-					fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_hFence) != VkResult::VK_SUCCESS) return;
-
-				}
-				
-				this->_isInit = true;
+				if (!this->_isInit) return;
 			}
 
 			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_hFence, VK_TRUE, ~0ull);
@@ -390,7 +321,7 @@ namespace hax {
 				
 			if (this->_f.pVkResetCommandBuffer(this->_hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
 
-			VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
+			VkCommandBufferBeginInfo cmdBufferBeginInfo{};
 			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
@@ -398,7 +329,7 @@ namespace hax {
 
 			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
 
-			VkRenderPassBeginInfo renderPassBeginInfo = {};
+			VkRenderPassBeginInfo renderPassBeginInfo{};
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBeginInfo.renderPass = this->_hRenderPass;
 			renderPassBeginInfo.framebuffer = pCurImageData->hFrameBuffer;
@@ -406,33 +337,9 @@ namespace hax {
 			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
 			this->_f.pVkCmdBeginRenderPass(this->_hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			BufferData* const tbd = &this->_triangleListBufferData;
-
-			if (!tbd->pLocalVertexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, tbd->hVertexMemory, 0ull, tbd->vertexBufferSize, 0ull, reinterpret_cast<void**>(&tbd->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return;
+			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 			
-			}
-			
-			if (!tbd->pLocalIndexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, tbd->hIndexMemory, 0ull, tbd->indexBufferSize, 0ull, reinterpret_cast<void**>(&tbd->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return;
-
-			}
-
-			BufferData* const pbd = &this->_pointListBufferData;
-
-			if (!pbd->pLocalVertexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pbd->hVertexMemory, 0ull, pbd->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pbd->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return;
-
-			}
-
-			if (!pbd->pLocalIndexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pbd->hIndexMemory, 0ull, pbd->indexBufferSize, 0ull, reinterpret_cast<void**>(&pbd->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return;
-
-			}
+			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
 			this->_beginSuccess = true;
 
@@ -531,6 +438,87 @@ namespace hax {
 
 
 		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
+
+		bool Draw::initialize(const Engine* pEngine) {
+			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
+
+			if (this->_hDevice == VK_NULL_HANDLE) return false;
+
+			EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+
+			if (!this->_hMainWindow) return false;
+
+			this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
+
+			if (!this->_hVulkan) return false;
+
+			if (this->_hInstance == VK_NULL_HANDLE) {
+				this->_hInstance = createInstance(this->_hVulkan);
+			}
+
+			if (this->_hInstance == VK_NULL_HANDLE) return false;
+
+			if (!this->getProcAddresses()) return false;
+
+			this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
+
+			if (this->_hPhysicalDevice == VK_NULL_HANDLE) return false;
+
+			if (this->_hRenderPass == VK_NULL_HANDLE) {
+
+				if (!this->createRenderPass()) return false;
+
+			}
+
+			this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+
+			if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
+
+			if (this->_hCommandBuffer == VK_NULL_HANDLE) {
+
+				if (!this->createCommandBuffer()) return false;
+
+			}
+
+			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
+
+			if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
+
+			if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
+
+				if (!this->createPipeline(&this->_hTriangleListPipeline, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)) return false;
+
+			}
+
+			if (this->_hPointListPipeline == VK_NULL_HANDLE) {
+
+				if (!this->createPipeline(&this->_hPointListPipeline, VK_PRIMITIVE_TOPOLOGY_POINT_LIST)) return false;
+
+			}
+
+			this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
+
+			if (!this->_memoryProperties.memoryTypeCount) return false;
+
+			this->destroyBufferData(&this->_triangleListBufferData);
+
+			if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+			this->destroyBufferData(&this->_pointListBufferData);
+
+			if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+			if (this->_hFence == VK_NULL_HANDLE) {
+				VkFenceCreateInfo fenceCreateInfo{};
+				fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+				fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+				if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_hFence) != VkResult::VK_SUCCESS) return false;
+
+			}
+			
+			return true;
+		}
 
 		bool Draw::getProcAddresses() {
 			const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddress = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
@@ -1127,6 +1115,24 @@ namespace hax {
 		}
 
 
+		bool Draw::mapBufferData(BufferData* pBufferData) const {
+			
+			if (!pBufferData->pLocalVertexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			if (!pBufferData->pLocalIndexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			return true;
+		}
+
+
 		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
 
 			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
@@ -1160,7 +1166,11 @@ namespace hax {
 
 			BufferData oldBufferData = *pBufferData;
 
-			if (!this->createBufferData(pBufferData, newVertexCount)) return false;
+			if (!this->createBufferData(pBufferData, newVertexCount)) {
+				this->destroyBufferData(pBufferData);
+				
+				return false;
+			}
 
 			if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
 
