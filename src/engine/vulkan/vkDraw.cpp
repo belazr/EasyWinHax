@@ -293,12 +293,7 @@ namespace hax {
 
 			if (!curImageCount) return;
 
-			RECT curWindowRect{};
-
-			if (!GetClientRect(this->_hMainWindow, &curWindowRect)) return;
-
-			if (curImageCount != this->_imageCount || curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
-
+			if (curImageCount != this->_imageCount) {
 				this->destroyImageDataArray();
 				
 				if (!this->createImageDataArray(hSwapchain, curImageCount)) {
@@ -307,10 +302,20 @@ namespace hax {
 					return;
 				}
 
-				this->_windowRect = curWindowRect;
 			}
 
 			if (!this->_pImageData) return;
+
+			RECT curWindowRect{};
+
+			if (!GetClientRect(this->_hMainWindow, &curWindowRect)) return;
+
+			if (curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
+				
+				if (!this->resetImageDataArrayResolution(hSwapchain)) return;
+				
+				this->_windowRect = curWindowRect;
+			}
 
 			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
 			
@@ -1117,6 +1122,64 @@ namespace hax {
 			}
 
 			return;
+		}
+
+
+		bool Draw::resetImageDataArrayResolution(VkSwapchainKHR hSwapchain) {
+			VkImage* const pImages = new VkImage[this->_imageCount]{};
+
+			uint32_t imageCount = this->_imageCount;
+
+			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
+				delete[] pImages;
+
+				return false;
+			}
+			
+			VkImageSubresourceRange imageSubresourceRange{};
+			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageSubresourceRange.baseMipLevel = 0u;
+			imageSubresourceRange.levelCount = 1u;
+			imageSubresourceRange.baseArrayLayer = 0u;
+			imageSubresourceRange.layerCount = 1u;
+
+			VkImageViewCreateInfo imageViewCreateInfo{};
+			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+
+			VkFramebufferCreateInfo framebufferCreateInfo{};
+			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCreateInfo.renderPass = this->_hRenderPass;
+			framebufferCreateInfo.attachmentCount = 1u;
+			framebufferCreateInfo.layers = 1u;
+
+			for (uint32_t i = 0; i < this->_imageCount; i++) {
+				
+				if (this->_pImageData->hFrameBuffer != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
+					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
+				}
+
+				if (this->_pImageData->hImageView != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
+					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
+				}
+				
+				imageViewCreateInfo.image = pImages[i];
+
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) return false;
+
+				framebufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
+
+				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			delete[] pImages;
+
+			return true;
 		}
 
 
