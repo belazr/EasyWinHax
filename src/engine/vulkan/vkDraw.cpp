@@ -304,7 +304,10 @@ namespace hax {
 
 			}
 
-			if (!this->_pImageData) return;
+			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
+
+			this->_f.pVkWaitForFences(this->_hDevice, 1u, &pCurImageData->hFence, VK_TRUE, ~0ull);
+			this->_f.pVkResetFences(this->_hDevice, 1u, &pCurImageData->hFence);
 
 			RECT curWindowRect{};
 
@@ -312,31 +315,14 @@ namespace hax {
 
 			if (curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
 				
-				if (!this->resetImageDataArrayResolution(hSwapchain)) return;
+				if (!this->recreateFramebuffers(hSwapchain)) return;
 				
 				this->_windowRect = curWindowRect;
 			}
-
-			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
-			
-			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pImageData[pPresentInfo->pImageIndices[0]].hFence, VK_TRUE, ~0ull);
-			this->_f.pVkResetFences(this->_hDevice, 1u, &pCurImageData->hFence);
 	
-			if (this->_f.pVkResetCommandBuffer(pCurImageData->hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return;
+			if (!this->beginCommandBuffer(pCurImageData->hCommandBuffer)) return;
 
-			VkCommandBufferBeginInfo cmdBufferBeginInfo{};
-			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-			if (this->_f.pVkBeginCommandBuffer(pCurImageData->hCommandBuffer, &cmdBufferBeginInfo) != VkResult::VK_SUCCESS) return;
-
-			VkRenderPassBeginInfo renderPassBeginInfo{};
-			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassBeginInfo.renderPass = this->_hRenderPass;
-			renderPassBeginInfo.framebuffer = pCurImageData->hFrameBuffer;
-			renderPassBeginInfo.renderArea.extent.width = this->_windowRect.right;
-			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
-			this->_f.pVkCmdBeginRenderPass(pCurImageData->hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			this->beginRenderPass(pCurImageData->hCommandBuffer, pCurImageData->hFrameBuffer);
 
 			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 			
@@ -1125,7 +1111,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resetImageDataArrayResolution(VkSwapchainKHR hSwapchain) {
+		bool Draw::recreateFramebuffers(VkSwapchainKHR hSwapchain) {
 			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 			uint32_t imageCount = this->_imageCount;
@@ -1180,6 +1166,31 @@ namespace hax {
 			delete[] pImages;
 
 			return true;
+		}
+
+
+		bool Draw::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
+			
+			if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return false;
+
+			VkCommandBufferBeginInfo cmdBufferBeginInfo{};
+			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+			return this->_f.pVkBeginCommandBuffer(hCommandBuffer, &cmdBufferBeginInfo) == VkResult::VK_SUCCESS;
+		}
+
+
+		void Draw::beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const {
+			VkRenderPassBeginInfo renderPassBeginInfo{};
+			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassBeginInfo.renderPass = this->_hRenderPass;
+			renderPassBeginInfo.framebuffer = hFramebuffer;
+			renderPassBeginInfo.renderArea.extent.width = this->_windowRect.right;
+			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
+			this->_f.pVkCmdBeginRenderPass(hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			return;
 		}
 
 

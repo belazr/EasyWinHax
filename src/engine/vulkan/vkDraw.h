@@ -187,7 +187,9 @@ namespace hax {
 			bool createImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
 			void destroyImageDataArray();
 			void destroyImageData(ImageData* pImageData) const;
-			bool resetImageDataArrayResolution(VkSwapchainKHR hSwapchain);
+			bool recreateFramebuffers(VkSwapchainKHR hSwapchain);
+			bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
+			void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
