@@ -276,6 +276,8 @@ namespace hax {
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
 		void Draw::beginDraw(Engine* pEngine) {
+			this->_beginSuccess = false;
+
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			
 			if (!pPresentInfo) return;
@@ -293,15 +295,10 @@ namespace hax {
 
 			if (!curImageCount) return;
 
-			if (curImageCount != this->_imageCount) {
+			if (!this->resizeImageDataArray(hSwapchain, curImageCount)) {
 				this->destroyImageDataArray();
-				
-				if (!this->createImageDataArray(hSwapchain, curImageCount)) {
-					this->destroyImageDataArray();
 
-					return;
-				}
-
+				return;
 			}
 
 			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
@@ -314,8 +311,9 @@ namespace hax {
 			if (!GetClientRect(this->_hMainWindow, &curWindowRect)) return;
 
 			if (curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
-				
-				if (!this->recreateFramebuffers(hSwapchain)) return;
+				this->destroyFramebuffers();
+
+				if (!this->createFramebuffers(hSwapchain)) return;
 				
 				this->_windowRect = curWindowRect;
 			}
@@ -1007,41 +1005,32 @@ namespace hax {
 		}
 
 
-		bool Draw::createImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
-			this->_pImageData = new ImageData[imageCount]{};
-			this->_imageCount = imageCount;
-			VkImage* const pImages = new VkImage[imageCount]{};
+		bool Draw::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
 
-			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
-				delete[] pImages;
+			if (imageCount < this->_imageCount) {
 
-				return false;
+				for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
+					this->destroyImageData(&this->_pImageData[i]);
+				}
+
+				this->_imageCount = imageCount;
+
+				return true;
 			}
 
+			if (imageCount == this->_imageCount) return true;
+
+			ImageData* const pOldImageData = this->_pImageData;
+			uint32_t oldImageCount = this->_imageCount;
+			
+			this->_pImageData = new ImageData[imageCount]{};
+			this->_imageCount = imageCount;
+			
 			VkCommandBufferAllocateInfo commandBufferAllocInfo{};
 			commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 			commandBufferAllocInfo.commandPool = this->_hCommandPool;
 			commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 			commandBufferAllocInfo.commandBufferCount = 1u;
-
-			VkImageSubresourceRange imageSubresourceRange{};
-			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageSubresourceRange.baseMipLevel = 0u;
-			imageSubresourceRange.levelCount = 1u;
-			imageSubresourceRange.baseArrayLayer = 0u;
-			imageSubresourceRange.layerCount = 1u;
-
-			VkImageViewCreateInfo imageViewCreateInfo{};
-			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
-
-			VkFramebufferCreateInfo framebufferCreateInfo{};
-			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferCreateInfo.renderPass = this->_hRenderPass;
-			framebufferCreateInfo.attachmentCount = 1u;
-			framebufferCreateInfo.layers = 1u;
 
 			VkFenceCreateInfo fenceCreateInfo{};
 			fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -1049,23 +1038,22 @@ namespace hax {
 
 			for (uint32_t i = 0; i < this->_imageCount; i++) {
 
-				if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
+				if (pOldImageData && i < oldImageCount) {
+					memcpy(&this->_pImageData[i], &pOldImageData[i], sizeof(ImageData));
+				}
+				else {
 
-				imageViewCreateInfo.image = pImages[i];
+					if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
 
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageData[i].hFence) != VkResult::VK_SUCCESS) return false;
 
-				framebufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
-
-				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
-				
-				if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageData[i].hFence) != VkResult::VK_SUCCESS) return false;
+				}
 
 			}
 
-			delete[] pImages;
+			this->destroyFramebuffers();
 
-			return true;
+			return this->createFramebuffers(hSwapchain);
 		}
 
 
@@ -1111,7 +1099,7 @@ namespace hax {
 		}
 
 
-		bool Draw::recreateFramebuffers(VkSwapchainKHR hSwapchain) {
+		bool Draw::createFramebuffers(VkSwapchainKHR hSwapchain) {
 			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 			uint32_t imageCount = this->_imageCount;
@@ -1141,18 +1129,7 @@ namespace hax {
 			framebufferCreateInfo.attachmentCount = 1u;
 			framebufferCreateInfo.layers = 1u;
 
-			for (uint32_t i = 0; i < this->_imageCount; i++) {
-				
-				if (this->_pImageData->hFrameBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
-					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
-				}
-
-				if (this->_pImageData->hImageView != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
-					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
-				}
-				
+			for (uint32_t i = 0; i < this->_imageCount; i++) {				
 				imageViewCreateInfo.image = pImages[i];
 
 				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) return false;
@@ -1166,6 +1143,26 @@ namespace hax {
 			delete[] pImages;
 
 			return true;
+		}
+
+
+		void Draw::destroyFramebuffers() {
+			
+			for (uint32_t i = 0u; i < this->_imageCount; i++) {
+				
+				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
+					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
+				}
+
+				if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
+					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
+				}
+
+			}
+			
+			return;
 		}
 
 
