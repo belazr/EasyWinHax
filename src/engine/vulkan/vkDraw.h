@@ -184,10 +184,11 @@ namespace hax {
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
 			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
-			bool createImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
+			bool resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
 			void destroyImageDataArray();
 			void destroyImageData(ImageData* pImageData) const;
-			bool recreateFramebuffers(VkSwapchainKHR hSwapchain);
+			bool createFramebuffers(VkSwapchainKHR hSwapchain);
+			void destroyFramebuffers();
 			bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 			void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			bool mapBufferData(BufferData* pBufferData) const;
