@@ -23,12 +23,6 @@ namespace hax {
 				PFN_vkGetSwapchainImagesKHR pVkGetSwapchainImagesKHR;
 				PFN_vkCreateCommandPool pVkCreateCommandPool;
 				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
-				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
-				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
-				PFN_vkCreateImageView pVkCreateImageView;
-				PFN_vkDestroyImageView pVkDestroyImageView;
-				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
-				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
 				PFN_vkCreateRenderPass pVkCreateRenderPass;
 				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
 				PFN_vkCreateShaderModule pVkCreateShaderModule;
@@ -39,13 +33,18 @@ namespace hax {
 				PFN_vkDestroyDescriptorSetLayout pVkDestroyDescriptorSetLayout;
 				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
 				PFN_vkDestroyPipeline pVkDestroyPipeline;
-				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
-				PFN_vkDestroyBuffer pVkDestroyBuffer;
-				PFN_vkFreeMemory pVkFreeMemory;
 				PFN_vkCreateBuffer pVkCreateBuffer;
+				PFN_vkDestroyBuffer pVkDestroyBuffer;
 				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
 				PFN_vkAllocateMemory pVkAllocateMemory;
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
+				PFN_vkFreeMemory pVkFreeMemory;
+				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
+				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
+				PFN_vkCreateImageView pVkCreateImageView;
+				PFN_vkDestroyImageView pVkDestroyImageView;
+				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
+				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
 				PFN_vkCreateFence pVkCreateFence;
 				PFN_vkDestroyFence pVkDestroyFence;
 				PFN_vkWaitForFences pVkWaitForFences;
@@ -58,6 +57,7 @@ namespace hax {
 				PFN_vkMapMemory pVkMapMemory;
 				PFN_vkUnmapMemory pVkUnmapMemory;
 				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
+				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
 				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
 				PFN_vkCmdPushConstants pVkCmdPushConstants;
@@ -69,8 +69,10 @@ namespace hax {
 			}Functions;
 			
 			typedef struct ImageData {
+				VkCommandBuffer hCommandBuffer;
 				VkImageView hImageView;
 				VkFramebuffer hFrameBuffer;
+				VkFence hFence;
 			}ImageData;
 
 			typedef struct BufferData {
@@ -105,9 +107,7 @@ namespace hax {
 			VkPipeline _hTriangleListPipeline;
 			VkPipeline _hPointListPipeline;
 			VkCommandPool _hCommandPool;
-			VkCommandBuffer _hCommandBuffer;
 			VkPhysicalDeviceMemoryProperties _memoryProperties;
-			VkFence _hFence;
 			VkDeviceSize _bufferAlignment;
 
 			BufferData _triangleListBufferData;
@@ -179,7 +179,7 @@ namespace hax {
 			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
-			bool createCommandBuffer();
+			bool createCommandPool();
 			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
@@ -190,7 +190,7 @@ namespace hax {
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
-			void drawBufferData(BufferData* pBufferData) const;
+			void drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const;
 		};
 
 	}
