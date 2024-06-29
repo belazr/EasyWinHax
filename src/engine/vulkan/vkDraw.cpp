@@ -205,8 +205,8 @@ namespace hax {
 			_graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hFirstGraphicsQueue{}, _hRenderPass{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 			_hTriangleListPipeline{}, _hPointListPipeline{}, _hCommandPool{},
-			_memoryProperties{}, _bufferAlignment{ 4ull }, _triangleListBufferData{}, _pointListBufferData{},
-			_hMainWindow{}, _windowRect{}, _pImageData {}, _imageCount{},
+			_memoryProperties{}, _bufferAlignment{ 4ull }, _hMainWindow{}, _windowRect{},
+			_pImageDataArray{}, _imageCount{}, _pCurImageData{},
 			_isInit{}, _beginSuccess{} {}
 
 
@@ -223,12 +223,11 @@ namespace hax {
 
 			if (this->_hDevice == VK_NULL_HANDLE) return;
 
-			if (this->_f.pVkFreeCommandBuffers && this->_f.pVkDestroyFramebuffer && this->_f.pVkDestroyImageView && this->_f.pVkDestroyFence) {
+			if (
+				this->_f.pVkFreeCommandBuffers && this->_f.pVkDestroyFramebuffer && this->_f.pVkDestroyImageView && this->_f.pVkDestroyFence &&
+				this->_f.pVkUnmapMemory && this->_f.pVkFreeMemory && this->_f.pVkDestroyBuffer
+			) {
 				this->destroyImageDataArray();
-			}
-
-			if (this->_f.pVkUnmapMemory && this->_f.pVkFreeMemory && this->_f.pVkDestroyBuffer) {
-				this->destroyBufferData(&this->_triangleListBufferData);
 			}
 
 			if (this->_f.pVkDestroyPipeline) {
@@ -270,9 +269,6 @@ namespace hax {
 		}
 
 
-		static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-		static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
-
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
 		void Draw::beginDraw(Engine* pEngine) {
@@ -301,10 +297,10 @@ namespace hax {
 				return;
 			}
 
-			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
+			this->_pCurImageData = &this->_pImageDataArray[pPresentInfo->pImageIndices[0]];
 
-			this->_f.pVkWaitForFences(this->_hDevice, 1u, &pCurImageData->hFence, VK_TRUE, ~0ull);
-			this->_f.pVkResetFences(this->_hDevice, 1u, &pCurImageData->hFence);
+			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
+			this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
 
 			RECT curWindowRect{};
 
@@ -319,13 +315,13 @@ namespace hax {
 				pEngine->setWindowSize(static_cast<int>(this->_windowRect.right), static_cast<int>(this->_windowRect.bottom));
 			}
 	
-			if (!this->beginCommandBuffer(pCurImageData->hCommandBuffer)) return;
+			if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return;
 
-			this->beginRenderPass(pCurImageData->hCommandBuffer, pCurImageData->hFrameBuffer);
-
-			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+			if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return;
 			
-			if (!this->mapBufferData(&this->_pointListBufferData)) return;
+			if (!this->mapBufferData(&this->_pCurImageData->pointListBufferData)) return;
+
+			this->beginRenderPass(this->_pCurImageData->hCommandBuffer, this->_pCurImageData->hFrameBuffer);
 
 			this->_beginSuccess = true;
 
@@ -339,8 +335,6 @@ namespace hax {
 
 			if (!this->_beginSuccess || !pPresentInfo) return;
 
-			const ImageData* const pCurImageData = &this->_pImageData[pPresentInfo->pImageIndices[0]];
-
 			VkViewport viewport{};
 			viewport.x = 0.f;
 			viewport.y = 0.f;
@@ -348,24 +342,24 @@ namespace hax {
 			viewport.height = static_cast<float>(this->_windowRect.bottom);
 			viewport.minDepth = 0.f;
 			viewport.maxDepth = 1.f;
-			this->_f.pVkCmdSetViewport(pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
+			this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
 
 			float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
 			float translate[2]{ -1.f, -1.f };
-			this->_f.pVkCmdPushConstants(pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
-			this->_f.pVkCmdPushConstants(pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
+			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
+			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
 			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
-			this->_f.pVkCmdSetScissor(pCurImageData->hCommandBuffer, 0u, 1u, &scissor);
+			this->_f.pVkCmdSetScissor(this->_pCurImageData->hCommandBuffer, 0u, 1u, &scissor);
 
-			this->_f.pVkCmdBindPipeline(pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
-			this->drawBufferData(&this->_triangleListBufferData, pCurImageData->hCommandBuffer);
+			this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
+			this->drawBufferData(&this->_pCurImageData->triangleListBufferData, this->_pCurImageData->hCommandBuffer);
 
-			this->_f.pVkCmdBindPipeline(pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPointListPipeline);
-			this->drawBufferData(&this->_pointListBufferData, pCurImageData->hCommandBuffer);
+			this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPointListPipeline);
+			this->drawBufferData(&this->_pCurImageData->pointListBufferData, this->_pCurImageData->hCommandBuffer);
 
-			this->_f.pVkCmdEndRenderPass(pCurImageData->hCommandBuffer);
-			this->_f.pVkEndCommandBuffer(pCurImageData->hCommandBuffer);
+			this->_f.pVkCmdEndRenderPass(this->_pCurImageData->hCommandBuffer);
+			this->_f.pVkEndCommandBuffer(this->_pCurImageData->hCommandBuffer);
 
 			if (hQueue != this->_hFirstGraphicsQueue) return;
 
@@ -376,13 +370,13 @@ namespace hax {
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pWaitDstStageMask = pStageMask;
 			submitInfo.commandBufferCount = 1u;
-			submitInfo.pCommandBuffers = &pCurImageData->hCommandBuffer;
+			submitInfo.pCommandBuffers = &this->_pCurImageData->hCommandBuffer;
 			submitInfo.pWaitSemaphores = pPresentInfo->pWaitSemaphores;
 			submitInfo.waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
 			submitInfo.pSignalSemaphores = pPresentInfo->pWaitSemaphores;
 			submitInfo.signalSemaphoreCount = pPresentInfo->waitSemaphoreCount;
 
-			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, pCurImageData->hFence);
+			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
 
 			delete[] pStageMask;
 
@@ -393,7 +387,7 @@ namespace hax {
 
 			if (!this->_isInit || count % 3) return;
 
-			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
+			this->copyToBufferData(&this->_pCurImageData->triangleListBufferData, corners, count, color);
 
 			return;
 		}
@@ -418,8 +412,8 @@ namespace hax {
 				if (pCurChar) {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
 					const Vector2 curPos{ pos->x + (pCurFont->width + 2.f) * i, pos->y - pCurFont->height };
-					this->copyToBufferData(&this->_pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-					this->copyToBufferData(&this->_pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+					this->copyToBufferData(&this->_pCurImageData->pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+					this->copyToBufferData(&this->_pCurImageData->pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 				}
 
 			}
@@ -490,14 +484,6 @@ namespace hax {
 			this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
 
 			if (!this->_memoryProperties.memoryTypeCount) return false;
-
-			this->destroyBufferData(&this->_triangleListBufferData);
-
-			if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-			this->destroyBufferData(&this->_pointListBufferData);
-
-			if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
 			
 			return true;
 		}
@@ -906,9 +892,181 @@ namespace hax {
 		}
 
 
+		bool Draw::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
+
+			if (imageCount < this->_imageCount) {
+
+				for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
+					this->destroyImageData(&this->_pImageDataArray[i]);
+				}
+
+				this->_imageCount = imageCount;
+
+				return true;
+			}
+
+			if (imageCount == this->_imageCount) return true;
+
+			ImageData* const pOldImageData = this->_pImageDataArray;
+			uint32_t oldImageCount = this->_imageCount;
+			
+			this->_pImageDataArray = new ImageData[imageCount]{};
+			this->_imageCount = imageCount;
+			
+			VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+			commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			commandBufferAllocInfo.commandPool = this->_hCommandPool;
+			commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			commandBufferAllocInfo.commandBufferCount = 1u;
+
+			VkFenceCreateInfo fenceCreateInfo{};
+			fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+			fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+			for (uint32_t i = 0; i < this->_imageCount; i++) {
+
+				if (pOldImageData && i < oldImageCount) {
+					memcpy(&this->_pImageDataArray[i], &pOldImageData[i], sizeof(ImageData));
+				}
+				else {
+
+					if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageDataArray[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
+
+					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VkResult::VK_SUCCESS) return false;
+
+					static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+
+					if (!this->createBufferData(&this->_pImageDataArray[i].triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+					static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+					if (!this->createBufferData(&this->_pImageDataArray[i].pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				}
+
+			}
+
+			this->destroyFramebuffers();
+
+			return this->createFramebuffers(hSwapchain);
+		}
+
+
+		void Draw::destroyImageDataArray() {
+
+			if (!this->_pImageDataArray) return;
+
+			for (uint32_t i = 0u; i < this->_imageCount && this->_hDevice != VK_NULL_HANDLE; i++) {
+				this->destroyImageData(&this->_pImageDataArray[i]);
+			}
+
+			delete[] this->_pImageDataArray;
+			this->_pImageDataArray = nullptr;
+			this->_imageCount = 0u;
+
+			return;
+		}
+
+
+		void Draw::destroyImageData(ImageData* pImageData) const {
+
+			if (pImageData->hCommandBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkFreeCommandBuffers(this->_hDevice, this->_hCommandPool, 1u, &pImageData->hCommandBuffer);
+				pImageData->hCommandBuffer = VK_NULL_HANDLE;
+			}
+
+			if (pImageData->hFrameBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyFramebuffer(this->_hDevice, pImageData->hFrameBuffer, nullptr);
+				pImageData->hFrameBuffer = VK_NULL_HANDLE;
+			}
+
+			if (pImageData->hImageView != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyImageView(this->_hDevice, pImageData->hImageView, nullptr);
+				pImageData->hImageView = VK_NULL_HANDLE;
+			}
+
+			this->destroyBufferData(&pImageData->triangleListBufferData);
+			this->destroyBufferData(&pImageData->pointListBufferData);
+
+			if (pImageData->hFence != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyFence(this->_hDevice, pImageData->hFence, nullptr);
+				pImageData->hFence = VK_NULL_HANDLE;
+			}
+
+			return;
+		}
+
+
+		bool Draw::createFramebuffers(VkSwapchainKHR hSwapchain) {
+			VkImage* const pImages = new VkImage[this->_imageCount]{};
+
+			uint32_t imageCount = this->_imageCount;
+
+			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
+				delete[] pImages;
+
+				return false;
+			}
+			
+			VkImageSubresourceRange imageSubresourceRange{};
+			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageSubresourceRange.baseMipLevel = 0u;
+			imageSubresourceRange.levelCount = 1u;
+			imageSubresourceRange.baseArrayLayer = 0u;
+			imageSubresourceRange.layerCount = 1u;
+
+			VkImageViewCreateInfo imageViewCreateInfo{};
+			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+
+			VkFramebufferCreateInfo framebufferCreateInfo{};
+			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCreateInfo.renderPass = this->_hRenderPass;
+			framebufferCreateInfo.attachmentCount = 1u;
+			framebufferCreateInfo.layers = 1u;
+
+			for (uint32_t i = 0; i < this->_imageCount; i++) {				
+				imageViewCreateInfo.image = pImages[i];
+
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageDataArray[i].hImageView) != VkResult::VK_SUCCESS) return false;
+
+				framebufferCreateInfo.pAttachments = &this->_pImageDataArray[i].hImageView;
+
+				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			delete[] pImages;
+
+			return true;
+		}
+
+
+		void Draw::destroyFramebuffers() {
+			
+			for (uint32_t i = 0u; i < this->_imageCount; i++) {
+				
+				if (this->_pImageDataArray[i].hFrameBuffer != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageDataArray[i].hFrameBuffer, nullptr);
+					this->_pImageDataArray[i].hFrameBuffer = VK_NULL_HANDLE;
+				}
+
+				if (this->_pImageDataArray[i].hImageView != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageDataArray[i].hImageView, nullptr);
+					this->_pImageDataArray[i].hImageView = VK_NULL_HANDLE;
+				}
+
+			}
+			
+			return;
+		}
+
+
 		bool Draw::createBufferData(BufferData* pBufferData, size_t vertexCount) {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
-			
+
 			VkDeviceSize vertexBufferSize = vertexCount * sizeof(Vertex);
 
 			if (!this->createBuffer(&pBufferData->hVertexBuffer, &pBufferData->hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
@@ -920,7 +1078,7 @@ namespace hax {
 			if (!this->createBuffer(&pBufferData->hIndexBuffer, &pBufferData->hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
 			pBufferData->indexBufferSize = indexBufferSize;
-			
+
 			return true;
 		}
 
@@ -973,12 +1131,12 @@ namespace hax {
 			VkMemoryRequirements memoryReq{};
 			this->_f.pVkGetBufferMemoryRequirements(this->_hDevice, *phBuffer, &memoryReq);
 			this->_bufferAlignment = memoryReq.alignment;
-			
+
 			VkMemoryAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = memoryReq.size;
 			allocInfo.memoryTypeIndex = this->getMemoryTypeIndex(memoryReq.memoryTypeBits);
-			
+
 			if (!this->_f.pVkAllocateMemory(this->_hDevice, &allocInfo, nullptr, phMemory) == VkResult::VK_SUCCESS) return false;
 
 			if (!this->_f.pVkBindBufferMemory(this->_hDevice, *phBuffer, *phMemory, 0) == VkResult::VK_SUCCESS) return false;
@@ -990,7 +1148,7 @@ namespace hax {
 
 
 		uint32_t Draw::getMemoryTypeIndex(uint32_t typeBits) const {
-			
+
 			for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
 
 				if ((_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
@@ -1000,167 +1158,6 @@ namespace hax {
 
 
 			return 0xFFFFFFFF;
-		}
-
-
-		bool Draw::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
-
-			if (imageCount < this->_imageCount) {
-
-				for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
-					this->destroyImageData(&this->_pImageData[i]);
-				}
-
-				this->_imageCount = imageCount;
-
-				return true;
-			}
-
-			if (imageCount == this->_imageCount) return true;
-
-			ImageData* const pOldImageData = this->_pImageData;
-			uint32_t oldImageCount = this->_imageCount;
-			
-			this->_pImageData = new ImageData[imageCount]{};
-			this->_imageCount = imageCount;
-			
-			VkCommandBufferAllocateInfo commandBufferAllocInfo{};
-			commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			commandBufferAllocInfo.commandPool = this->_hCommandPool;
-			commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-			commandBufferAllocInfo.commandBufferCount = 1u;
-
-			VkFenceCreateInfo fenceCreateInfo{};
-			fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-			for (uint32_t i = 0; i < this->_imageCount; i++) {
-
-				if (pOldImageData && i < oldImageCount) {
-					memcpy(&this->_pImageData[i], &pOldImageData[i], sizeof(ImageData));
-				}
-				else {
-
-					if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageData[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
-
-					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageData[i].hFence) != VkResult::VK_SUCCESS) return false;
-
-				}
-
-			}
-
-			this->destroyFramebuffers();
-
-			return this->createFramebuffers(hSwapchain);
-		}
-
-
-		void Draw::destroyImageDataArray() {
-
-			if (!this->_pImageData) return;
-
-			for (uint32_t i = 0u; i < this->_imageCount && this->_hDevice != VK_NULL_HANDLE; i++) {
-				this->destroyImageData(&this->_pImageData[i]);
-			}
-
-			delete[] this->_pImageData;
-			this->_pImageData = nullptr;
-			this->_imageCount = 0u;
-
-			return;
-		}
-
-
-		void Draw::destroyImageData(ImageData* pImageData) const {
-
-			if (pImageData->hCommandBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkFreeCommandBuffers(this->_hDevice, this->_hCommandPool, 1u, &pImageData->hCommandBuffer);
-				pImageData->hCommandBuffer = VK_NULL_HANDLE;
-			}
-
-			if (pImageData->hFrameBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyFramebuffer(this->_hDevice, pImageData->hFrameBuffer, nullptr);
-				pImageData->hFrameBuffer = VK_NULL_HANDLE;
-			}
-
-			if (pImageData->hImageView != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyImageView(this->_hDevice, pImageData->hImageView, nullptr);
-				pImageData->hImageView = VK_NULL_HANDLE;
-			}
-
-			if (pImageData->hFence != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyFence(this->_hDevice, pImageData->hFence, nullptr);
-				pImageData->hFence = VK_NULL_HANDLE;
-			}
-
-			return;
-		}
-
-
-		bool Draw::createFramebuffers(VkSwapchainKHR hSwapchain) {
-			VkImage* const pImages = new VkImage[this->_imageCount]{};
-
-			uint32_t imageCount = this->_imageCount;
-
-			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
-				delete[] pImages;
-
-				return false;
-			}
-			
-			VkImageSubresourceRange imageSubresourceRange{};
-			imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageSubresourceRange.baseMipLevel = 0u;
-			imageSubresourceRange.levelCount = 1u;
-			imageSubresourceRange.baseArrayLayer = 0u;
-			imageSubresourceRange.layerCount = 1u;
-
-			VkImageViewCreateInfo imageViewCreateInfo{};
-			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-			imageViewCreateInfo.subresourceRange = imageSubresourceRange;
-
-			VkFramebufferCreateInfo framebufferCreateInfo{};
-			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferCreateInfo.renderPass = this->_hRenderPass;
-			framebufferCreateInfo.attachmentCount = 1u;
-			framebufferCreateInfo.layers = 1u;
-
-			for (uint32_t i = 0; i < this->_imageCount; i++) {				
-				imageViewCreateInfo.image = pImages[i];
-
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageData[i].hImageView) != VkResult::VK_SUCCESS) return false;
-
-				framebufferCreateInfo.pAttachments = &this->_pImageData[i].hImageView;
-
-				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageData[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
-
-			}
-
-			delete[] pImages;
-
-			return true;
-		}
-
-
-		void Draw::destroyFramebuffers() {
-			
-			for (uint32_t i = 0u; i < this->_imageCount; i++) {
-				
-				if (this->_pImageData[i].hFrameBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageData[i].hFrameBuffer, nullptr);
-					this->_pImageData[i].hFrameBuffer = VK_NULL_HANDLE;
-				}
-
-				if (this->_pImageData[i].hImageView != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageData[i].hImageView, nullptr);
-					this->_pImageData[i].hImageView = VK_NULL_HANDLE;
-				}
-
-			}
-			
-			return;
 		}
 
 

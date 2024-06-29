@@ -68,13 +68,6 @@ namespace hax {
 				PFN_vkQueueSubmit pVkQueueSubmit;
 			}Functions;
 			
-			typedef struct ImageData {
-				VkCommandBuffer hCommandBuffer;
-				VkImageView hImageView;
-				VkFramebuffer hFrameBuffer;
-				VkFence hFence;
-			}ImageData;
-
 			typedef struct BufferData {
 				VkBuffer hVertexBuffer;
 				VkBuffer hIndexBuffer;
@@ -86,6 +79,15 @@ namespace hax {
 				uint32_t* pLocalIndexBuffer;
 				uint32_t curOffset;
 			}BufferData;
+
+			typedef struct ImageData {
+				VkCommandBuffer hCommandBuffer;
+				VkImageView hImageView;
+				VkFramebuffer hFrameBuffer;
+				BufferData triangleListBufferData;
+				BufferData pointListBufferData;
+				VkFence hFence;
+			}ImageData;
 
 			union {
 				Functions _f;
@@ -110,12 +112,11 @@ namespace hax {
 			VkPhysicalDeviceMemoryProperties _memoryProperties;
 			VkDeviceSize _bufferAlignment;
 
-			BufferData _triangleListBufferData;
-			BufferData _pointListBufferData;
 			HWND _hMainWindow;
 			RECT _windowRect;
-			ImageData* _pImageData;
+			ImageData* _pImageDataArray;
 			uint32_t _imageCount;
+			ImageData* _pCurImageData;
 
 			bool _isInit;
 			bool _beginSuccess;
@@ -180,15 +181,15 @@ namespace hax {
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
 			bool createCommandPool();
-			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
-			void destroyBufferData(BufferData* pBufferData) const;
-			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize *pSize, VkBufferUsageFlagBits usage);
-			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 			bool resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
 			void destroyImageDataArray();
 			void destroyImageData(ImageData* pImageData) const;
 			bool createFramebuffers(VkSwapchainKHR hSwapchain);
 			void destroyFramebuffers();
+			bool createBufferData(BufferData* pBufferData, size_t vertexCount);
+			void destroyBufferData(BufferData* pBufferData) const;
+			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage);
+			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 			bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 			void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			bool mapBufferData(BufferData* pBufferData) const;
