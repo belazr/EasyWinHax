@@ -316,6 +316,7 @@ namespace hax {
 				if (!this->createFramebuffers(hSwapchain)) return;
 				
 				this->_windowRect = curWindowRect;
+				pEngine->setWindowSize(static_cast<int>(this->_windowRect.right), static_cast<int>(this->_windowRect.bottom));
 			}
 	
 			if (!this->beginCommandBuffer(pCurImageData->hCommandBuffer)) return;
