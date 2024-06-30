@@ -2,7 +2,7 @@
 #include "IDraw.h"
 #include "rgb.h"
 
-// Class for drawing within a hook independent of graphics API.
+// Class for drawing within a graphics API hook.
 // 
 // 
 // Example usage:
@@ -12,7 +12,6 @@
 // 
 // hax::dx9::tEndScene pGatewayToEndScene = 0xDEADBEEF;
 //
-// hax::dx9::Font font(&hax::dx9::charsets::medium);
 // hax::dx9::Draw draw;
 // hax::Engine engine(&draw);
 // 
@@ -23,7 +22,7 @@
 //     Vector2 pos2{ 300, 100 };
 // 
 //     engine.drawLine(&pos1, &pos2, 2, hax::rgb::red);
-//     engine.drawString(&font, &pos1, "Hi!", hax::rgb::green);
+//     engine.drawString(&hax::font::medium, &pos1, "Hi!", hax::rgb::green);
 // 
 //     pGatewayToEndScene(pOriginalDevice);
 // 
@@ -36,7 +35,6 @@
 // 
 // hax::dx11::tPresent pGatewayToPresent = 0xDEADBEEF;
 //
-// hax::dx::Font font<hax::dx11::Vertex>(&hax::dx::charsets::medium);
 // hax::dx11::Draw draw;
 // hax::Engine engine(&draw);
 // 
@@ -47,11 +45,9 @@
 //     Vector2 pos2{ 300, 100 };
 // 
 //     engine.drawLine(&pos1, &pos2, 2, hax::rgb::red);
-//     engine.drawString(&font, &pos1, "Hi!", hax::rgb::green);
-// 
-//     pGatewayToPresent(pOriginalSwapChain, syncInterval, flags);
-// 
-//     return;
+//     engine.drawString(&hax::font::medium, &pos1, "Hi!", hax::rgb::green);
+//     
+//     return pGatewayToPresent(pOriginalSwapChain, syncInterval, flags);
 // }
 // 
 // 
@@ -80,9 +76,32 @@
 // 
 //     engine.endDraw();
 // 
-//     pGatewayToWglSwapBuffers(hDc);
+//     return pGatewayToWglSwapBuffers(hDc);
+// }
 // 
-//     return;
+// 
+// Vulkan vkQueuePresentKHR hook:
+// 
+// // call getVulkanInitData from thread inside target programm to fill initData
+// hax::vk::VulkanInitData initData{};
+// 
+// PFN_vkQueuePresentKHR pGatewayToVkQueuePresentKHR = 0xDEADBEEF;
+//
+// hax::vk::Draw draw;
+// hax::Engine engine(&draw);
+// 
+// VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* pPresentInfo) {
+//     engine.beginDraw(hQueue, pPresentInfo, initData.hDevice);
+// 
+//     Vector2 pos1{ 100, 100 };
+//     Vector2 pos2{ 300, 100 };
+// 
+//     engine.drawLine(&pos1, &pos2, 2, hax::rgb::red);
+//     engine.drawString(&hax::font::medium, &pos1, "Hi!", hax::rgb::green);
+// 
+//     engine.endDraw();
+// 
+//     return pGatewayToVkQueuePresentKHR(hQueue, pPresentInfo);
 // }
 
 namespace hax {
