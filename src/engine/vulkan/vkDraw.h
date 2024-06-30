@@ -89,37 +89,39 @@ namespace hax {
 				VkFence hFence;
 			}ImageData;
 
+
+			HMODULE _hVulkan;
+			HWND _hMainWindow;
+
+			VkDevice _hDevice;
+			VkInstance _hInstance;
+
 			union {
 				Functions _f;
 				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 			};
 
-			HMODULE _hVulkan;
-
-			VkDevice _hDevice;
-			VkInstance _hInstance;
 			VkPhysicalDevice _hPhysicalDevice;
 			uint32_t _graphicsQueueFamilyIndex;
-			VkQueue _hFirstGraphicsQueue;
 			VkRenderPass _hRenderPass;
+			VkCommandPool _hCommandPool;
 			VkShaderModule _hShaderModuleVert;
 			VkShaderModule _hShaderModuleFrag;
 			VkDescriptorSetLayout _hDescriptorSetLayout;
 			VkPipelineLayout _hPipelineLayout;
 			VkPipeline _hTriangleListPipeline;
 			VkPipeline _hPointListPipeline;
-			VkCommandPool _hCommandPool;
 			VkPhysicalDeviceMemoryProperties _memoryProperties;
-			VkDeviceSize _bufferAlignment;
+			VkQueue _hFirstGraphicsQueue;
 
-			HWND _hMainWindow;
-			RECT _windowRect;
 			ImageData* _pImageDataArray;
 			uint32_t _imageCount;
+			VkDeviceSize _bufferAlignment;
 			ImageData* _pCurImageData;
+			RECT _windowRect;
 
 			bool _isInit;
-			bool _beginSuccess;
+			bool _isBegin;
 
 		public:
 			Draw();
@@ -176,11 +178,11 @@ namespace hax {
 			bool initialize(const Engine* pEngine);
 			bool getProcAddresses();
 			bool createRenderPass();
-			bool createPipeline(VkPipeline* phPipeline, VkPrimitiveTopology topology);
-			bool createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size);
+			bool createCommandPool();
+			VkPipeline createPipeline(VkPrimitiveTopology topology);
+			VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
 			bool createPipelineLayout();
 			bool createDescriptorSetLayout();
-			bool createCommandPool();
 			bool resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
 			void destroyImageDataArray();
 			void destroyImageData(ImageData* pImageData) const;
@@ -190,9 +192,9 @@ namespace hax {
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage);
 			uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
+			bool mapBufferData(BufferData* pBufferData) const;
 			bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 			void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
-			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
 			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
 			void drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const;

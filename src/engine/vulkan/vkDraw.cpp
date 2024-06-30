@@ -11,16 +11,16 @@ namespace hax {
 	namespace vk {
 
 		static hax::in::TrampHook* pAcquireHook;
-		static HANDLE hSemaphore;
-		static VkDevice hDevice;
+		static HANDLE hHookSemaphore;
+		static VkDevice hHookDevice;
 
-		static VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
-			hDevice = device;
+		static VkResult VKAPI_CALL hkvkAcquireNextImageKHR(VkDevice hDevice, VkSwapchainKHR hSwapchain, uint64_t timeout, VkSemaphore hSemaphore, VkFence hFence, uint32_t* pImageIndex) {
+			hHookDevice = hDevice;
 			pAcquireHook->disable();
 			const PFN_vkAcquireNextImageKHR pAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pAcquireHook->getOrigin());
-			ReleaseSemaphore(hSemaphore, 1, nullptr);
+			ReleaseSemaphore(hHookSemaphore, 1, nullptr);
 
-			return pAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+			return pAcquireNextImageKHR(hDevice, hSwapchain, timeout, hSemaphore, hFence, pImageIndex);
 		}
 
 
@@ -33,9 +33,11 @@ namespace hax {
 
 			if (!hVulkan) return false;
 
+			const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(hVulkan, "vkDestroyInstance"));
+			const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetDeviceProcAddr"));
 			const PFN_vkDestroyDevice pVkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(proc::in::getProcAddress(hVulkan, "vkDestroyDevice"));
 
-			if (!pVkDestroyDevice) return false;
+			if (!pVkDestroyInstance || !pVkGetDeviceProcAddr || !pVkDestroyDevice) return false;
 
 			const VkInstance hInstance = createInstance(hVulkan);
 
@@ -43,33 +45,40 @@ namespace hax {
 
 			VkPhysicalDevice hPhysicalDevice = getPhysicalDevice(hVulkan, hInstance);
 
-			if (hPhysicalDevice == VK_NULL_HANDLE) return false;
+			if (hPhysicalDevice == VK_NULL_HANDLE) {
+				pVkDestroyInstance(hInstance, nullptr);
+
+				return false;
+			}
 
 			const VkDevice hDummyDevice = createDummyDevice(hVulkan, hPhysicalDevice);
 
-			if (hDummyDevice == VK_NULL_HANDLE) return false;
+			if (hDummyDevice == VK_NULL_HANDLE) {
+				pVkDestroyInstance(hInstance, nullptr);
 
-			PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(hVulkan, "vkGetDeviceProcAddr"));
-
-			if (!pVkGetDeviceProcAddr) return false;
+				return false;
+			}
 
 			initData->pVkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkQueuePresentKHR"));
-
 			const PFN_vkAcquireNextImageKHR pVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(pVkGetDeviceProcAddr(hDummyDevice, "vkAcquireNextImageKHR"));
 
 			pVkDestroyDevice(hDummyDevice, nullptr);
+			pVkDestroyInstance(hInstance, nullptr);
 
-			hSemaphore = CreateSemaphoreA(nullptr, 0, 1, nullptr);
+			if (!initData->pVkQueuePresentKHR || !pVkAcquireNextImageKHR) return false;
 
-			if (hSemaphore) {
-				pAcquireHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pVkAcquireNextImageKHR), reinterpret_cast<BYTE*>(hkvkAcquireNextImageKHR), 0xC);
-				pAcquireHook->enable();
-				WaitForSingleObject(hSemaphore, INFINITE);
-				delete pAcquireHook;
-				initData->hDevice = hDevice;
-			}
+			hHookSemaphore = CreateSemaphoreA(nullptr, 0, 1, nullptr);
 
-			return true;
+			if (!hHookSemaphore) return false;
+
+			pAcquireHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pVkAcquireNextImageKHR), reinterpret_cast<BYTE*>(hkvkAcquireNextImageKHR), 0xC);
+			pAcquireHook->enable();
+			WaitForSingleObject(hHookSemaphore, INFINITE);
+			delete pAcquireHook;
+			
+			initData->hDevice = hHookDevice;
+
+			return initData->hDevice != VK_NULL_HANDLE;
 		}
 
 
@@ -105,9 +114,9 @@ namespace hax {
 
 			if (!gpuCount) return VK_NULL_HANDLE;
 
-			VkPhysicalDevice* const pPhysicalDevices = new VkPhysicalDevice[gpuCount]{};
+			VkPhysicalDevice* const pPhysicalDeviceArray = new VkPhysicalDevice[gpuCount]{};
 
-			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDevices) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+			if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDeviceArray) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
 			VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
 
@@ -116,17 +125,17 @@ namespace hax {
 
 			for (uint32_t i = 0u; i < gpuCount; i++) {
 				VkPhysicalDeviceProperties properties{};
-				pVkGetPhysicalDeviceProperties(pPhysicalDevices[i], &properties);
+				pVkGetPhysicalDeviceProperties(pPhysicalDeviceArray[i], &properties);
 
 				if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-					hPhysicalDevice = pPhysicalDevices[i];
+					hPhysicalDevice = pPhysicalDeviceArray[i];
 					break;
 				}
 			}
 
 			#pragma warning(pop)
 
-			delete[] pPhysicalDevices;
+			delete[] pPhysicalDeviceArray;
 
 			return hPhysicalDevice;
 		}
@@ -139,15 +148,15 @@ namespace hax {
 
 			if (!pVkCreateDevice) return VK_NULL_HANDLE;
 			
-			const uint32_t queueFamily = getGraphicsQueueFamilyIndex(hVulkan, hPhysicalDevice);
+			const uint32_t graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(hVulkan, hPhysicalDevice);
 
-			if (queueFamily == 0xFFFFFFFF) return VK_NULL_HANDLE;
+			if (graphicsQueueFamilyIndex == 0xFFFFFFFF) return VK_NULL_HANDLE;
 
 			constexpr float QUEUE_PRIORITY = 1.f;
 
 			VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
 			deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			deviceQueueCreateInfo.queueFamilyIndex = queueFamily;
+			deviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
 			deviceQueueCreateInfo.queueCount = 1u;
 			deviceQueueCreateInfo.pQueuePriorities = &QUEUE_PRIORITY;
 
@@ -201,13 +210,12 @@ namespace hax {
 
 
 		Draw::Draw() :
-			_f{}, _hVulkan{}, _hDevice{}, _hInstance{}, _hPhysicalDevice{},
-			_graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hFirstGraphicsQueue{}, _hRenderPass{},
+			_hVulkan{}, _hMainWindow{}, _hDevice{}, _hInstance{}, _f{},
+			_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
-			_hTriangleListPipeline{}, _hPointListPipeline{}, _hCommandPool{},
-			_memoryProperties{}, _bufferAlignment{ 4ull }, _hMainWindow{}, _windowRect{},
-			_pImageDataArray{}, _imageCount{}, _pCurImageData{},
-			_isInit{}, _beginSuccess{} {}
+			_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
+			_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _windowRect{},
+			_isInit{}, _isBegin{} {}
 
 
 		Draw::~Draw() {
@@ -272,7 +280,7 @@ namespace hax {
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
 		void Draw::beginDraw(Engine* pEngine) {
-			this->_beginSuccess = false;
+			this->_isBegin = false;
 
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 			
@@ -314,16 +322,16 @@ namespace hax {
 				this->_windowRect = curWindowRect;
 				pEngine->setWindowSize(static_cast<int>(this->_windowRect.right), static_cast<int>(this->_windowRect.bottom));
 			}
-	
-			if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return;
 
 			if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return;
 			
 			if (!this->mapBufferData(&this->_pCurImageData->pointListBufferData)) return;
 
+			if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return;
+
 			this->beginRenderPass(this->_pCurImageData->hCommandBuffer, this->_pCurImageData->hFrameBuffer);
 
-			this->_beginSuccess = true;
+			this->_isBegin = true;
 
 			return;
 		}
@@ -333,24 +341,19 @@ namespace hax {
 			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 
-			if (!this->_beginSuccess || !pPresentInfo) return;
+			if (!this->_isBegin || !pPresentInfo) return;
 
-			VkViewport viewport{};
-			viewport.x = 0.f;
-			viewport.y = 0.f;
-			viewport.width = static_cast<float>(this->_windowRect.right);
-			viewport.height = static_cast<float>(this->_windowRect.bottom);
-			viewport.minDepth = 0.f;
-			viewport.maxDepth = 1.f;
+			const VkViewport viewport{ 0.f, 0.f, static_cast<float>(this->_windowRect.right), static_cast<float>(this->_windowRect.bottom), 0.f, 1.f };
 			this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
-
-			float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
-			float translate[2]{ -1.f, -1.f };
-			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
-			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
 			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
 			this->_f.pVkCmdSetScissor(this->_pCurImageData->hCommandBuffer, 0u, 1u, &scissor);
+
+			const float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
+			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
+			
+			const float translate[2]{ -1.f, -1.f };
+			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
 			this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
 			this->drawBufferData(&this->_pCurImageData->triangleListBufferData, this->_pCurImageData->hCommandBuffer);
@@ -395,7 +398,7 @@ namespace hax {
 
 		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
-			if (!this->_beginSuccess || !pFont) return;
+			if (!this->_isBegin || !pFont) return;
 
 			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
 
@@ -425,17 +428,17 @@ namespace hax {
 		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
 
 		bool Draw::initialize(const Engine* pEngine) {
-			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
-
-			if (this->_hDevice == VK_NULL_HANDLE) return false;
-
-			EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
-
-			if (!this->_hMainWindow) return false;
-
 			this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
 			if (!this->_hVulkan) return false;
+			
+			EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+
+			if (!this->_hMainWindow) return false;
+			
+			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
+
+			if (this->_hDevice == VK_NULL_HANDLE) return false;
 
 			if (this->_hInstance == VK_NULL_HANDLE) {
 				this->_hInstance = createInstance(this->_hVulkan);
@@ -449,15 +452,15 @@ namespace hax {
 
 			if (this->_hPhysicalDevice == VK_NULL_HANDLE) return false;
 
+			this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+
+			if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
+
 			if (this->_hRenderPass == VK_NULL_HANDLE) {
 
 				if (!this->createRenderPass()) return false;
 
 			}
-
-			this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
-
-			if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
 
 			if (this->_hCommandPool == VK_NULL_HANDLE) {
 				
@@ -465,25 +468,25 @@ namespace hax {
 
 			}
 
-			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
-
-			if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
-
 			if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
-
-				if (!this->createPipeline(&this->_hTriangleListPipeline, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)) return false;
-
+				this->_hTriangleListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 			}
+
+			if (this->_hTriangleListPipeline == VK_NULL_HANDLE) return false;
 
 			if (this->_hPointListPipeline == VK_NULL_HANDLE) {
-
-				if (!this->createPipeline(&this->_hPointListPipeline, VK_PRIMITIVE_TOPOLOGY_POINT_LIST)) return false;
-
+				this->_hPointListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 			}
+
+			if (this->_hPointListPipeline == VK_NULL_HANDLE) return false;
 
 			this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
 
 			if (!this->_memoryProperties.memoryTypeCount) return false;
+
+			this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
+
+			if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
 			
 			return true;
 		}
@@ -580,6 +583,16 @@ namespace hax {
 			renderPassCreateInfo.pSubpasses = &subpassDesc;
 
 			return this->_f.pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
+		}
+
+
+		bool Draw::createCommandPool() {
+			VkCommandPoolCreateInfo commandPoolCreateInfo{};
+			commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
+
+			return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -716,23 +729,27 @@ namespace hax {
 			0x38, 0x00, 0x01, 0x00
 		};
 
-		bool Draw::createPipeline(VkPipeline* phPipeline, VkPrimitiveTopology topology) {
+		VkPipeline Draw::createPipeline(VkPrimitiveTopology topology) {
 
 			if (this->_hShaderModuleVert == VK_NULL_HANDLE) {
-				
-				if (!this->createShaderModule(&this->_hShaderModuleVert, GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT))) return false;
+
+				this->_hShaderModuleVert = this->createShaderModule(GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT));
 
 			}
+
+			if (this->_hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
 
 			if (this->_hShaderModuleFrag == VK_NULL_HANDLE) {
 
-				if (!this->createShaderModule(&this->_hShaderModuleFrag, GLSL_SHADER_FRAG, sizeof(GLSL_SHADER_FRAG))) return false;
+				this->_hShaderModuleFrag = this->createShaderModule(GLSL_SHADER_FRAG, sizeof(GLSL_SHADER_FRAG));
 
 			}
+
+			if (this->_hShaderModuleFrag == VK_NULL_HANDLE) return VK_NULL_HANDLE;
 			
 			if (this->_hPipelineLayout == VK_NULL_HANDLE) {
 
-				if (!this->createPipelineLayout()) return false;
+				if (!this->createPipelineLayout()) return VK_NULL_HANDLE;
 
 			}
 
@@ -829,17 +846,25 @@ namespace hax {
 			pipelineCreateInfo.renderPass = this->_hRenderPass;
 			pipelineCreateInfo.subpass = 0u;
 
-			return this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, phPipeline) == VkResult::VK_SUCCESS;
+			VkPipeline hPipeline{};
+
+			if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			return hPipeline;
 		}
 
 
-		bool Draw::createShaderModule(VkShaderModule* pShaderModule, const BYTE shader[], size_t size) {
+		VkShaderModule Draw::createShaderModule(const BYTE shader[], size_t size) const {
 			VkShaderModuleCreateInfo fragCreateInfo{};
 			fragCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			fragCreateInfo.codeSize = size;
 			fragCreateInfo.pCode = reinterpret_cast<const uint32_t*>(shader);
 
-			return this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, pShaderModule) == VkResult::VK_SUCCESS;
+			VkShaderModule hShaderModule{};
+
+			if (this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &hShaderModule) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+			return hShaderModule;
 		}
 
 
@@ -879,16 +904,6 @@ namespace hax {
 			descCreateinfo.pBindings = &binding;
 
 			return this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) == VkResult::VK_SUCCESS;
-		}
-
-
-		bool Draw::createCommandPool() {
-			VkCommandPoolCreateInfo commandPoolCreateInfo{};
-			commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
-
-			return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
 		}
 
 
@@ -1030,11 +1045,19 @@ namespace hax {
 			for (uint32_t i = 0; i < this->_imageCount; i++) {				
 				imageViewCreateInfo.image = pImages[i];
 
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageDataArray[i].hImageView) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageDataArray[i].hImageView) != VkResult::VK_SUCCESS) {
+					delete[] pImages;
+					
+					return false;
+				}
 
 				framebufferCreateInfo.pAttachments = &this->_pImageDataArray[i].hImageView;
 
-				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VkResult::VK_SUCCESS) {
+					delete[] pImages;
+
+					return false;
+				}
 
 			}
 
@@ -1161,6 +1184,24 @@ namespace hax {
 		}
 
 
+		bool Draw::mapBufferData(BufferData* pBufferData) const {
+
+			if (!pBufferData->pLocalVertexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			if (!pBufferData->pLocalIndexBuffer) {
+
+				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
+
+			}
+
+			return true;
+		}
+
+
 		bool Draw::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
 			
 			if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return false;
@@ -1183,24 +1224,6 @@ namespace hax {
 			this->_f.pVkCmdBeginRenderPass(hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			return;
-		}
-
-
-		bool Draw::mapBufferData(BufferData* pBufferData) const {
-			
-			if (!pBufferData->pLocalVertexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-			}
-
-			if (!pBufferData->pLocalIndexBuffer) {
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-			}
-
-			return true;
 		}
 
 
