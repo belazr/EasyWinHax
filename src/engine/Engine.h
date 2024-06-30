@@ -80,7 +80,7 @@
 // }
 // 
 // 
-// Vulkan vkQueuePresentKHR hook:
+// Vulkan vkQueuePresentKHR hook (only working with NVIDIA gpus for some reason):
 // 
 // // call getVulkanInitData from thread inside target programm to fill initData
 // hax::vk::VulkanInitData initData{};
