@@ -71,6 +71,7 @@ See the headers in the "engine" folder for further documentation. Usage examples
 
 ## TODO
 - Refactor engine to do more logic in the engine class instead of the IDraw implementations
+- Add example projects for all IDraw implementations
 - Add further implementations of the IDraw interface (DirectX 12)
 - Better error handling for launch functions
 
