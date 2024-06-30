@@ -62,26 +62,23 @@ The library provides a simple file loader class to load files from disk into mem
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
-The library provides an Engine class that can be used to draw geometric shapes within a hook independent of graphics API via the IDraw interface.
-Currently there are implementations of the IDraw interface for DirectX 11 to draw from a Present hook, DirectX 9 to draw from an EndScene hook and for OpenGL 2 to draw from an wglSwapBuffers hook.
-See the "engine\Engine.h" and "engine\IDraw.h" headers for further documentation.
-#### DirectX 11 implementation
-The library provides a DirectX 11 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It provides a font class that can be used for text drawing. See the headers in the "engine\dx11" and "engine\dx" folders for further documentation.
-#### DirectX 9 implementation
-The library provides a DirectX 9 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It provides a font class that can be used for text drawing without the need to include the deprecated DirectX SDK. See the headers in the "engine\dx9" and "engine\dx" folders for further documentation.
-#### OpenGL 2 implementation
-The library provides an OpenGL 2 implementation of the IDraw interface to draw triangle strips and text. The Engine class uses these implementations to draw more advanced shapes.
-It also provides a font class that can be used for text drawing. See the headers in the "engine\ogl2" folder for further documentation.
+The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IDraw interfaces.
+Currently there are implementations of the IDraw interface for DirectX 11 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
+Text rendering is done via a point list buffer with hardcoded point lists for supported characters for all but the OpenGL 2 implementations.
+It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
+The vulkan implementation is only tested and working with NVIDIA gpus. It does not draw with AMD gpus. All hints to why are very welcome!
+See the headers in the "engine" folder for further documentation. Usage examples can be found in the "engine\engine.h" header.
 
 ## TODO
+- Refactor engine to do more logic in the engine class instead of the IDraw implementations
+- Add further implementations of the IDraw interface (DirectX 12)
 - Better error handling for launch functions
-- Add further implementations of the IDraw interface (DirectX 12, Vulkan)
 
 ## References
 - https://guidedhacking.com/
 - https://learn.microsoft.com/en-us/windows/win32/api/
+- https://github.com/ocornut/imgui
+- https://github.com/bruhmoment21/UniversalHookX
 - https://www.vergiliusproject.com/
 - https://github.com/x64dbg/x64dbg
 - https://github.com/khalladay/hooking-by-example
