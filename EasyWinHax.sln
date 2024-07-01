@@ -6,10 +6,19 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyWinHax", "EasyWinHax.vcxproj", "{3E5DB86D-1911-4CA7-AB29-B9E2C01DC291}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanHook", "examples\VulkanHook\VulkanHook.vcxproj", "{36A9F558-8FBA-4554-86C6-3A9440EC44ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3E5DB86D-1911-4CA7-AB29-B9E2C01DC291} = {3E5DB86D-1911-4CA7-AB29-B9E2C01DC291}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL2Hook", "examples\OpenGL2Hook\OpenGL2Hook.vcxproj", "{22384CDC-3575-44DB-922A-C8A76CD052D9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3E5DB86D-1911-4CA7-AB29-B9E2C01DC291} = {3E5DB86D-1911-4CA7-AB29-B9E2C01DC291}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectX9Hook", "examples\DirectX9Hook\DirectX9Hook.vcxproj", "{6095A0D0-B2B2-4FE7-87F6-2FDA1BBD17A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3E5DB86D-1911-4CA7-AB29-B9E2C01DC291} = {3E5DB86D-1911-4CA7-AB29-B9E2C01DC291}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
