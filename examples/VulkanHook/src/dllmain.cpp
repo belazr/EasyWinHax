@@ -3,6 +3,9 @@
 
 // This is a example DLL for hooking and drawing within a Vulkan application.
 // Compile the project and inject it into a process rendering with Vulkan.
+// It is specific for NVIDIA vulkan runtimes (drivers 555.99).
+// Size parameter of tramp hook might have to be adjusted for different drivers/vulkan runtimes.
+// It is not working for AMD GPUs/vulkan runtimes!
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 
@@ -73,7 +76,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0);
 	}
 
-	// size 0x9 only applies for NVIDIA gpus an might be different with futures drivers/ vulkan runtimes
+	// size 0x9 only applies for NVIDIA gpus an might be different with futures drivers/vulkan runtimes
 	// look at src\hooks\TrampHook.h and assembly at initData.pVkQueuePresentKHR to figure out correct value
 	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), 0x9);
 
