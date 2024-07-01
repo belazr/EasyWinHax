@@ -131,7 +131,7 @@ namespace hax {
 
 			if (!pBackBuffer) return;
 
-			this->_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &this->_pRenderTargetView);
+			this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView);
 			
 			pBackBuffer->Release();
 
@@ -160,13 +160,13 @@ namespace hax {
 			if (!this->_isInit) return;
 
 			// draw all the buffers at once to save api calls
-			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0u);
-			this->_pointListBufferData.pLocalBuffer = nullptr;
-			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
 			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0u);
 			this->_triangleListBufferData.pLocalBuffer = nullptr;
 			this->drawVertexBuffer(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0u);
+			this->_pointListBufferData.pLocalBuffer = nullptr;
+			this->drawVertexBuffer(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			if (this->_originalTopology) {
 				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
