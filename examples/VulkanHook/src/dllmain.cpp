@@ -31,13 +31,13 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	
 	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
 
-	constexpr char text[] = "EasyWinHax";
-	const float widthText = _countof(text) * hax::font::medium.width;
+	constexpr char TEXT[] = "EasyWinHax";
+	const float widthText = _countof(TEXT) * hax::font::medium.width;
 	const float heightText = hax::font::medium.height;
 	
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 	
-	engine.drawString(&hax::font::medium, &bottomLeftText, text, hax::rgb::orange);
+	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
 	engine.endDraw();
 

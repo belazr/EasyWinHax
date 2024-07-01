@@ -6,7 +6,7 @@
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 
-static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
+static hax::Bench bench("200 x hkWglSwapBuffers", 200u);
 
 static hax::ogl2::Font* pFont;
 static hax::ogl2::Draw draw;
@@ -15,7 +15,7 @@ static hax::Engine engine{ &draw };
 static HANDLE hSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;
 
-BOOL APIENTRY hkwglSwapBuffers(HDC hDc) {
+BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 
 	if (!pFont) {
 		pFont = new hax::ogl2::Font(hDc, "Consolas", 25);
@@ -33,13 +33,13 @@ BOOL APIENTRY hkwglSwapBuffers(HDC hDc) {
 
 	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
 
-	constexpr char text[] = "EasyWinHax";
-	const float widthText = _countof(text) * hax::font::medium.width;
+	constexpr char TEXT[] = "EasyWinHax";
+	const float widthText = _countof(TEXT) * hax::font::medium.width;
 	const float heightText = hax::font::medium.height;
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(pFont, &bottomLeftText, text, hax::rgb::orange);
+	engine.drawString(pFont, &bottomLeftText, TEXT, hax::rgb::orange);
 
 	engine.endDraw();
 
@@ -73,7 +73,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkwglSwapBuffers), 0x5);
+	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkWglSwapBuffers), 0x5);
 
 	if (!pSwapBuffersHook) {
 		fclose(file);
