@@ -104,14 +104,14 @@ namespace hax {
 			if (!this->_isInit) return;
 
 			// draw all the buffers at once to save api calls
-			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
-				this->_pointListBufferData.pLocalBuffer = nullptr;
-				this->drawVertexBuffer(&this->_pointListBufferData, D3DPT_POINTLIST);
-			}
-
 			if (this->_triangleListBufferData.pBuffer->Unlock() == D3D_OK) {
 				this->_triangleListBufferData.pLocalBuffer = nullptr;
 				this->drawVertexBuffer(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
+			}
+
+			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
+				this->_pointListBufferData.pLocalBuffer = nullptr;
+				this->drawVertexBuffer(&this->_pointListBufferData, D3DPT_POINTLIST);
 			}
 
 			this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
