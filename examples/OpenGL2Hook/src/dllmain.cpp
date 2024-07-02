@@ -12,7 +12,7 @@ static hax::ogl2::Font* pFont;
 static hax::ogl2::Draw draw;
 static hax::Engine engine{ &draw };
 
-static HANDLE hSemaphore;
+static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;
 
 BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
@@ -49,18 +49,43 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pSwapBuffersHook->disable();
 		const hax::ogl2::twglSwapBuffers pSwapBuffers = reinterpret_cast<hax::ogl2::twglSwapBuffers>(pSwapBuffersHook->getOrigin());
-		ReleaseSemaphore(hSemaphore, 1l, nullptr);
+		const BOOL res = pSwapBuffers(hDc);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
-		return pSwapBuffers(hDc);
+		return res;
 	}
 
 	return reinterpret_cast<hax::ogl2::twglSwapBuffers>(pSwapBuffersHook->getGateway())(hDc);
 }
 
 
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+
+	if (pHook) {
+		delete pHook;
+	}
+
+	if (hSemaphore) {
+		CloseHandle(hSemaphore);
+		// just to be save
+		Sleep(10ul);
+	}
+	
+	if (file) {
+		fclose(file);
+	}
+
+	FreeConsole();
+	// just to be save
+	Sleep(500ul);
+}
+
+
 DWORD WINAPI haxThread(HMODULE hModule) {
 
 	if (!AllocConsole()) {
+		// just to be save
+		Sleep(500ul);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -68,7 +93,15 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		FreeConsole();
+		cleanup(hHookSemaphore, pSwapBuffersHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+	if (!hHookSemaphore) {
+		cleanup(hHookSemaphore, pSwapBuffersHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -76,40 +109,22 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkWglSwapBuffers), 0x5);
 
 	if (!pSwapBuffersHook) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pSwapBuffersHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pSwapBuffersHook->enable()) {
-		delete pSwapBuffersHook;
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pSwapBuffersHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	std::cout << "Hooked at: " << std::hex << reinterpret_cast<uintptr_t>(pSwapBuffersHook->getOrigin()) << std::dec << std::endl;
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pSwapBuffersHook->getOrigin()) << std::dec << std::endl;
 
-	hSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
-
-	if (!hSemaphore) {
-		delete pSwapBuffersHook;
-		fclose(file);
-		FreeConsole();
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
-
-	WaitForSingleObject(hSemaphore, INFINITE);
-	CloseHandle(hSemaphore);
-	// just to be save
-	Sleep(10ul);
-
-	delete pSwapBuffersHook;
-	fclose(file);
-	FreeConsole();
+	WaitForSingleObject(hHookSemaphore, INFINITE);
+	
+	cleanup(hHookSemaphore, pSwapBuffersHook, file);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
