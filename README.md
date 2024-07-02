@@ -15,7 +15,7 @@ Build tested with:
 - Windows 11 SDK (10.0.22621)
 
 Usage tested with:
-- Windows 11 22H2 64bit
+- Windows 11 23H2 64bit
 
 ## Build
 Open the solution file (EasyWinHax.sln) with Visual Studio and run the desired builds from there.
@@ -67,11 +67,23 @@ Currently there are implementations of the IDraw interface for DirectX 11 to dra
 Text rendering is done via a point list buffer with hardcoded point lists for supported characters for all but the OpenGL 2 implementations.
 It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
 The vulkan implementation is only tested and working with NVIDIA gpus. It does not draw with AMD gpus. All hints to why are very welcome!
-See the headers in the "engine" folder for further documentation. Usage examples can be found in the "engine\engine.h" header.
+See the headers in the "engine" folder for further documentation.
+### Examples
+There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
+Build the following projects:
+
+- DirectX11Hook
+- DirectX9Hook
+- OpenGL2Hook
+- VulkanHook
+
+and inject the built DLLs into a process that uses the respective graphics API.
+On process attach they start a thread that hooks the API and the hook then draws a demo to the screen.
+Press "END" to unhook and eject the DLL.
+
 
 ## TODO
-- Refactor engine to do more logic in the engine class instead of the IDraw implementations
-- Add example projects for all IDraw implementations
+- Refactor engine for general clean up and to do more logic in the engine class instead of the IDraw implementations
 - Add further implementations of the IDraw interface (DirectX 12)
 - Better error handling for launch functions
 
