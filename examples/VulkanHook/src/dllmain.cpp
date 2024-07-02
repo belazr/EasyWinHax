@@ -15,7 +15,7 @@ static hax::vk::VulkanInitData initData;
 static hax::vk::Draw draw;
 static hax::Engine engine{ &draw };
 
-static HANDLE hSemaphore;
+static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pQueuePresentHook;
 
 VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* pPresentInfo) {
@@ -47,31 +47,65 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pQueuePresentHook->disable();
 		const PFN_vkQueuePresentKHR pQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(pQueuePresentHook->getOrigin());
-		ReleaseSemaphore(hSemaphore, 1l, nullptr);
+		VkResult res = pQueuePresentKHR(hQueue, pPresentInfo);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 		
-		return pQueuePresentKHR(hQueue, pPresentInfo);
+		return res;
 	}
 
 	return reinterpret_cast<PFN_vkQueuePresentKHR>(pQueuePresentHook->getGateway())(hQueue, pPresentInfo);
 }
 
 
-DWORD WINAPI haxThread(HMODULE hModule) {
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
 
-	if (!hax::vk::getVulkanInitData(&initData)) {
-		
-		FreeLibraryAndExitThread(hModule, 0ul);
+	if (pHook) {
+		delete pHook;
 	}
 
+	if (hSemaphore) {
+		CloseHandle(hSemaphore);
+		// just to be save
+		Sleep(10ul);
+	}
+
+	if (file) {
+		fclose(file);
+	}
+
+	FreeConsole();
+	// just to be save
+	Sleep(500ul);
+}
+
+
+DWORD WINAPI haxThread(HMODULE hModule) {
+
 	if (!AllocConsole()) {
-		
+		// just to be save
+		Sleep(500ul);
+
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		FreeConsole();
+		cleanup(hHookSemaphore, pQueuePresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+	if (!hHookSemaphore) {
+		cleanup(hHookSemaphore, pQueuePresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	if (!hax::vk::getVulkanInitData(&initData)) {
+		cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -81,40 +115,22 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), 0x9);
 
 	if (!pQueuePresentHook) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pQueuePresentHook->enable()) {
-		delete pQueuePresentHook;
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	std::cout << "Hooked at: " << std::hex << reinterpret_cast<uintptr_t>(initData.pVkQueuePresentKHR) << std::dec << std::endl;
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(initData.pVkQueuePresentKHR) << std::dec << std::endl;
 
-	hSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+	WaitForSingleObject(hHookSemaphore, INFINITE);
 
-	if (!hSemaphore) {
-		delete pQueuePresentHook;
-		fclose(file);
-		FreeConsole();
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
-
-	WaitForSingleObject(hSemaphore, INFINITE);
-	CloseHandle(hSemaphore);
-	// just to be save
-	Sleep(10ul);
-	
-	delete pQueuePresentHook;
-	fclose(file);
-	FreeConsole();
+	cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }

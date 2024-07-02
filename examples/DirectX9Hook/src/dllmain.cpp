@@ -11,8 +11,8 @@ static hax::Bench bench("200 x hkEndScene", 200u);
 static hax::dx9::Draw draw;
 static hax::Engine engine{ &draw };
 
-static HANDLE hSemaphore;
-static hax::in::TrampHook* pEndScenetHook;
+static HANDLE hHookSemaphore;
+static hax::in::TrampHook* pEndSceneHook;
 
 void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	bench.start();
@@ -41,24 +41,47 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	bench.printAvg();
 
 	if (GetAsyncKeyState(VK_END) & 1) {
-		pEndScenetHook->disable();
-		const hax::dx9::tEndScene pEndScene = reinterpret_cast<hax::dx9::tEndScene>(pEndScenetHook->getOrigin());
-		ReleaseSemaphore(hSemaphore, 1l, nullptr);
-
+		pEndSceneHook->disable();
+		const hax::dx9::tEndScene pEndScene = reinterpret_cast<hax::dx9::tEndScene>(pEndSceneHook->getOrigin());
 		pEndScene(pDevice);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
 		return;
 	}
 
-	reinterpret_cast<hax::dx9::tEndScene>(pEndScenetHook->getGateway())(pDevice);
+	reinterpret_cast<hax::dx9::tEndScene>(pEndSceneHook->getGateway())(pDevice);
 
 	return;
+}
+
+
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+
+	if (pHook) {
+		delete pHook;
+	}
+
+	if (hSemaphore) {
+		CloseHandle(hSemaphore);
+		// just to be save
+		Sleep(10ul);
+	}
+
+	if (file) {
+		fclose(file);
+	}
+
+	FreeConsole();
+	// just to be save
+	Sleep(500ul);
 }
 
 
 DWORD WINAPI haxThread(HMODULE hModule) {
 
 	if (!AllocConsole()) {
+		// just to be save
+		Sleep(500ul);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -66,16 +89,23 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		FreeConsole();
+		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	void* pD3d9DeviceVTable[119]{};
+	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+	if (!hHookSemaphore) {
+		cleanup(hHookSemaphore, pEndSceneHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	void* pD3d9DeviceVTable[43]{};
 
 	if (!hax::dx9::getD3D9DeviceVTable(pD3d9DeviceVTable, sizeof(pD3d9DeviceVTable))) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -84,49 +114,30 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	BYTE* const pEndScene = reinterpret_cast<BYTE*>(pD3d9DeviceVTable[END_SCENE_OFFSET]);
 
 	if (!pEndScene) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pEndScenetHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), 0x7);
+	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), 0x7);
 
-	if (!pEndScenetHook) {
-		fclose(file);
-		FreeConsole();
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
-
-	if (!pEndScenetHook->enable()) {
-		delete pEndScenetHook;
-		fclose(file);
-		FreeConsole();
+	if (!pEndSceneHook) {
+		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	std::cout << "Hooked at: " << std::hex << reinterpret_cast<uintptr_t>(pEndScenetHook->getOrigin()) << std::dec << std::endl;
-
-	hSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
-
-	if (!hSemaphore) {
-		delete pEndScenetHook;
-		fclose(file);
-		FreeConsole();
+	if (!pEndSceneHook->enable()) {
+		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	WaitForSingleObject(hSemaphore, INFINITE);
-	CloseHandle(hSemaphore);
-	// just to be save
-	Sleep(10ul);
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pEndSceneHook->getOrigin()) << std::dec << std::endl;
 
-	delete pEndScenetHook;
-	fclose(file);
-	FreeConsole();
+	WaitForSingleObject(hHookSemaphore, INFINITE);
+
+	cleanup(hHookSemaphore, pEndSceneHook, file);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }

@@ -11,7 +11,7 @@ static hax::Bench bench("200 x hkPresent", 200u);
 static hax::dx11::Draw draw;
 static hax::Engine engine{ &draw };
 
-static HANDLE hSemaphore;
+static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
@@ -44,7 +44,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 		pPresentHook->disable();
 		const hax::dx11::tPresent pPresent = reinterpret_cast<hax::dx11::tPresent>(pPresentHook->getOrigin());
 		const HRESULT res = pPresent(pSwapChain, syncInterval, flags);
-		ReleaseSemaphore(hSemaphore, 1l, nullptr);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
 		return res;
 	}
@@ -53,9 +53,33 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 }
 
 
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+
+	if (pHook) {
+		delete pHook;
+	}
+
+	if (hSemaphore) {
+		CloseHandle(hSemaphore);
+		// just to be save
+		Sleep(10ul);
+	}
+
+	if (file) {
+		fclose(file);
+	}
+
+	FreeConsole();
+	// just to be save
+	Sleep(500ul);
+}
+
+
 DWORD WINAPI haxThread(HMODULE hModule) {
 
 	if (!AllocConsole()) {
+		// just to be save
+		Sleep(500ul);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -63,7 +87,15 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		FreeConsole();
+		cleanup(hHookSemaphore, pPresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+	if (!hHookSemaphore) {
+		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -71,63 +103,39 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	void* pD3D11SwapChainVTable[9]{};
 
 	if (!hax::dx11::getD3D11SwapChainVTable(pD3D11SwapChainVTable, sizeof(pD3D11SwapChainVTable))) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	constexpr unsigned int PRESENT_OFFSET = 8ul;
-	BYTE* const pEndScene = reinterpret_cast<BYTE*>(pD3D11SwapChainVTable[PRESENT_OFFSET]);
+	BYTE* const pPresent = reinterpret_cast<BYTE*>(pD3D11SwapChainVTable[PRESENT_OFFSET]);
 
-	if (!pEndScene) {
-		fclose(file);
-		FreeConsole();
+	if (!pPresent) {
+		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pPresentHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkPresent), 0x8);
+	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x8);
 
 	if (!pPresentHook) {
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pPresentHook->enable()) {
-		delete pPresentHook;
-		fclose(file);
-		FreeConsole();
+		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	std::cout << "Hooked at: " << std::hex << reinterpret_cast<uintptr_t>(pPresentHook->getOrigin()) << std::dec << std::endl;
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pPresentHook->getOrigin()) << std::dec << std::endl;
 
-	hSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+	WaitForSingleObject(hHookSemaphore, INFINITE);
 
-	if (!hSemaphore) {
-		delete pPresentHook;
-		fclose(file);
-		FreeConsole();
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
-
-	WaitForSingleObject(hSemaphore, INFINITE);
-	CloseHandle(hSemaphore);
-	
-	// just to be save
-	Sleep(10ul);
-
-	delete pPresentHook;
-	fclose(file);
-	FreeConsole();
-
-	// just to be save
-	Sleep(100ul);
+	cleanup(hHookSemaphore, pPresentHook, file);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
