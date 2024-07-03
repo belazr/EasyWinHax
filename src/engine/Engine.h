@@ -1,5 +1,6 @@
 #pragma once
 #include "IDraw.h"
+#include "font\Font.h"
 
 // Class for drawing within a graphics API hook.
 
@@ -120,7 +121,7 @@ namespace hax {
 		// [in] pFont:
 		// Pointer to an appropriate Font object. ogl2::Font* for OpenGL 2 hooks and dx::Font* for DirectX hooks.
 		//
-		// [in] origin:
+		// [in] pos:
 		// Coordinates of the bottom left corner of the first character of the text.
 		// 
 		// [in] text:
@@ -128,7 +129,7 @@ namespace hax {
 		//
 		// [in] color:
 		// Color of the text.
-		void drawString(const font::Font* pFont, const Vector2* origin, const char* text, rgb::Color color) const;
+		void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) const;
 
 		// Draws a parallelogram grid with horizontal bottom and top sides.
 		//

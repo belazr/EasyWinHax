@@ -78,31 +78,31 @@ namespace hax {
 			// 
 			// [in] corners:
 			// Screen coordinates of the corners of the triangles in the list.
-			// The three corners of the first triangle have to be in clockwise order. For there on the orientation of the triangles has to alternate.
+			// The three corners of the first triangle have to be in clockwise order. From there on the orientation of the triangles has to alternate.
 			// 
 			// [in] count:
 			// Count of the corners of the triangles in the list. Has to be divisble by three.
 			// 
-			// [in]
-			// Color of the triangle list.
-			void drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) override;
+			// [in] color:
+			// Color of each triangle.
+			void drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) override;
 
-			// Draws text to the screen. Should be called by an Engine object.
-			//
+			// Draws a point list. Should be called by an Engine object.
+			// 
 			// Parameters:
 			// 
-			// [in] pFont:
-			// Pointer to an ogl2::Font object.
-			//
-			// [in] origin:
-			// Coordinates of the bottom left corner of the first character of the text.
+			// [in] coordinate:
+			// Screen coordinates of the points in the list.
 			// 
-			// [in] text:
-			// Text to be drawn. See length limitations implementations.
-			//
+			// [in] count:
+			// Count of the points in the list.
+			// 
 			// [in] color:
-			// Color of the text.
-			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			// Color of each point.
+			//
+			// [in] offest:
+			// Offset by which each point is drawn.
+			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 		private:
 			bool initialize();
