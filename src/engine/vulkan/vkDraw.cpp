@@ -423,8 +423,6 @@ namespace hax {
 		}
 
 
-		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
-
 		bool Draw::initialize(const Engine* pEngine) {
 			this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
@@ -489,6 +487,8 @@ namespace hax {
 			return true;
 		}
 
+		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
+
 		bool Draw::getProcAddresses() {
 			const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddress = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
 			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddress = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetInstanceProcAddr"));
@@ -551,6 +551,8 @@ namespace hax {
 
 			return true;
 		}
+
+		#undef ASSIGN_PROC_ADDRESS
 
 
 		bool Draw::createRenderPass() {
