@@ -25,7 +25,6 @@
     <ClInclude Include="src\engine\dx\dx9\dx9Draw.h" />
     <ClInclude Include="src\engine\IDraw.h" />
     <ClInclude Include="src\engine\ogl2\ogl2Draw.h" />
-    <ClInclude Include="src\engine\ogl2\ogl2Font.h" />
     <ClInclude Include="src\engine\rgb.h" />
     <ClInclude Include="src\engine\Vertex.h" />
     <ClInclude Include="src\engine\vulkan\include\vk_platform.h" />
@@ -51,7 +50,6 @@
     <ClCompile Include="src\engine\Engine.cpp" />
     <ClCompile Include="src\engine\dx\dx9\dx9Draw.cpp" />
     <ClCompile Include="src\engine\ogl2\ogl2Draw.cpp" />
-    <ClCompile Include="src\engine\ogl2\ogl2Font.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />

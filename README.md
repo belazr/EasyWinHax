@@ -64,7 +64,7 @@ The library provides a collection of structures and function types used by the w
 ### Drawing from hooks
 The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IDraw interfaces.
 Currently there are implementations of the IDraw interface for DirectX 11 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
-Text rendering is done via a point list buffer with hardcoded point lists for supported characters for all but the OpenGL 2 implementations.
+Text rendering is done via a point list buffer with hardcoded point lists for supported characters.
 It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
 The vulkan implementation is only tested and working with NVIDIA gpus. It does not draw with AMD gpus. All hints to why are very welcome!
 See the headers in the "engine" folder for further documentation.

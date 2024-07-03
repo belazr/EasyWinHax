@@ -8,7 +8,6 @@
 
 static hax::Bench bench("200 x hkWglSwapBuffers", 200u);
 
-static hax::ogl2::Font* pFont;
 static hax::ogl2::Draw draw;
 static hax::Engine engine{ &draw };
 
@@ -16,11 +15,6 @@ static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;
 
 BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
-
-	if (!pFont) {
-		pFont = new hax::ogl2::Font(hDc, "Consolas", 25);
-	}
-
 	bench.start();
 
 	engine.beginDraw(hDc);
@@ -39,7 +33,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(pFont, &bottomLeftText, TEXT, hax::rgb::orange);
+	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
 	engine.endDraw();
 
