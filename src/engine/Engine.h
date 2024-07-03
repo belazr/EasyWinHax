@@ -1,6 +1,5 @@
 #pragma once
 #include "IDraw.h"
-#include "rgb.h"
 
 // Class for drawing within a graphics API hook.
 
@@ -129,7 +128,7 @@ namespace hax {
 		//
 		// [in] color:
 		// Color of the text.
-		void drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const;
+		void drawString(const font::Font* pFont, const Vector2* origin, const char* text, rgb::Color color) const;
 
 		// Draws a parallelogram grid with horizontal bottom and top sides.
 		//

@@ -1,5 +1,6 @@
 #pragma once
 #include "rgb.h"
+#include "font\Font.h"
 #include "..\vecmath.h"
 #include <Windows.h>
 
@@ -57,7 +58,7 @@ namespace hax{
 		//
 		// [in] color:
 		// Color of the text.
-		virtual void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
+		virtual void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
 	};
 
 }
