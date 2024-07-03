@@ -147,7 +147,7 @@ namespace hax {
 		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
-	void Engine::drawString(const void* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
+	void Engine::drawString(const font::Font* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
 		this->_pDraw->drawString(pFont, origin, text, color);
 	}
 

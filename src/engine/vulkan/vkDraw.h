@@ -89,7 +89,6 @@ namespace hax {
 				VkFence hFence;
 			}ImageData;
 
-
 			HMODULE _hVulkan;
 			HWND _hMainWindow;
 
@@ -172,7 +171,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
 			bool initialize(const Engine* pEngine);
@@ -195,8 +194,8 @@ namespace hax {
 			bool mapBufferData(BufferData* pBufferData) const;
 			bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 			void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
-			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
-			bool resizeBufferData(BufferData* pBufferData, size_t newSize);
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
+			bool resizeBufferData(BufferData* pBufferData, size_t newVertexCount);
 			void drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const;
 		};
 

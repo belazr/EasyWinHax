@@ -96,7 +96,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
+			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 			
 		private:
 			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;

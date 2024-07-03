@@ -396,11 +396,9 @@ namespace hax {
 		}
 
 
-		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 			
 			if (!this->_isBegin || !pFont) return;
-
-			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -410,11 +408,11 @@ namespace hax {
 				if (c == ' ') continue;
 
 				const font::CharIndex index = font::charToCharIndex(c);
-				const font::Char* pCurChar = &pCurFont->chars[index];
+				const font::Char* pCurChar = &pFont->chars[index];
 
 				if (pCurChar) {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-					const Vector2 curPos{ pos->x + (pCurFont->width + 2.f) * i, pos->y - pCurFont->height };
+					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
 					this->copyToBufferData(&this->_pCurImageData->pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
 					this->copyToBufferData(&this->_pCurImageData->pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 				}
@@ -1108,9 +1106,15 @@ namespace hax {
 
 		void Draw::destroyBufferData(BufferData* pBufferData) const {
 
-			if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
-				pBufferData->hVertexBuffer = VK_NULL_HANDLE;
+			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
+				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
+				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
+				pBufferData->hIndexMemory = VK_NULL_HANDLE;
+			}
+
+			if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
+				pBufferData->hIndexBuffer = VK_NULL_HANDLE;
 			}
 
 			if (pBufferData->hVertexMemory != VK_NULL_HANDLE) {
@@ -1119,15 +1123,9 @@ namespace hax {
 				pBufferData->hVertexMemory = VK_NULL_HANDLE;
 			}
 
-			if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
-				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
-				pBufferData->hIndexBuffer = VK_NULL_HANDLE;
-			}
-
-			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
-				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
-				this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
-				pBufferData->hIndexMemory = VK_NULL_HANDLE;
+			if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
+				this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
+				pBufferData->hVertexBuffer = VK_NULL_HANDLE;
 			}
 
 			pBufferData->vertexBufferSize = 0ull;
@@ -1227,7 +1225,7 @@ namespace hax {
 		}
 
 
-		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) {
+		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
 
 			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
 
@@ -1239,7 +1237,7 @@ namespace hax {
 
 			}
 
-			for (UINT i = 0u; i < count; i++) {
+			for (uint32_t i = 0u; i < count; i++) {
 				const uint32_t curIndex = pBufferData->curOffset + i;
 
 				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };

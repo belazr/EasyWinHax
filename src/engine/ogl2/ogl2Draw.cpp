@@ -101,11 +101,9 @@ namespace hax {
         }
 
 
-		void Draw::drawString(const void* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) {
 
 			if (!this->_isInit || !pFont) return;
-
-			const font::Font* const pCurFont = reinterpret_cast<const font::Font*>(pFont);
 
 			const size_t size = strlen(text);
 
@@ -115,11 +113,11 @@ namespace hax {
 				if (c == ' ') continue;
 
 				const font::CharIndex index = font::charToCharIndex(c);
-				const font::Char* pCurChar = &pCurFont->chars[index];
+				const font::Char* pCurChar = &pFont->chars[index];
 
 				if (pCurChar) {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-					const Vector2 curPos{ pos->x + (pCurFont->width + 2.f) * i, pos->y - pCurFont->height };
+					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
 					this->copyToBufferData(&this->_pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
 					this->copyToBufferData(&this->_pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 				}
