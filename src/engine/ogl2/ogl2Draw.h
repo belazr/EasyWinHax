@@ -1,7 +1,7 @@
 #pragma once
 #include "..\Vertex.h"
 #include "..\IDraw.h"
-#define GL_GLEXT_PROTOTYPES
+#include <stdint.h>
 #include <gl\GL.h>
 
 // Class for drawing with OpenGL 2.
@@ -10,27 +10,27 @@
 namespace hax {
 
 	namespace ogl2 {
-
 		typedef BOOL(APIENTRY* twglSwapBuffers)(HDC hDc);
-
-		typedef void(APIENTRY* tglGenBuffers)(GLsizei n, GLuint* buffers);
-		typedef void(APIENTRY* tglBindBuffer)(GLenum target, GLuint buffer);
-		typedef void(APIENTRY* tglBufferData)(GLenum target, uintptr_t size, const GLvoid* data, GLenum usage);
-		typedef void*(APIENTRY* tglMapBuffer)(GLenum target, GLenum access);
-		typedef GLboolean (APIENTRY* tglUnmapBuffer)(GLenum target);
-		typedef void(APIENTRY* tglDeleteBuffers)(GLsizei n, const GLuint* buffers);
-
-		typedef struct BufferData {
-			GLuint vertexBufferId;
-			GLuint indexBufferId;
-			Vertex* pLocalVertexBuffer;
-			GLuint* pLocalIndexBuffer;
-			UINT size;
-			UINT curOffset;
-		}BufferData;
 
 		class Draw : public IDraw {
 		private:
+			typedef void(APIENTRY* tglGenBuffers)(GLsizei n, GLuint* buffers);
+			typedef void(APIENTRY* tglBindBuffer)(GLenum target, GLuint buffer);
+			typedef void(APIENTRY* tglBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
+			typedef void* (APIENTRY* tglMapBuffer)(GLenum target, GLenum access);
+			typedef GLboolean(APIENTRY* tglUnmapBuffer)(GLenum target);
+			typedef void(APIENTRY* tglDeleteBuffers)(GLsizei n, const GLuint* buffers);
+
+			typedef struct BufferData {
+				GLuint vertexBufferId;
+				GLuint indexBufferId;
+				Vertex* pLocalVertexBuffer;
+				GLuint* pLocalIndexBuffer;
+				uint32_t vertexBufferSize;
+				uint32_t indexBufferSize;
+				uint32_t curOffset;
+			}BufferData;
+
 			tglGenBuffers _pglGenBuffers;
 			tglBindBuffer _pglBindBuffer;
 			tglBufferData _pglBufferData;
@@ -42,9 +42,7 @@ namespace hax {
 			GLint _height;
 
 			BufferData _triangleListBufferData;
-
-			GLuint _lastIndexBufferId;
-			GLuint _lastVertexBufferId;
+			BufferData _pointListBufferData;
 
 			bool _isInit;
 
@@ -101,9 +99,13 @@ namespace hax {
 
 		private:
 			bool getProcAddresses();
-			bool createBufferData(BufferData* pBufferData, UINT size) const;
-			bool createBuffer(GLenum target, GLenum binding, UINT size, GLuint* pId) const;
-			bool resizeBuffers(BufferData* pBufferData, UINT newSize) const;
+			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
+			void destroyBufferData(BufferData* pBufferData) const;
+			bool createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const;
+			bool mapBufferData(BufferData* pBufferData) const;
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const;
+			void drawBufferData(BufferData* pBufferData, GLenum mode) const;
 		};
 
 	}
