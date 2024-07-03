@@ -14,10 +14,9 @@ namespace hax {
 		constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
 		constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
 
-		Draw::Draw() : _pglGenBuffers{}, _pglBindBuffer{}, _pglBufferData{},
-			_pglMapBuffer{}, _pglUnmapBuffer{}, _pglDeleteBuffers {},
-			_width{}, _height{}, _triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
-			 _isInit {} {}
+		Draw::Draw() : _f{}, _width{}, _height{},
+			_triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
+			_isInit {} {}
 
 
 		Draw::~Draw() {
@@ -28,23 +27,8 @@ namespace hax {
 
 		void Draw::beginDraw(Engine* pEngine) {
 
-			if (!this->_isInit) {
-
-				if (!this->getProcAddresses()) return;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-				
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
-				
-				this->_isInit = true;
+			if (!this->_isInit) {				
+				this->_isInit = this->initialize();
 			}
 
 			GLint viewport[4]{};
@@ -128,21 +112,46 @@ namespace hax {
 		}
 
 
-		bool Draw::getProcAddresses() {
-			this->_pglGenBuffers = reinterpret_cast<tglGenBuffers>(wglGetProcAddress("glGenBuffers"));
-			this->_pglBindBuffer = reinterpret_cast<tglBindBuffer>(wglGetProcAddress("glBindBuffer"));
-			this->_pglBufferData = reinterpret_cast<tglBufferData>(wglGetProcAddress("glBufferData"));
-			this->_pglMapBuffer = reinterpret_cast<tglMapBuffer>(wglGetProcAddress("glMapBuffer"));
-			this->_pglUnmapBuffer = reinterpret_cast<tglUnmapBuffer>(wglGetProcAddress("glUnmapBuffer"));
-			this->_pglDeleteBuffers = reinterpret_cast<tglDeleteBuffers>(wglGetProcAddress("glDeleteBuffers"));
+		bool Draw::initialize() {
+			
+			if (!this->getProcAddresses()) return false;
 
-			if (
-				!this->_pglGenBuffers || !this->_pglBindBuffer || !this->_pglBufferData ||
-				!this->_pglMapBuffer || !this->_pglUnmapBuffer || !this->_pglDeleteBuffers
-			) return false;
+			this->destroyBufferData(&this->_triangleListBufferData);
+
+			constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+
+			if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+			this->destroyBufferData(&this->_pointListBufferData);
+
+			constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
+
+			if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+			
+			return true;
+		}
+
+
+		#define ASSIGN_PROC_ADDRESS(f) this->_f.pGl##f = reinterpret_cast<tGl##f>(wglGetProcAddress("gl"#f))
+
+		bool Draw::getProcAddresses() {
+			ASSIGN_PROC_ADDRESS(GenBuffers);
+			ASSIGN_PROC_ADDRESS(BindBuffer);
+			ASSIGN_PROC_ADDRESS(BufferData);
+			ASSIGN_PROC_ADDRESS(MapBuffer);
+			ASSIGN_PROC_ADDRESS(UnmapBuffer);
+			ASSIGN_PROC_ADDRESS(DeleteBuffers);
+
+			for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
+
+				if (!(this->_fPtrs[i])) return false;
+
+			}
 
 			return true;
 		}
+
+		#undef ASSIGN_PROC_ADDRESS
 
 
 		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
@@ -170,11 +179,11 @@ namespace hax {
 				GLuint curBufferId{};
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
-				this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
+				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
 
-				this->_pglDeleteBuffers(1, &pBufferData->indexBufferId);
+				this->_f.pGlDeleteBuffers(1, &pBufferData->indexBufferId);
 				pBufferData->indexBufferId = UINT_MAX;
 			}
 
@@ -182,11 +191,11 @@ namespace hax {
 				GLuint curArrayBufferId{};
 				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curArrayBufferId));
 
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
-				this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, curArrayBufferId);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
+				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curArrayBufferId);
 
-				this->_pglDeleteBuffers(1, &pBufferData->vertexBufferId);
+				this->_f.pGlDeleteBuffers(1, &pBufferData->vertexBufferId);
 				pBufferData->vertexBufferId = UINT_MAX;
 			}
 			
@@ -203,17 +212,17 @@ namespace hax {
 
 		bool Draw::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const
 		{
-			this->_pglGenBuffers(1, pId);
+			this->_f.pGlGenBuffers(1, pId);
 
 			if (*pId == UINT_MAX) return false;
 
 			GLuint curBufferId = 0u;
 			glGetIntegerv(binding, reinterpret_cast<GLint*>(&curBufferId));
 
-			this->_pglBindBuffer(target, *pId);
-			this->_pglBufferData(target, size, nullptr, GL_DYNAMIC_DRAW);
+			this->_f.pGlBindBuffer(target, *pId);
+			this->_f.pGlBufferData(target, size, nullptr, GL_DYNAMIC_DRAW);
 			
-			this->_pglBindBuffer(target, curBufferId);
+			this->_f.pGlBindBuffer(target, curBufferId);
 
 			return true;
 		}
@@ -225,11 +234,11 @@ namespace hax {
 				GLuint curBufferId{};
 				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
 
-				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_pglMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
-				this->_pglBindBuffer(GL_ARRAY_BUFFER, curBufferId);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curBufferId);
 
 				if (!pBufferData->pLocalVertexBuffer) return false;
 
@@ -239,11 +248,11 @@ namespace hax {
 				GLuint curBufferId{};
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 
-				pBufferData->pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_pglMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
+				pBufferData->pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 
-				this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
 
 				if (!pBufferData->pLocalIndexBuffer) return false;
 
@@ -318,8 +327,8 @@ namespace hax {
 			GLuint curIndexBufferId{};
 			glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curIndexBufferId));
 
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
+			this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, pBufferData->vertexBufferId);
+			this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glEnableClientState(GL_COLOR_ARRAY);
@@ -328,10 +337,10 @@ namespace hax {
 			glVertexPointer(2, GL_FLOAT, sizeof(Vertex), nullptr);
 			glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
 
-			this->_pglUnmapBuffer(GL_ARRAY_BUFFER);
+			this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
 			pBufferData->pLocalVertexBuffer = nullptr;
 
-			this->_pglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 			pBufferData->pLocalIndexBuffer = nullptr;
 
 			glDrawElements(mode, static_cast<GLsizei>(pBufferData->curOffset), GL_UNSIGNED_INT, nullptr);
@@ -341,8 +350,8 @@ namespace hax {
 
 			pBufferData->curOffset = 0u;
 
-			this->_pglBindBuffer(GL_ARRAY_BUFFER, curVertexBufferId);
-			this->_pglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curIndexBufferId);
+			this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curVertexBufferId);
+			this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curIndexBufferId);
 
 			return;
 		}

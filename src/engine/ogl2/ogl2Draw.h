@@ -14,12 +14,21 @@ namespace hax {
 
 		class Draw : public IDraw {
 		private:
-			typedef void(APIENTRY* tglGenBuffers)(GLsizei n, GLuint* buffers);
-			typedef void(APIENTRY* tglBindBuffer)(GLenum target, GLuint buffer);
-			typedef void(APIENTRY* tglBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
-			typedef void* (APIENTRY* tglMapBuffer)(GLenum target, GLenum access);
-			typedef GLboolean(APIENTRY* tglUnmapBuffer)(GLenum target);
-			typedef void(APIENTRY* tglDeleteBuffers)(GLsizei n, const GLuint* buffers);
+			typedef void(APIENTRY* tGlGenBuffers)(GLsizei n, GLuint* buffers);
+			typedef void(APIENTRY* tGlBindBuffer)(GLenum target, GLuint buffer);
+			typedef void(APIENTRY* tGlBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
+			typedef void* (APIENTRY* tGlMapBuffer)(GLenum target, GLenum access);
+			typedef GLboolean(APIENTRY* tGlUnmapBuffer)(GLenum target);
+			typedef void(APIENTRY* tGlDeleteBuffers)(GLsizei n, const GLuint* buffers);
+
+			typedef struct Functions {
+				tGlGenBuffers pGlGenBuffers;
+				tGlBindBuffer pGlBindBuffer;
+				tGlBufferData pGlBufferData;
+				tGlMapBuffer pGlMapBuffer;
+				tGlUnmapBuffer pGlUnmapBuffer;
+				tGlDeleteBuffers pGlDeleteBuffers;
+			}Functions;
 
 			typedef struct BufferData {
 				GLuint vertexBufferId;
@@ -31,12 +40,10 @@ namespace hax {
 				uint32_t curOffset;
 			}BufferData;
 
-			tglGenBuffers _pglGenBuffers;
-			tglBindBuffer _pglBindBuffer;
-			tglBufferData _pglBufferData;
-			tglMapBuffer _pglMapBuffer;
-			tglUnmapBuffer _pglUnmapBuffer;
-			tglDeleteBuffers _pglDeleteBuffers;
+			union {
+				Functions _f;
+				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
+			};
 
 			GLint _width;
 			GLint _height;
@@ -98,6 +105,7 @@ namespace hax {
 			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) override;
 
 		private:
+			bool initialize();
 			bool getProcAddresses();
 			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
