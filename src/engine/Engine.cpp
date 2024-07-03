@@ -128,6 +128,7 @@ namespace hax {
 		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
+
 	void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const {
 		Vector2 corners[6]{};
 		corners[0].x = pos->x;
@@ -147,9 +148,33 @@ namespace hax {
 		this->_pDraw->drawTriangleList(corners, 6, color);
 	}
 
-	void Engine::drawString(const font::Font* pFont, const Vector2* origin, const char* text, rgb::Color color) const {
-		this->_pDraw->drawString(pFont, origin, text, color);
+
+	void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
+		
+		if (!pFont) return;
+		
+		const size_t size = strlen(text);
+
+		for (size_t i = 0; i < size; i++) {
+			const char c = text[i];
+
+			if (c == ' ') continue;
+
+			const font::CharIndex index = font::charToCharIndex(c);
+			const font::Char* pCurChar = &pFont->chars[index];
+
+			if (pCurChar) {
+				// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
+				const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
+				this->_pDraw->drawPointList(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+				this->_pDraw->drawPointList(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+			}
+
+		}
+
+		return;
 	}
+
 
 	void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const {
 		const float height = bot->y - top->y;
@@ -195,6 +220,7 @@ namespace hax {
 
 		return;
 	}
+
 
 	void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, rgb::Color color) const {
 		// top face

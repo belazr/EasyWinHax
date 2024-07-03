@@ -1,8 +1,8 @@
 #pragma once
 #include "rgb.h"
-#include "font\Font.h"
 #include "..\vecmath.h"
 #include <Windows.h>
+#include <stdint.h>
 
 // Interface for drawing with graphics APIs within a hook.
 // The appropriate implementation should be instantiated and passed to an engine object.
@@ -34,31 +34,31 @@ namespace hax{
 		// 
 		// [in] corners:
 		// Screen coordinates of the corners of the triangles in the list.
-		// The three corners of the first triangle have to be in clockwise order. For there on the orientation of the triangles has to alternate.
+		// The three corners of the first triangle have to be in clockwise order. From there on the orientation of the triangles has to alternate.
 		// 
 		// [in] count:
 		// Count of the corners of the triangles in the list. Has to be divisble by three.
 		// 
-		// [in]
-		// Color of the triangle list.
-		virtual void drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) = 0;
+		// [in] color:
+		// Color of each triangle.
+		virtual void drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) = 0;
 
-		// Draws text to the screen. Should be called by an Engine object.
-		//
+		// Draws a point list. Should be called by an Engine object.
+		// 
 		// Parameters:
 		// 
-		// [in] pFont:
-		// Pointer to an appropriate Font object. dx::Font<dx1:Vertex>* for DirectX 11 hooks, dx::Font<dx9:Vertex>* for DirectX 9 hooks and ogl2::Font* for OpenGL 2 hooks.
-		//
-		// [in] origin:
-		// Coordinates of the bottom left corner of the first character of the text.
+		// [in] coordinate:
+		// Screen coordinates of the points in the list.
 		// 
-		// [in] text:
-		// Text to be drawn. See length limitations implementations.
-		//
+		// [in] count:
+		// Count of the points in the list..
+		// 
 		// [in] color:
-		// Color of the text.
-		virtual void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) = 0;
+		// Color of each point.
+		//
+		// [in] offest:
+		// Offset by which each point is drawn.
+		virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) = 0;
 	};
 
 }

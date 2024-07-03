@@ -119,9 +119,9 @@ namespace hax {
 		}
 
 
-		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
+		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-			if (!this->_isInit || count % 3) return;
+			if (!this->_isInit || count % 3u) return;
 			
 			this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color);
 
@@ -129,28 +129,11 @@ namespace hax {
 		}
 
 
-		void Draw::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) {
+		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 			
-			if (!this->_isInit || !pFont) return;
+			if (!this->_isInit) return;
 
-			const size_t size = strlen(text);
-
-			for (size_t i = 0; i < size; i++) {
-				const char c = text[i];
-
-				if (c == ' ') continue;
-				
-				const font::CharIndex index = font::charToCharIndex(c);
-				const font::Char* pCurChar = &pFont->chars[index];
-
-				if (pCurChar) {
-					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-					this->copyToVertexBuffer(&this->_pointListBufferData, pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
-				}
-
-			}
+			this->copyToVertexBuffer(&this->_pointListBufferData, coordinates, count, color, offset);
 
 			return;
 		}
