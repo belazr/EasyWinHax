@@ -51,6 +51,7 @@ namespace hax {
 			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
 			
 			bool _isInit;
+			bool _isBegin;
 
 		public:
 			Draw();
