@@ -27,12 +27,12 @@ namespace hax {
 		// True on success, false on failure.
 		bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size);
 
-		typedef struct VertexBufferData {
+		typedef struct BufferData {
 			ID3D11Buffer* pBuffer;
 			Vertex* pLocalBuffer;
 			UINT size;
 			UINT curOffset;
-		}VertexBufferData;
+		}BufferData;
 
 		class Draw : public IDraw {
 		private:
@@ -44,8 +44,8 @@ namespace hax {
 			ID3D11RenderTargetView* _pRenderTargetView;
 			ID3D11Buffer* _pConstantBuffer;
 			
-			VertexBufferData _pointListBufferData;
-			VertexBufferData _triangleListBufferData;
+			BufferData _pointListBufferData;
+			BufferData _triangleListBufferData;
 			
 			D3D11_VIEWPORT _viewport;
 			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
@@ -104,14 +104,16 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 		private:
+			bool initialize(IDXGISwapChain* pSwapChain);
 			bool compileShaders();
-			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;
+			bool createBufferData(BufferData* pBufferData, UINT size) const;
 			void getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 			bool createConstantBuffer();
 			void updateConstantBuffer() const;
-			void copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const;
-			void drawVertexBuffer(VertexBufferData* pVertexBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
+			bool mapBufferData(BufferData* pBufferData) const;
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			bool resizeBufferData(BufferData* pBufferData, UINT newSize) const;
+			void drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
 
 		};
 
