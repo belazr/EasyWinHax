@@ -16,7 +16,7 @@ namespace hax {
 
 		Draw::Draw() : _f{}, _width{}, _height{},
 			_triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
-			_isInit {} {}
+			_isInit{}, _isBegin{} {}
 
 
 		Draw::~Draw() {
@@ -26,6 +26,7 @@ namespace hax {
 
 
 		void Draw::beginDraw(Engine* pEngine) {
+			this->_isBegin = false;
 
 			if (!this->_isInit) {				
 				this->_isInit = this->initialize();
@@ -54,6 +55,8 @@ namespace hax {
 			
 			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
+			this->_isBegin = true;
+
 			return;
 		}
 
@@ -61,7 +64,7 @@ namespace hax {
 		void Draw::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 			
 			this->drawBufferData(&this->_pointListBufferData, GL_POINTS);
 			this->drawBufferData(&this->_triangleListBufferData, GL_TRIANGLES);
@@ -77,7 +80,7 @@ namespace hax {
 
 		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 			
-			if (!this->_isInit || count % 3u) return;
+			if (!this->_isBegin || count % 3u) return;
 			
 			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -87,7 +90,7 @@ namespace hax {
 
 		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 
 			this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 

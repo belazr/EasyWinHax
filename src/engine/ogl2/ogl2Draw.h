@@ -52,6 +52,7 @@ namespace hax {
 			BufferData _pointListBufferData;
 
 			bool _isInit;
+			bool _isBegin;
 
 		public:
 			Draw();
