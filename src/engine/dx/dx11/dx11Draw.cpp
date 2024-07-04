@@ -39,7 +39,7 @@ namespace hax {
 
 		Draw::Draw() :
 			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
-			_pointListBufferData{}, _triangleListBufferData{}, _viewport {}, _originalTopology{}, _isInit{} {}
+			_pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _originalTopology{}, _isInit{}, _isBegin{} {}
 
 
 		Draw::~Draw() {
@@ -89,6 +89,8 @@ namespace hax {
 		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
 
 		void Draw::beginDraw(Engine* pEngine) {
+			this->_isBegin = false;
+
 			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg1);
 
 			if (!this->_isInit) {
@@ -126,6 +128,8 @@ namespace hax {
 			
 			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
+			this->_isBegin = true;
+
 			return;
 		}
 
@@ -133,7 +137,7 @@ namespace hax {
 		void Draw::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 
 			// draw all the buffers at once to save api calls
 			this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0u);
@@ -159,7 +163,7 @@ namespace hax {
 
 		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-			if (!this->_isInit || count % 3u) return;
+			if (!this->_isBegin || count % 3u) return;
 			
 			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -169,7 +173,7 @@ namespace hax {
 
 		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 
 			this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
