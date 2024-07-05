@@ -44,42 +44,37 @@ namespace hax {
 
 		Draw::~Draw() {
 
-			if (this->_pDevice) {
-				this->_pDevice->Release();
-			}
-
-			if (this->_pContext) {
-				this->_pContext->Release();
-			}
-
-			if (this->_pVertexShader) {
-				this->_pVertexShader->Release();
-			}
-
-			if (this->_pVertexLayout) {
-				this->_pVertexLayout->Release();
-			}
-
-			if (this->_pPixelShader) {
-				this->_pPixelShader->Release();
+			if (this->_pRenderTargetView) {
+				this->_pRenderTargetView->Release();
 			}
 
 			if (this->_pConstantBuffer) {
 				this->_pConstantBuffer->Release();
 			}
 
-			if (this->_pRenderTargetView) {
-				this->_pRenderTargetView->Release();
+			if (this->_pContext) {
+				this->destroyBufferData(&this->_triangleListBufferData);
+				this->destroyBufferData(&this->_pointListBufferData);
 			}
 
-			if (this->_pointListBufferData.pBuffer) {
-				this->_pContext->Unmap(this->_pointListBufferData.pBuffer, 0u);
-				this->_pointListBufferData.pBuffer->Release();
+			if (this->_pPixelShader) {
+				this->_pPixelShader->Release();
 			}
 
-			if (this->_triangleListBufferData.pBuffer) {
-				this->_pContext->Unmap(this->_triangleListBufferData.pBuffer, 0u);
-				this->_triangleListBufferData.pBuffer->Release();
+			if (this->_pVertexLayout) {
+				this->_pVertexLayout->Release();
+			}
+
+			if (this->_pVertexShader) {
+				this->_pVertexShader->Release();
+			}
+
+			if (this->_pContext) {
+				this->_pContext->Release();
+			}
+
+			if (this->_pDevice) {
+				this->_pDevice->Release();
 			}
 
 		}
@@ -106,7 +101,7 @@ namespace hax {
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
-			// the render target view is released every frame in endDraw() so there is no leftover reference to the backbuffer
+			// the render target view is released every frame in endDraw() and there is no leftover reference to the backbuffer
 			// so it has to be created every frame as well
 			// this is done so resolution changes do not break rendering
 			ID3D11Texture2D* pBackBuffer = nullptr;
@@ -186,13 +181,19 @@ namespace hax {
 
 			if (hResult != S_OK || !this->_pDevice) return false;
 
-			this->_pDevice->GetImmediateContext(&this->_pContext);
+			if (!this->_pContext) {
+				this->_pDevice->GetImmediateContext(&this->_pContext);
+			}
 
 			if (!this->_pContext) return false;
-
+			
 			if (!this->compileShaders()) return false;
 
+			this->destroyBufferData(&this->_pointListBufferData);
+
 			if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+			this->destroyBufferData(&this->_triangleListBufferData);
 
 			if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
@@ -325,6 +326,8 @@ namespace hax {
 
 
 		bool Draw::createBufferData(BufferData* pBufferData, UINT size) const {
+			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
+			
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			bufferDesc.ByteWidth = size;
@@ -333,21 +336,27 @@ namespace hax {
 
 			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pBufferData->pBuffer);
 
-			if (!pBufferData->pBuffer) {
-				pBufferData->pLocalBuffer = nullptr;
-				pBufferData->size = 0u;
-				pBufferData->curOffset = 0u;
+			if (hResult != S_OK || !pBufferData->pBuffer) return false;
 
-				return false;
-			}
-
-			if (hResult != S_OK) return false;
-
-			pBufferData->pLocalBuffer = nullptr;
 			pBufferData->size = size;
-			pBufferData->curOffset = 0u;
 
 			return true;
+		}
+
+
+		void Draw::destroyBufferData(BufferData* pBufferData) const {
+			
+			if (pBufferData->pBuffer) {
+				this->_pContext->Unmap(pBufferData->pBuffer, 0u);
+				pBufferData->pLocalBuffer = nullptr;
+				pBufferData->pBuffer->Release();
+				pBufferData->pBuffer = nullptr;
+			}
+			
+			pBufferData->size = 0u;
+			pBufferData->curOffset = 0u;
+
+			return;
 		}
 
 
@@ -419,7 +428,11 @@ namespace hax {
 
 			const BufferData oldBufferData = *pBufferData;
 
-			if (!this->createBufferData(pBufferData, newSize)) return false;
+			if (!this->createBufferData(pBufferData, newSize)) {
+				this->destroyBufferData(pBufferData);
+
+				return false;
+			}
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
 
