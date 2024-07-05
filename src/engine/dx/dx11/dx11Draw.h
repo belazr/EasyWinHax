@@ -28,10 +28,10 @@ namespace hax {
 		bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size);
 
 		typedef struct BufferData {
-			ID3D11Buffer* pBuffer;
-			Vertex* pLocalBuffer;
-			UINT size;
-			UINT curOffset;
+			ID3D11Buffer* pVertexBuffer;
+			Vertex* pLocalVertexBuffer;
+			uint32_t vertexBufferSize;
+			uint32_t curOffset;
 		}BufferData;
 
 		class Draw : public IDraw {
@@ -107,14 +107,14 @@ namespace hax {
 		private:
 			bool initialize(IDXGISwapChain* pSwapChain);
 			bool compileShaders();
-			bool createBufferData(BufferData* pBufferData, UINT size) const;
+			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
 			void getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 			bool createConstantBuffer();
 			void updateConstantBuffer() const;
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-			bool resizeBufferData(BufferData* pBufferData, UINT newSize) const;
+			bool resizeBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
 		};
 
