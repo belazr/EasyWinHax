@@ -111,7 +111,7 @@ namespace hax {
 			void destroyBufferData(BufferData* pBufferData) const;
 			void getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 			bool createConstantBuffer();
-			void updateConstantBuffer() const;
+			bool updateConstantBuffer() const;
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 			bool resizeBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
