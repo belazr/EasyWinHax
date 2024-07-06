@@ -48,7 +48,6 @@ namespace hax {
 			BufferData _triangleListBufferData;
 			
 			D3D11_VIEWPORT _viewport;
-			D3D11_PRIMITIVE_TOPOLOGY _originalTopology;
 			
 			bool _isInit;
 			bool _isBegin;
