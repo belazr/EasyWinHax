@@ -94,31 +94,35 @@ namespace hax {
 
 			if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
 				this->_viewport = curViewport;
-				this->updateConstantBuffer();
+				
+				if (!this->updateConstantBuffer()) return;
+				
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
-			// the render target view is released every frame in endDraw() and there is no leftover reference to the backbuffer
-			// so it has to be created every frame as well
-			// this is done so resolution changes do not break rendering
-			ID3D11Texture2D* pBackBuffer = nullptr;
-			pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer));
+			if (!this->_pRenderTargetView) {
+				// the render target view is released every frame in endDraw() and there is no leftover reference to the backbuffer
+				// so it has to be acquired every frame as well
+				// this is done so resolution changes do not break rendering
+				ID3D11Texture2D* pBackBuffer = nullptr;
+				pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer));
 
-			if (!pBackBuffer) return;
+				if (!pBackBuffer) return;
 
-			this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView);
+				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) return;
+
+				pBackBuffer->Release();
+			}
+
+			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 			
-			pBackBuffer->Release();
+			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
 			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 			this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 			this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 			this->_pContext->IASetInputLayout(this->_pVertexLayout);
 			this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
-
-			if (!this->mapBufferData(&this->_pointListBufferData)) return;
-			
-			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
 			this->_isBegin = true;
 
@@ -354,7 +358,7 @@ namespace hax {
 		}
 
 
-		void Draw::updateConstantBuffer() const {
+		bool Draw::updateConstantBuffer() const {
 			const float viewLeft = this->_viewport.TopLeftX;
 			const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
 			const float viewTop = this->_viewport.TopLeftY;
@@ -368,13 +372,14 @@ namespace hax {
 			};
 
 			D3D11_MAPPED_SUBRESOURCE subresource{};
-			this->_pContext->Map(this->_pConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource);
+			
+			if (FAILED(this->_pContext->Map(this->_pConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource))) return false;
 			
 			memcpy(subresource.pData, ortho, sizeof(ortho));
 			
 			this->_pContext->Unmap(this->_pConstantBuffer, 0u);
 			
-			return;
+			return true;
 		}
 
 
@@ -384,7 +389,9 @@ namespace hax {
 			
 			if (!pBufferData->pLocalVertexBuffer) {
 				D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
-				this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints);
+				
+				if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
+				
 				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
 			}
 			
