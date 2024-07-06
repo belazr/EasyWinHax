@@ -104,12 +104,14 @@ namespace hax {
 				// the render target view is released every frame in endDraw() and there is no leftover reference to the backbuffer
 				// so it has to be acquired every frame as well
 				// this is done so resolution changes do not break rendering
-				ID3D11Texture2D* pBackBuffer = nullptr;
-				pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer));
+				ID3D11Texture2D* pBackBuffer{};
+				if (FAILED(pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return;
 
-				if (!pBackBuffer) return;
-
-				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) return;
+				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
+					pBackBuffer->Release();
+					
+					return;
+				}
 
 				pBackBuffer->Release();
 			}
