@@ -44,18 +44,19 @@ namespace hax {
 
 		Draw::~Draw() {
 
-			if (this->_pointListBufferData.pBuffer) {
-				this->_pointListBufferData.pBuffer->Unlock();
-				this->_pointListBufferData.pBuffer->Release();
+			this->destroyBufferData(&this->_triangleListBufferData);
+			this->destroyBufferData(&this->_pointListBufferData);
+
+			if (this->_pVertexDeclaration) {
+				this->_pVertexDeclaration->Release();
 			}
 
 		}
 
 
-		constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
-		constexpr UINT INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
-		constexpr UINT INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 100;
-		
+		constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
+		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 99;
+
 		void Draw::beginDraw(Engine* pEngine) {
 
 			if (!this->_isInit) {
@@ -63,17 +64,25 @@ namespace hax {
 
 				if (!this->_pDevice) return;
 
-				if (!createVertexBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
-
-				if (!createVertexBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
-
 				constexpr D3DVERTEXELEMENT9 vertexElements[]{
-					{ 0, 0,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0 },
-					{ 0, 8, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+					{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
+					{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
 					D3DDECL_END()
 				};
 
-				this->_pDevice->CreateVertexDeclaration(vertexElements, &this->_pVertexDeclaration);
+				if (!this->_pVertexDeclaration) {
+
+					if (FAILED(this->_pDevice->CreateVertexDeclaration(vertexElements, &this->_pVertexDeclaration))) return;
+
+				}
+
+				this->destroyBufferData(&this->_pointListBufferData);
+
+				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
+
+				this->destroyBufferData(&this->_triangleListBufferData);
+
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
 
 				this->_isInit = true;
 			}
@@ -89,9 +98,17 @@ namespace hax {
 			this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration);
 			this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration);
 
-			// locking the buffers is expensive so it is just done once per frame if no resize is necessary
-			this->_pointListBufferData.pBuffer->Lock(0u, this->_pointListBufferData.size, reinterpret_cast<void**>(&this->_pointListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
-			this->_triangleListBufferData.pBuffer->Lock(0u, this->_triangleListBufferData.size, reinterpret_cast<void**>(&this->_triangleListBufferData.pLocalBuffer), D3DLOCK_DISCARD);
+			if (!this->_pointListBufferData.pLocalVertexBuffer) {
+
+				if (!this->mapBufferData(&this->_pointListBufferData)) return;
+
+			}
+			
+			if (!this->_triangleListBufferData.pLocalVertexBuffer) {
+
+				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+
+			}
 
 			return;
 		}
@@ -102,15 +119,14 @@ namespace hax {
 
 			if (!this->_isInit) return;
 
-			// draw all the buffers at once to save api calls
-			if (this->_triangleListBufferData.pBuffer->Unlock() == D3D_OK) {
-				this->_triangleListBufferData.pLocalBuffer = nullptr;
-				this->drawVertexBuffer(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
+			if (this->_triangleListBufferData.pVertexBuffer->Unlock() == D3D_OK) {
+				this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
+				this->drawBufferData(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
 			}
 
-			if (this->_pointListBufferData.pBuffer->Unlock() == D3D_OK) {
-				this->_pointListBufferData.pLocalBuffer = nullptr;
-				this->drawVertexBuffer(&this->_pointListBufferData, D3DPT_POINTLIST);
+			if (this->_pointListBufferData.pVertexBuffer->Unlock() == D3D_OK) {
+				this->_pointListBufferData.pLocalVertexBuffer = nullptr;
+				this->drawBufferData(&this->_pointListBufferData, D3DPT_POINTLIST);
 			}
 
 			this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
@@ -123,7 +139,7 @@ namespace hax {
 
 			if (!this->_isInit || count % 3u) return;
 			
-			this->copyToVertexBuffer(&this->_triangleListBufferData, corners, count, color);
+			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
 			return;
 		}
@@ -133,105 +149,129 @@ namespace hax {
 			
 			if (!this->_isInit) return;
 
-			this->copyToVertexBuffer(&this->_pointListBufferData, coordinates, count, color, offset);
+			this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
 			return;
 		}
 
 
-		bool Draw::createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const {
-			const HRESULT hResult = this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pVertexBufferData->pBuffer, nullptr);
+		bool Draw::createBufferData(BufferData* pBufferData, uint32_t size) const {
+			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 
-			if (!pVertexBufferData->pBuffer) {
-				pVertexBufferData->pLocalBuffer = nullptr;
-				pVertexBufferData->size = 0u;
-				pVertexBufferData->curOffset = 0u;
+			constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
+			
+			if (FAILED(this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pBufferData->pVertexBuffer, nullptr))) return false;
 
-				return false;
-			}
-
-			if (hResult != D3D_OK) return false;
-
-			pVertexBufferData->pLocalBuffer = nullptr;
-			pVertexBufferData->size = size;
-			pVertexBufferData->curOffset = 0u;
+			pBufferData->vertexBufferSize = size;
 
 			return true;
 		}
 
 
-		void Draw::copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset) const {
-			
-			if (!pVertexBufferData->pLocalBuffer) return;
-			
-			const UINT sizeNeeded = (pVertexBufferData->curOffset + count) * sizeof(Vertex);
 
-			if (sizeNeeded > pVertexBufferData->size) {
+		void Draw::destroyBufferData(BufferData* pBufferData) const {
+			pBufferData->vertexBufferSize = 0u;
+			pBufferData->curOffset = 0u;
 
-				if (!this->resizeVertexBuffer(pVertexBufferData, sizeNeeded * 2)) return;
-
+			if (!pBufferData->pVertexBuffer) return;
+				
+			if (pBufferData->pLocalVertexBuffer) {
+				pBufferData->pVertexBuffer->Unlock();
+				pBufferData->pLocalVertexBuffer = nullptr;
 			}
 
-			for (UINT i = 0u; i < count; i++) {
-				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, COLOR_ABGR_TO_ARGB(color)};
-				memcpy(&(pVertexBufferData->pLocalBuffer[pVertexBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
-			}
-
-			pVertexBufferData->curOffset += count;
+			pBufferData->pVertexBuffer->Release();
+			pBufferData->pVertexBuffer = nullptr;
 
 			return;
 		}
 
 
-		bool Draw::resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const {
-			const UINT bytesUsed = pVertexBufferData->curOffset * sizeof(Vertex);
+		bool Draw::mapBufferData(BufferData* pBufferData) const {
+
+			if (!pBufferData->pVertexBuffer) return false;
+
+			return SUCCEEDED(pBufferData->pVertexBuffer->Lock(0u, pBufferData->vertexBufferSize, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer), D3DLOCK_DISCARD));
+		}
+
+
+		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
+			
+			if (!pBufferData->pLocalVertexBuffer) return;
+			
+			const uint32_t sizeNeeded = (pBufferData->curOffset + count) * sizeof(Vertex);
+
+			if (sizeNeeded > pBufferData->vertexBufferSize) {
+
+				if (!this->resizeBufferData(pBufferData, sizeNeeded * 2)) return;
+
+			}
+
+			for (uint32_t i = 0u; i < count; i++) {
+				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, COLOR_ABGR_TO_ARGB(color)};
+				memcpy(&(pBufferData->pLocalVertexBuffer[pBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
+			}
+
+			pBufferData->curOffset += count;
+
+			return;
+		}
+
+
+		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newSize) const {
+			const uint32_t bytesUsed = pBufferData->curOffset * sizeof(Vertex);
 			
 			if (newSize < bytesUsed) return false;
 
-			const VertexBufferData oldBufferData = *pVertexBufferData;
+			BufferData oldBufferData = *pBufferData;
 
-			if (!this->createVertexBufferData(pVertexBufferData, newSize)) return false;
-			
-			if (pVertexBufferData->pBuffer->Lock(0u, pVertexBufferData->size, reinterpret_cast<void**>(&pVertexBufferData->pLocalBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+			if (!this->createBufferData(pBufferData, newSize)) {
+				this->destroyBufferData(pBufferData);
 
-			if (oldBufferData.pBuffer && oldBufferData.pLocalBuffer) {
-				memcpy(pVertexBufferData->pLocalBuffer, oldBufferData.pLocalBuffer, bytesUsed);
-
-				oldBufferData.pBuffer->Unlock();
-				oldBufferData.pBuffer->Release();
+				return false;
 			}
+			
+			if (pBufferData->pVertexBuffer->Lock(0u, pBufferData->vertexBufferSize, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+
+			if (oldBufferData.pLocalVertexBuffer) {
+				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, bytesUsed);
+			}
+
+			pBufferData->curOffset = oldBufferData.curOffset;
+
+			this->destroyBufferData(&oldBufferData);
 
 			return true;
 		}
 
 
-		void Draw::drawVertexBuffer(VertexBufferData* pVertexBufferData, D3DPRIMITIVETYPE type) const {
-			UINT primitiveCount = 0u;
+		void Draw::drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const {
+			UINT primitiveCount{};
 
 			switch (type) {
 			case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
-				primitiveCount = pVertexBufferData->curOffset;
+				primitiveCount = pBufferData->curOffset;
 				break;
 			case D3DPRIMITIVETYPE::D3DPT_LINELIST:
-				primitiveCount = pVertexBufferData->curOffset / 2;
+				primitiveCount = pBufferData->curOffset / 2;
 				break;
 			case D3DPRIMITIVETYPE::D3DPT_LINESTRIP:
-				primitiveCount = pVertexBufferData->curOffset - 1;
+				primitiveCount = pBufferData->curOffset - 1;
 				break;
 			case D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST:
-				primitiveCount = pVertexBufferData->curOffset / 3;
+				primitiveCount = pBufferData->curOffset / 3;
 				break;
 			case D3DPRIMITIVETYPE::D3DPT_TRIANGLESTRIP:
 			case D3DPRIMITIVETYPE::D3DPT_TRIANGLEFAN:
-				primitiveCount = pVertexBufferData->curOffset - 2;
+				primitiveCount = pBufferData->curOffset - 2;
 				break;
 			default:
 				return;
 			}
 			
-			if (this->_pDevice->SetStreamSource(0u, pVertexBufferData->pBuffer, 0u, sizeof(Vertex)) == D3D_OK) {
+			if (this->_pDevice->SetStreamSource(0u, pBufferData->pVertexBuffer, 0u, sizeof(Vertex)) == D3D_OK) {
 				this->_pDevice->DrawPrimitive(type, 0u, primitiveCount);
-				pVertexBufferData->curOffset = 0u;
+				pBufferData->curOffset = 0u;
 			}
 
 		}

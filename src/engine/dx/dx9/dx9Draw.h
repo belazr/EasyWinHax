@@ -27,12 +27,12 @@ namespace hax {
 		// True on success, false on failure.
 		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
 
-		typedef struct VertexBufferData {
-			IDirect3DVertexBuffer9* pBuffer;
-			Vertex* pLocalBuffer;
-			UINT size;
-			UINT curOffset;
-		}VertexBufferData;
+		typedef struct BufferData {
+			IDirect3DVertexBuffer9* pVertexBuffer;
+			Vertex* pLocalVertexBuffer;
+			uint32_t vertexBufferSize;
+			uint32_t curOffset;
+		}BufferData;
 
 		class Draw : public IDraw {
 		private:
@@ -40,8 +40,8 @@ namespace hax {
 			IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 			IDirect3DVertexDeclaration9* _pVertexDeclaration;
 
-			VertexBufferData _pointListBufferData;
-			VertexBufferData _triangleListBufferData;
+			BufferData _pointListBufferData;
+			BufferData _triangleListBufferData;
 
 			D3DVIEWPORT9 _viewport;
 
@@ -99,10 +99,12 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 			
 		private:
-			bool createVertexBufferData(VertexBufferData* pVertexBufferData, UINT size) const;
-			void copyToVertexBuffer(VertexBufferData* pVertexBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-			bool resizeVertexBuffer(VertexBufferData* pVertexBufferData, UINT newSize) const;
-			void drawVertexBuffer(VertexBufferData* pVertexBufferData, D3DPRIMITIVETYPE type) const;
+			bool createBufferData(BufferData* pBufferData, uint32_t size) const;
+			void destroyBufferData(BufferData* pBufferData) const;
+			bool mapBufferData(BufferData* pBufferData) const;
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			bool resizeBufferData(BufferData* pBufferData, uint32_t newSize) const;
+			void drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const;
 
 		};
 
