@@ -112,7 +112,7 @@ namespace hax {
 			bool createConstantBuffer();
 			bool updateConstantBuffer() const;
 			bool mapBufferData(BufferData* pBufferData) const;
-			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], UINT count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
+			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 			bool resizeBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
 		};
