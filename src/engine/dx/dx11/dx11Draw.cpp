@@ -39,7 +39,7 @@ namespace hax {
 
 		Draw::Draw() :
 			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
-			_pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _originalTopology{}, _isInit{}, _isBegin{} {}
+			_pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
 
 
 		Draw::~Draw() {
@@ -138,10 +138,6 @@ namespace hax {
 			this->drawBufferData(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			this->drawBufferData(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-			if (this->_originalTopology) {
-				this->_pContext->IASetPrimitiveTopology(this->_originalTopology);
-			}
-
 			if (this->_pRenderTargetView) {
 				this->_pRenderTargetView->Release();
 				this->_pRenderTargetView = nullptr;
@@ -200,8 +196,6 @@ namespace hax {
 				if (!this->createConstantBuffer()) return false;
 
 			}
-			
-			this->_pContext->IAGetPrimitiveTopology(&this->_originalTopology);
 			
 			return true;
 		}
@@ -450,6 +444,11 @@ namespace hax {
 
 
 		void Draw::drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
+			D3D11_PRIMITIVE_TOPOLOGY curTopology{};
+			this->_pContext->IAGetPrimitiveTopology(&curTopology);
+
+			if (!curTopology) return;
+
 			this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
 			pBufferData->pLocalVertexBuffer = nullptr;
 
@@ -458,6 +457,7 @@ namespace hax {
 			this->_pContext->IASetVertexBuffers(0u, 1u, &pBufferData->pVertexBuffer, &STRIDE, &OFFSET);
 			this->_pContext->IASetPrimitiveTopology(topology);
 			this->_pContext->Draw(pBufferData->curOffset, 0u);
+			this->_pContext->IASetPrimitiveTopology(curTopology);
 
 			pBufferData->curOffset = 0u;
 
