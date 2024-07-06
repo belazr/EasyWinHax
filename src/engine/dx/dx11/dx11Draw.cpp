@@ -116,9 +116,17 @@ namespace hax {
 				pBackBuffer->Release();
 			}
 
-			if (!this->mapBufferData(&this->_pointListBufferData)) return;
-			
-			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+			if (!this->_pointListBufferData.pLocalVertexBuffer) {
+
+				if (!this->mapBufferData(&this->_pointListBufferData)) return;
+
+			}
+
+			if (!this->_triangleListBufferData.pLocalVertexBuffer) {
+
+				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+
+			}
 
 			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 			this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
@@ -173,9 +181,8 @@ namespace hax {
 		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
 		bool Draw::initialize(IDXGISwapChain* pSwapChain) {
-			const HRESULT hResult = pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice));
-
-			if (hResult != S_OK || !this->_pDevice) return false;
+			
+			if (FAILED(pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice)))) return false;
 
 			if (!this->_pContext) {
 				this->_pDevice->GetImmediateContext(&this->_pContext);
@@ -307,15 +314,11 @@ namespace hax {
 		bool Draw::createConstantBuffer() {
 			D3D11_BUFFER_DESC bufferDesc{};
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			bufferDesc.ByteWidth = 16 * sizeof(float);
+			bufferDesc.ByteWidth = 16u * sizeof(float);
 			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer);
-
-			if (hResult != S_OK || !this->_pConstantBuffer) return false;
-
-			return true;
+			return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
 		}
 
 
@@ -328,9 +331,7 @@ namespace hax {
 			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-			const HRESULT hResult = this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pBufferData->pVertexBuffer);
-
-			if (hResult != S_OK || !pBufferData->pVertexBuffer) return false;
+			if (FAILED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pBufferData->pVertexBuffer))) return false;
 
 			pBufferData->vertexBufferSize = bufferDesc.ByteWidth;
 
@@ -383,15 +384,13 @@ namespace hax {
 			
 			if (!pBufferData->pVertexBuffer) return false;
 			
-			if (!pBufferData->pLocalVertexBuffer) {
-				D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
+			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
 				
-				if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
+			if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
 				
-				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
-			}
+			pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
 			
-			return pBufferData->pLocalVertexBuffer != nullptr;
+			return true;
 		}
 
 
