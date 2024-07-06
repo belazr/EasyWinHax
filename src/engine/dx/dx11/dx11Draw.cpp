@@ -131,13 +131,7 @@ namespace hax {
 
 			if (!this->_isBegin) return;
 
-			// draw all the buffers at once to save api calls
-			this->_pContext->Unmap(this->_triangleListBufferData.pVertexBuffer, 0u);
-			this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
 			this->drawBufferData(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-			this->_pContext->Unmap(this->_pointListBufferData.pVertexBuffer, 0u);
-			this->_pointListBufferData.pLocalVertexBuffer = nullptr;
 			this->drawBufferData(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			if (this->_originalTopology) {
@@ -449,6 +443,9 @@ namespace hax {
 
 
 		void Draw::drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
+			this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
+			pBufferData->pLocalVertexBuffer = nullptr;
+
 			constexpr UINT STRIDE = sizeof(Vertex);
 			constexpr UINT OFFSET = 0u;
 			this->_pContext->IASetVertexBuffers(0u, 1u, &pBufferData->pVertexBuffer, &STRIDE, &OFFSET);
