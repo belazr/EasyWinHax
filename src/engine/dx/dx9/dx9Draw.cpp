@@ -39,7 +39,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData {}, _triangleListBufferData{}, _viewport{}, _isInit {} {}
+		Draw::Draw() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
 
 
 		Draw::~Draw() {
@@ -58,6 +58,7 @@ namespace hax {
 		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
 		void Draw::beginDraw(Engine* pEngine) {
+			this->_isBegin = false;
 
 			if (!this->_isInit) {
 				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1);
@@ -94,21 +95,28 @@ namespace hax {
 				this->_viewport = curViewport;
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
-			
-			this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration);
-			this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration);
 
 			if (!this->_pointListBufferData.pLocalVertexBuffer) {
 
 				if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
 			}
-			
+
 			if (!this->_triangleListBufferData.pLocalVertexBuffer) {
 
 				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
 			}
+
+			if (!this->_pOriginalVertexDeclaration) {
+
+				if (FAILED(this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration))) return;
+
+			}
+
+			if (FAILED(this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration))) return;
+
+			this->_isBegin = true;
 
 			return;
 		}
@@ -117,7 +125,7 @@ namespace hax {
 		void Draw::endDraw(const Engine* pEngine) { 
 			UNREFERENCED_PARAMETER(pEngine);
 
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 
 			if (this->_triangleListBufferData.pVertexBuffer->Unlock() == D3D_OK) {
 				this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
@@ -130,14 +138,14 @@ namespace hax {
 			}
 
 			this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
-			
+
 			return; 
 		}
 
 
 		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-			if (!this->_isInit || count % 3u) return;
+			if (!this->_isBegin || count % 3u) return;
 			
 			this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -147,7 +155,7 @@ namespace hax {
 
 		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 			
-			if (!this->_isInit) return;
+			if (!this->_isBegin) return;
 
 			this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
