@@ -46,6 +46,7 @@ namespace hax {
 			D3DVIEWPORT9 _viewport;
 
 			bool _isInit;
+			bool _isBegin;
 
 		public:
 			Draw();
