@@ -114,7 +114,12 @@ namespace hax {
 
 			}
 
-			if (FAILED(this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration))) return;
+			if (FAILED(this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration))) {
+				this->_pOriginalVertexDeclaration->Release();
+				this->_pOriginalVertexDeclaration = nullptr;
+				
+				return;
+			}
 
 			this->_isBegin = true;
 
@@ -138,6 +143,8 @@ namespace hax {
 			}
 
 			this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
+			this->_pOriginalVertexDeclaration->Release();
+			this->_pOriginalVertexDeclaration = nullptr;
 
 			return; 
 		}
