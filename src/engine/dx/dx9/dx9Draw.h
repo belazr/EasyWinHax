@@ -99,11 +99,11 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 			
 		private:
-			bool createBufferData(BufferData* pBufferData, uint32_t size) const;
+			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-			bool resizeBufferData(BufferData* pBufferData, uint32_t newSize) const;
+			bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const;
 			void drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const;
 
 		};

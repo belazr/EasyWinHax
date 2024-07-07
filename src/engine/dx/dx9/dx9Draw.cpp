@@ -54,8 +54,8 @@ namespace hax {
 		}
 
 
-		constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = sizeof(Vertex) * 1000;
-		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = sizeof(Vertex) * 99;
+		constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
+		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
 		void Draw::beginDraw(Engine* pEngine) {
 
@@ -155,14 +155,14 @@ namespace hax {
 		}
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, uint32_t size) const {
+		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 
 			constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
 			
-			if (FAILED(this->_pDevice->CreateVertexBuffer(size, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pBufferData->pVertexBuffer, nullptr))) return false;
+			if (FAILED(this->_pDevice->CreateVertexBuffer(vertexCount * sizeof(Vertex), D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &pBufferData->pVertexBuffer, nullptr))) return false;
 
-			pBufferData->vertexBufferSize = size;
+			pBufferData->vertexBufferSize = vertexCount * sizeof(Vertex);
 
 			return true;
 		}
@@ -199,11 +199,11 @@ namespace hax {
 			
 			if (!pBufferData->pLocalVertexBuffer) return;
 			
-			const uint32_t sizeNeeded = (pBufferData->curOffset + count) * sizeof(Vertex);
+			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
-			if (sizeNeeded > pBufferData->vertexBufferSize) {
+			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize) {
 
-				if (!this->resizeBufferData(pBufferData, sizeNeeded * 2)) return;
+				if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
 
 			}
 
@@ -218,23 +218,23 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newSize) const {
-			const uint32_t bytesUsed = pBufferData->curOffset * sizeof(Vertex);
+		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
 			
-			if (newSize < bytesUsed) return false;
+			if (newVertexCount <= pBufferData->curOffset) return true;
 
 			BufferData oldBufferData = *pBufferData;
 
-			if (!this->createBufferData(pBufferData, newSize)) {
+			if (!this->createBufferData(pBufferData, newVertexCount)) {
 				this->destroyBufferData(pBufferData);
 
 				return false;
 			}
-			
-			if (pBufferData->pVertexBuffer->Lock(0u, pBufferData->vertexBufferSize, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer), D3DLOCK_DISCARD) != D3D_OK) return false;
+
+			if (!this->mapBufferData(pBufferData)) return false;
+
 
 			if (oldBufferData.pLocalVertexBuffer) {
-				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, bytesUsed);
+				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, oldBufferData.vertexBufferSize);
 			}
 
 			pBufferData->curOffset = oldBufferData.curOffset;
