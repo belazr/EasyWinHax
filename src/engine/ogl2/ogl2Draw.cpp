@@ -236,7 +236,7 @@ namespace hax {
 
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pBufferData->indexBufferId);
 
-				pBufferData->pLocalIndexBuffer = reinterpret_cast<GLuint*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
+				pBufferData->pLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
 
@@ -254,7 +254,7 @@ namespace hax {
 
 			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
-			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(GLuint) > pBufferData->indexBufferSize) {
+			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
 
 				if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
 
