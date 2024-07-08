@@ -34,7 +34,7 @@ namespace hax {
 				GLuint vertexBufferId;
 				GLuint indexBufferId;
 				Vertex* pLocalVertexBuffer;
-				GLuint* pLocalIndexBuffer;
+				uint32_t* pLocalIndexBuffer;
 				uint32_t vertexBufferSize;
 				uint32_t indexBufferSize;
 				uint32_t curOffset;
