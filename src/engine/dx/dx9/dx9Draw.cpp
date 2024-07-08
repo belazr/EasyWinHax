@@ -72,17 +72,9 @@ namespace hax {
 				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
-			if (!this->_pointListBufferData.pLocalVertexBuffer) {
+			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
-				if (!this->mapBufferData(&this->_pointListBufferData)) return;
-
-			}
-
-			if (!this->_triangleListBufferData.pLocalVertexBuffer) {
-
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
-
-			}
+			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
 			if (!this->_pOriginalVertexDeclaration) {
 
@@ -288,12 +280,17 @@ namespace hax {
 			default:
 				return;
 			}
-			
-			if (this->_pDevice->SetStreamSource(0u, pBufferData->pVertexBuffer, 0u, sizeof(Vertex)) == D3D_OK) {
-				this->_pDevice->DrawPrimitive(type, 0u, primitiveCount);
-				pBufferData->curOffset = 0u;
-			}
 
+			if (FAILED(this->_pDevice->SetStreamSource(0u, pBufferData->pVertexBuffer, 0u, sizeof(Vertex)))) return;
+			
+			if (FAILED(pBufferData->pVertexBuffer->Unlock())) return;
+
+			this->_pointListBufferData.pLocalVertexBuffer = nullptr;
+
+			this->_pDevice->DrawPrimitive(type, 0u, primitiveCount);
+			pBufferData->curOffset = 0u;
+
+			return;
 		}
 
 	}

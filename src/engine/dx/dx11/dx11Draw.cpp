@@ -115,17 +115,9 @@ namespace hax {
 				pBackBuffer->Release();
 			}
 
-			if (!this->_pointListBufferData.pLocalVertexBuffer) {
+			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
-				if (!this->mapBufferData(&this->_pointListBufferData)) return;
-
-			}
-
-			if (!this->_triangleListBufferData.pLocalVertexBuffer) {
-
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
-
-			}
+			if (!this->mapBufferData(&this->_triangleListBufferData)) return;
 
 			this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 			this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
@@ -471,13 +463,13 @@ namespace hax {
 
 		bool Draw::mapBufferData(BufferData* pBufferData) const {
 			
-			if (!pBufferData->pVertexBuffer) return false;
-			
-			D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
-				
-			if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
-				
-			pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
+			if (!pBufferData->pLocalVertexBuffer) {
+				D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
+
+				if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
+
+				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
+			}
 			
 			return true;
 		}
