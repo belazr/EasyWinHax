@@ -24,7 +24,6 @@
 
 // Headers for DirectX 11
 #pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 
 #include "engine\dx\dx11\dx11Draw.h"
 

@@ -105,7 +105,7 @@ namespace hax {
 
 		private:
 			bool initialize(IDXGISwapChain* pSwapChain);
-			bool compileShaders();
+			bool createShaders();
 			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
 			void getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
