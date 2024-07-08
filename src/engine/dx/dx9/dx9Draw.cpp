@@ -285,7 +285,7 @@ namespace hax {
 			
 			if (FAILED(pBufferData->pVertexBuffer->Unlock())) return;
 
-			this->_pointListBufferData.pLocalVertexBuffer = nullptr;
+			pBufferData->pLocalVertexBuffer = nullptr;
 
 			this->_pDevice->DrawPrimitive(type, 0u, primitiveCount);
 			pBufferData->curOffset = 0u;
