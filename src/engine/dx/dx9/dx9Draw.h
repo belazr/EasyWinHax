@@ -100,6 +100,7 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 			
 		private:
+			bool initialize(IDirect3DDevice9* pDevice);
 			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool mapBufferData(BufferData* pBufferData) const;

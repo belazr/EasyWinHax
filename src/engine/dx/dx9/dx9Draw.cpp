@@ -54,38 +54,14 @@ namespace hax {
 		}
 
 
-		constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
-		constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+		static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
+		static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
 		void Draw::beginDraw(Engine* pEngine) {
 			this->_isBegin = false;
 
 			if (!this->_isInit) {
-				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1);
-
-				if (!this->_pDevice) return;
-
-				constexpr D3DVERTEXELEMENT9 vertexElements[]{
-					{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
-					{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
-					D3DDECL_END()
-				};
-
-				if (!this->_pVertexDeclaration) {
-
-					if (FAILED(this->_pDevice->CreateVertexDeclaration(vertexElements, &this->_pVertexDeclaration))) return;
-
-				}
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return;
-
-				this->_isInit = true;
+				this->_isInit = this->initialize(reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1));
 			}
 
 			D3DVIEWPORT9 curViewport{};
@@ -167,6 +143,35 @@ namespace hax {
 			this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
 			return;
+		}
+
+
+		bool Draw::initialize(IDirect3DDevice9* pDevice) {
+			this->_pDevice = pDevice;
+
+			if (!this->_pDevice) return false;
+
+			constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
+				{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
+				{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
+				D3DDECL_END()
+			};
+
+			if (!this->_pVertexDeclaration) {
+
+				if (FAILED(this->_pDevice->CreateVertexDeclaration(VERTEX_ELEMENTS, &this->_pVertexDeclaration))) return false;
+
+			}
+
+			this->destroyBufferData(&this->_pointListBufferData);
+
+			if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+			this->destroyBufferData(&this->_triangleListBufferData);
+
+			if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+			
+			return true;
 		}
 
 
