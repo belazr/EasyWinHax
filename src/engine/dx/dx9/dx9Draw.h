@@ -29,8 +29,11 @@ namespace hax {
 
 		typedef struct BufferData {
 			IDirect3DVertexBuffer9* pVertexBuffer;
+			IDirect3DIndexBuffer9* pIndexBuffer;
 			Vertex* pLocalVertexBuffer;
+			uint32_t* pLocalIndexBuffer;
 			uint32_t vertexBufferSize;
+			uint32_t indexBufferSize;
 			uint32_t curOffset;
 		}BufferData;
 
