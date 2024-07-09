@@ -406,15 +406,25 @@ namespace hax {
 		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 			
-			D3D11_BUFFER_DESC bufferDesc{};
-			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			bufferDesc.ByteWidth = vertexCount * sizeof(Vertex);
-			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			D3D11_BUFFER_DESC vertexBufferDesc{};
+			vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			vertexBufferDesc.ByteWidth = vertexCount * sizeof(Vertex);
+			vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-			if (FAILED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &pBufferData->pVertexBuffer))) return false;
+			if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &pBufferData->pVertexBuffer))) return false;
 
-			pBufferData->vertexBufferSize = bufferDesc.ByteWidth;
+			pBufferData->vertexBufferSize = vertexBufferDesc.ByteWidth;
+
+			D3D11_BUFFER_DESC indexBufferDesc{};
+			indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			indexBufferDesc.ByteWidth = vertexCount * sizeof(uint32_t);
+			indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+			if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &pBufferData->pIndexBuffer))) return false;
+
+			pBufferData->indexBufferSize = indexBufferDesc.ByteWidth;
 
 			return true;
 		}
@@ -428,8 +438,16 @@ namespace hax {
 				pBufferData->pVertexBuffer->Release();
 				pBufferData->pVertexBuffer = nullptr;
 			}
+
+			if (pBufferData->pIndexBuffer) {
+				this->_pContext->Unmap(pBufferData->pIndexBuffer, 0u);
+				pBufferData->pLocalIndexBuffer = nullptr;
+				pBufferData->pIndexBuffer->Release();
+				pBufferData->pIndexBuffer = nullptr;
+			}
 			
 			pBufferData->vertexBufferSize = 0u;
+			pBufferData->indexBufferSize = 0u;
 			pBufferData->curOffset = 0u;
 
 			return;
@@ -470,26 +488,37 @@ namespace hax {
 
 				pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
 			}
+
+			if (!pBufferData->pLocalIndexBuffer) {
+				D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
+
+				if (FAILED(this->_pContext->Map(pBufferData->pIndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
+
+				pBufferData->pLocalIndexBuffer = reinterpret_cast<uint32_t*>(subresourcePoints.pData);
+			}
 			
 			return true;
 		}
 
 
 		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
-			
-			if (!pBufferData->pLocalVertexBuffer) return;
-
 			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
-			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize) {
+			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
 
 				if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
 
 			}
 
+			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
+
 			for (uint32_t i = 0u; i < count; i++) {
+				const uint32_t curIndex = pBufferData->curOffset + i;
+
 				const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-				memcpy(&(pBufferData->pLocalVertexBuffer[pBufferData->curOffset + i]), &curVertex, sizeof(Vertex));
+				memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
+
+				pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
 			}
 
 			pBufferData->curOffset += count;
@@ -506,15 +535,23 @@ namespace hax {
 
 			if (!this->createBufferData(pBufferData, newVertexCount)) {
 				this->destroyBufferData(pBufferData);
+				this->destroyBufferData(&oldBufferData);
 
 				return false;
 			}
 
-			if (!this->mapBufferData(pBufferData)) return false;
+			if (!this->mapBufferData(pBufferData)) {
+				this->destroyBufferData(&oldBufferData);
 
+				return false;
+			}
 
 			if (oldBufferData.pLocalVertexBuffer) {
 				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, oldBufferData.vertexBufferSize);
+			}
+
+			if (oldBufferData.pLocalIndexBuffer) {
+				memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalIndexBuffer, oldBufferData.indexBufferSize);
 			}
 
 			pBufferData->curOffset = oldBufferData.curOffset;
@@ -534,11 +571,15 @@ namespace hax {
 			this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
 			pBufferData->pLocalVertexBuffer = nullptr;
 
+			this->_pContext->Unmap(pBufferData->pIndexBuffer, 0u);
+			pBufferData->pLocalIndexBuffer = nullptr;
+
 			constexpr UINT STRIDE = sizeof(Vertex);
 			constexpr UINT OFFSET = 0u;
 			this->_pContext->IASetVertexBuffers(0u, 1u, &pBufferData->pVertexBuffer, &STRIDE, &OFFSET);
+			this->_pContext->IASetIndexBuffer(pBufferData->pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
 			this->_pContext->IASetPrimitiveTopology(topology);
-			this->_pContext->Draw(pBufferData->curOffset, 0u);
+			this->_pContext->DrawIndexed(pBufferData->curOffset, 0u, 0u);
 			this->_pContext->IASetPrimitiveTopology(curTopology);
 
 			pBufferData->curOffset = 0u;
