@@ -1,4 +1,4 @@
-#include "vkDraw.h"
+#include "vkBackend.h"
 #include "..\Engine.h"
 #include "..\Vertex.h"
 #include "..\font\Font.h"
@@ -209,7 +209,7 @@ namespace hax {
 		}
 
 
-		Draw::Draw() :
+		Backend::Backend() :
 			_hVulkan{}, _hMainWindow{}, _hDevice{}, _hInstance{}, _f{},
 			_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
@@ -218,7 +218,7 @@ namespace hax {
 			_isInit{}, _isBegin{} {}
 
 
-		Draw::~Draw() {
+		Backend::~Backend() {
 			
 			if (this->_hVulkan) {
 				const PFN_vkDestroyInstance pVkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(proc::in::getProcAddress(this->_hVulkan, "vkDestroyInstance"));
@@ -279,7 +279,7 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		void Draw::beginDraw(Engine* pEngine) {
+		void Backend::beginDraw(Engine* pEngine) {
 			this->_isBegin = false;
 
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
@@ -337,7 +337,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) {
+		void Backend::endDraw(const Engine* pEngine) {
 			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 
@@ -386,7 +386,7 @@ namespace hax {
 			return;
 		}
 
-		void Draw::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
+		void Backend::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
 			if (!this->_isBegin || count % 3u) return;
 
@@ -396,7 +396,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
+		void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 			
 			if (!this->_isBegin) return;
 
@@ -406,7 +406,7 @@ namespace hax {
 		}
 
 
-		bool Draw::initialize(const Engine* pEngine) {
+		bool Backend::initialize(const Engine* pEngine) {
 			this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
 			if (!this->_hVulkan) return false;
@@ -472,7 +472,7 @@ namespace hax {
 
 		#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
 
-		bool Draw::getProcAddresses() {
+		bool Backend::getProcAddresses() {
 			const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddress = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
 			const PFN_vkGetInstanceProcAddr pVkGetInstanceProcAddress = reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetInstanceProcAddr"));
 			
@@ -538,7 +538,7 @@ namespace hax {
 		#undef ASSIGN_PROC_ADDRESS
 
 
-		bool Draw::createRenderPass() {
+		bool Backend::createRenderPass() {
 			VkAttachmentDescription attachmentDesc{};
 			attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
 			attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -569,7 +569,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createCommandPool() {
+		bool Backend::createCommandPool() {
 			VkCommandPoolCreateInfo commandPoolCreateInfo{};
 			commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 			commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -712,7 +712,7 @@ namespace hax {
 			0x38, 0x00, 0x01, 0x00
 		};
 
-		VkPipeline Draw::createPipeline(VkPrimitiveTopology topology) {
+		VkPipeline Backend::createPipeline(VkPrimitiveTopology topology) {
 
 			if (this->_hShaderModuleVert == VK_NULL_HANDLE) {
 
@@ -837,7 +837,7 @@ namespace hax {
 		}
 
 
-		VkShaderModule Draw::createShaderModule(const BYTE shader[], size_t size) const {
+		VkShaderModule Backend::createShaderModule(const BYTE shader[], size_t size) const {
 			VkShaderModuleCreateInfo fragCreateInfo{};
 			fragCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			fragCreateInfo.codeSize = size;
@@ -851,7 +851,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createPipelineLayout() {
+		bool Backend::createPipelineLayout() {
 
 			if (this->_hDescriptorSetLayout == VK_NULL_HANDLE) {
 					
@@ -875,7 +875,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createDescriptorSetLayout() {
+		bool Backend::createDescriptorSetLayout() {
 			VkDescriptorSetLayoutBinding binding{};
 			binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			binding.descriptorCount = 1;
@@ -890,7 +890,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
+		bool Backend::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
 
 			if (imageCount < this->_imageCount) {
 
@@ -950,7 +950,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyImageDataArray() {
+		void Backend::destroyImageDataArray() {
 
 			if (!this->_pImageDataArray) return;
 
@@ -966,7 +966,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyImageData(ImageData* pImageData) const {
+		void Backend::destroyImageData(ImageData* pImageData) const {
 
 			if (pImageData->hCommandBuffer != VK_NULL_HANDLE) {
 				this->_f.pVkFreeCommandBuffers(this->_hDevice, this->_hCommandPool, 1u, &pImageData->hCommandBuffer);
@@ -995,7 +995,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createFramebuffers(VkSwapchainKHR hSwapchain) {
+		bool Backend::createFramebuffers(VkSwapchainKHR hSwapchain) {
 			VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 			uint32_t imageCount = this->_imageCount;
@@ -1050,7 +1050,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyFramebuffers() {
+		void Backend::destroyFramebuffers() {
 			
 			for (uint32_t i = 0u; i < this->_imageCount; i++) {
 				
@@ -1070,7 +1070,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, size_t vertexCount) {
+		bool Backend::createBufferData(BufferData* pBufferData, size_t vertexCount) {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 
 			VkDeviceSize vertexBufferSize = vertexCount * sizeof(Vertex);
@@ -1089,7 +1089,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyBufferData(BufferData* pBufferData) const {
+		void Backend::destroyBufferData(BufferData* pBufferData) const {
 
 			if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
 				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
@@ -1123,7 +1123,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
+		bool Backend::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
 			const VkDeviceSize sizeAligned = (((*pSize) - 1ull) / this->_bufferAlignment + 1ull) * this->_bufferAlignment;
 
 			VkBufferCreateInfo bufferCreateinfo{};
@@ -1153,7 +1153,7 @@ namespace hax {
 		}
 
 
-		uint32_t Draw::getMemoryTypeIndex(uint32_t typeBits) const {
+		uint32_t Backend::getMemoryTypeIndex(uint32_t typeBits) const {
 
 			for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
 
@@ -1167,7 +1167,7 @@ namespace hax {
 		}
 
 
-		bool Draw::mapBufferData(BufferData* pBufferData) const {
+		bool Backend::mapBufferData(BufferData* pBufferData) const {
 
 			if (!pBufferData->pLocalVertexBuffer) {
 
@@ -1185,7 +1185,7 @@ namespace hax {
 		}
 
 
-		bool Draw::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
+		bool Backend::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
 			
 			if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return false;
 
@@ -1197,7 +1197,7 @@ namespace hax {
 		}
 
 
-		void Draw::beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const {
+		void Backend::beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const {
 			VkRenderPassBeginInfo renderPassBeginInfo{};
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBeginInfo.renderPass = this->_hRenderPass;
@@ -1210,7 +1210,7 @@ namespace hax {
 		}
 
 
-		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
+		void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
 			const size_t newVertexCount = pBufferData->curOffset + count;
 
 			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
@@ -1236,7 +1236,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeBufferData(BufferData* pBufferData, size_t newVertexCount) {
+		bool Backend::resizeBufferData(BufferData* pBufferData, size_t newVertexCount) {
 
 			if (newVertexCount <= pBufferData->curOffset) return true;
 
@@ -1268,7 +1268,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const {
+		void Backend::drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const {
 			VkMappedMemoryRange ranges[2]{};
 			ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			ranges[0].memory = pBufferData->hVertexMemory;

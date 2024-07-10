@@ -1,5 +1,5 @@
 #pragma once
-#include "IDraw.h"
+#include "IBackend.h"
 #include "font\Font.h"
 
 // Class for drawing within a graphics API hook.
@@ -8,7 +8,7 @@ namespace hax {
 
 	class Engine {
 	private:
-		IDraw* const _pDraw;
+		IBackend* const _pBackend;
 
 	public:
 		void* pHookArg1;
@@ -17,13 +17,13 @@ namespace hax {
 		float fWindowWidth;
 		float fWindowHeight;
 
-		// Sets the IDraw interface for drawing with a specific graphics API.
+		// Sets the IBackend interface for drawing with a specific graphics API.
 		//
 		// Parameters:
 		// 
-		// [in] pDraw:
-		// Pointer to an appropriate IDraw interface to draw within a hook.
-		Engine(IDraw* pDraw);
+		// [in] pBackend:
+		// Pointer to an appropriate IBackend interface to backend within a hook.
+		Engine(IBackend* pBackend);
 
 		// Initializes drawing within a hook. Has to be called before any drawing calls.
 		//
@@ -125,7 +125,7 @@ namespace hax {
 		// Coordinates of the bottom left corner of the first character of the text.
 		// 
 		// [in] text:
-		// Text to be drawn. See length limitations of IDraw implementations.
+		// Text to be drawn.
 		//
 		// [in] color:
 		// Color of the text.

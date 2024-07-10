@@ -8,8 +8,8 @@
 
 static hax::Bench bench("200 x hkWglSwapBuffers", 200u);
 
-static hax::ogl2::Draw draw;
-static hax::Engine engine{ &draw };
+static hax::ogl2::Backend backend;
+static hax::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;

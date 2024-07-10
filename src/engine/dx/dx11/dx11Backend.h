@@ -1,6 +1,6 @@
 #pragma once
 #include "..\..\Vertex.h"
-#include "..\..\IDraw.h"
+#include "..\..\IBackend.h"
 #include <d3d11.h>
 
 // Class for drawing within a DirectX 11 Present hook.
@@ -37,7 +37,7 @@ namespace hax {
 			uint32_t curOffset;
 		}BufferData;
 
-		class Draw : public IDraw {
+		class Backend : public IBackend {
 		private:
 			ID3D11Device* _pDevice;
 			ID3D11DeviceContext* _pContext;
@@ -56,9 +56,9 @@ namespace hax {
 			bool _isBegin;
 
 		public:
-			Draw();
+			Backend();
 
-			~Draw();
+			~Backend();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//

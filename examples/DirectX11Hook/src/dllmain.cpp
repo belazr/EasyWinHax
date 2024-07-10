@@ -8,8 +8,8 @@
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
-static hax::dx11::Draw draw;
-static hax::Engine engine{ &draw };
+static hax::dx11::Backend backend;
+static hax::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;

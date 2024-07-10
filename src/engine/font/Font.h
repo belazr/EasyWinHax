@@ -1,7 +1,7 @@
 #pragma once
 #include "..\..\vecmath.h"
 
-// These structs can be used to draw characters via the Font class.
+// These structs can be used to backend characters via the Font class.
 // Their main purpose is to avoid using the deprecated legacy DirectX SDK for text redndering.
 
 namespace hax {

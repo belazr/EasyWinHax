@@ -12,8 +12,8 @@
 static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
 static hax::vk::VulkanInitData initData;
 
-static hax::vk::Draw draw;
-static hax::Engine engine{ &draw };
+static hax::vk::Backend backend;
+static hax::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pQueuePresentHook;

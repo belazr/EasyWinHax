@@ -1,4 +1,4 @@
-#include "ogl2Draw.h"
+#include "ogl2Backend.h"
 #include "..\font\Font.h"
 #include "..\Engine.h"
 #include <Windows.h>
@@ -14,18 +14,18 @@ namespace hax {
 		constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
 		constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
 
-		Draw::Draw() : _f{}, _width{}, _height{},
+		Backend::Backend() : _f{}, _width{}, _height{},
 			_triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
 			_isInit{}, _isBegin{} {}
 
 
-		Draw::~Draw() {
+		Backend::~Backend() {
 			this->destroyBufferData(&this->_pointListBufferData);
 			this->destroyBufferData(&this->_triangleListBufferData);
 		}
 
 
-		void Draw::beginDraw(Engine* pEngine) {
+		void Backend::beginDraw(Engine* pEngine) {
 			this->_isBegin = false;
 
 			if (!this->_isInit) {				
@@ -61,7 +61,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) {
+		void Backend::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isBegin) return;
@@ -78,7 +78,7 @@ namespace hax {
 			return;
 		}
 
-		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
+		void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 			
 			if (!this->_isBegin || count % 3u) return;
 			
@@ -88,7 +88,7 @@ namespace hax {
         }
 
 
-		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
+		void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 
 			if (!this->_isBegin) return;
 
@@ -98,7 +98,7 @@ namespace hax {
 		}
 
 
-		bool Draw::initialize() {
+		bool Backend::initialize() {
 			
 			if (!this->getProcAddresses()) return false;
 
@@ -120,7 +120,7 @@ namespace hax {
 
 		#define ASSIGN_PROC_ADDRESS(f) this->_f.pGl##f = reinterpret_cast<tGl##f>(wglGetProcAddress("gl"#f))
 
-		bool Draw::getProcAddresses() {
+		bool Backend::getProcAddresses() {
 			ASSIGN_PROC_ADDRESS(GenBuffers);
 			ASSIGN_PROC_ADDRESS(BindBuffer);
 			ASSIGN_PROC_ADDRESS(BufferData);
@@ -140,7 +140,7 @@ namespace hax {
 		#undef ASSIGN_PROC_ADDRESS
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
+		bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 			
 			const uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
@@ -159,7 +159,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyBufferData(BufferData* pBufferData) const {
+		void Backend::destroyBufferData(BufferData* pBufferData) const {
 			
 			if (pBufferData->indexBufferId != UINT_MAX) {
 				GLuint curBufferId{};
@@ -196,7 +196,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const
+		bool Backend::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const
 		{
 			this->_f.pGlGenBuffers(1, pId);
 
@@ -214,7 +214,7 @@ namespace hax {
 		}
 
 
-		bool Draw::mapBufferData(BufferData* pBufferData) const {
+		bool Backend::mapBufferData(BufferData* pBufferData) const {
 
 			if (!pBufferData->pLocalVertexBuffer) {
 				GLuint curBufferId{};
@@ -248,7 +248,7 @@ namespace hax {
 		}
 
 
-		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
+		void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
 			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
 			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
@@ -274,7 +274,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
+		bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
 
 			if (newVertexCount <= pBufferData->curOffset) return true;
 
@@ -305,7 +305,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawBufferData(BufferData* pBufferData, GLenum mode) const {
+		void Backend::drawBufferData(BufferData* pBufferData, GLenum mode) const {
 			GLuint curVertexBufferId{};
 			glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curVertexBufferId));
 			

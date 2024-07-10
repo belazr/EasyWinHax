@@ -1,4 +1,4 @@
-#include "dx9Draw.h"
+#include "dx9Backend.h"
 #include "..\..\Engine.h"
 
 namespace hax {
@@ -39,10 +39,10 @@ namespace hax {
 		}
 
 
-		Draw::Draw() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
+		Backend::Backend() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
 
 
-		Draw::~Draw() {
+		Backend::~Backend() {
 
 			this->destroyBufferData(&this->_triangleListBufferData);
 			this->destroyBufferData(&this->_pointListBufferData);
@@ -57,7 +57,7 @@ namespace hax {
 		static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
 		static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
-		void Draw::beginDraw(Engine* pEngine) {
+		void Backend::beginDraw(Engine* pEngine) {
 			this->_isBegin = false;
 
 			if (!this->_isInit) {
@@ -95,7 +95,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) { 
+		void Backend::endDraw(const Engine* pEngine) { 
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isBegin) return;
@@ -118,7 +118,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
+		void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
 			if (!this->_isBegin || count % 3u) return;
 			
@@ -128,7 +128,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
+		void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 			
 			if (!this->_isBegin) return;
 
@@ -138,7 +138,7 @@ namespace hax {
 		}
 
 
-		bool Draw::initialize(IDirect3DDevice9* pDevice) {
+		bool Backend::initialize(IDirect3DDevice9* pDevice) {
 			this->_pDevice = pDevice;
 
 			if (!this->_pDevice) return false;
@@ -167,7 +167,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
+		bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 
 			constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
@@ -187,7 +187,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyBufferData(BufferData* pBufferData) const {
+		void Backend::destroyBufferData(BufferData* pBufferData) const {
 
 			if (pBufferData->pVertexBuffer) {
 				pBufferData->pVertexBuffer->Unlock();
@@ -211,7 +211,7 @@ namespace hax {
 		}
 
 
-		bool Draw::mapBufferData(BufferData* pBufferData) const {
+		bool Backend::mapBufferData(BufferData* pBufferData) const {
 
 			if (!pBufferData->pLocalVertexBuffer) {
 
@@ -229,7 +229,7 @@ namespace hax {
 		}
 
 
-		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
+		void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
 			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
 			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
@@ -255,7 +255,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
+		bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
 			
 			if (newVertexCount <= pBufferData->curOffset) return true;
 
@@ -290,7 +290,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const {
+		void Backend::drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const {
 			UINT primitiveCount{};
 
 			switch (type) {

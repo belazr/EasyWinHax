@@ -1,4 +1,4 @@
-#include "dx11Draw.h"
+#include "dx11Backend.h"
 #include "..\..\Engine.h"
 
 namespace hax {
@@ -36,12 +36,12 @@ namespace hax {
 		}
 
 
-		Draw::Draw() :
+		Backend::Backend() :
 			_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
 			_pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
 
 
-		Draw::~Draw() {
+		Backend::~Backend() {
 
 			if (this->_pRenderTargetView) {
 				this->_pRenderTargetView->Release();
@@ -79,7 +79,7 @@ namespace hax {
 		}
 
 
-		void Draw::beginDraw(Engine* pEngine) {
+		void Backend::beginDraw(Engine* pEngine) {
 			this->_isBegin = false;
 
 			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg1);
@@ -131,7 +131,7 @@ namespace hax {
 		}
 
 
-		void Draw::endDraw(const Engine* pEngine) {
+		void Backend::endDraw(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isBegin) return;
@@ -148,7 +148,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
+		void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
 			if (!this->_isBegin || count % 3u) return;
 			
@@ -158,7 +158,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
+		void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
 
 			if (!this->_isBegin) return;
 
@@ -171,7 +171,7 @@ namespace hax {
 		static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 		static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
-		bool Draw::initialize(IDXGISwapChain* pSwapChain) {
+		bool Backend::initialize(IDXGISwapChain* pSwapChain) {
 			
 			if (FAILED(pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice)))) return false;
 
@@ -327,7 +327,7 @@ namespace hax {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 		};
 
-		bool Draw::createShaders() {
+		bool Backend::createShaders() {
 			
 			if (!this->_pVertexShader) {
 
@@ -358,7 +358,7 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		void Draw::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
+		void Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
 			D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
 			UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
 
@@ -390,7 +390,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createConstantBuffer() {
+		bool Backend::createConstantBuffer() {
 			this->_pConstantBuffer = nullptr;
 
 			D3D11_BUFFER_DESC bufferDesc{};
@@ -403,7 +403,7 @@ namespace hax {
 		}
 
 
-		bool Draw::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
+		bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
 			RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 			
 			D3D11_BUFFER_DESC vertexBufferDesc{};
@@ -430,7 +430,7 @@ namespace hax {
 		}
 
 
-		void Draw::destroyBufferData(BufferData* pBufferData) const {
+		void Backend::destroyBufferData(BufferData* pBufferData) const {
 			
 			if (pBufferData->pVertexBuffer) {
 				this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
@@ -454,7 +454,7 @@ namespace hax {
 		}
 
 
-		bool Draw::updateConstantBuffer() const {
+		bool Backend::updateConstantBuffer() const {
 			const float viewLeft = this->_viewport.TopLeftX;
 			const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
 			const float viewTop = this->_viewport.TopLeftY;
@@ -479,7 +479,7 @@ namespace hax {
 		}
 
 
-		bool Draw::mapBufferData(BufferData* pBufferData) const {
+		bool Backend::mapBufferData(BufferData* pBufferData) const {
 			
 			if (!pBufferData->pLocalVertexBuffer) {
 				D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
@@ -501,7 +501,7 @@ namespace hax {
 		}
 
 
-		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
+		void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
 			const uint32_t newVertexCount = pBufferData->curOffset + count;
 
 			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
@@ -527,7 +527,7 @@ namespace hax {
 		}
 
 
-		bool Draw::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
+		bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
 
 			if (newVertexCount <= pBufferData->curOffset) return true;
 
@@ -562,7 +562,7 @@ namespace hax {
 		}
 
 
-		void Draw::drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
+		void Backend::drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
 			D3D11_PRIMITIVE_TOPOLOGY curTopology{};
 			this->_pContext->IAGetPrimitiveTopology(&curTopology);
 

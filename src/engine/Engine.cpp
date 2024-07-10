@@ -2,7 +2,7 @@
 
 namespace hax {
 
-	Engine::Engine(IDraw* pDraw) : _pDraw{ pDraw }, pHookArg1{}, pHookArg2{}, pHookArg3{}, fWindowWidth {}, fWindowHeight{} {}
+	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, pHookArg1{}, pHookArg2{}, pHookArg3{}, fWindowWidth {}, fWindowHeight{} {}
 
 
 	void Engine::beginDraw(void* pArg1, const void* pArg2, void* pArg3) {
@@ -10,14 +10,14 @@ namespace hax {
 		this->pHookArg2 = pArg2;
 		this->pHookArg3 = pArg3;
 
-		this->_pDraw->beginDraw(this);
+		this->_pBackend->beginDraw(this);
 
 		return;
 	}
 
 
 	void Engine::endDraw() {
-		this->_pDraw->endDraw(this);
+		this->_pBackend->endDraw(this);
 
 		return;
 	}
@@ -89,7 +89,7 @@ namespace hax {
 		corners[5].x = pos2->x - cosAtan;
 		corners[5].y = pos2->y - sinAtan;
 
-		this->_pDraw->drawTriangleList(corners, 6, color);
+		this->_pBackend->drawTriangleList(corners, 6, color);
 	}
 
 
@@ -125,7 +125,7 @@ namespace hax {
 		corners[5].x = pos2->x - cosAtan - omega * sinAtan;
 		corners[5].y = pos2->y;
 
-		this->_pDraw->drawTriangleList(corners, 6, color);
+		this->_pBackend->drawTriangleList(corners, 6, color);
 	}
 
 
@@ -145,7 +145,7 @@ namespace hax {
 		corners[5].x = pos->x + width;
 		corners[5].y = pos->y;
 
-		this->_pDraw->drawTriangleList(corners, 6, color);
+		this->_pBackend->drawTriangleList(corners, 6, color);
 	}
 
 
@@ -166,8 +166,8 @@ namespace hax {
 			if (pCurChar) {
 				// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
 				const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-				this->_pDraw->drawPointList(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-				this->_pDraw->drawPointList(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+				this->_pBackend->drawPointList(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+				this->_pBackend->drawPointList(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 			}
 
 		}
