@@ -214,7 +214,7 @@ namespace hax {
 			_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 			_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
-			_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _windowRect{},
+			_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _viewport{},
 			_isInit{}, _isBegin{} {}
 
 
@@ -310,17 +310,16 @@ namespace hax {
 			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
 			this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
 
-			RECT curWindowRect{};
+			RECT curViewport{};
 
-			if (!GetClientRect(this->_hMainWindow, &curWindowRect)) return;
+			if (!GetClientRect(this->_hMainWindow, &curViewport)) return;
 
-			if (curWindowRect.right != this->_windowRect.right || curWindowRect.bottom != this->_windowRect.bottom) {
+			if (curViewport.right != this->_viewport.right || curViewport.bottom != this->_viewport.bottom) {
 				this->destroyFramebuffers();
 
 				if (!this->createFramebuffers(hSwapchain)) return;
 				
-				this->_windowRect = curWindowRect;
-				pEngine->setWindowSize(static_cast<int>(this->_windowRect.right), static_cast<int>(this->_windowRect.bottom));
+				this->_viewport = curViewport;
 			}
 
 			if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return;
@@ -343,13 +342,13 @@ namespace hax {
 
 			if (!this->_isBegin || !pPresentInfo) return;
 
-			const VkViewport viewport{ 0.f, 0.f, static_cast<float>(this->_windowRect.right), static_cast<float>(this->_windowRect.bottom), 0.f, 1.f };
+			const VkViewport viewport{ 0.f, 0.f, static_cast<float>(this->_viewport.right), static_cast<float>(this->_viewport.bottom), 0.f, 1.f };
 			this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
 
-			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_windowRect.right), static_cast<uint32_t>(this->_windowRect.bottom) } };
+			const VkRect2D scissor{ { 0, 0 }, { static_cast<uint32_t>(this->_viewport.right), static_cast<uint32_t>(this->_viewport.bottom) } };
 			this->_f.pVkCmdSetScissor(this->_pCurImageData->hCommandBuffer, 0u, 1u, &scissor);
 
-			const float scale[]{ 2.f / static_cast<float>(this->_windowRect.right), 2.f / static_cast<float>(this->_windowRect.bottom) };
+			const float scale[]{ 2.f / static_cast<float>(this->_viewport.right), 2.f / static_cast<float>(this->_viewport.bottom) };
 			this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 			
 			const float translate[2]{ -1.f, -1.f };
@@ -382,6 +381,13 @@ namespace hax {
 			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
 
 			delete[] pStageMask;
+
+			return;
+		}
+
+		void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			*frameWidth = static_cast<float>(this->_viewport.right);
+			*frameHeight = static_cast<float>(this->_viewport.bottom);
 
 			return;
 		}
@@ -1202,8 +1208,8 @@ namespace hax {
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBeginInfo.renderPass = this->_hRenderPass;
 			renderPassBeginInfo.framebuffer = hFramebuffer;
-			renderPassBeginInfo.renderArea.extent.width = this->_windowRect.right;
-			renderPassBeginInfo.renderArea.extent.height = this->_windowRect.bottom;
+			renderPassBeginInfo.renderArea.extent.width = this->_viewport.right;
+			renderPassBeginInfo.renderArea.extent.height = this->_viewport.bottom;
 			this->_f.pVkCmdBeginRenderPass(hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			return;

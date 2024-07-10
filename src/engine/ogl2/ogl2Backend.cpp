@@ -14,7 +14,7 @@ namespace hax {
 		constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
 		constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
 
-		Backend::Backend() : _f{}, _width{}, _height{},
+		Backend::Backend() : _f{}, _viewport{},
 			_triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
 			_isInit{}, _isBegin{} {}
 
@@ -32,20 +32,12 @@ namespace hax {
 				this->_isInit = this->initialize();
 			}
 
-			GLint viewport[4]{};
-			glGetIntegerv(GL_VIEWPORT, viewport);
-
-			if (this->_width != viewport[2] || this->_height != viewport[3]) {
-				this->_width = viewport[2];
-				this->_height = viewport[3];
-
-				pEngine->setWindowSize(this->_width, this->_height);
-			}
+			glGetIntegerv(GL_VIEWPORT, this->_viewport);
 
 			glMatrixMode(GL_PROJECTION);
 			glPushMatrix();
 			glLoadIdentity();
-			glOrtho(0, static_cast<double>(this->_width), static_cast<double>(this->_height), 0, -1.f, 1.f);
+			glOrtho(0, static_cast<double>(this->_viewport[2]), static_cast<double>(this->_viewport[3]), 0, -1.f, 1.f);
 
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -77,6 +69,15 @@ namespace hax {
 
 			return;
 		}
+
+
+		void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			*frameWidth = static_cast<float>(this->_viewport[2]);
+			*frameHeight = static_cast<float>(this->_viewport[3]);
+
+			return;
+		}
+
 
 		void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 			

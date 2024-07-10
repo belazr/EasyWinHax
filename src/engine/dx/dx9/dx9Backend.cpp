@@ -64,13 +64,7 @@ namespace hax {
 				this->_isInit = this->initialize(reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1));
 			}
 
-			D3DVIEWPORT9 curViewport{};
-			this->_pDevice->GetViewport(&curViewport);
-
-			if (this->_viewport.Width != curViewport.Width || this->_viewport.Height != curViewport.Height) {
-				this->_viewport = curViewport;
-				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
-			}
+			this->_pDevice->GetViewport(&this->_viewport);
 
 			if (!this->mapBufferData(&this->_pointListBufferData)) return;
 
@@ -115,6 +109,14 @@ namespace hax {
 			this->_pOriginalVertexDeclaration = nullptr;
 
 			return; 
+		}
+
+
+		void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			*frameWidth = static_cast<float>(this->_viewport.Width);
+			*frameHeight = static_cast<float>(this->_viewport.Height);
+
+			return;
 		}
 
 

@@ -56,19 +56,30 @@ namespace hax {
 
 			~Backend();
 
-			// Initializes drawing within a hook. Should be called by an Engine object.
+			// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
 			//
 			// Parameters:
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void beginFrame(Engine* pEngine) override;
+			virtual void beginFrame(Engine* pEngine) override;
 
-			// Ends drawing within a hook. Should be called by an Engine object.
+			// Ends the current frame within a hook. Should be called by an Engine object.
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void endFrame(const Engine* pEngine) override;
+			virtual void endFrame(const Engine* pEngine) override;
+
+			// Gets the resolution of the current frame. Should be called by an Engine object.
+			//
+			// Parameters:
+			// 
+			// [out] frameWidth:
+			// Pointer that receives the current frame width in pixel.
+			//
+			// [out] frameHeight:
+			// Pointer that receives the current frame height in pixel.
+			virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
 
 			// Draws a filled triangle list. Should be called by an Engine object.
 			// 

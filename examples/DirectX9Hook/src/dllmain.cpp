@@ -19,10 +19,10 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 
 	engine.beginFrame(pDevice);
 
-	const hax::Vector2 middleOfScreen{ engine.fWindowWidth / 2.f, engine.fWindowHeight / 2.f };
+	const hax::Vector2 middleOfScreen{ engine.frameWidth / 2.f, engine.frameHeight / 2.f };
 
-	const float widthRect = engine.fWindowWidth / 4.f;
-	const float heightRect = engine.fWindowHeight / 4.f;
+	const float widthRect = engine.frameWidth / 4.f;
+	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
 	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);

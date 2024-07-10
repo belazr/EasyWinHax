@@ -2,7 +2,7 @@
 
 namespace hax {
 
-	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, pHookArg1{}, pHookArg2{}, pHookArg3{}, fWindowWidth {}, fWindowHeight{} {}
+	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, pHookArg1{}, pHookArg2{}, pHookArg3{}, frameWidth {}, frameHeight{} {}
 
 
 	void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
@@ -11,6 +11,7 @@ namespace hax {
 		this->pHookArg3 = pArg3;
 
 		this->_pBackend->beginFrame(this);
+		this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
 		return;
 	}
@@ -18,30 +19,6 @@ namespace hax {
 
 	void Engine::endFrame() {
 		this->_pBackend->endFrame(this);
-
-		return;
-	}
-
-
-	void Engine::setWindowSize(float width, float height) {
-		this->fWindowWidth = width;
-		this->fWindowHeight = height;
-
-		return;
-	}
-
-
-	void Engine::setWindowSize(unsigned long width, unsigned long height) {
-		this->fWindowWidth = static_cast<float>(width);
-		this->fWindowHeight = static_cast<float>(height);
-
-		return;
-	}
-
-
-	void Engine::setWindowSize(int width, int height) {
-		this->fWindowWidth = static_cast<float>(width);
-		this->fWindowHeight = static_cast<float>(height);
 
 		return;
 	}
