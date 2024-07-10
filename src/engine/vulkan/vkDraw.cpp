@@ -1211,9 +1211,6 @@ namespace hax {
 
 
 		void Draw::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
-
-			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
-
 			const size_t newVertexCount = pBufferData->curOffset + count;
 
 			if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
@@ -1222,10 +1219,12 @@ namespace hax {
 
 			}
 
+			if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
+
 			for (uint32_t i = 0u; i < count; i++) {
 				const uint32_t curIndex = pBufferData->curOffset + i;
 
-				Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
+				const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
 				memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
 
 				pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
