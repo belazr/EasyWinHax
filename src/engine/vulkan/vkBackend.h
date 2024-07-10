@@ -1,6 +1,6 @@
 #pragma once
 #include "..\Vertex.h"
-#include "..\IDraw.h"
+#include "..\IBackend.h"
 
 #define VK_NO_PROTOTYPES
 #include "include\vulkan.h"
@@ -16,7 +16,7 @@ namespace hax {
 
 		bool getVulkanInitData(VulkanInitData* initData);
 
-		class Draw : public IDraw {
+		class Backend : public IBackend {
 		private:
 			typedef struct Functions {
 				PFN_vkGetPhysicalDeviceMemoryProperties pVkGetPhysicalDeviceMemoryProperties;
@@ -123,9 +123,9 @@ namespace hax {
 			bool _isBegin;
 
 		public:
-			Draw();
+			Backend();
 
-			~Draw();
+			~Backend();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//

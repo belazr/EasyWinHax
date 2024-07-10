@@ -54,16 +54,16 @@
     <ClInclude Include="src\engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\dx9\dx9Draw.h">
+    <ClInclude Include="src\engine\dx\dx9\dx9Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\IDraw.h">
+    <ClInclude Include="src\engine\IBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\ogl2\ogl2Draw.h">
+    <ClInclude Include="src\engine\ogl2\ogl2Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\dx11\dx11Draw.h">
+    <ClInclude Include="src\engine\dx\dx11\dx11Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\rgb.h">
@@ -72,7 +72,7 @@
     <ClInclude Include="src\engine\Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\vulkan\vkDraw.h">
+    <ClInclude Include="src\engine\vulkan\vkBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\vulkan\include\vk_platform.h">
@@ -119,16 +119,16 @@
     <ClCompile Include="src\engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx9\dx9Draw.cpp">
+    <ClCompile Include="src\engine\dx\dx9\dx9Backendcpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\ogl2\ogl2Draw.cpp">
+    <ClCompile Include="src\engine\ogl2\ogl2Backendcpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx11\dx11Draw.cpp">
+    <ClCompile Include="src\engine\dx\dx11\dx11Backendcpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\vulkan\vkDraw.cpp">
+    <ClCompile Include="src\engine\vulkan\vkBackend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <stdint.h>
 
-// Interface for drawing with graphics APIs within a hook.
+// Interface the engine class uses for drawing with graphics APIs within a hook.
 // The appropriate implementation should be instantiated and passed to an engine object.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
@@ -12,7 +12,7 @@ namespace hax{
 
 	class Engine;
 
-	class IDraw {
+	class IBackend {
 	public:
 		// Initializes drawing within a hook. Should be called by an Engine object.
 		//

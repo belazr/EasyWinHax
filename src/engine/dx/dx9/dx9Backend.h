@@ -1,63 +1,60 @@
 #pragma once
-#include "..\Vertex.h"
-#include "..\IDraw.h"
-#include <stdint.h>
-#include <gl\GL.h>
+#include "..\..\Vertex.h"
+#include "..\..\IBackend.h"
+#include <d3d9.h>
 
-// Class for drawing with OpenGL 2.
+// Class for drawing within a DirectX 9 EndScene hook.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
 namespace hax {
 
-	namespace ogl2 {
-		typedef BOOL(APIENTRY* twglSwapBuffers)(HDC hDc);
+	namespace dx9 {
 
-		class Draw : public IDraw {
+		typedef HRESULT(APIENTRY* tEndScene)(LPDIRECT3DDEVICE9 _pDevice);
+
+		// Gets a copy of the vTable of the DirectX 9 device used by the caller process.
+		// 
+		// Parameter:
+		// 
+		// [out] pDeviceVTable:
+		// Contains the devices vTable on success. See the d3d9 header for the offset of the EndScene function (typically 42).
+		// 
+		// [in] size:
+		// Size of the memory allocated at the address pointed to by pDeviceVTable.
+		// See the d3d9 header for the actual size of the vTable. Has to be at least offset of the function needed + one.
+		// 
+		// Return:
+		// True on success, false on failure.
+		bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
+
+		typedef struct BufferData {
+			IDirect3DVertexBuffer9* pVertexBuffer;
+			IDirect3DIndexBuffer9* pIndexBuffer;
+			Vertex* pLocalVertexBuffer;
+			uint32_t* pLocalIndexBuffer;
+			uint32_t vertexBufferSize;
+			uint32_t indexBufferSize;
+			uint32_t curOffset;
+		}BufferData;
+
+		class Backend : public IBackend {
 		private:
-			typedef void(APIENTRY* tGlGenBuffers)(GLsizei n, GLuint* buffers);
-			typedef void(APIENTRY* tGlBindBuffer)(GLenum target, GLuint buffer);
-			typedef void(APIENTRY* tGlBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
-			typedef void* (APIENTRY* tGlMapBuffer)(GLenum target, GLenum access);
-			typedef GLboolean(APIENTRY* tGlUnmapBuffer)(GLenum target);
-			typedef void(APIENTRY* tGlDeleteBuffers)(GLsizei n, const GLuint* buffers);
+			IDirect3DDevice9* _pDevice;
+			IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
+			IDirect3DVertexDeclaration9* _pVertexDeclaration;
 
-			typedef struct Functions {
-				tGlGenBuffers pGlGenBuffers;
-				tGlBindBuffer pGlBindBuffer;
-				tGlBufferData pGlBufferData;
-				tGlMapBuffer pGlMapBuffer;
-				tGlUnmapBuffer pGlUnmapBuffer;
-				tGlDeleteBuffers pGlDeleteBuffers;
-			}Functions;
-
-			typedef struct BufferData {
-				GLuint vertexBufferId;
-				GLuint indexBufferId;
-				Vertex* pLocalVertexBuffer;
-				uint32_t* pLocalIndexBuffer;
-				uint32_t vertexBufferSize;
-				uint32_t indexBufferSize;
-				uint32_t curOffset;
-			}BufferData;
-
-			union {
-				Functions _f;
-				void* _fPtrs[sizeof(Functions) / sizeof(void*)];
-			};
-
-			GLint _width;
-			GLint _height;
-
-			BufferData _triangleListBufferData;
 			BufferData _pointListBufferData;
+			BufferData _triangleListBufferData;
+
+			D3DVIEWPORT9 _viewport;
 
 			bool _isInit;
 			bool _isBegin;
 
 		public:
-			Draw();
+			Backend();
 
-			~Draw();
+			~Backend();
 
 			// Initializes drawing within a hook. Should be called by an Engine object.
 			//
@@ -104,20 +101,20 @@ namespace hax {
 			// [in] offest:
 			// Offset by which each point is drawn.
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
-
+			
 		private:
-			bool initialize();
-			bool getProcAddresses();
+			bool initialize(IDirect3DDevice9* pDevice);
 			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
-			bool createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const;
 			bool mapBufferData(BufferData* pBufferData) const;
 			void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 			bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const;
-			void drawBufferData(BufferData* pBufferData, GLenum mode) const;
+			void drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const;
+
 		};
 
 	}
-
+	
 }
+
 
