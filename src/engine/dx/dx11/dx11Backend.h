@@ -66,13 +66,13 @@ namespace hax {
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void beginDraw(Engine* pEngine) override;
+			void beginFrame(Engine* pEngine) override;
 
 			// Ends drawing within a hook. Should be called by an Engine object.
 			// 
 			// [in] pEngine:
 			// Pointer to the Engine object responsible for drawing within the hook.
-			void endDraw(const Engine* pEngine) override;
+			void endFrame(const Engine* pEngine) override;
 
 			// Draws a filled triangle list. Should be called by an Engine object.
 			// 

@@ -57,7 +57,7 @@ namespace hax {
 		static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
 		static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
-		void Backend::beginDraw(Engine* pEngine) {
+		void Backend::beginFrame(Engine* pEngine) {
 			this->_isBegin = false;
 
 			if (!this->_isInit) {
@@ -95,7 +95,7 @@ namespace hax {
 		}
 
 
-		void Backend::endDraw(const Engine* pEngine) { 
+		void Backend::endFrame(const Engine* pEngine) { 
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isBegin) return;

@@ -21,7 +21,7 @@ static hax::in::TrampHook* pQueuePresentHook;
 VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* pPresentInfo) {
 	bench.start();
 
-	engine.beginDraw(hQueue, pPresentInfo, initData.hDevice);
+	engine.beginFrame(hQueue, pPresentInfo, initData.hDevice);
 
 	const hax::Vector2 middleOfScreen{ engine.fWindowWidth / 2.f, engine.fWindowHeight / 2.f };
 
@@ -39,7 +39,7 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	
 	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
-	engine.endDraw();
+	engine.endFrame();
 
 	bench.end();
 	bench.printAvg();

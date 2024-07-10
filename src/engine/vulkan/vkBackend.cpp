@@ -279,7 +279,7 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		void Backend::beginDraw(Engine* pEngine) {
+		void Backend::beginFrame(Engine* pEngine) {
 			this->_isBegin = false;
 
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
@@ -337,7 +337,7 @@ namespace hax {
 		}
 
 
-		void Backend::endDraw(const Engine* pEngine) {
+		void Backend::endFrame(const Engine* pEngine) {
 			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
 			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
 

@@ -79,7 +79,7 @@ namespace hax {
 		}
 
 
-		void Backend::beginDraw(Engine* pEngine) {
+		void Backend::beginFrame(Engine* pEngine) {
 			this->_isBegin = false;
 
 			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg1);
@@ -100,7 +100,7 @@ namespace hax {
 			}
 
 			if (!this->_pRenderTargetView) {
-				// the render target view is released every frame in endDraw() and there is no leftover reference to the backbuffer
+				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
 				// so it has to be acquired every frame as well
 				// this is done so resolution changes do not break rendering
 				ID3D11Texture2D* pBackBuffer{};
@@ -131,7 +131,7 @@ namespace hax {
 		}
 
 
-		void Backend::endDraw(const Engine* pEngine) {
+		void Backend::endFrame(const Engine* pEngine) {
 			UNREFERENCED_PARAMETER(pEngine);
 
 			if (!this->_isBegin) return;

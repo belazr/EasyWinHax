@@ -17,7 +17,7 @@ static hax::in::TrampHook* pEndSceneHook;
 void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	bench.start();
 
-	engine.beginDraw(pDevice);
+	engine.beginFrame(pDevice);
 
 	const hax::Vector2 middleOfScreen{ engine.fWindowWidth / 2.f, engine.fWindowHeight / 2.f };
 
@@ -35,7 +35,7 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 
 	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
-	engine.endDraw();
+	engine.endFrame();
 
 	bench.end();
 	bench.printAvg();

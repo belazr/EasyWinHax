@@ -5,19 +5,19 @@ namespace hax {
 	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, pHookArg1{}, pHookArg2{}, pHookArg3{}, fWindowWidth {}, fWindowHeight{} {}
 
 
-	void Engine::beginDraw(void* pArg1, const void* pArg2, void* pArg3) {
+	void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
 		this->pHookArg1 = pArg1;
 		this->pHookArg2 = pArg2;
 		this->pHookArg3 = pArg3;
 
-		this->_pBackend->beginDraw(this);
+		this->_pBackend->beginFrame(this);
 
 		return;
 	}
 
 
-	void Engine::endDraw() {
-		this->_pBackend->endDraw(this);
+	void Engine::endFrame() {
+		this->_pBackend->endFrame(this);
 
 		return;
 	}
