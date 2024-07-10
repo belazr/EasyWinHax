@@ -17,7 +17,7 @@ static hax::in::TrampHook* pPresentHook;
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
 	bench.start();
 
-	engine.beginDraw(pSwapChain);
+	engine.beginFrame(pSwapChain);
 
 	const hax::Vector2 middleOfScreen{ engine.fWindowWidth / 2.f, engine.fWindowHeight / 2.f };
 
@@ -35,7 +35,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 
 	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
-	engine.endDraw();
+	engine.endFrame();
 
 	bench.end();
 	bench.printAvg();

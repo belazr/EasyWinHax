@@ -17,7 +17,7 @@ static hax::in::TrampHook* pSwapBuffersHook;
 BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	bench.start();
 
-	engine.beginDraw(hDc);
+	engine.beginFrame(hDc);
 
 	const hax::Vector2 middleOfScreen{ engine.fWindowWidth / 2.f, engine.fWindowHeight / 2.f };
 
@@ -35,7 +35,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 
 	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
 
-	engine.endDraw();
+	engine.endFrame();
 
 	bench.end();
 	bench.printAvg();

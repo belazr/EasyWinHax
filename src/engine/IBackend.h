@@ -20,13 +20,13 @@ namespace hax{
 		// 
 		// [in] pEngine:
 		// Pointer to the Engine object responsible for drawing within the hook.
-		virtual void beginDraw(Engine* pEngine) = 0;
+		virtual void beginFrame(Engine* pEngine) = 0;
 
 		// Ends drawing within a hook. Should be called by an Engine object.
 		// 
 		// [in] pEngine:
 		// Pointer to the Engine object responsible for drawing within the hook.
-		virtual void endDraw(const Engine* pEngine) = 0;
+		virtual void endFrame(const Engine* pEngine) = 0;
 
 		// Draws a filled triangle list. Should be called by an Engine object.
 		// 
