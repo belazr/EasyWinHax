@@ -96,7 +96,6 @@ namespace hax {
 				
 				if (!this->updateConstantBuffer()) return;
 				
-				pEngine->setWindowSize(this->_viewport.Width, this->_viewport.Height);
 			}
 
 			if (!this->_pRenderTargetView) {
@@ -144,6 +143,14 @@ namespace hax {
 				this->_pRenderTargetView = nullptr;
 			}
 			
+			return;
+		}
+
+
+		void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			*frameWidth = static_cast<float>(this->_viewport.Width);
+			*frameHeight = static_cast<float>(this->_viewport.Height);
+
 			return;
 		}
 

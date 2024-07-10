@@ -43,13 +43,13 @@
     <ClInclude Include="src\engine\vulkan\vkBackend.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\engine\dx\dx11\dx11Backendcpp" />
+    <ClCompile Include="src\engine\dx\dx11\dx11Backend.cpp" />
     <ClCompile Include="src\engine\font\LargeFont.cpp" />
     <ClCompile Include="src\engine\font\MediumFont.cpp" />
     <ClCompile Include="src\engine\font\TinyFont.cpp" />
     <ClCompile Include="src\engine\Engine.cpp" />
-    <ClCompile Include="src\engine\dx\dx9\dx9Backendcpp" />
-    <ClCompile Include="src\engine\ogl2\ogl2Backendcpp" />
+    <ClCompile Include="src\engine\dx\dx9\dx9Backend.cpp" />
+    <ClCompile Include="src\engine\ogl2\ogl2Backend.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />

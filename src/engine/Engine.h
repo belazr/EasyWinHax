@@ -14,8 +14,8 @@ namespace hax {
 		void* pHookArg1;
 		const void* pHookArg2;
 		void* pHookArg3;
-		float fWindowWidth;
-		float fWindowHeight;
+		float frameWidth;
+		float frameHeight;
 
 		// Sets the IBackend interface for drawing with a specific graphics API.
 		//
@@ -46,22 +46,6 @@ namespace hax {
 		
 		// Ends drawing within a hook. Has to be called after any drawing calls.
 		void endFrame();
-
-		// Sets the current window size.
-		//
-		// Parameters:
-		// 
-		// 
-		// [in] width:
-		// Width of the window.
-		// 
-		// [in] height:
-		// Height of the window.
-		void setWindowSize(float width, float height);
-		
-		void setWindowSize(unsigned long width, unsigned long height);
-
-		void setWindowSize(int width, int height);
 
 		// Draws a line. The line is a filled rectangle with the ends perpendicular to the middle axis.
 		//

@@ -14,7 +14,7 @@ namespace hax{
 
 	class IBackend {
 	public:
-		// Initializes drawing within a hook. Should be called by an Engine object.
+		// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
 		//
 		// Parameters:
 		// 
@@ -22,11 +22,22 @@ namespace hax{
 		// Pointer to the Engine object responsible for drawing within the hook.
 		virtual void beginFrame(Engine* pEngine) = 0;
 
-		// Ends drawing within a hook. Should be called by an Engine object.
+		// Ends the current frame within a hook. Should be called by an Engine object.
 		// 
 		// [in] pEngine:
 		// Pointer to the Engine object responsible for drawing within the hook.
 		virtual void endFrame(const Engine* pEngine) = 0;
+
+		// Gets the resolution of the current frame. Should be called by an Engine object.
+		//
+		// Parameters:
+		// 
+		// [out] frameWidth:
+		// Pointer that receives the current frame width in pixel.
+		//
+		// [out] frameHeight:
+		// Pointer that receives the current frame height in pixel.
+		virtual void getFrameResolution(float* frameWidth, float* frameHeight) = 0;
 
 		// Draws a filled triangle list. Should be called by an Engine object.
 		// 

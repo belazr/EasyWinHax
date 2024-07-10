@@ -119,13 +119,13 @@
     <ClCompile Include="src\engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx9\dx9Backendcpp">
+    <ClCompile Include="src\engine\dx\dx9\dx9Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\ogl2\ogl2Backendcpp">
+    <ClCompile Include="src\engine\ogl2\ogl2Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx11\dx11Backendcpp">
+    <ClCompile Include="src\engine\dx\dx11\dx11Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\vulkan\vkBackend.cpp">
