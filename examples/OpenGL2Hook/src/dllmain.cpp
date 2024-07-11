@@ -17,7 +17,7 @@ static hax::in::TrampHook* pSwapBuffersHook;
 BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	bench.start();
 
-	engine.beginFrame(hDc);
+	engine.beginFrame();
 
 	const hax::Vector2 middleOfScreen{ engine.frameWidth / 2.f, engine.frameHeight / 2.f };
 

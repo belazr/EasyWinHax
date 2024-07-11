@@ -89,10 +89,12 @@ namespace hax {
 				VkFence hFence;
 			}ImageData;
 
+			VkQueue _hQueue;
+			const VkPresentInfoKHR* _phPresentInfo;
+			VkDevice _hDevice;
+
 			HMODULE _hVulkan;
 			HWND _hMainWindow;
-
-			VkDevice _hDevice;
 			VkInstance _hInstance;
 
 			union {
@@ -131,15 +133,18 @@ namespace hax {
 			//
 			// Parameters:
 			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void beginFrame(Engine* pEngine) override;
+			// [in] pArg1:
+			// Pass the VkQueue.
+			//
+			// [in] pArg2:
+			// Pass the VkPresentInfoKHR*.
+			//
+			// [in] pArg3:
+			// Pass the device handle that was retrieved by vk::getVulkanInitData().
+			virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
 			// Ends the current frame within a hook. Should be called by an Engine object.
-			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void endFrame(const Engine* pEngine) override;
+			virtual void endFrame() override;
 
 			// Gets the resolution of the current frame. Should be called by an Engine object.
 			//
@@ -185,7 +190,7 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 		private:
-			bool initialize(const Engine* pEngine);
+			bool initialize();
 			bool getProcAddresses();
 			bool createRenderPass();
 			bool createCommandPool();

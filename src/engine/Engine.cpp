@@ -2,15 +2,11 @@
 
 namespace hax {
 
-	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, pHookArg1{}, pHookArg2{}, pHookArg3{}, frameWidth {}, frameHeight{} {}
+	Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, frameWidth {}, frameHeight{} {}
 
 
 	void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
-		this->pHookArg1 = pArg1;
-		this->pHookArg2 = pArg2;
-		this->pHookArg3 = pArg3;
-
-		this->_pBackend->beginFrame(this);
+		this->_pBackend->beginFrame(pArg1, pArg2, pArg3);
 		this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
 		return;
@@ -18,7 +14,7 @@ namespace hax {
 
 
 	void Engine::endFrame() {
-		this->_pBackend->endFrame(this);
+		this->_pBackend->endFrame();
 
 		return;
 	}

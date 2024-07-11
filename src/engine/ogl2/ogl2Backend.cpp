@@ -1,6 +1,5 @@
 #include "ogl2Backend.h"
 #include "..\font\Font.h"
-#include "..\Engine.h"
 #include <Windows.h>
 
 namespace hax {
@@ -25,7 +24,11 @@ namespace hax {
 		}
 
 
-		void Backend::beginFrame(Engine* pEngine) {
+		void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			UNREFERENCED_PARAMETER(pArg1);
+			UNREFERENCED_PARAMETER(pArg2);
+			UNREFERENCED_PARAMETER(pArg3);
+
 			this->_isBegin = false;
 
 			if (!this->_isInit) {				
@@ -53,8 +56,7 @@ namespace hax {
 		}
 
 
-		void Backend::endFrame(const Engine* pEngine) {
-			UNREFERENCED_PARAMETER(pEngine);
+		void Backend::endFrame() {
 
 			if (!this->_isBegin) return;
 			

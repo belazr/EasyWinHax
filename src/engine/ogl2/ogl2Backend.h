@@ -62,15 +62,18 @@ namespace hax {
 			//
 			// Parameters:
 			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void beginFrame(Engine* pEngine) override;
+			// [in] pArg1:
+			// Pass nothing.
+			//
+			// [in] pArg2:
+			// Pass nothing
+			//
+			// [in] pArg3:
+			// Pass nothing
+			virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
 			// Ends the current frame within a hook. Should be called by an Engine object.
-			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void endFrame(const Engine* pEngine) override;
+			virtual void endFrame() override;
 
 			// Gets the resolution of the current frame. Should be called by an Engine object.
 			//

@@ -1,6 +1,6 @@
 #pragma once
-#include "..\..\Vertex.h"
 #include "..\..\IBackend.h"
+#include "..\..\Vertex.h"
 #include <d3d9.h>
 
 // Class for drawing within a DirectX 9 EndScene hook.
@@ -60,15 +60,18 @@ namespace hax {
 			//
 			// Parameters:
 			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void beginFrame(Engine* pEngine) override;
+			// [in] pArg1:
+			// Pass the LPDIRECT3DDEVICE9.
+			//
+			// [in] pArg2:
+			// Pass nothing
+			//
+			// [in] pArg3:
+			// Pass nothing
+			virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
 			// Ends the current frame within a hook. Should be called by an Engine object.
-			// 
-			// [in] pEngine:
-			// Pointer to the Engine object responsible for drawing within the hook.
-			virtual void endFrame(const Engine* pEngine) override;
+			virtual void endFrame() override;
 
 			// Gets the resolution of the current frame. Should be called by an Engine object.
 			//
@@ -114,7 +117,7 @@ namespace hax {
 			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 			
 		private:
-			bool initialize(IDirect3DDevice9* pDevice);
+			bool initialize();
 			bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 			void destroyBufferData(BufferData* pBufferData) const;
 			bool mapBufferData(BufferData* pBufferData) const;

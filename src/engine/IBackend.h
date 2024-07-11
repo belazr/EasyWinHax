@@ -8,9 +8,7 @@
 // The appropriate implementation should be instantiated and passed to an engine object.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
-namespace hax{
-
-	class Engine;
+namespace hax {
 
 	class IBackend {
 	public:
@@ -18,15 +16,30 @@ namespace hax{
 		//
 		// Parameters:
 		// 
-		// [in] pEngine:
-		// Pointer to the Engine object responsible for drawing within the hook.
-		virtual void beginFrame(Engine* pEngine) = 0;
+		// [in] pArg1:
+		// The argument of the the hooked function.
+		// For OpenGL 2 wglSwapBuffers hooks pass nothing.
+		// For DirectX 9 EndScene hooks pass the LPDIRECT3DDEVICE9.
+		// For DirectX 11 Present hooks pass the IDXGISwapChain.
+		// For Vulkan QueuePresentKHR hooks pass the VkQueue.
+		//
+		// [in] pArg2:
+		// The argument of the the hooked function.
+		// For OpenGL 2 wglSwapBuffers hooks pass nothing.
+		// For DirectX 9 EndScene hooks pass nothing.
+		// For DirectX 11 Present hooks pass nothing.
+		// For Vulkan QueuePresentKHR hooks pass the VkPresentInfoKHR.
+		//
+		// [in] pArg3:
+		// The argument of the the hooked function.
+		// For OpenGL 2 wglSwapBuffers hooks pass nothing.
+		// For DirectX 9 EndScene hooks pass nothing.
+		// For DirectX 11 Present hooks pass nothing.
+		// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getVulkanInitData().
+		virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) = 0;
 
 		// Ends the current frame within a hook. Should be called by an Engine object.
-		// 
-		// [in] pEngine:
-		// Pointer to the Engine object responsible for drawing within the hook.
-		virtual void endFrame(const Engine* pEngine) = 0;
+		virtual void endFrame() = 0;
 
 		// Gets the resolution of the current frame. Should be called by an Engine object.
 		//

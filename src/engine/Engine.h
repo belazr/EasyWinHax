@@ -11,9 +11,6 @@ namespace hax {
 		IBackend* const _pBackend;
 
 	public:
-		void* pHookArg1;
-		const void* pHookArg2;
-		void* pHookArg3;
 		float frameWidth;
 		float frameHeight;
 
@@ -31,7 +28,7 @@ namespace hax {
 		// 
 		// [in] pArg1:
 		// The argument of the the hooked function.
-		// For OpenGL 2 wglSwapBuffers hooks pass the HDC.
+		// For OpenGL 2 wglSwapBuffers hooks pass nothing.
 		// For DirectX 9 EndScene hooks pass the LPDIRECT3DDEVICE9.
 		// For DirectX 11 Present hooks pass the IDXGISwapChain.
 		// For Vulkan QueuePresentKHR hooks pass the VkQueue.
@@ -42,7 +39,14 @@ namespace hax {
 		// For DirectX 9 EndScene hooks pass nothing.
 		// For DirectX 11 Present hooks pass nothing.
 		// For Vulkan QueuePresentKHR hooks pass the VkPresentInfoKHR.
-		void beginFrame(void* pArg1, const void* pArg2 = nullptr, void* pArg3 = nullptr);
+		//
+		// [in] pArg3:
+		// The argument of the the hooked function.
+		// For OpenGL 2 wglSwapBuffers hooks pass nothing.
+		// For DirectX 9 EndScene hooks pass nothing.
+		// For DirectX 11 Present hooks pass nothing.
+		// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getVulkanInitData().
+		void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr);
 		
 		// Ends drawing within a hook. Has to be called after any drawing calls.
 		void endFrame();
