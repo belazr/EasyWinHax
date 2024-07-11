@@ -8,8 +8,8 @@
 
 static hax::Bench bench("200 x hkEndScene", 200u);
 
-static hax::dx9::Backend backend;
-static hax::Engine engine{ &backend };
+static hax::draw::dx9::Backend backend;
+static hax::draw::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pEndSceneHook;
@@ -25,15 +25,15 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
 
 	constexpr char TEXT[] = "EasyWinHax";
-	float widthText = _countof(TEXT) * hax::font::medium.width;
-	float heightText = hax::font::medium.height;
+	float widthText = _countof(TEXT) * hax::draw::font::medium.width;
+	float heightText = hax::draw::font::medium.height;
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
 
 	engine.endFrame();
 
@@ -42,14 +42,14 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pEndSceneHook->disable();
-		const hax::dx9::tEndScene pEndScene = reinterpret_cast<hax::dx9::tEndScene>(pEndSceneHook->getOrigin());
+		const hax::draw::dx9::tEndScene pEndScene = reinterpret_cast<hax::draw::dx9::tEndScene>(pEndSceneHook->getOrigin());
 		pEndScene(pDevice);
 		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
 		return;
 	}
 
-	reinterpret_cast<hax::dx9::tEndScene>(pEndSceneHook->getGateway())(pDevice);
+	reinterpret_cast<hax::draw::dx9::tEndScene>(pEndSceneHook->getGateway())(pDevice);
 
 	return;
 }
@@ -104,7 +104,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 	void* pD3d9DeviceVTable[43]{};
 
-	if (!hax::dx9::getD3D9DeviceVTable(pD3d9DeviceVTable, sizeof(pD3d9DeviceVTable))) {
+	if (!hax::draw::dx9::getD3D9DeviceVTable(pD3d9DeviceVTable, sizeof(pD3d9DeviceVTable))) {
 		cleanup(hHookSemaphore, pEndSceneHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);

@@ -8,8 +8,8 @@
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
-static hax::dx11::Backend backend;
-static hax::Engine engine{ &backend };
+static hax::draw::dx11::Backend backend;
+static hax::draw::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
@@ -25,15 +25,15 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
 
 	constexpr char TEXT[] = "EasyWinHax";
-	float widthText = _countof(TEXT) * hax::font::medium.width;
-	float heightText = hax::font::medium.height;
+	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
+	const float heightText = hax::draw::font::medium.height;
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
 
 	engine.endFrame();
 
@@ -42,14 +42,14 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pPresentHook->disable();
-		const hax::dx11::tPresent pPresent = reinterpret_cast<hax::dx11::tPresent>(pPresentHook->getOrigin());
+		const hax::draw::dx11::tPresent pPresent = reinterpret_cast<hax::draw::dx11::tPresent>(pPresentHook->getOrigin());
 		const HRESULT res = pPresent(pSwapChain, syncInterval, flags);
 		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
 		return res;
 	}
 
-	return reinterpret_cast<hax::dx11::tPresent>(pPresentHook->getGateway())(pSwapChain, syncInterval, flags);
+	return reinterpret_cast<hax::draw::dx11::tPresent>(pPresentHook->getGateway())(pSwapChain, syncInterval, flags);
 }
 
 
@@ -102,7 +102,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 	void* pD3D11SwapChainVTable[9]{};
 
-	if (!hax::dx11::getD3D11SwapChainVTable(pD3D11SwapChainVTable, sizeof(pD3D11SwapChainVTable))) {
+	if (!hax::draw::dx11::getD3D11SwapChainVTable(pD3D11SwapChainVTable, sizeof(pD3D11SwapChainVTable))) {
 		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);

@@ -11,26 +11,26 @@
 #include "launch.h"
 
 // Headers for engine
-#include "engine\Engine.h"
-#include "engine\IBackend.h"
-#include "engine\Vertex.h"
-#include "engine\rgb.h"
-#include "engine\font\Font.h"
+#include "draw\Engine.h"
+#include "draw\IBackend.h"
+#include "draw\Vertex.h"
+#include "draw\rgb.h"
+#include "draw\font\Font.h"
 
 // Headers for DirectX 9
 #pragma comment(lib, "d3d9.lib")
 
-#include "engine\dx\dx9\dx9Backend.h"
+#include "draw\dx\dx9\dx9Backend.h"
 
 // Headers for DirectX 11
 #pragma comment(lib, "d3d11.lib")
 
-#include "engine\dx\dx11\dx11Backend.h"
+#include "draw\dx\dx11\dx11Backend.h"
 
 // Headers for OpenGL 2
 #pragma comment( lib, "OpenGL32.lib" )
 
-#include "engine\ogl2\ogl2Backend.h"
+#include "draw\ogl2\ogl2Backend.h"
 
 // Headers for Vulkan
-#include "engine\vulkan\vkBackend.h"
+#include "draw\vulkan\vkBackend.h"

@@ -48,37 +48,37 @@
     <ClInclude Include="src\launch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\font\Font.h">
+    <ClInclude Include="src\draw\font\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\Engine.h">
+    <ClInclude Include="src\draw\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\dx9\dx9Backend.h">
+    <ClInclude Include="src\draw\dx\dx9\dx9Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\IBackend.h">
+    <ClInclude Include="src\draw\IBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\ogl2\ogl2Backend.h">
+    <ClInclude Include="src\draw\ogl2\ogl2Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\dx\dx11\dx11Backend.h">
+    <ClInclude Include="src\draw\dx\dx11\dx11Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\rgb.h">
+    <ClInclude Include="src\draw\rgb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\Vertex.h">
+    <ClInclude Include="src\draw\Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\vulkan\vkBackend.h">
+    <ClInclude Include="src\draw\vulkan\vkBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\vulkan\include\vk_platform.h">
+    <ClInclude Include="src\draw\vulkan\include\vk_platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\engine\vulkan\include\vulkan.h">
+    <ClInclude Include="src\draw\vulkan\include\vulkan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -107,28 +107,28 @@
     <ClCompile Include="src\launch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\font\LargeFont.cpp">
+    <ClCompile Include="src\draw\font\LargeFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\font\MediumFont.cpp">
+    <ClCompile Include="src\draw\font\MediumFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\font\TinyFont.cpp">
+    <ClCompile Include="src\draw\font\TinyFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\Engine.cpp">
+    <ClCompile Include="src\draw\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx9\dx9Backend.cpp">
+    <ClCompile Include="src\draw\dx\dx9\dx9Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\ogl2\ogl2Backend.cpp">
+    <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\dx\dx11\dx11Backend.cpp">
+    <ClCompile Include="src\draw\dx\dx11\dx11Backend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\vulkan\vkBackend.cpp">
+    <ClCompile Include="src\draw\vulkan\vkBackend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

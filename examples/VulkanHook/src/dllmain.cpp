@@ -10,10 +10,10 @@
 // https://github.com/belazr/JackieBlue
 
 static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
-static hax::vk::VulkanInitData initData;
 
-static hax::vk::Backend backend;
-static hax::Engine engine{ &backend };
+static hax::draw::vk::VulkanInitData initData;
+static hax::draw::vk::Backend backend;
+static hax::draw::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pQueuePresentHook;
@@ -29,15 +29,15 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 	
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
 
 	constexpr char TEXT[] = "EasyWinHax";
-	const float widthText = _countof(TEXT) * hax::font::medium.width;
-	const float heightText = hax::font::medium.height;
+	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
+	const float heightText = hax::draw::font::medium.height;
 	
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 	
-	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
 
 	engine.endFrame();
 
@@ -104,7 +104,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	if (!hax::vk::getVulkanInitData(&initData)) {
+	if (!hax::draw::vk::getVulkanInitData(&initData)) {
 		cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);

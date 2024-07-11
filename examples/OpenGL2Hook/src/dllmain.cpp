@@ -8,8 +8,8 @@
 
 static hax::Bench bench("200 x hkWglSwapBuffers", 200u);
 
-static hax::ogl2::Backend backend;
-static hax::Engine engine{ &backend };
+static hax::draw::ogl2::Backend backend;
+static hax::draw::Engine engine{ &backend };
 
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;
@@ -25,15 +25,15 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
 
 	constexpr char TEXT[] = "EasyWinHax";
-	const float widthText = _countof(TEXT) * hax::font::medium.width;
-	const float heightText = hax::font::medium.height;
+	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
+	const float heightText = hax::draw::font::medium.height;
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(&hax::font::medium, &bottomLeftText, TEXT, hax::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
 
 	engine.endFrame();
 
@@ -42,14 +42,14 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pSwapBuffersHook->disable();
-		const hax::ogl2::twglSwapBuffers pSwapBuffers = reinterpret_cast<hax::ogl2::twglSwapBuffers>(pSwapBuffersHook->getOrigin());
+		const hax::draw::ogl2::twglSwapBuffers pSwapBuffers = reinterpret_cast<hax::draw::ogl2::twglSwapBuffers>(pSwapBuffersHook->getOrigin());
 		const BOOL res = pSwapBuffers(hDc);
 		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
 		return res;
 	}
 
-	return reinterpret_cast<hax::ogl2::twglSwapBuffers>(pSwapBuffersHook->getGateway())(hDc);
+	return reinterpret_cast<hax::draw::ogl2::twglSwapBuffers>(pSwapBuffersHook->getGateway())(hDc);
 }
 
 
