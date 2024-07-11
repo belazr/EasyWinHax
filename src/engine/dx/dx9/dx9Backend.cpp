@@ -1,5 +1,4 @@
 #include "dx9Backend.h"
-#include "..\..\Engine.h"
 
 namespace hax {
 
@@ -57,11 +56,18 @@ namespace hax {
 		static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
 		static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
-		void Backend::beginFrame(Engine* pEngine) {
+		void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			UNREFERENCED_PARAMETER(pArg2);
+			UNREFERENCED_PARAMETER(pArg3);
+
 			this->_isBegin = false;
 
+			this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pArg1);
+
+			if (!this->_pDevice) return;
+
 			if (!this->_isInit) {
-				this->_isInit = this->initialize(reinterpret_cast<IDirect3DDevice9*>(pEngine->pHookArg1));
+				this->_isInit = this->initialize();
 			}
 
 			this->_pDevice->GetViewport(&this->_viewport);
@@ -89,8 +95,7 @@ namespace hax {
 		}
 
 
-		void Backend::endFrame(const Engine* pEngine) { 
-			UNREFERENCED_PARAMETER(pEngine);
+		void Backend::endFrame() { 
 
 			if (!this->_isBegin) return;
 
@@ -140,11 +145,7 @@ namespace hax {
 		}
 
 
-		bool Backend::initialize(IDirect3DDevice9* pDevice) {
-			this->_pDevice = pDevice;
-
-			if (!this->_pDevice) return false;
-
+		bool Backend::initialize() {
 			constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
 				{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
 				{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },

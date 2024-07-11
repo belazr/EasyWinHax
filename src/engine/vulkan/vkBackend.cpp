@@ -1,5 +1,4 @@
 #include "vkBackend.h"
-#include "..\Engine.h"
 #include "..\Vertex.h"
 #include "..\font\Font.h"
 #include "..\..\proc.h"
@@ -210,7 +209,7 @@ namespace hax {
 
 
 		Backend::Backend() :
-			_hVulkan{}, _hMainWindow{}, _hDevice{}, _hInstance{}, _f{},
+			_hQueue{}, _phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _hInstance{}, _f{},
 			_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 			_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 			_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
@@ -279,20 +278,22 @@ namespace hax {
 
 		static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-		void Backend::beginFrame(Engine* pEngine) {
+		void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
 			this->_isBegin = false;
 
-			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
+			this->_hQueue = reinterpret_cast<VkQueue>(pArg1);
+			this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg2);
+			this->_hDevice = reinterpret_cast<VkDevice>(pArg3);
 			
-			if (!pPresentInfo) return;
+			if (this->_hQueue == VK_NULL_HANDLE || !this->_phPresentInfo || this->_hDevice == VK_NULL_HANDLE) return;
 
 			if (!this->_isInit) {
-				this->_isInit = this->initialize(pEngine);
+				this->_isInit = this->initialize();
 
 				if (!this->_isInit) return;
 			}
 
-			const VkSwapchainKHR hSwapchain = pPresentInfo->pSwapchains[0];
+			const VkSwapchainKHR hSwapchain = this->_phPresentInfo->pSwapchains[0];
 			uint32_t curImageCount = 0u;
 
 			if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return;
@@ -305,7 +306,7 @@ namespace hax {
 				return;
 			}
 
-			this->_pCurImageData = &this->_pImageDataArray[pPresentInfo->pImageIndices[0]];
+			this->_pCurImageData = &this->_pImageDataArray[this->_phPresentInfo->pImageIndices[0]];
 
 			this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
 			this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
@@ -336,11 +337,9 @@ namespace hax {
 		}
 
 
-		void Backend::endFrame(const Engine* pEngine) {
-			const VkQueue hQueue = reinterpret_cast<VkQueue>(pEngine->pHookArg1);
-			const VkPresentInfoKHR* const pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pEngine->pHookArg2);
+		void Backend::endFrame() {
 
-			if (!this->_isBegin || !pPresentInfo) return;
+			if (!this->_isBegin) return;
 
 			const VkViewport viewport{ 0.f, 0.f, static_cast<float>(this->_viewport.right), static_cast<float>(this->_viewport.bottom), 0.f, 1.f };
 			this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
@@ -363,22 +362,22 @@ namespace hax {
 			this->_f.pVkCmdEndRenderPass(this->_pCurImageData->hCommandBuffer);
 			this->_f.pVkEndCommandBuffer(this->_pCurImageData->hCommandBuffer);
 
-			if (hQueue != this->_hFirstGraphicsQueue) return;
+			if (this->_hQueue != this->_hFirstGraphicsQueue) return;
 
-			VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[pPresentInfo->waitSemaphoreCount];
-			memset(pStageMask, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, pPresentInfo->waitSemaphoreCount * sizeof(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT));
+			VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_phPresentInfo->waitSemaphoreCount];
+			memset(pStageMask, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, this->_phPresentInfo->waitSemaphoreCount * sizeof(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT));
 			
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pWaitDstStageMask = pStageMask;
 			submitInfo.commandBufferCount = 1u;
 			submitInfo.pCommandBuffers = &this->_pCurImageData->hCommandBuffer;
-			submitInfo.pWaitSemaphores = pPresentInfo->pWaitSemaphores;
-			submitInfo.waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
-			submitInfo.pSignalSemaphores = pPresentInfo->pWaitSemaphores;
-			submitInfo.signalSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+			submitInfo.pWaitSemaphores = this->_phPresentInfo->pWaitSemaphores;
+			submitInfo.waitSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
+			submitInfo.pSignalSemaphores = this->_phPresentInfo->pWaitSemaphores;
+			submitInfo.signalSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
 
-			this->_f.pVkQueueSubmit(hQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
+			this->_f.pVkQueueSubmit(this->_hQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
 
 			delete[] pStageMask;
 
@@ -412,7 +411,7 @@ namespace hax {
 		}
 
 
-		bool Backend::initialize(const Engine* pEngine) {
+		bool Backend::initialize() {
 			this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
 
 			if (!this->_hVulkan) return false;
@@ -421,10 +420,6 @@ namespace hax {
 
 			if (!this->_hMainWindow) return false;
 			
-			this->_hDevice = reinterpret_cast<VkDevice>(pEngine->pHookArg3);
-
-			if (this->_hDevice == VK_NULL_HANDLE) return false;
-
 			if (this->_hInstance == VK_NULL_HANDLE) {
 				this->_hInstance = createInstance(this->_hVulkan);
 			}

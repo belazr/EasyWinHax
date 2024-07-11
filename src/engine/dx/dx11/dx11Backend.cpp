@@ -1,5 +1,4 @@
 #include "dx11Backend.h"
-#include "..\..\Engine.h"
 
 namespace hax {
 
@@ -79,10 +78,15 @@ namespace hax {
 		}
 
 
-		void Backend::beginFrame(Engine* pEngine) {
+		void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			UNREFERENCED_PARAMETER(pArg2);
+			UNREFERENCED_PARAMETER(pArg3);
+
 			this->_isBegin = false;
 
-			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pEngine->pHookArg1);
+			IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pArg1);
+
+			if (!pSwapChain) return;
 
 			if (!this->_isInit) {
 				this->_isInit = this->initialize(pSwapChain);
@@ -130,8 +134,7 @@ namespace hax {
 		}
 
 
-		void Backend::endFrame(const Engine* pEngine) {
-			UNREFERENCED_PARAMETER(pEngine);
+		void Backend::endFrame() {
 
 			if (!this->_isBegin) return;
 
