@@ -1062,16 +1062,16 @@ namespace hax {
 			}
 
 
-			bool Backend::createBufferData(BufferData* pBufferData, size_t vertexCount) {
+			bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) {
 				RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
 
-				VkDeviceSize vertexBufferSize = vertexCount * sizeof(Vertex);
+				uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
 
 				if (!this->createBuffer(&pBufferData->hVertexBuffer, &pBufferData->hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
 				pBufferData->vertexBufferSize = vertexBufferSize;
 
-				VkDeviceSize indexBufferSize = vertexCount * sizeof(uint32_t);
+				uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
 
 				if (!this->createBuffer(&pBufferData->hIndexBuffer, &pBufferData->hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
@@ -1115,8 +1115,8 @@ namespace hax {
 			}
 
 
-			bool Backend::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage) {
-				const VkDeviceSize sizeAligned = (((*pSize) - 1ull) / this->_bufferAlignment + 1ull) * this->_bufferAlignment;
+			bool Backend::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage) {
+				const VkDeviceSize sizeAligned = (((*pSize) - 1ul) / this->_bufferAlignment + 1ul) * this->_bufferAlignment;
 
 				VkBufferCreateInfo bufferCreateinfo{};
 				bufferCreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1139,7 +1139,7 @@ namespace hax {
 
 				if (!this->_f.pVkBindBufferMemory(this->_hDevice, *phBuffer, *phMemory, 0) == VkResult::VK_SUCCESS) return false;
 
-				*pSize = memoryReq.size;
+				*pSize = static_cast<uint32_t>(memoryReq.size);
 
 				return true;
 			}
@@ -1203,7 +1203,7 @@ namespace hax {
 
 
 			void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
-				const size_t newVertexCount = pBufferData->curOffset + count;
+				const uint32_t newVertexCount = pBufferData->curOffset + count;
 
 				if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
 
@@ -1228,7 +1228,7 @@ namespace hax {
 			}
 
 
-			bool Backend::resizeBufferData(BufferData* pBufferData, size_t newVertexCount) {
+			bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) {
 
 				if (newVertexCount <= pBufferData->curOffset) return true;
 

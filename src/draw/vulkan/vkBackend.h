@@ -75,10 +75,10 @@ namespace hax {
 					VkBuffer hIndexBuffer;
 					VkDeviceMemory hVertexMemory;
 					VkDeviceMemory hIndexMemory;
-					VkDeviceSize vertexBufferSize;
-					VkDeviceSize indexBufferSize;
 					Vertex* pLocalVertexBuffer;
 					uint32_t* pLocalIndexBuffer;
+					uint32_t vertexBufferSize;
+					uint32_t indexBufferSize;
 					uint32_t curOffset;
 				}BufferData;
 
@@ -213,15 +213,15 @@ namespace hax {
 				void destroyImageData(ImageData* pImageData) const;
 				bool createFramebuffers(VkSwapchainKHR hSwapchain);
 				void destroyFramebuffers();
-				bool createBufferData(BufferData* pBufferData, size_t vertexCount);
+				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount);
 				void destroyBufferData(BufferData* pBufferData) const;
-				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, VkDeviceSize* pSize, VkBufferUsageFlagBits usage);
+				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage);
 				uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 				bool mapBufferData(BufferData* pBufferData) const;
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
-				bool resizeBufferData(BufferData* pBufferData, size_t newVertexCount);
+				bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount);
 				void drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const;
 			};
 
