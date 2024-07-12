@@ -237,10 +237,12 @@ namespace hax {
 
 				if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
 
+				const rgb::Color argbColor = COLOR_ABGR_TO_ARGB(color);
+
 				for (uint32_t i = 0u; i < count; i++) {
 					const uint32_t curIndex = pBufferData->curOffset + i;
 
-					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, COLOR_ABGR_TO_ARGB(color) };
+					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, argbColor };
 					memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
 
 					pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
