@@ -12,6 +12,9 @@ namespace hax {
 		private:
 			IBackend* const _pBackend;
 
+			bool _init;
+			bool _frame;
+
 		public:
 			float frameWidth;
 			float frameHeight;
@@ -24,7 +27,8 @@ namespace hax {
 			// Pointer to an appropriate IBackend interface to backend within a hook.
 			Engine(IBackend* pBackend);
 
-			// Initializes drawing within a hook. Has to be called before any drawing calls.
+			// Inititalizes the backend if neccessary and starts a frame within a hook.
+			// Has to be called before any drawing calls.
 			//
 			// Parameters:
 			// 
@@ -50,7 +54,7 @@ namespace hax {
 			// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getVulkanInitData().
 			void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr);
 
-			// Ends drawing within a hook. Has to be called after any drawing calls.
+			// Ends a frame within a hook. Has to be called after any drawing calls.
 			void endFrame();
 
 			// Draws a line. The line is a filled rectangle with the ends perpendicular to the middle axis.

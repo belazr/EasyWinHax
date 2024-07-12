@@ -4,25 +4,44 @@ namespace hax {
 
 	namespace draw {
 
-		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, frameWidth{}, frameHeight{} {}
+		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
 		void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
-			this->_pBackend->beginFrame(pArg1, pArg2, pArg3);
-			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
+			this->_pBackend->setHookArguments(pArg1, pArg2, pArg3);
 
+			if (!this->_init) {
+				this->_init = this->_pBackend->initialize();
+			}
+
+			if (!this->_init) return;
+			
+			this->_frame = this->_pBackend->beginFrame();
+			
+			if (!this->_frame) return;
+			
+			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
+			
 			return;
 		}
 
 
 		void Engine::endFrame() {
+			
+			if (!this->_frame) return;
+			
 			this->_pBackend->endFrame();
+
+			this->_frame = false;
 
 			return;
 		}
 
 
 		void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
+
+			if (!this->_frame) return;
+
 			// defaults for horizontal line
 			float cosAtan = 0.f;
 			float sinAtan = width / 2.f;
@@ -69,6 +88,9 @@ namespace hax {
 
 
 		void Engine::drawPLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
+			
+			if (!this->_frame) return;
+			
 			// only makes sense if not horizontal
 			if (!(pos1->y - pos2->y)) return;
 
@@ -105,6 +127,9 @@ namespace hax {
 
 
 		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const {
+
+			if (!this->_frame) return;
+
 			Vector2 corners[6]{};
 			corners[0].x = pos->x;
 			corners[0].y = pos->y;
@@ -126,7 +151,7 @@ namespace hax {
 
 		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
 
-			if (!pFont) return;
+			if (!this->_frame) return;
 
 			const size_t size = strlen(text);
 
@@ -152,6 +177,9 @@ namespace hax {
 
 
 		void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const {
+			
+			if (!this->_frame) return;
+			
 			const float height = bot->y - top->y;
 
 			// corners coordinates of the parallelogram
@@ -180,6 +208,9 @@ namespace hax {
 
 
 		void Engine::draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, rgb::Color color) const {
+
+			if (!this->_frame) return;
+
 			this->drawLine(&top[0], &top[1], width, color);
 			this->drawLine(&bot[0], &bot[1], width, color);
 
@@ -198,6 +229,9 @@ namespace hax {
 
 
 		void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, rgb::Color color) const {
+
+			if (!this->_frame) return;
+
 			// top face
 			this->drawLine(&top[0], &top[1], width, color);
 			this->drawLine(&top[1], &top[2], width, color);

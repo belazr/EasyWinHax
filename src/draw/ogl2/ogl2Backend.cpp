@@ -15,9 +15,7 @@ namespace hax {
 			constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
 			constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
 
-			Backend::Backend() : _f{}, _viewport{},
-				_triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX },
-				_isInit{}, _isBegin{} {}
+			Backend::Backend() : _f{}, _viewport{}, _triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX } {}
 
 
 			Backend::~Backend() {
@@ -26,17 +24,41 @@ namespace hax {
 			}
 
 
-			void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
 				UNREFERENCED_PARAMETER(pArg1);
 				UNREFERENCED_PARAMETER(pArg2);
 				UNREFERENCED_PARAMETER(pArg3);
 
-				this->_isBegin = false;
+				return;
+			}
 
-				if (!this->_isInit) {
-					this->_isInit = this->initialize();
-				}
 
+			bool Backend::initialize() {
+
+				if (!this->getProcAddresses()) return false;
+
+				this->destroyBufferData(&this->_triangleListBufferData);
+
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+				this->destroyBufferData(&this->_pointListBufferData);
+
+				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
+
+				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+				return true;
+			}
+
+
+			bool Backend::beginFrame() {
+				
+				if (!this->mapBufferData(&this->_triangleListBufferData)) return false;
+
+				if (!this->mapBufferData(&this->_pointListBufferData)) return false;
+				
 				glGetIntegerv(GL_VIEWPORT, this->_viewport);
 
 				glMatrixMode(GL_PROJECTION);
@@ -48,20 +70,11 @@ namespace hax {
 				glPushMatrix();
 				glLoadIdentity();
 
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
-
-				if (!this->mapBufferData(&this->_pointListBufferData)) return;
-
-				this->_isBegin = true;
-
-				return;
+				return true;
 			}
 
 
 			void Backend::endFrame() {
-
-				if (!this->_isBegin) return;
-
 				this->drawBufferData(&this->_pointListBufferData, GL_POINTS);
 				this->drawBufferData(&this->_triangleListBufferData, GL_TRIANGLES);
 
@@ -85,7 +98,7 @@ namespace hax {
 
 			void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-				if (!this->_isBegin || count % 3u) return;
+				if (count % 3u) return;
 
 				this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -94,32 +107,9 @@ namespace hax {
 
 
 			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-
-				if (!this->_isBegin) return;
-
 				this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
 				return;
-			}
-
-
-			bool Backend::initialize() {
-
-				if (!this->getProcAddresses()) return false;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
-
-				return true;
 			}
 
 

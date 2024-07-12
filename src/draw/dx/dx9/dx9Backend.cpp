@@ -40,7 +40,7 @@ namespace hax {
 			}
 
 
-			Backend::Backend() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
+			Backend::Backend() : _pDevice{}, _pOriginalVertexDeclaration{}, _pVertexDeclaration{}, _pointListBufferData{}, _triangleListBufferData{}, _viewport{} {}
 
 
 			Backend::~Backend() {
@@ -55,32 +55,56 @@ namespace hax {
 			}
 
 
-			static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 100u;
-			static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
-
-			void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
 				UNREFERENCED_PARAMETER(pArg2);
 				UNREFERENCED_PARAMETER(pArg3);
 
-				this->_isBegin = false;
-
 				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pArg1);
 
-				if (!this->_pDevice) return;
+				return;
+			}
 
-				if (!this->_isInit) {
-					this->_isInit = this->initialize();
+			
+			bool Backend::initialize() {
+				constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
+					{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
+					{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
+					D3DDECL_END()
+				};
+
+				if (!this->_pVertexDeclaration) {
+
+					if (FAILED(this->_pDevice->CreateVertexDeclaration(VERTEX_ELEMENTS, &this->_pVertexDeclaration))) return false;
+
 				}
 
-				this->_pDevice->GetViewport(&this->_viewport);
+				this->destroyBufferData(&this->_pointListBufferData);
 
-				if (!this->mapBufferData(&this->_pointListBufferData)) return;
+				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
 
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+				this->destroyBufferData(&this->_triangleListBufferData);
+
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+				return true;
+			}
+
+
+			bool Backend::beginFrame() {
+				
+				if(FAILED(this->_pDevice->GetViewport(&this->_viewport))) return false;
+
+				if (!this->mapBufferData(&this->_pointListBufferData)) return false;
+
+				if (!this->mapBufferData(&this->_triangleListBufferData)) return false;
 
 				if (!this->_pOriginalVertexDeclaration) {
 
-					if (FAILED(this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration))) return;
+					if (FAILED(this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration))) return false;
 
 				}
 
@@ -88,25 +112,21 @@ namespace hax {
 					this->_pOriginalVertexDeclaration->Release();
 					this->_pOriginalVertexDeclaration = nullptr;
 
-					return;
+					return false;
 				}
 
-				this->_isBegin = true;
-
-				return;
+				return true;
 			}
 
 
 			void Backend::endFrame() {
-
-				if (!this->_isBegin) return;
-
-				if (this->_triangleListBufferData.pVertexBuffer->Unlock() == D3D_OK) {
+				
+				if (SUCCEEDED(this->_triangleListBufferData.pVertexBuffer->Unlock())) {
 					this->_triangleListBufferData.pLocalVertexBuffer = nullptr;
 					this->drawBufferData(&this->_triangleListBufferData, D3DPT_TRIANGLELIST);
 				}
 
-				if (this->_pointListBufferData.pVertexBuffer->Unlock() == D3D_OK) {
+				if (SUCCEEDED(this->_pointListBufferData.pVertexBuffer->Unlock())) {
 					this->_pointListBufferData.pLocalVertexBuffer = nullptr;
 					this->drawBufferData(&this->_pointListBufferData, D3DPT_POINTLIST);
 				}
@@ -129,7 +149,7 @@ namespace hax {
 
 			void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-				if (!this->_isBegin || count % 3u) return;
+				if (count % 3u) return;
 
 				this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -138,37 +158,9 @@ namespace hax {
 
 
 			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-
-				if (!this->_isBegin) return;
-
 				this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
 				return;
-			}
-
-
-			bool Backend::initialize() {
-				constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
-					{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0u },
-					{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
-					D3DDECL_END()
-				};
-
-				if (!this->_pVertexDeclaration) {
-
-					if (FAILED(this->_pDevice->CreateVertexDeclaration(VERTEX_ELEMENTS, &this->_pVertexDeclaration))) return false;
-
-				}
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
-
-				return true;
 			}
 
 

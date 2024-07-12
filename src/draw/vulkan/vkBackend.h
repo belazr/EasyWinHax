@@ -123,15 +123,12 @@ namespace hax {
 				ImageData* _pCurImageData;
 				RECT _viewport;
 
-				bool _isInit;
-				bool _isBegin;
-
 			public:
 				Backend();
 
 				~Backend();
 
-				// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
+				// Sets the arguments of the current call of the hooked function.
 				//
 				// Parameters:
 				// 
@@ -143,9 +140,21 @@ namespace hax {
 				//
 				// [in] pArg3:
 				// Pass the device handle that was retrieved by vk::getVulkanInitData().
-				virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
-				// Ends the current frame within a hook. Should be called by an Engine object.
+				// Initializes the backend. Should be called by an Engine object until success.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool initialize() override;
+
+				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool beginFrame() override;
+
+				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
@@ -192,7 +201,6 @@ namespace hax {
 				virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 			private:
-				bool initialize();
 				bool getProcAddresses();
 				bool createRenderPass();
 				bool createCommandPool();

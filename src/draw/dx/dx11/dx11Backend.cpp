@@ -19,9 +19,9 @@ namespace hax {
 				ID3D11Device* pDevice = nullptr;
 				IDXGISwapChain* pSwapChain = nullptr;
 
-				HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0u, nullptr, 0u, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, nullptr, nullptr);
+				const HRESULT hResult = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0u, nullptr, 0u, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, nullptr, nullptr);
 
-				if (hResult != S_OK || !pDevice || !pSwapChain) return false;
+				if (FAILED(hResult)) return false;
 
 				if (memcpy_s(pSwapChainVTable, size, *reinterpret_cast<void**>(pSwapChain), size)) {
 					pDevice->Release();
@@ -38,8 +38,8 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
-				_pointListBufferData{}, _triangleListBufferData{}, _viewport{}, _isInit{}, _isBegin{} {}
+				_pSwapChain{}, _pDevice {}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
+				_pointListBufferData{}, _triangleListBufferData{}, _viewport{} {}
 
 
 			Backend::~Backend() {
@@ -80,49 +80,79 @@ namespace hax {
 			}
 
 
-			void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
+			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
 				UNREFERENCED_PARAMETER(pArg2);
 				UNREFERENCED_PARAMETER(pArg3);
 
-				this->_isBegin = false;
+				this->_pSwapChain = reinterpret_cast<IDXGISwapChain*>(pArg1);
 
-				IDXGISwapChain* const pSwapChain = reinterpret_cast<IDXGISwapChain*>(pArg1);
+				return;
+			}
 
-				if (!pSwapChain) return;
 
-				if (!this->_isInit) {
-					this->_isInit = this->initialize(pSwapChain);
+			bool Backend::initialize() {
+
+				if (FAILED(this->_pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice)))) return false;
+
+				if (!this->_pContext) {
+					this->_pDevice->GetImmediateContext(&this->_pContext);
 				}
 
+				if (!this->_pContext) return false;
+
+				if (!this->createShaders()) return false;
+
+				this->destroyBufferData(&this->_pointListBufferData);
+
+				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				this->destroyBufferData(&this->_triangleListBufferData);
+
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+
+				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				if (!this->_pConstantBuffer) {
+
+					if (!this->createConstantBuffer()) return false;
+
+				}
+
+				return true;
+			}
+
+
+			bool Backend::beginFrame() {
 				D3D11_VIEWPORT curViewport{};
-				this->getCurrentViewport(&curViewport);
+				
+				if(!this->getCurrentViewport(&curViewport)) return false;
 
 				if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
+					
+					if (!this->updateConstantBuffer(curViewport)) return false;
+
 					this->_viewport = curViewport;
-
-					if (!this->updateConstantBuffer()) return;
-
 				}
 
-				if (!this->_pRenderTargetView) {
-					// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
-					// so it has to be acquired every frame as well
-					// this is done so resolution changes do not break rendering
-					ID3D11Texture2D* pBackBuffer{};
-					if (FAILED(pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return;
+				if (!this->mapBufferData(&this->_pointListBufferData)) return false;
 
-					if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
-						pBackBuffer->Release();
+				if (!this->mapBufferData(&this->_triangleListBufferData)) return false;
 
-						return;
-					}
+				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
+				// so it has to be acquired every frame as well
+				// this is done so resolution changes do not break rendering
+				ID3D11Texture2D* pBackBuffer{};
+				if (FAILED(this->_pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return false;
 
+				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
 					pBackBuffer->Release();
+
+					return false;
 				}
 
-				if (!this->mapBufferData(&this->_pointListBufferData)) return;
-
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return;
+				pBackBuffer->Release();
 
 				this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
@@ -130,23 +160,16 @@ namespace hax {
 				this->_pContext->IASetInputLayout(this->_pVertexLayout);
 				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 
-				this->_isBegin = true;
-
-				return;
+				return true;
 			}
 
 
 			void Backend::endFrame() {
-
-				if (!this->_isBegin) return;
-
 				this->drawBufferData(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->drawBufferData(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-				if (this->_pRenderTargetView) {
-					this->_pRenderTargetView->Release();
-					this->_pRenderTargetView = nullptr;
-				}
+				this->_pRenderTargetView->Release();
+				this->_pRenderTargetView = nullptr;
 
 				return;
 			}
@@ -162,7 +185,7 @@ namespace hax {
 
 			void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
 
-				if (!this->_isBegin || count % 3u) return;
+				if (count % 3u) return;
 
 				this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
 
@@ -171,45 +194,9 @@ namespace hax {
 
 
 			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-
-				if (!this->_isBegin) return;
-
 				this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
 
 				return;
-			}
-
-
-			static constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-			static constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
-
-			bool Backend::initialize(IDXGISwapChain* pSwapChain) {
-
-				if (FAILED(pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice)))) return false;
-
-				if (!this->_pContext) {
-					this->_pDevice->GetImmediateContext(&this->_pContext);
-				}
-
-				if (!this->_pContext) return false;
-
-				if (!this->createShaders()) return false;
-
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
-
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-				if (!this->_pConstantBuffer) {
-
-					if (!this->createConstantBuffer()) return false;
-
-				}
-
-				return true;
 			}
 
 
@@ -370,7 +357,7 @@ namespace hax {
 
 			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
-			void Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
+			bool Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
 				D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
 				UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
 
@@ -379,15 +366,15 @@ namespace hax {
 				*pViewport = viewports[0];
 
 				if (!viewportCount || !pViewport->Width) {
-					HWND hMainWnd = nullptr;
+					HWND hMainWnd{};
 
 					EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
 
-					if (!hMainWnd) return;
+					if (!hMainWnd) return false;
 
 					RECT windowRect{};
 
-					if (!GetClientRect(hMainWnd, &windowRect)) return;
+					if (!GetClientRect(hMainWnd, &windowRect)) return false;
 
 					pViewport->Width = static_cast<FLOAT>(windowRect.right);
 					pViewport->Height = static_cast<FLOAT>(windowRect.bottom);
@@ -398,7 +385,7 @@ namespace hax {
 					this->_pContext->RSSetViewports(1u, pViewport);
 				}
 
-				return;
+				return true;
 			}
 
 
@@ -466,11 +453,11 @@ namespace hax {
 			}
 
 
-			bool Backend::updateConstantBuffer() const {
-				const float viewLeft = this->_viewport.TopLeftX;
-				const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
-				const float viewTop = this->_viewport.TopLeftY;
-				const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
+			bool Backend::updateConstantBuffer(D3D11_VIEWPORT viewport) const {
+				const float viewLeft = viewport.TopLeftX;
+				const float viewRight = viewport.TopLeftX + viewport.Width;
+				const float viewTop = viewport.TopLeftY;
+				const float viewBottom = viewport.TopLeftY + viewport.Height;
 
 				const float ortho[][4]{
 					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
