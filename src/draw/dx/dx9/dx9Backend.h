@@ -29,19 +29,20 @@ namespace hax {
 			// True on success, false on failure.
 			bool getD3D9DeviceVTable(void** pDeviceVTable, size_t size);
 
-			typedef struct BufferData {
-				IDirect3DVertexBuffer9* pVertexBuffer;
-				IDirect3DIndexBuffer9* pIndexBuffer;
-				Vertex* pLocalVertexBuffer;
-				uint32_t* pLocalIndexBuffer;
-				uint32_t vertexBufferSize;
-				uint32_t indexBufferSize;
-				uint32_t curOffset;
-			}BufferData;
-
 			class Backend : public IBackend {
 			private:
+				typedef struct BufferData {
+					IDirect3DVertexBuffer9* pVertexBuffer;
+					IDirect3DIndexBuffer9* pIndexBuffer;
+					Vertex* pLocalVertexBuffer;
+					uint32_t* pLocalIndexBuffer;
+					uint32_t vertexBufferSize;
+					uint32_t indexBufferSize;
+					uint32_t curOffset;
+				}BufferData;
+
 				IDirect3DDevice9* _pDevice;
+
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 				IDirect3DVertexDeclaration9* _pVertexDeclaration;
 
@@ -49,9 +50,6 @@ namespace hax {
 				BufferData _triangleListBufferData;
 
 				D3DVIEWPORT9 _viewport;
-
-				bool _isInit;
-				bool _isBegin;
 
 			public:
 				Backend();
@@ -70,9 +68,21 @@ namespace hax {
 				//
 				// [in] pArg3:
 				// Pass nothing
-				virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
-				// Ends the current frame within a hook. Should be called by an Engine object.
+				// Initializes the backend. Should be called by an Engine object until success.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool initialize() override;
+
+				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool beginFrame() override;
+
+				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
@@ -119,7 +129,6 @@ namespace hax {
 				virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 			private:
-				bool initialize();
 				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 				void destroyBufferData(BufferData* pBufferData) const;
 				bool mapBufferData(BufferData* pBufferData) const;

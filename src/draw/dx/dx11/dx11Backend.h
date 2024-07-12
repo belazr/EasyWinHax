@@ -29,18 +29,20 @@ namespace hax {
 			// True on success, false on failure.
 			bool getD3D11SwapChainVTable(void** pSwapChainVTable, size_t size);
 
-			typedef struct BufferData {
-				ID3D11Buffer* pVertexBuffer;
-				ID3D11Buffer* pIndexBuffer;
-				Vertex* pLocalVertexBuffer;
-				uint32_t* pLocalIndexBuffer;
-				uint32_t vertexBufferSize;
-				uint32_t indexBufferSize;
-				uint32_t curOffset;
-			}BufferData;
-
 			class Backend : public IBackend {
 			private:
+				typedef struct BufferData {
+					ID3D11Buffer* pVertexBuffer;
+					ID3D11Buffer* pIndexBuffer;
+					Vertex* pLocalVertexBuffer;
+					uint32_t* pLocalIndexBuffer;
+					uint32_t vertexBufferSize;
+					uint32_t indexBufferSize;
+					uint32_t curOffset;
+				}BufferData;
+
+				IDXGISwapChain* _pSwapChain;
+
 				ID3D11Device* _pDevice;
 				ID3D11DeviceContext* _pContext;
 				ID3D11VertexShader* _pVertexShader;
@@ -53,9 +55,6 @@ namespace hax {
 				BufferData _triangleListBufferData;
 
 				D3D11_VIEWPORT _viewport;
-
-				bool _isInit;
-				bool _isBegin;
 
 			public:
 				Backend();
@@ -74,9 +73,21 @@ namespace hax {
 				//
 				// [in] pArg3:
 				// Pass nothing
-				virtual void beginFrame(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
 
-				// Ends the current frame within a hook. Should be called by an Engine object.
+				// Initializes the backend. Should be called by an Engine object until success.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool initialize() override;
+
+				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool beginFrame() override;
+
+				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
@@ -123,13 +134,12 @@ namespace hax {
 				virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) override;
 
 			private:
-				bool initialize(IDXGISwapChain* pSwapChain);
 				bool createShaders();
 				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
 				void destroyBufferData(BufferData* pBufferData) const;
-				void getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 				bool createConstantBuffer();
-				bool updateConstantBuffer() const;
+				bool getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
+				bool updateConstantBuffer(D3D11_VIEWPORT viewport) const;
 				bool mapBufferData(BufferData* pBufferData) const;
 				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
 				bool resizeBufferData(BufferData* pBufferData, uint32_t vertexCount) const;

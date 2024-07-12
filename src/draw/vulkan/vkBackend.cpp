@@ -215,8 +215,7 @@ namespace hax {
 				_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
-				_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _viewport{},
-				_isInit{}, _isBegin{} {}
+				_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _viewport{} {}
 
 
 			Backend::~Backend() {
@@ -278,34 +277,90 @@ namespace hax {
 			}
 
 
-			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
-
-			void Backend::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
-				this->_isBegin = false;
-
+			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
 				this->_hQueue = reinterpret_cast<VkQueue>(pArg1);
 				this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg2);
 				this->_hDevice = reinterpret_cast<VkDevice>(pArg3);
-			
-				if (this->_hQueue == VK_NULL_HANDLE || !this->_phPresentInfo || this->_hDevice == VK_NULL_HANDLE) return;
 
-				if (!this->_isInit) {
-					this->_isInit = this->initialize();
+				return;
+			}
 
-					if (!this->_isInit) return;
+
+			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
+
+			bool Backend::initialize() {
+				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
+
+				if (!this->_hVulkan) return false;
+
+				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+
+				if (!this->_hMainWindow) return false;
+
+				if (this->_hInstance == VK_NULL_HANDLE) {
+					this->_hInstance = createInstance(this->_hVulkan);
 				}
 
+				if (this->_hInstance == VK_NULL_HANDLE) return false;
+
+				if (!this->getProcAddresses()) return false;
+
+				this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
+
+				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return false;
+
+				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+
+				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
+
+				if (this->_hRenderPass == VK_NULL_HANDLE) {
+
+					if (!this->createRenderPass()) return false;
+
+				}
+
+				if (this->_hCommandPool == VK_NULL_HANDLE) {
+
+					if (!this->createCommandPool()) return false;
+
+				}
+
+				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
+					this->_hTriangleListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+				}
+
+				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) return false;
+
+				if (this->_hPointListPipeline == VK_NULL_HANDLE) {
+					this->_hPointListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+				}
+
+				if (this->_hPointListPipeline == VK_NULL_HANDLE) return false;
+
+				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
+
+				if (!this->_memoryProperties.memoryTypeCount) return false;
+
+				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
+
+				if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
+
+				return true;
+			}
+
+
+			bool Backend::beginFrame() {
 				const VkSwapchainKHR hSwapchain = this->_phPresentInfo->pSwapchains[0];
 				uint32_t curImageCount = 0u;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return;
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return false;
 
-				if (!curImageCount) return;
+				if (!curImageCount) return false;
 
 				if (!this->resizeImageDataArray(hSwapchain, curImageCount)) {
 					this->destroyImageDataArray();
 
-					return;
+					return false;
 				}
 
 				this->_pCurImageData = &this->_pImageDataArray[this->_phPresentInfo->pImageIndices[0]];
@@ -315,33 +370,23 @@ namespace hax {
 
 				RECT curViewport{};
 
-				if (!GetClientRect(this->_hMainWindow, &curViewport)) return;
+				if (!GetClientRect(this->_hMainWindow, &curViewport)) return false;
 
 				if (curViewport.right != this->_viewport.right || curViewport.bottom != this->_viewport.bottom) {
 					this->destroyFramebuffers();
 
-					if (!this->createFramebuffers(hSwapchain)) return;
+					if (!this->createFramebuffers(hSwapchain)) return false;
 				
 					this->_viewport = curViewport;
 				}
 
-				if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return;
+				if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return false;
 			
-				if (!this->mapBufferData(&this->_pCurImageData->pointListBufferData)) return;
+				if (!this->mapBufferData(&this->_pCurImageData->pointListBufferData)) return false;
 
-				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return;
+				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return false;
 
 				this->beginRenderPass(this->_pCurImageData->hCommandBuffer, this->_pCurImageData->hFrameBuffer);
-
-				this->_isBegin = true;
-
-				return;
-			}
-
-
-			void Backend::endFrame() {
-
-				if (!this->_isBegin) return;
 
 				const VkViewport viewport{ 0.f, 0.f, static_cast<float>(this->_viewport.right), static_cast<float>(this->_viewport.bottom), 0.f, 1.f };
 				this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &viewport);
@@ -351,10 +396,15 @@ namespace hax {
 
 				const float scale[]{ 2.f / static_cast<float>(this->_viewport.right), 2.f / static_cast<float>(this->_viewport.bottom) };
 				this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
-			
+
 				const float translate[2]{ -1.f, -1.f };
 				this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
+				return true;
+			}
+
+
+			void Backend::endFrame() {
 				this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
 				this->drawBufferData(&this->_pCurImageData->triangleListBufferData, this->_pCurImageData->hCommandBuffer);
 
@@ -386,6 +436,7 @@ namespace hax {
 				return;
 			}
 
+
 			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
 				*frameWidth = static_cast<float>(this->_viewport.right);
 				*frameHeight = static_cast<float>(this->_viewport.bottom);
@@ -393,9 +444,10 @@ namespace hax {
 				return;
 			}
 
+
 			void Backend::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
 
-				if (!this->_isBegin || count % 3u) return;
+				if (count % 3u) return;
 
 				this->copyToBufferData(&this->_pCurImageData->triangleListBufferData, corners, count, color);
 
@@ -404,74 +456,11 @@ namespace hax {
 
 
 			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-			
-				if (!this->_isBegin) return;
-
 				this->copyToBufferData(&this->_pCurImageData->pointListBufferData, coordinates, count, color, offset);
 
 				return;
 			}
 
-
-			bool Backend::initialize() {
-				this->_hVulkan = proc::in::getModuleHandle("vulkan-1.dll");
-
-				if (!this->_hVulkan) return false;
-			
-				EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
-
-				if (!this->_hMainWindow) return false;
-			
-				if (this->_hInstance == VK_NULL_HANDLE) {
-					this->_hInstance = createInstance(this->_hVulkan);
-				}
-
-				if (this->_hInstance == VK_NULL_HANDLE) return false;
-
-				if (!this->getProcAddresses()) return false;
-
-				this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
-
-				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return false;
-
-				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
-
-				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
-
-				if (this->_hRenderPass == VK_NULL_HANDLE) {
-
-					if (!this->createRenderPass()) return false;
-
-				}
-
-				if (this->_hCommandPool == VK_NULL_HANDLE) {
-				
-					if (!this->createCommandPool()) return false;
-
-				}
-
-				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) {
-					this->_hTriangleListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-				}
-
-				if (this->_hTriangleListPipeline == VK_NULL_HANDLE) return false;
-
-				if (this->_hPointListPipeline == VK_NULL_HANDLE) {
-					this->_hPointListPipeline = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-				}
-
-				if (this->_hPointListPipeline == VK_NULL_HANDLE) return false;
-
-				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
-
-				if (!this->_memoryProperties.memoryTypeCount) return false;
-
-				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
-
-				if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
-			
-				return true;
-			}
 
 			#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
 
@@ -1160,11 +1149,11 @@ namespace hax {
 
 				for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
 
-					if ((_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
+					if ((this->_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
 						return i;
 					}
-				}
 
+				}
 
 				return 0xFFFFFFFF;
 			}
