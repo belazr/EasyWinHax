@@ -8,13 +8,6 @@ namespace hax {
 
 		namespace ogl2 {
 
-			constexpr static GLenum GL_ARRAY_BUFFER = 0x8892;
-			constexpr static GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
-			constexpr static GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
-			constexpr static GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
-			constexpr static GLenum GL_DYNAMIC_DRAW = 0x88E8;
-			constexpr static GLenum GL_WRITE_ONLY = 0x88B9;
-
 			Backend::Backend() : _f{}, _viewport{}, _triangleListBufferData{ UINT_MAX, UINT_MAX }, _pointListBufferData{ UINT_MAX, UINT_MAX } {}
 
 
@@ -191,8 +184,7 @@ namespace hax {
 			}
 
 
-			bool Backend::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const
-			{
+			bool Backend::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const {
 				this->_f.pGlGenBuffers(1, pId);
 
 				if (*pId == UINT_MAX) return false;
