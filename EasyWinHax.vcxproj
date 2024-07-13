@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\draw\AbstractDrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11Backend.h" />
     <ClInclude Include="src\draw\font\Font.h" />
     <ClInclude Include="src\draw\Engine.h" />
