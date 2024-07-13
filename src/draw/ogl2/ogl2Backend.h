@@ -1,8 +1,7 @@
 #pragma once
+#include "ogl2Defs.h"
 #include "..\Vertex.h"
 #include "..\IBackend.h"
-#include <stdint.h>
-#include <gl\GL.h>
 
 // Class for drawing with OpenGL 2.
 // All methods are intended to be called by an Engine object and not for direct calls.
@@ -16,22 +15,6 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef void(APIENTRY* tGlGenBuffers)(GLsizei n, GLuint* buffers);
-				typedef void(APIENTRY* tGlBindBuffer)(GLenum target, GLuint buffer);
-				typedef void(APIENTRY* tGlBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
-				typedef void* (APIENTRY* tGlMapBuffer)(GLenum target, GLenum access);
-				typedef GLboolean(APIENTRY* tGlUnmapBuffer)(GLenum target);
-				typedef void(APIENTRY* tGlDeleteBuffers)(GLsizei n, const GLuint* buffers);
-
-				typedef struct Functions {
-					tGlGenBuffers pGlGenBuffers;
-					tGlBindBuffer pGlBindBuffer;
-					tGlBufferData pGlBufferData;
-					tGlMapBuffer pGlMapBuffer;
-					tGlUnmapBuffer pGlUnmapBuffer;
-					tGlDeleteBuffers pGlDeleteBuffers;
-				}Functions;
-
 				typedef struct BufferData {
 					GLuint vertexBufferId;
 					GLuint indexBufferId;
@@ -54,7 +37,6 @@ namespace hax {
 
 			public:
 				Backend();
-
 				~Backend();
 
 				// Initializes backend and starts a frame within a hook. Should be called by an Engine object.

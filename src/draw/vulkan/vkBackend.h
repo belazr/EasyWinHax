@@ -5,6 +5,8 @@
 #define VK_NO_PROTOTYPES
 #include "include\vulkan.h"
 
+#include <Windows.h>
+
 namespace hax {
 
 	namespace draw {

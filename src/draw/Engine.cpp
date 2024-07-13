@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include <string.h>
 
 namespace hax {
 

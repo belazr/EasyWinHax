@@ -1,7 +1,6 @@
 #pragma once
 #include "rgb.h"
 #include "..\vecmath.h"
-#include <Windows.h>
 #include <stdint.h>
 
 // Interface the engine class uses for drawing with graphics APIs within a hook.
