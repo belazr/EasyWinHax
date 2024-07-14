@@ -7,6 +7,7 @@ namespace hax {
 	namespace draw {
 
 		namespace ogl2 {
+
 			constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
 			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
 			constexpr GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
