@@ -1,6 +1,7 @@
 #pragma once
 #include "Vertex.h"
-#include <winnt.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 
 // Abstract class the engine class uses as a buffer for vertices and indices to draw primitives.

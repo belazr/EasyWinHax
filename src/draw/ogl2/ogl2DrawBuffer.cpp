@@ -11,6 +11,8 @@ namespace hax {
 
 			DrawBuffer::~DrawBuffer() {
 				this->destroy();
+
+				return;
 			}
 
 
