@@ -17,13 +17,26 @@ namespace hax {
 
 			if (!this->_init) return;
 			
-			this->_frame = this->_pBackend->beginFrame();
-			
-			if (!this->_frame) return;
+			if (!this->_pBackend->beginFrame()) return;
 			
 			this->_pTriangleListBuffer = this->_pBackend->getTriangleListBuffer();
 			this->_pPointListBuffer = this->_pBackend->getPointListBuffer();
+
+			if (!this->_pTriangleListBuffer->map()) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
+
+			if (!this->_pPointListBuffer->map()) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
+
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
+
+			this->_frame = true;
 			
 			return;
 		}
