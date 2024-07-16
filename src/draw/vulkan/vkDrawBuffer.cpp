@@ -6,13 +6,24 @@ namespace hax{
 
 		namespace vk {
 
-			DrawBuffer::DrawBuffer(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties) :
-				_f{ f }, _hDevice{ hDevice }, _hCommandBuffer{ hCommandBuffer }, _hPipeline{ hPipeline }, _memoryProperties{ memoryProperties },
+			DrawBuffer::DrawBuffer() :
+				_f{}, _hDevice{}, _hCommandBuffer{}, _hPipeline{}, _memoryProperties{},
 				_hVertexBuffer{}, _hIndexBuffer{}, _hVertexMemory{}, _hIndexMemory{}, _bufferAlignment{ 0x10u } {}
 			
 			
 			DrawBuffer::~DrawBuffer() {
 				this->destroy();
+
+				return;
+			}
+
+
+			void DrawBuffer::initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties) {
+				this->_f = f;
+				this->_hDevice = hDevice;
+				this->_hCommandBuffer = hCommandBuffer;
+				this->_hPipeline = hPipeline;
+				this->_memoryProperties = memoryProperties;
 
 				return;
 			}
