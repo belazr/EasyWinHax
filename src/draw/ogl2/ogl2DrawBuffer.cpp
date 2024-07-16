@@ -6,11 +6,19 @@ namespace hax {
 
 		namespace ogl2 {
 
-			DrawBuffer::DrawBuffer(Functions f, GLenum mode) : _f{ f }, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _mode{ mode } {}
+			DrawBuffer::DrawBuffer() : _f{}, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _mode{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
 				this->destroy();
+
+				return;
+			}
+
+
+			void DrawBuffer::initialize(Functions f, GLenum mode) {
+				this->_f = f;
+				this->_mode = mode;
 
 				return;
 			}
