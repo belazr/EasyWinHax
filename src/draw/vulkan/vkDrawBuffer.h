@@ -22,8 +22,10 @@ namespace hax {
 				VkDeviceSize _bufferAlignment;
 
 			public:
-				DrawBuffer(Functions f, VkDevice _hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties);
+				DrawBuffer();
 				~DrawBuffer();
+
+				void initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties);
 
 				bool create(uint32_t vertexCount) override;
 				void destroy() override;
