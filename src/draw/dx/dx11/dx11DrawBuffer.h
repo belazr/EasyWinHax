@@ -17,8 +17,10 @@ namespace hax {
 				D3D11_PRIMITIVE_TOPOLOGY _topology;
 
 			public:
-				DrawBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology);
+				DrawBuffer();
 				~DrawBuffer();
+
+				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology);
 
 				bool create(uint32_t vertexCount) override;
 				void destroy() override;

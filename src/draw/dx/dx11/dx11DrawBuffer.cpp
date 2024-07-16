@@ -6,12 +6,20 @@ namespace hax {
 
 		namespace dx11 {
 
-			DrawBuffer::DrawBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology) :
-				_pDevice{ pDevice }, _pContext{ pContext }, _pVertexBuffer{}, _pIndexBuffer{}, _topology{ topology } {}
+			DrawBuffer::DrawBuffer() : _pDevice{}, _pContext{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
 				this->destroy();
+
+				return;
+			}
+
+
+			void DrawBuffer::initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology) {
+				this->_pDevice = pDevice;
+				this->_pContext = pContext;
+				this->_topology = topology;
 
 				return;
 			}
