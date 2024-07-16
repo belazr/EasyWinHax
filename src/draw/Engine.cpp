@@ -5,7 +5,7 @@ namespace hax {
 
 	namespace draw {
 
-		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
+		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{}, _pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
 
 
 		void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
@@ -21,6 +21,8 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
+			this->_pTriangleListBuffer = this->_pBackend->getTriangleListBuffer();
+			this->_pPointListBuffer = this->_pBackend->getPointListBuffer();
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 			
 			return;
@@ -31,6 +33,12 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
+			this->_pTriangleListBuffer->draw();
+			this->_pTriangleListBuffer = nullptr;
+			
+			this->_pPointListBuffer->draw();
+			this->_pPointListBuffer = nullptr;
+
 			this->_pBackend->endFrame();
 
 			this->_frame = false;
@@ -84,7 +92,7 @@ namespace hax {
 			corners[5].x = pos2->x - cosAtan;
 			corners[5].y = pos2->y - sinAtan;
 
-			this->_pBackend->drawTriangleList(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, 6, color);
 		}
 
 
@@ -123,7 +131,7 @@ namespace hax {
 			corners[5].x = pos2->x - cosAtan - omega * sinAtan;
 			corners[5].y = pos2->y;
 
-			this->_pBackend->drawTriangleList(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, 6, color);
 		}
 
 
@@ -146,7 +154,7 @@ namespace hax {
 			corners[5].x = pos->x + width;
 			corners[5].y = pos->y;
 
-			this->_pBackend->drawTriangleList(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, 6, color);
 		}
 
 
@@ -167,8 +175,8 @@ namespace hax {
 				if (pCurChar) {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
 					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-					this->_pBackend->drawPointList(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-					this->_pBackend->drawPointList(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+					this->_pPointListBuffer->append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+					this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
 				}
 
 			}

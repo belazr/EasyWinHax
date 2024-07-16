@@ -15,6 +15,9 @@ namespace hax {
 			bool _init;
 			bool _frame;
 
+			AbstractDrawBuffer* _pTriangleListBuffer;
+			AbstractDrawBuffer* _pPointListBuffer;
+
 		public:
 			float frameWidth;
 			float frameHeight;

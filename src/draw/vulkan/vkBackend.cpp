@@ -445,23 +445,6 @@ namespace hax {
 			}
 
 
-			void Backend::drawTriangleList(const Vector2 corners[], UINT count, rgb::Color color) {
-
-				if (count % 3u) return;
-
-				this->copyToBufferData(&this->_pCurImageData->triangleListBufferData, corners, count, color);
-
-				return;
-			}
-
-
-			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-				this->copyToBufferData(&this->_pCurImageData->pointListBufferData, coordinates, count, color, offset);
-
-				return;
-			}
-
-
 			#define ASSIGN_PROC_ADDRESS(dispatchableObject, f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGet##dispatchableObject##ProcAddress(this->_h##dispatchableObject, "vk"#f))
 
 			bool Backend::getProcAddresses() {
