@@ -34,6 +34,7 @@
     <ClInclude Include="src\draw\Vertex.h" />
     <ClInclude Include="src\draw\vulkan\include\vk_platform.h" />
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />
+    <ClInclude Include="src\draw\vulkan\vkDefs.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
     <ClInclude Include="src\FileLoader.h" />
@@ -46,6 +47,7 @@
     <ClInclude Include="src\undocWinTypes.h" />
     <ClInclude Include="src\vecmath.h" />
     <ClInclude Include="src\draw\vulkan\vkBackend.h" />
+    <ClInclude Include="src\draw\vulkan\vkDrawBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\draw\dx\dx11\dx11DrawBuffer.cpp" />
@@ -67,6 +69,7 @@
     <ClCompile Include="src\proc.cpp" />
     <ClCompile Include="src\vecmath.cpp" />
     <ClCompile Include="src\draw\vulkan\vkBackend.cpp" />
+    <ClCompile Include="src\draw\vulkan\vkDrawBuffer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
