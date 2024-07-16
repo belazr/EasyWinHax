@@ -6,11 +6,19 @@ namespace hax {
 
 		namespace dx9 {
 
-			DrawBuffer::DrawBuffer(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType) : _pDevice{ pDevice }, _pVertexBuffer {}, _pIndexBuffer{}, _primitiveType{ primitiveType } {}
+			DrawBuffer::DrawBuffer() : _pDevice{}, _pVertexBuffer {}, _pIndexBuffer{}, _primitiveType{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
 				this->destroy();
+
+				return;
+			}
+
+
+			void DrawBuffer::initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType) {
+				this->_pDevice = pDevice;
+				this->_primitiveType = primitiveType;
 
 				return;
 			}

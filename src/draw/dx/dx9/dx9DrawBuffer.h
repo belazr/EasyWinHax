@@ -16,8 +16,10 @@ namespace hax {
 				D3DPRIMITIVETYPE _primitiveType;
 
 			public:
-				DrawBuffer(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType);
+				DrawBuffer();
 				~DrawBuffer();
+
+				void initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType);
 
 				bool create(uint32_t vertexCount) override;
 				void destroy() override;
