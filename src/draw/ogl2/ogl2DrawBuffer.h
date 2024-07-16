@@ -16,8 +16,10 @@ namespace hax {
 				GLenum _mode;
 
 			public:
-				DrawBuffer(Functions f, GLenum mode);
+				DrawBuffer();
 				~DrawBuffer();
+
+				void initialize(Functions f, GLenum mode);
 
 				bool create(uint32_t vertexCount) override;
 				void destroy() override;
