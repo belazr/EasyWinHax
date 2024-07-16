@@ -183,23 +183,6 @@ namespace hax {
 			}
 
 
-			void Backend::drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) {
-
-				if (count % 3u) return;
-
-				this->copyToBufferData(&this->_triangleListBufferData, corners, count, color);
-
-				return;
-			}
-
-
-			void Backend::drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset) {
-				this->copyToBufferData(&this->_pointListBufferData, coordinates, count, color, offset);
-
-				return;
-			}
-
-
 			/*
 			cbuffer vertexBuffer : register(b0) {
 				float4x4 projectionMatrix;

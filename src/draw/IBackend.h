@@ -1,4 +1,5 @@
 #pragma once
+#include "AbstractDrawBuffer.h"
 #include "rgb.h"
 #include "..\vecmath.h"
 #include <stdint.h>
@@ -65,37 +66,17 @@ namespace hax {
 			// Pointer that receives the current frame height in pixel.
 			virtual void getFrameResolution(float* frameWidth, float* frameHeight) = 0;
 
-			// Draws a filled triangle list. Should be called by an Engine object.
+			// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
 			// 
-			// Parameters:
-			// 
-			// [in] corners:
-			// Screen coordinates of the corners of the triangles in the list.
-			// The three corners of the first triangle have to be in clockwise order. From there on the orientation of the triangles has to alternate.
-			// 
-			// [in] count:
-			// Count of the corners of the triangles in the list. Has to be divisble by three.
-			// 
-			// [in] color:
-			// Color of each triangle.
-			virtual void drawTriangleList(const Vector2 corners[], uint32_t count, rgb::Color color) = 0;
+			// Return:
+			// Pointer to the triangle list buffer.
+			virtual AbstractDrawBuffer* getTriangleListBuffer() const = 0;
 
-			// Draws a point list. Should be called by an Engine object.
+			// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
 			// 
-			// Parameters:
-			// 
-			// [in] coordinate:
-			// Screen coordinates of the points in the list.
-			// 
-			// [in] count:
-			// Count of the points in the list..
-			// 
-			// [in] color:
-			// Color of each point.
-			//
-			// [in] offest:
-			// Offset by which each point is drawn.
-			virtual void drawPointList(const Vector2 coordinates[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) = 0;
+			// Return:
+			// Pointer to the point list buffer.
+			virtual AbstractDrawBuffer* getPointListBuffer() const = 0;
 		};
 
 	}
