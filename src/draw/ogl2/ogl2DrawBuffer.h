@@ -11,9 +11,9 @@ namespace hax {
 			class DrawBuffer : public AbstractDrawBuffer {
 			private:
 				Functions _f;
+				GLenum _mode;
 				GLuint _vertexBufferId;
 				GLuint _indexBufferId;
-				GLenum _mode;
 
 			public:
 				DrawBuffer();

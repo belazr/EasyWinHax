@@ -25,7 +25,11 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				memset(this, 0, sizeof(DrawBuffer));
+				this->pLocalVertexBuffer = nullptr;
+				this->pLocalIndexBuffer = nullptr;
+				this->vertexBufferSize = 0u;
+				this->indexBufferSize = 0u;
+				this->curOffset = 0u;
 				this->_vertexBufferId = UINT_MAX;
 				this->_indexBufferId = UINT_MAX;
 
@@ -39,7 +43,7 @@ namespace hax {
 
 				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, newIndexBufferSize, &this->_indexBufferId)) return false;
 
-				this->indexBufferSize = indexBufferSize;
+				this->indexBufferSize = newIndexBufferSize;
 
 				return true;
 			}
