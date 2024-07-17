@@ -55,6 +55,18 @@ namespace hax {
 			// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 			virtual void endFrame() = 0;
 
+			// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+			// 
+			// Return:
+			// Pointer to the triangle list buffer.
+			virtual AbstractDrawBuffer* getTriangleListBuffer() = 0;
+
+			// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+			// 
+			// Return:
+			// Pointer to the point list buffer.
+			virtual AbstractDrawBuffer* getPointListBuffer() = 0;
+
 			// Gets the resolution of the current frame. Should be called by an Engine object.
 			//
 			// Parameters:
@@ -65,18 +77,6 @@ namespace hax {
 			// [out] frameHeight:
 			// Pointer that receives the current frame height in pixel.
 			virtual void getFrameResolution(float* frameWidth, float* frameHeight) = 0;
-
-			// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
-			// 
-			// Return:
-			// Pointer to the triangle list buffer.
-			virtual AbstractDrawBuffer* getTriangleListBuffer() const = 0;
-
-			// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
-			// 
-			// Return:
-			// Pointer to the point list buffer.
-			virtual AbstractDrawBuffer* getPointListBuffer() const = 0;
 		};
 
 	}

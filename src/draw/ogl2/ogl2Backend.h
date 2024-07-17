@@ -1,5 +1,6 @@
 #pragma once
 #include "ogl2Defs.h"
+#include "ogl2DrawBuffer.h"
 #include "..\Vertex.h"
 #include "..\IBackend.h"
 
@@ -15,15 +16,6 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct BufferData {
-					GLuint vertexBufferId;
-					GLuint indexBufferId;
-					Vertex* pLocalVertexBuffer;
-					uint32_t* pLocalIndexBuffer;
-					uint32_t vertexBufferSize;
-					uint32_t indexBufferSize;
-					uint32_t curOffset;
-				}BufferData;
 
 				union {
 					Functions _f;
@@ -31,9 +23,10 @@ namespace hax {
 				};
 
 				GLint _viewport[4];
+				GLenum _depthFunc;
 
-				BufferData _triangleListBufferData;
-				BufferData _pointListBufferData;
+				DrawBuffer _triangleListBuffer;
+				DrawBuffer _pointListBuffer;
 
 			public:
 				Backend();
@@ -68,6 +61,18 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
+				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer.
+				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+
+				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the point list buffer.
+				virtual AbstractDrawBuffer* getPointListBuffer() override;
+
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
 				// Parameters:
@@ -81,13 +86,6 @@ namespace hax {
 
 			private:
 				bool getProcAddresses();
-				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
-				void destroyBufferData(BufferData* pBufferData) const;
-				bool createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const;
-				bool mapBufferData(BufferData* pBufferData) const;
-				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-				bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const;
-				void drawBufferData(BufferData* pBufferData, GLenum mode) const;
 			};
 
 		}
