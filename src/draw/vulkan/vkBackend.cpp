@@ -380,10 +380,6 @@ namespace hax {
 					this->_viewport = curViewport;
 				}
 
-				if (!this->mapBufferData(&this->_pCurImageData->triangleListBufferData)) return false;
-			
-				if (!this->mapBufferData(&this->_pCurImageData->pointListBufferData)) return false;
-
 				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return false;
 
 				this->beginRenderPass(this->_pCurImageData->hCommandBuffer, this->_pCurImageData->hFrameBuffer);
@@ -405,12 +401,6 @@ namespace hax {
 
 
 			void Backend::endFrame() {
-				this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hTriangleListPipeline);
-				this->drawBufferData(&this->_pCurImageData->triangleListBufferData, this->_pCurImageData->hCommandBuffer);
-
-				this->_f.pVkCmdBindPipeline(this->_pCurImageData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPointListPipeline);
-				this->drawBufferData(&this->_pCurImageData->pointListBufferData, this->_pCurImageData->hCommandBuffer);
-
 				this->_f.pVkCmdEndRenderPass(this->_pCurImageData->hCommandBuffer);
 				this->_f.pVkEndCommandBuffer(this->_pCurImageData->hCommandBuffer);
 
@@ -434,6 +424,18 @@ namespace hax {
 				delete[] pStageMask;
 
 				return;
+			}
+
+
+			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+
+				return &this->_pCurImageData->triangleListBuffer;
+			}
+
+
+			AbstractDrawBuffer* Backend::getPointListBuffer() {
+
+				return &this->_pCurImageData->pointListBuffer;
 			}
 
 
@@ -907,13 +909,17 @@ namespace hax {
 
 						if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VkResult::VK_SUCCESS) return false;
 
+						this->_pImageDataArray[i].triangleListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hTriangleListPipeline, this->_memoryProperties);
+
 						static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
-						if (!this->createBufferData(&this->_pImageDataArray[i].triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+						if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+						this->_pImageDataArray[i].pointListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hPointListPipeline, this->_memoryProperties);
 
 						static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
-						if (!this->createBufferData(&this->_pImageDataArray[i].pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+						if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 					}
 
@@ -958,8 +964,8 @@ namespace hax {
 					pImageData->hImageView = VK_NULL_HANDLE;
 				}
 
-				this->destroyBufferData(&pImageData->triangleListBufferData);
-				this->destroyBufferData(&pImageData->pointListBufferData);
+				pImageData->pointListBuffer.destroy();
+				pImageData->triangleListBuffer.destroy();
 
 				if (pImageData->hFence != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyFence(this->_hDevice, pImageData->hFence, nullptr);
@@ -1043,123 +1049,8 @@ namespace hax {
 			
 				return;
 			}
-
-
-			bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) {
-				RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
-
-				uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
-
-				if (!this->createBuffer(&pBufferData->hVertexBuffer, &pBufferData->hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
-
-				pBufferData->vertexBufferSize = vertexBufferSize;
-
-				uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
-
-				if (!this->createBuffer(&pBufferData->hIndexBuffer, &pBufferData->hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
-
-				pBufferData->indexBufferSize = indexBufferSize;
-
-				return true;
-			}
-
-
-			void Backend::destroyBufferData(BufferData* pBufferData) const {
-
-				if (pBufferData->hIndexMemory != VK_NULL_HANDLE) {
-					this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
-					this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hIndexMemory, nullptr);
-					pBufferData->hIndexMemory = VK_NULL_HANDLE;
-				}
-
-				if (pBufferData->hIndexBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hIndexBuffer, nullptr);
-					pBufferData->hIndexBuffer = VK_NULL_HANDLE;
-				}
-
-				if (pBufferData->hVertexMemory != VK_NULL_HANDLE) {
-					this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hVertexMemory);
-					this->_f.pVkFreeMemory(this->_hDevice, pBufferData->hVertexMemory, nullptr);
-					pBufferData->hVertexMemory = VK_NULL_HANDLE;
-				}
-
-				if (pBufferData->hVertexBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyBuffer(this->_hDevice, pBufferData->hVertexBuffer, nullptr);
-					pBufferData->hVertexBuffer = VK_NULL_HANDLE;
-				}
-
-				pBufferData->vertexBufferSize = 0ull;
-				pBufferData->pLocalVertexBuffer = nullptr;
-				pBufferData->indexBufferSize = 0ull;
-				pBufferData->pLocalIndexBuffer = nullptr;
-				pBufferData->curOffset = 0u;
-
-				return;
-			}
-
-
-			bool Backend::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage) {
-				const VkDeviceSize sizeAligned = (((*pSize) - 1ul) / this->_bufferAlignment + 1ul) * this->_bufferAlignment;
-
-				VkBufferCreateInfo bufferCreateinfo{};
-				bufferCreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-				bufferCreateinfo.size = sizeAligned;
-				bufferCreateinfo.usage = usage;
-				bufferCreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-				if (!this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateinfo, nullptr, phBuffer) == VkResult::VK_SUCCESS) return false;
-
-				VkMemoryRequirements memoryReq{};
-				this->_f.pVkGetBufferMemoryRequirements(this->_hDevice, *phBuffer, &memoryReq);
-				this->_bufferAlignment = memoryReq.alignment;
-
-				VkMemoryAllocateInfo allocInfo{};
-				allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-				allocInfo.allocationSize = memoryReq.size;
-				allocInfo.memoryTypeIndex = this->getMemoryTypeIndex(memoryReq.memoryTypeBits);
-
-				if (!this->_f.pVkAllocateMemory(this->_hDevice, &allocInfo, nullptr, phMemory) == VkResult::VK_SUCCESS) return false;
-
-				if (!this->_f.pVkBindBufferMemory(this->_hDevice, *phBuffer, *phMemory, 0) == VkResult::VK_SUCCESS) return false;
-
-				*pSize = static_cast<uint32_t>(memoryReq.size);
-
-				return true;
-			}
-
-
-			uint32_t Backend::getMemoryTypeIndex(uint32_t typeBits) const {
-
-				for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
-
-					if ((this->_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && typeBits & (1 << i)) {
-						return i;
-					}
-
-				}
-
-				return 0xFFFFFFFF;
-			}
-
-
-			bool Backend::mapBufferData(BufferData* pBufferData) const {
-
-				if (!pBufferData->pLocalVertexBuffer) {
-
-					if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-				}
-
-				if (!pBufferData->pLocalIndexBuffer) {
-
-					if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-				}
-
-				return true;
-			}
-
-
+			
+			
 			bool Backend::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
 			
 				if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return false;
@@ -1180,92 +1071,6 @@ namespace hax {
 				renderPassBeginInfo.renderArea.extent.width = this->_viewport.right;
 				renderPassBeginInfo.renderArea.extent.height = this->_viewport.bottom;
 				this->_f.pVkCmdBeginRenderPass(hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-				return;
-			}
-
-
-			void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) {
-				const uint32_t newVertexCount = pBufferData->curOffset + count;
-
-				if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
-
-					if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
-
-				}
-
-				if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
-
-				for (uint32_t i = 0u; i < count; i++) {
-					const uint32_t curIndex = pBufferData->curOffset + i;
-
-					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-					memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
-
-					pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
-				}
-
-				pBufferData->curOffset += count;
-
-				return;
-			}
-
-
-			bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) {
-
-				if (newVertexCount <= pBufferData->curOffset) return true;
-
-				BufferData oldBufferData = *pBufferData;
-
-				if (!this->createBufferData(pBufferData, newVertexCount)) {
-					this->destroyBufferData(pBufferData);
-				
-					return false;
-				}
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hVertexMemory, 0ull, pBufferData->vertexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-				if (oldBufferData.pLocalVertexBuffer) {
-					memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, static_cast<size_t>(oldBufferData.vertexBufferSize));
-				}
-
-				if (this->_f.pVkMapMemory(this->_hDevice, pBufferData->hIndexMemory, 0ull, pBufferData->indexBufferSize, 0ull, reinterpret_cast<void**>(&pBufferData->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
-
-				if (oldBufferData.pLocalIndexBuffer) {
-					memcpy(pBufferData->pLocalIndexBuffer, oldBufferData.pLocalIndexBuffer, static_cast<size_t>(oldBufferData.indexBufferSize));
-				}
-
-				pBufferData->curOffset = oldBufferData.curOffset;
-
-				this->destroyBufferData(&oldBufferData);
-
-				return true;
-			}
-
-
-			void Backend::drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const {
-				VkMappedMemoryRange ranges[2]{};
-				ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				ranges[0].memory = pBufferData->hVertexMemory;
-				ranges[0].size = VK_WHOLE_SIZE;
-				ranges[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				ranges[1].memory = pBufferData->hIndexMemory;
-				ranges[1].size = VK_WHOLE_SIZE;
-
-				if (this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return;
-
-				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hVertexMemory);
-				pBufferData->pLocalVertexBuffer = nullptr;
-
-				this->_f.pVkUnmapMemory(this->_hDevice, pBufferData->hIndexMemory);
-				pBufferData->pLocalIndexBuffer = nullptr;
-			
-				constexpr VkDeviceSize offset = 0ull;
-				this->_f.pVkCmdBindVertexBuffers(hCommandBuffer, 0u, 1u, &pBufferData->hVertexBuffer, &offset);
-				this->_f.pVkCmdBindIndexBuffer(hCommandBuffer, pBufferData->hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
-				this->_f.pVkCmdDrawIndexed(hCommandBuffer, pBufferData->curOffset, 1u, 0u, 0u, 0u);
-
-				pBufferData->curOffset = 0u;
 
 				return;
 			}
