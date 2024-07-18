@@ -1,4 +1,5 @@
 #pragma once
+#include "dx11DrawBuffer.h"
 #include "..\..\IBackend.h"
 #include "..\..\Vertex.h"
 #include <d3d11.h>
@@ -31,16 +32,6 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct BufferData {
-					ID3D11Buffer* pVertexBuffer;
-					ID3D11Buffer* pIndexBuffer;
-					Vertex* pLocalVertexBuffer;
-					uint32_t* pLocalIndexBuffer;
-					uint32_t vertexBufferSize;
-					uint32_t indexBufferSize;
-					uint32_t curOffset;
-				}BufferData;
-
 				IDXGISwapChain* _pSwapChain;
 
 				ID3D11Device* _pDevice;
@@ -50,11 +41,10 @@ namespace hax {
 				ID3D11PixelShader* _pPixelShader;
 				ID3D11RenderTargetView* _pRenderTargetView;
 				ID3D11Buffer* _pConstantBuffer;
-
-				BufferData _pointListBufferData;
-				BufferData _triangleListBufferData;
-
 				D3D11_VIEWPORT _viewport;
+				
+				DrawBuffer _triangleListBuffer;
+				DrawBuffer _pointListBuffer;
 
 			public:
 				Backend();
@@ -90,6 +80,18 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
+				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer.
+				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+
+				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the point list buffer.
+				virtual AbstractDrawBuffer* getPointListBuffer() override;
+
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
 				// Parameters:
@@ -103,15 +105,9 @@ namespace hax {
 
 			private:
 				bool createShaders();
-				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
-				void destroyBufferData(BufferData* pBufferData) const;
 				bool createConstantBuffer();
 				bool getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer(D3D11_VIEWPORT viewport) const;
-				bool mapBufferData(BufferData* pBufferData) const;
-				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-				bool resizeBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
-				void drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const;
 			};
 
 		}

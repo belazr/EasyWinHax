@@ -12,9 +12,9 @@ namespace hax {
 			private:
 				ID3D11Device* _pDevice;
 				ID3D11DeviceContext* _pContext;
+				D3D11_PRIMITIVE_TOPOLOGY _topology;
 				ID3D11Buffer* _pVertexBuffer;
 				ID3D11Buffer* _pIndexBuffer;
-				D3D11_PRIMITIVE_TOPOLOGY _topology;
 
 			public:
 				DrawBuffer();

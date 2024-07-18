@@ -38,8 +38,8 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice {}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _pRenderTargetView{},
-				_pointListBufferData{}, _triangleListBufferData{}, _viewport{} {}
+				_pSwapChain{}, _pDevice {}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{},
+				_pRenderTargetView{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -53,8 +53,8 @@ namespace hax {
 				}
 
 				if (this->_pContext) {
-					this->destroyBufferData(&this->_triangleListBufferData);
-					this->destroyBufferData(&this->_pointListBufferData);
+					this->_pointListBuffer.destroy();
+					this->_triangleListBuffer.destroy();
 				}
 
 				if (this->_pPixelShader) {
@@ -102,17 +102,19 @@ namespace hax {
 
 				if (!this->createShaders()) return false;
 
-				this->destroyBufferData(&this->_pointListBufferData);
-
-				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-
-				if (!this->createBufferData(&this->_pointListBufferData, INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-				this->destroyBufferData(&this->_triangleListBufferData);
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_triangleListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
-				if (!this->createBufferData(&this->_triangleListBufferData, INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				this->_pointListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+				this->_pointListBuffer.destroy();
+
+				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 				if (!this->_pConstantBuffer) {
 
@@ -135,10 +137,6 @@ namespace hax {
 
 					this->_viewport = curViewport;
 				}
-
-				if (!this->mapBufferData(&this->_pointListBufferData)) return false;
-
-				if (!this->mapBufferData(&this->_triangleListBufferData)) return false;
 
 				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
 				// so it has to be acquired every frame as well
@@ -165,13 +163,22 @@ namespace hax {
 
 
 			void Backend::endFrame() {
-				this->drawBufferData(&this->_triangleListBufferData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				this->drawBufferData(&this->_pointListBufferData, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
 				this->_pRenderTargetView->Release();
 				this->_pRenderTargetView = nullptr;
 
 				return;
+			}
+
+
+			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+
+				return &this->_triangleListBuffer;
+			}
+
+
+			AbstractDrawBuffer* Backend::getPointListBuffer() {
+
+				return &this->_pointListBuffer;
 			}
 
 
@@ -385,57 +392,6 @@ namespace hax {
 			}
 
 
-			bool Backend::createBufferData(BufferData* pBufferData, uint32_t vertexCount) const {
-				RtlSecureZeroMemory(pBufferData, sizeof(BufferData));
-
-				D3D11_BUFFER_DESC vertexBufferDesc{};
-				vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-				vertexBufferDesc.ByteWidth = vertexCount * sizeof(Vertex);
-				vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-				vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-				if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &pBufferData->pVertexBuffer))) return false;
-
-				pBufferData->vertexBufferSize = vertexBufferDesc.ByteWidth;
-
-				D3D11_BUFFER_DESC indexBufferDesc{};
-				indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-				indexBufferDesc.ByteWidth = vertexCount * sizeof(uint32_t);
-				indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-				indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &pBufferData->pIndexBuffer))) return false;
-
-				pBufferData->indexBufferSize = indexBufferDesc.ByteWidth;
-
-				return true;
-			}
-
-
-			void Backend::destroyBufferData(BufferData* pBufferData) const {
-
-				if (pBufferData->pVertexBuffer) {
-					this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
-					pBufferData->pLocalVertexBuffer = nullptr;
-					pBufferData->pVertexBuffer->Release();
-					pBufferData->pVertexBuffer = nullptr;
-				}
-
-				if (pBufferData->pIndexBuffer) {
-					this->_pContext->Unmap(pBufferData->pIndexBuffer, 0u);
-					pBufferData->pLocalIndexBuffer = nullptr;
-					pBufferData->pIndexBuffer->Release();
-					pBufferData->pIndexBuffer = nullptr;
-				}
-
-				pBufferData->vertexBufferSize = 0u;
-				pBufferData->indexBufferSize = 0u;
-				pBufferData->curOffset = 0u;
-
-				return;
-			}
-
-
 			bool Backend::updateConstantBuffer(D3D11_VIEWPORT viewport) const {
 				const float viewLeft = viewport.TopLeftX;
 				const float viewRight = viewport.TopLeftX + viewport.Width;
@@ -458,115 +414,6 @@ namespace hax {
 				this->_pContext->Unmap(this->_pConstantBuffer, 0u);
 
 				return true;
-			}
-
-
-			bool Backend::mapBufferData(BufferData* pBufferData) const {
-
-				if (!pBufferData->pLocalVertexBuffer) {
-					D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
-
-					if (FAILED(this->_pContext->Map(pBufferData->pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
-
-					pBufferData->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
-				}
-
-				if (!pBufferData->pLocalIndexBuffer) {
-					D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
-
-					if (FAILED(this->_pContext->Map(pBufferData->pIndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
-
-					pBufferData->pLocalIndexBuffer = reinterpret_cast<uint32_t*>(subresourcePoints.pData);
-				}
-
-				return true;
-			}
-
-
-			void Backend::copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset) const {
-				const uint32_t newVertexCount = pBufferData->curOffset + count;
-
-				if (newVertexCount * sizeof(Vertex) > pBufferData->vertexBufferSize || newVertexCount * sizeof(uint32_t) > pBufferData->indexBufferSize) {
-
-					if (!this->resizeBufferData(pBufferData, newVertexCount * 2u)) return;
-
-				}
-
-				if (!pBufferData->pLocalVertexBuffer || !pBufferData->pLocalIndexBuffer) return;
-
-				for (uint32_t i = 0u; i < count; i++) {
-					const uint32_t curIndex = pBufferData->curOffset + i;
-
-					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-					memcpy(&(pBufferData->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
-
-					pBufferData->pLocalIndexBuffer[curIndex] = curIndex;
-				}
-
-				pBufferData->curOffset += count;
-
-				return;
-			}
-
-
-			bool Backend::resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const {
-
-				if (newVertexCount <= pBufferData->curOffset) return true;
-
-				BufferData oldBufferData = *pBufferData;
-
-				if (!this->createBufferData(pBufferData, newVertexCount)) {
-					this->destroyBufferData(pBufferData);
-					this->destroyBufferData(&oldBufferData);
-
-					return false;
-				}
-
-				if (!this->mapBufferData(pBufferData)) {
-					this->destroyBufferData(&oldBufferData);
-
-					return false;
-				}
-
-				if (oldBufferData.pLocalVertexBuffer) {
-					memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalVertexBuffer, oldBufferData.vertexBufferSize);
-				}
-
-				if (oldBufferData.pLocalIndexBuffer) {
-					memcpy(pBufferData->pLocalVertexBuffer, oldBufferData.pLocalIndexBuffer, oldBufferData.indexBufferSize);
-				}
-
-				pBufferData->curOffset = oldBufferData.curOffset;
-
-				this->destroyBufferData(&oldBufferData);
-
-				return true;
-			}
-
-
-			void Backend::drawBufferData(BufferData* pBufferData, D3D11_PRIMITIVE_TOPOLOGY topology) const {
-				D3D11_PRIMITIVE_TOPOLOGY curTopology{};
-				this->_pContext->IAGetPrimitiveTopology(&curTopology);
-
-				if (!curTopology) return;
-
-				this->_pContext->Unmap(pBufferData->pVertexBuffer, 0u);
-				pBufferData->pLocalVertexBuffer = nullptr;
-
-				this->_pContext->Unmap(pBufferData->pIndexBuffer, 0u);
-				pBufferData->pLocalIndexBuffer = nullptr;
-
-				constexpr UINT STRIDE = sizeof(Vertex);
-				constexpr UINT OFFSET = 0u;
-				this->_pContext->IASetVertexBuffers(0u, 1u, &pBufferData->pVertexBuffer, &STRIDE, &OFFSET);
-				this->_pContext->IASetIndexBuffer(pBufferData->pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
-				this->_pContext->IASetPrimitiveTopology(topology);
-				this->_pContext->DrawIndexed(pBufferData->curOffset, 0u, 0u);
-				this->_pContext->IASetPrimitiveTopology(curTopology);
-
-				pBufferData->curOffset = 0u;
-
-				return;
 			}
 
 

@@ -26,7 +26,13 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				memset(this, 0, sizeof(DrawBuffer));
+				this->pLocalVertexBuffer = nullptr;
+				this->pLocalIndexBuffer = nullptr;
+				this->vertexBufferSize = 0u;
+				this->indexBufferSize = 0u;
+				this->curOffset = 0u;
+				this->_pVertexBuffer = nullptr;
+				this->_pIndexBuffer = nullptr;
 
 				D3D11_BUFFER_DESC vertexBufferDesc{};
 				vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
