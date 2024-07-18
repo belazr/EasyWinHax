@@ -25,25 +25,25 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				this->pLocalVertexBuffer = nullptr;
-				this->pLocalIndexBuffer = nullptr;
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 				this->_vertexBufferId = UINT_MAX;
 				this->_indexBufferId = UINT_MAX;
 
-				const uint32_t newVertexBufferSize = vertexCount * sizeof(Vertex);
+				const uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
 
-				if (!this->createBuffer(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER_BINDING, newVertexBufferSize, &this->_vertexBufferId)) return false;
+				if (!this->createBuffer(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER_BINDING, vertexBufferSize, &this->_vertexBufferId)) return false;
 
-				this->vertexBufferSize = newVertexBufferSize;
+				this->_vertexBufferSize = vertexBufferSize;
 
-				const uint32_t newIndexBufferSize = vertexCount * sizeof(GLuint);
+				const uint32_t indexBufferSize = vertexCount * sizeof(GLuint);
 
-				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, newIndexBufferSize, &this->_indexBufferId)) return false;
+				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, indexBufferSize, &this->_indexBufferId)) return false;
 
-				this->indexBufferSize = newIndexBufferSize;
+				this->_indexBufferSize = indexBufferSize;
 
 				return true;
 			}
@@ -76,11 +76,11 @@ namespace hax {
 				}
 
 
-				this->vertexBufferSize = 0ul;
-				this->pLocalVertexBuffer = nullptr;
-				this->indexBufferSize = 0ul;
-				this->pLocalIndexBuffer = nullptr;
-				this->curOffset = 0u;
+				this->_vertexBufferSize = 0ul;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_indexBufferSize = 0ul;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_curOffset = 0u;
 
 				return;
 			}
@@ -88,31 +88,31 @@ namespace hax {
 
 			bool DrawBuffer::map() {
 
-				if (!this->pLocalVertexBuffer) {
+				if (!this->_pLocalVertexBuffer) {
 					GLuint curBufferId{};
 					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
 
-					this->pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+					this->_pLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curBufferId);
 
-					if (!this->pLocalVertexBuffer) return false;
+					if (!this->_pLocalVertexBuffer) return false;
 
 				}
 
-				if (!this->pLocalIndexBuffer) {
+				if (!this->_pLocalIndexBuffer) {
 					GLuint curBufferId{};
 					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
 					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
 
-					this->pLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
+					this->_pLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
 
 					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
 
-					if (!this->pLocalIndexBuffer) return false;
+					if (!this->_pLocalIndexBuffer) return false;
 
 				}
 
@@ -138,17 +138,17 @@ namespace hax {
 				glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
 
 				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-				this->pLocalVertexBuffer = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
 
 				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-				this->pLocalIndexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
 
-				glDrawElements(this->_mode, static_cast<GLsizei>(this->curOffset), GL_UNSIGNED_INT, nullptr);
+				glDrawElements(this->_mode, static_cast<GLsizei>(this->_curOffset), GL_UNSIGNED_INT, nullptr);
 
 				glDisableClientState(GL_COLOR_ARRAY);
 				glDisableClientState(GL_VERTEX_ARRAY);
 
-				this->curOffset = 0u;
+				this->_curOffset = 0u;
 
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curVertexBufferId);
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curIndexBufferId);

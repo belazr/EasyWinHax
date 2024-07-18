@@ -13,13 +13,14 @@ namespace hax {
 	namespace draw {
 
 		class AbstractDrawBuffer {
-		public:
-			Vertex* pLocalVertexBuffer{};
-			uint32_t* pLocalIndexBuffer{};
-			uint32_t vertexBufferSize{};
-			uint32_t indexBufferSize{};
-			uint32_t curOffset{};
+		protected:
+			Vertex* _pLocalVertexBuffer{};
+			uint32_t* _pLocalIndexBuffer{};
+			uint32_t _vertexBufferSize{};
+			uint32_t _indexBufferSize{};
+			uint32_t _curOffset{};
 
+		public:
 			virtual bool create(uint32_t vertexCount) = 0;
 			virtual void destroy() = 0;
 			virtual bool map() = 0;
@@ -27,26 +28,26 @@ namespace hax {
 
 
 			void append(const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) {
-				const uint32_t newVertexCount = this->curOffset + count;
+				const uint32_t newVertexCount = this->_curOffset + count;
 
-				if (newVertexCount * sizeof(Vertex) > this->vertexBufferSize || newVertexCount * sizeof(uint32_t) > this->indexBufferSize) {
+				if (newVertexCount * sizeof(Vertex) > this->_vertexBufferSize || newVertexCount * sizeof(uint32_t) > this->_indexBufferSize) {
 
 					if (!this->resize(newVertexCount * 2u)) return;
 
 				}
 
-				if (!this->pLocalVertexBuffer || !this->pLocalIndexBuffer) return;
+				if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
 
 				for (uint32_t i = 0u; i < count; i++) {
-					const uint32_t curIndex = this->curOffset + i;
+					const uint32_t curIndex = this->_curOffset + i;
 
 					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-					memcpy(&(this->pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
+					memcpy(&(this->_pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
 
-					this->pLocalIndexBuffer[curIndex] = curIndex;
+					this->_pLocalIndexBuffer[curIndex] = curIndex;
 				}
 
-				this->curOffset += count;
+				this->_curOffset += count;
 
 				return;
 			}
@@ -54,16 +55,16 @@ namespace hax {
 
 			bool resize(uint32_t newVertexCount) {
 
-				if (newVertexCount <= this->curOffset) return true;
+				if (newVertexCount <= this->_curOffset) return true;
 
-				const uint32_t oldOffset = this->curOffset;
+				const uint32_t oldOffset = this->_curOffset;
 
 				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(calloc(oldOffset, sizeof(Vertex)));
 
 				if (!pTmpVertexBuffer) return false;
 
-				if (this->pLocalVertexBuffer) {
-					memcpy(pTmpVertexBuffer, this->pLocalVertexBuffer, oldOffset * sizeof(Vertex));
+				if (this->_pLocalVertexBuffer) {
+					memcpy(pTmpVertexBuffer, this->_pLocalVertexBuffer, oldOffset * sizeof(Vertex));
 				}
 				else {
 					memset(pTmpVertexBuffer, 0, oldOffset * sizeof(Vertex));
@@ -77,8 +78,8 @@ namespace hax {
 					return false;
 				}
 
-				if (this->pLocalIndexBuffer) {
-					memcpy(pTmpIndexBuffer, this->pLocalIndexBuffer, oldOffset * sizeof(uint32_t));
+				if (this->_pLocalIndexBuffer) {
+					memcpy(pTmpIndexBuffer, this->_pLocalIndexBuffer, oldOffset * sizeof(uint32_t));
 				}
 				else {
 					memset(pTmpIndexBuffer, 0, oldOffset * sizeof(uint32_t));
@@ -100,11 +101,11 @@ namespace hax {
 					return false;
 				}
 
-				if (this->pLocalVertexBuffer && this->pLocalIndexBuffer) {
-					memcpy(this->pLocalVertexBuffer, pTmpVertexBuffer, oldOffset * sizeof(Vertex));
-					memcpy(this->pLocalIndexBuffer, pTmpIndexBuffer, oldOffset * sizeof(uint32_t));
+				if (this->_pLocalVertexBuffer && this->_pLocalIndexBuffer) {
+					memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldOffset * sizeof(Vertex));
+					memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldOffset * sizeof(uint32_t));
 
-					this->curOffset = oldOffset;
+					this->_curOffset = oldOffset;
 				}
 				
 				free(pTmpVertexBuffer);

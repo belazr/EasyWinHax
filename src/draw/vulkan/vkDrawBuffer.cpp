@@ -30,27 +30,27 @@ namespace hax{
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				this->pLocalVertexBuffer = nullptr;
-				this->pLocalIndexBuffer = nullptr;
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
-				this->_hVertexBuffer = nullptr;
-				this->_hIndexBuffer = nullptr;
-				this->_hVertexMemory = nullptr;
-				this->_hIndexMemory = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
+				this->_hVertexBuffer = VK_NULL_HANDLE;
+				this->_hIndexBuffer = VK_NULL_HANDLE;
+				this->_hVertexMemory = VK_NULL_HANDLE;
+				this->_hIndexMemory = VK_NULL_HANDLE;
 
-				uint32_t newVertexBufferSize = vertexCount * sizeof(Vertex);
+				uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
 
-				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &newVertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
+				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize)) return false;
 
-				this->vertexBufferSize = newVertexBufferSize;
+				this->_vertexBufferSize = vertexBufferSize;
 
-				uint32_t newIndexBufferSize = vertexCount * sizeof(uint32_t);
+				uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
 
-				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &newIndexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
+				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize)) return false;
 
-				this->indexBufferSize = newIndexBufferSize;
+				this->_indexBufferSize = indexBufferSize;
 
 				return true;
 			}
@@ -80,11 +80,11 @@ namespace hax{
 					this->_hVertexBuffer = VK_NULL_HANDLE;
 				}
 
-				this->pLocalVertexBuffer = nullptr;
-				this->pLocalIndexBuffer = nullptr;
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}
@@ -92,15 +92,15 @@ namespace hax{
 
 			bool DrawBuffer::map() {
 
-				if (!this->pLocalVertexBuffer) {
+				if (!this->_pLocalVertexBuffer) {
 
-					if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->vertexBufferSize, 0ull, reinterpret_cast<void**>(&this->pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->_vertexBufferSize, 0ull, reinterpret_cast<void**>(&this->_pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 				}
 
-				if (!this->pLocalIndexBuffer) {
+				if (!this->_pLocalIndexBuffer) {
 
-					if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->indexBufferSize, 0ull, reinterpret_cast<void**>(&this->pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->_indexBufferSize, 0ull, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 				}
 
@@ -120,30 +120,30 @@ namespace hax{
 				if (this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return;
 
 				this->_f.pVkUnmapMemory(this->_hDevice, this->_hVertexMemory);
-				this->pLocalVertexBuffer = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
 
 				this->_f.pVkUnmapMemory(this->_hDevice, this->_hIndexMemory);
-				this->pLocalIndexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
 
 				constexpr VkDeviceSize offset = 0ull;
 				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &offset);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
-				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->curOffset, 1u, 0u, 0u, 0u);
+				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_curOffset, 1u, 0u, 0u, 0u);
 
-				this->curOffset = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}
 
 
-			bool DrawBuffer::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage) {
+			bool DrawBuffer::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize) {
 				const VkDeviceSize sizeAligned = (((*pSize) - 1ul) / this->_bufferAlignment + 1ul) * this->_bufferAlignment;
 
 				VkBufferCreateInfo bufferCreateinfo{};
 				bufferCreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				bufferCreateinfo.size = sizeAligned;
-				bufferCreateinfo.usage = usage;
+				bufferCreateinfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 				bufferCreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 				if (!this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateinfo, nullptr, phBuffer) == VkResult::VK_SUCCESS) return false;
