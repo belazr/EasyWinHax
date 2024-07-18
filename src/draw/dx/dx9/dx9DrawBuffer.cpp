@@ -25,26 +25,27 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				this->pLocalVertexBuffer = nullptr;
-				this->pLocalIndexBuffer = nullptr;
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 				this->_pVertexBuffer = nullptr;
 				this->_pIndexBuffer = nullptr;
 
 				constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
-				const UINT newVertexBufferSize = vertexCount * sizeof(Vertex);
 
-				if (FAILED(this->_pDevice->CreateVertexBuffer(newVertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
+				const UINT vertexBufferSize = vertexCount * sizeof(Vertex);
 
-				this->vertexBufferSize = newVertexBufferSize;
+				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
 
-				const UINT newIndexBufferSize = vertexCount * sizeof(uint32_t);
+				this->_vertexBufferSize = vertexBufferSize;
 
-				if (FAILED(this->_pDevice->CreateIndexBuffer(newIndexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
+				const UINT indexBufferSize = vertexCount * sizeof(uint32_t);
 
-				this->indexBufferSize = newIndexBufferSize;
+				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
+
+				this->_indexBufferSize = indexBufferSize;
 
 				return true;
 			}
@@ -54,21 +55,21 @@ namespace hax {
 
 				if (this->_pVertexBuffer) {
 					this->_pVertexBuffer->Unlock();
-					this->pLocalVertexBuffer = nullptr;
+					this->_pLocalVertexBuffer = nullptr;
 					this->_pVertexBuffer->Release();
 					this->_pVertexBuffer = nullptr;
 				}
 
 				if (this->_pIndexBuffer) {
 					this->_pIndexBuffer->Unlock();
-					this->pLocalIndexBuffer = nullptr;
+					this->_pLocalIndexBuffer = nullptr;
 					this->_pIndexBuffer->Release();
 					this->_pIndexBuffer = nullptr;
 				}
 
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}
@@ -76,15 +77,15 @@ namespace hax {
 
 			bool DrawBuffer::map() {
 
-				if (!this->pLocalVertexBuffer) {
+				if (!this->_pLocalVertexBuffer) {
 
-					if (FAILED(this->_pVertexBuffer->Lock(0u, this->vertexBufferSize, reinterpret_cast<void**>(&this->pLocalVertexBuffer), D3DLOCK_DISCARD))) return false;
+					if (FAILED(this->_pVertexBuffer->Lock(0u, this->_vertexBufferSize, reinterpret_cast<void**>(&this->_pLocalVertexBuffer), D3DLOCK_DISCARD))) return false;
 
 				}
 
-				if (!this->pLocalIndexBuffer) {
+				if (!this->_pLocalIndexBuffer) {
 
-					if (FAILED(this->_pIndexBuffer->Lock(0u, this->indexBufferSize, reinterpret_cast<void**>(&this->pLocalIndexBuffer), D3DLOCK_DISCARD))) return false;
+					if (FAILED(this->_pIndexBuffer->Lock(0u, this->_indexBufferSize, reinterpret_cast<void**>(&this->_pLocalIndexBuffer), D3DLOCK_DISCARD))) return false;
 
 				}
 
@@ -97,20 +98,20 @@ namespace hax {
 
 				switch (this->_primitiveType) {
 				case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
-					primitiveCount = this->curOffset;
+					primitiveCount = this->_curOffset;
 					break;
 				case D3DPRIMITIVETYPE::D3DPT_LINELIST:
-					primitiveCount = this->curOffset / 2;
+					primitiveCount = this->_curOffset / 2;
 					break;
 				case D3DPRIMITIVETYPE::D3DPT_LINESTRIP:
-					primitiveCount = this->curOffset - 1;
+					primitiveCount = this->_curOffset - 1;
 					break;
 				case D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST:
-					primitiveCount = this->curOffset / 3;
+					primitiveCount = this->_curOffset / 3;
 					break;
 				case D3DPRIMITIVETYPE::D3DPT_TRIANGLESTRIP:
 				case D3DPRIMITIVETYPE::D3DPT_TRIANGLEFAN:
-					primitiveCount = this->curOffset - 2;
+					primitiveCount = this->_curOffset - 2;
 					break;
 				default:
 					return;
@@ -122,15 +123,15 @@ namespace hax {
 
 				if (FAILED(this->_pVertexBuffer->Unlock())) return;
 
-				this->pLocalVertexBuffer = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
 
 				if (FAILED(this->_pIndexBuffer->Unlock())) return;
 
-				this->pLocalIndexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
 
-				this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->curOffset, 0u, primitiveCount);
+				this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->_curOffset, 0u, primitiveCount);
 				
-				this->curOffset = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}

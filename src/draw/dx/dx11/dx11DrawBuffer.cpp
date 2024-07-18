@@ -26,11 +26,11 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				this->pLocalVertexBuffer = nullptr;
-				this->pLocalIndexBuffer = nullptr;
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 				this->_pVertexBuffer = nullptr;
 				this->_pIndexBuffer = nullptr;
 
@@ -42,7 +42,7 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &this->_pVertexBuffer))) return false;
 
-				this->vertexBufferSize = vertexBufferDesc.ByteWidth;
+				this->_vertexBufferSize = vertexBufferDesc.ByteWidth;
 
 				D3D11_BUFFER_DESC indexBufferDesc{};
 				indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -52,7 +52,7 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
 
-				this->indexBufferSize = indexBufferDesc.ByteWidth;
+				this->_indexBufferSize = indexBufferDesc.ByteWidth;
 
 				return true;
 			}
@@ -62,21 +62,21 @@ namespace hax {
 
 				if (this->_pVertexBuffer) {
 					this->_pContext->Unmap(this->_pVertexBuffer, 0u);
-					this->pLocalVertexBuffer = nullptr;
+					this->_pLocalVertexBuffer = nullptr;
 					this->_pVertexBuffer->Release();
 					this->_pVertexBuffer = nullptr;
 				}
 
 				if (this->_pIndexBuffer) {
 					this->_pContext->Unmap(this->_pIndexBuffer, 0u);
-					this->pLocalIndexBuffer = nullptr;
+					this->_pLocalIndexBuffer = nullptr;
 					this->_pIndexBuffer->Release();
 					this->_pIndexBuffer = nullptr;
 				}
 
-				this->vertexBufferSize = 0u;
-				this->indexBufferSize = 0u;
-				this->curOffset = 0u;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}
@@ -84,20 +84,20 @@ namespace hax {
 
 			bool DrawBuffer::map() {
 
-				if (!this->pLocalVertexBuffer) {
+				if (!this->_pLocalVertexBuffer) {
 					D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
 
 					if (FAILED(this->_pContext->Map(this->_pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
 
-					this->pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
+					this->_pLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourcePoints.pData);
 				}
 
-				if (!this->pLocalIndexBuffer) {
+				if (!this->_pLocalIndexBuffer) {
 					D3D11_MAPPED_SUBRESOURCE subresourcePoints{};
 
 					if (FAILED(this->_pContext->Map(this->_pIndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourcePoints))) return false;
 
-					this->pLocalIndexBuffer = reinterpret_cast<uint32_t*>(subresourcePoints.pData);
+					this->_pLocalIndexBuffer = reinterpret_cast<uint32_t*>(subresourcePoints.pData);
 				}
 
 				return true;
@@ -111,20 +111,20 @@ namespace hax {
 				if (!curTopology) return;
 
 				this->_pContext->Unmap(this->_pVertexBuffer, 0u);
-				this->pLocalVertexBuffer = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
 
 				this->_pContext->Unmap(this->_pIndexBuffer, 0u);
-				this->pLocalIndexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
 
 				constexpr UINT STRIDE = sizeof(Vertex);
 				constexpr UINT OFFSET = 0u;
 				this->_pContext->IASetVertexBuffers(0u, 1u, &this->_pVertexBuffer, &STRIDE, &OFFSET);
 				this->_pContext->IASetIndexBuffer(this->_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
 				this->_pContext->IASetPrimitiveTopology(this->_topology);
-				this->_pContext->DrawIndexed(this->curOffset, 0u, 0u);
+				this->_pContext->DrawIndexed(this->_curOffset, 0u, 0u);
 				this->_pContext->IASetPrimitiveTopology(curTopology);
 
-				this->curOffset = 0u;
+				this->_curOffset = 0u;
 
 				return;
 			}

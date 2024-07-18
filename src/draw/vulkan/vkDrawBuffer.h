@@ -33,7 +33,7 @@ namespace hax {
 				void draw() override;
 
 			private:
-				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage);
+				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize);
 				uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
 
 			
