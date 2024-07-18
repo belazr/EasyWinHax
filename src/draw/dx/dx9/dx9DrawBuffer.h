@@ -11,9 +11,9 @@ namespace hax {
 			class DrawBuffer : public AbstractDrawBuffer {
 			private:
 				IDirect3DDevice9* _pDevice;
+				D3DPRIMITIVETYPE _primitiveType;
 				IDirect3DVertexBuffer9* _pVertexBuffer;
 				IDirect3DIndexBuffer9* _pIndexBuffer;
-				D3DPRIMITIVETYPE _primitiveType;
 
 			public:
 				DrawBuffer();
