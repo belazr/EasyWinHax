@@ -30,7 +30,15 @@ namespace hax{
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				memset(this, 0, sizeof(DrawBuffer));
+				this->pLocalVertexBuffer = nullptr;
+				this->pLocalIndexBuffer = nullptr;
+				this->vertexBufferSize = 0u;
+				this->indexBufferSize = 0u;
+				this->curOffset = 0u;
+				this->_hVertexBuffer = nullptr;
+				this->_hIndexBuffer = nullptr;
+				this->_hVertexMemory = nullptr;
+				this->_hIndexMemory = nullptr;
 
 				uint32_t newVertexBufferSize = vertexCount * sizeof(Vertex);
 

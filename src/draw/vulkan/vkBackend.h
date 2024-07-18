@@ -1,5 +1,5 @@
 #pragma once
-#include "vkDefs.h"
+#include "vkDrawBuffer.h"
 #include "..\Vertex.h"
 #include "..\IBackend.h"
 #include <Windows.h>
@@ -19,24 +19,12 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct BufferData {
-					VkBuffer hVertexBuffer;
-					VkBuffer hIndexBuffer;
-					VkDeviceMemory hVertexMemory;
-					VkDeviceMemory hIndexMemory;
-					Vertex* pLocalVertexBuffer;
-					uint32_t* pLocalIndexBuffer;
-					uint32_t vertexBufferSize;
-					uint32_t indexBufferSize;
-					uint32_t curOffset;
-				}BufferData;
-
 				typedef struct ImageData {
 					VkCommandBuffer hCommandBuffer;
 					VkImageView hImageView;
 					VkFramebuffer hFrameBuffer;
-					BufferData triangleListBufferData;
-					BufferData pointListBufferData;
+					DrawBuffer triangleListBuffer;
+					DrawBuffer pointListBuffer;
 					VkFence hFence;
 				}ImageData;
 
@@ -106,6 +94,18 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
+				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer.
+				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+
+				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the point list buffer.
+				virtual AbstractDrawBuffer* getPointListBuffer() override;
+
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
 				// Parameters:
@@ -130,16 +130,8 @@ namespace hax {
 				void destroyImageData(ImageData* pImageData) const;
 				bool createFramebuffers(VkSwapchainKHR hSwapchain);
 				void destroyFramebuffers();
-				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount);
-				void destroyBufferData(BufferData* pBufferData) const;
-				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlagBits usage);
-				uint32_t getMemoryTypeIndex(uint32_t typeBits) const;
-				bool mapBufferData(BufferData* pBufferData) const;
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
-				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f });
-				bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount);
-				void drawBufferData(BufferData* pBufferData, VkCommandBuffer hCommandBuffer) const;
 			};
 
 		}
