@@ -1,4 +1,5 @@
 #pragma once
+#include "dx9DrawBuffer.h"
 #include "..\..\IBackend.h"
 #include "..\..\Vertex.h"
 #include <d3d9.h>
@@ -31,25 +32,14 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct BufferData {
-					IDirect3DVertexBuffer9* pVertexBuffer;
-					IDirect3DIndexBuffer9* pIndexBuffer;
-					Vertex* pLocalVertexBuffer;
-					uint32_t* pLocalIndexBuffer;
-					uint32_t vertexBufferSize;
-					uint32_t indexBufferSize;
-					uint32_t curOffset;
-				}BufferData;
-
 				IDirect3DDevice9* _pDevice;
 
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 				IDirect3DVertexDeclaration9* _pVertexDeclaration;
-
-				BufferData _pointListBufferData;
-				BufferData _triangleListBufferData;
-
 				D3DVIEWPORT9 _viewport;
+
+				DrawBuffer _triangleListBuffer;
+				DrawBuffer _pointListBuffer;
 
 			public:
 				Backend();
@@ -85,6 +75,18 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
+				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer.
+				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+
+				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the point list buffer.
+				virtual AbstractDrawBuffer* getPointListBuffer() override;
+
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
 				// Parameters:
@@ -95,14 +97,6 @@ namespace hax {
 				// [out] frameHeight:
 				// Pointer that receives the current frame height in pixel.
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
-
-			private:
-				bool createBufferData(BufferData* pBufferData, uint32_t vertexCount) const;
-				void destroyBufferData(BufferData* pBufferData) const;
-				bool mapBufferData(BufferData* pBufferData) const;
-				void copyToBufferData(BufferData* pBufferData, const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) const;
-				bool resizeBufferData(BufferData* pBufferData, uint32_t newVertexCount) const;
-				void drawBufferData(BufferData* pBufferData, D3DPRIMITIVETYPE type) const;
 
 			};
 

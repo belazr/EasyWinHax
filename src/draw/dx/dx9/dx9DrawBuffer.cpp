@@ -25,7 +25,13 @@ namespace hax {
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				memset(this, 0, sizeof(DrawBuffer));
+				this->pLocalVertexBuffer = nullptr;
+				this->pLocalIndexBuffer = nullptr;
+				this->vertexBufferSize = 0u;
+				this->indexBufferSize = 0u;
+				this->curOffset = 0u;
+				this->_pVertexBuffer = nullptr;
+				this->_pIndexBuffer = nullptr;
 
 				constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
 				const UINT newVertexBufferSize = vertexCount * sizeof(Vertex);
