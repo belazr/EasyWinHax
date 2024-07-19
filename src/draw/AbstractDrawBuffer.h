@@ -21,12 +21,46 @@ namespace hax {
 			uint32_t _curOffset{};
 
 		public:
+			// Creates a new buffer with all internal resources.
+			//
+			// Parameters:
+			// 
+			// [in] vertexCount:
+			// Size of the buffer in vertices.
+			//
+			// Return:
+			// True on success, false on failure.
 			virtual bool create(uint32_t vertexCount) = 0;
+
+			// Destroys the buffer and all internal resources.
 			virtual void destroy() = 0;
+
+			// Maps the allocated VRAM into the address space of the current process. Needs to be called before the buffer can be filled.
+			//
+			// Return:
+			// True on success, false on failure.
 			virtual bool map() = 0;
+
+			// Draws the content of the buffer to the screen.
+			// Needs to be called between a successful of IBackend::beginFrame and a call to IBackend::endFrame.
 			virtual void draw() = 0;
 
 
+			// Appends vertices to the buffer.
+			//
+			// Parameters:
+			// 
+			// [in] data:
+			// Pointer to an array of screen coordinates of verices to be appended to the buffer.
+			//
+			// [in] count:
+			// Amount of vertices in the data array.
+			//
+			// [in] color:
+			// Color that the vertices will be drawn in.
+			//
+			// [in] offset:
+			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
 			void append(const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) {
 				const uint32_t newVertexCount = this->_curOffset + count;
 
@@ -53,6 +87,15 @@ namespace hax {
 			}
 
 
+			// Resizes the buffer.
+			//
+			// Parameters:
+			// 
+			// [in] newVertexCount:
+			// New size of the buffer in vertices after the resize.
+			//
+			// Return:
+			// True on success, false on failure.
 			bool resize(uint32_t newVertexCount) {
 
 				if (newVertexCount <= this->_curOffset) return true;
