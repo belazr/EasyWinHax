@@ -1,5 +1,5 @@
 #pragma once
-#include "rgb.h"
+#include "Color.h"
 #include "..\vecmath.h"
 
 // Struct to hold the Vertices used for drawing.
@@ -11,12 +11,12 @@ namespace hax {
 		struct Vertex {
 		private:
 			Vector2 _coordinates;
-			rgb::Color _color;
+			Color _color;
 
 			Vertex() = delete;
 
 		public:
-			Vertex(Vector2 coordinates, rgb::Color color) : _coordinates{ coordinates }, _color{ color } {}
+			Vertex(Vector2 coordinates, Color color) : _coordinates{ coordinates }, _color{ color } {}
 		};
 
 	}

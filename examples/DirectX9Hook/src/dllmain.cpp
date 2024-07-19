@@ -5,6 +5,7 @@
 // Compile the project and inject it into a process rendering with DirectX 9.
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
+// It is important to note that DirectX 9 uses ARGB as a color format.
 
 static hax::Bench bench("200 x hkEndScene", 200u);
 
@@ -25,7 +26,7 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::argb::GRAY);
 
 	constexpr char TEXT[] = "EasyWinHax";
 	float widthText = _countof(TEXT) * hax::draw::font::medium.width;
@@ -33,7 +34,7 @@ void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::argb::ORANGE);
 
 	engine.endFrame();
 

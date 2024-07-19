@@ -66,7 +66,7 @@
     <ClInclude Include="src\draw\dx\dx11\dx11Backend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\draw\rgb.h">
+    <ClInclude Include="src\draw\Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\draw\Vertex.h">

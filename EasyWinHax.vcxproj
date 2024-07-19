@@ -30,7 +30,7 @@
     <ClInclude Include="src\draw\dx\dx9\dx9Backend.h" />
     <ClInclude Include="src\draw\IBackend.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Backend.h" />
-    <ClInclude Include="src\draw\rgb.h" />
+    <ClInclude Include="src\draw\Color.h" />
     <ClInclude Include="src\draw\Vertex.h" />
     <ClInclude Include="src\draw\vulkan\include\vk_platform.h" />
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />

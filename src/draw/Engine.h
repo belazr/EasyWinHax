@@ -74,8 +74,8 @@ namespace hax {
 			// Width in pixels.
 			// 
 			// [in] color:
-			// Color of the line.
-			void drawLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const;
+			// Color of the line. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const;
 
 			// Draws a line. The line is a parallelogram with horizontal ends.
 			//
@@ -91,8 +91,8 @@ namespace hax {
 			// Width in pixels.
 			// 
 			// [in] color:
-			// Color of the line.
-			void drawPLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const;
+			// Color of the line. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const;
 
 			// Draws a filled rectangle with the sides parallel to the screen edges.
 			//
@@ -108,8 +108,8 @@ namespace hax {
 			// Height of the rectangle.
 			// 
 			// [in] color:
-			// Color of the rectangle.
-			void drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const;
+			// Color of the rectangle. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void drawFilledRectangle(const Vector2* pos, float width, float height, Color color) const;
 
 			// Draws text to the screen.
 			//
@@ -125,8 +125,8 @@ namespace hax {
 			// Text to be drawn.
 			//
 			// [in] color:
-			// Color of the text.
-			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) const;
+			// Color of the text. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) const;
 
 			// Draws a parallelogram grid with horizontal bottom and top sides.
 			//
@@ -145,8 +145,8 @@ namespace hax {
 			// Line width in pixels.
 			// 
 			// [in] color:
-			// Line color.
-			void drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const;
+			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color) const;
 
 			// Draws a 2D box grid.
 			//
@@ -162,8 +162,8 @@ namespace hax {
 			// Line width in pixels.
 			// 
 			// [in] color:
-			// Line color
-			void draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, rgb::Color color) const;
+			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color) const;
 
 			// Draws a 3D box grid.
 			//
@@ -179,8 +179,8 @@ namespace hax {
 			// Line width in pixels.
 			// 
 			// [in] color:
-			// Line color.
-			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, rgb::Color color) const;
+			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const;
 		};
 
 	}
