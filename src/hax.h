@@ -12,7 +12,6 @@
 
 // Headers for engine
 #include "draw\Engine.h"
-#include "draw\IBackend.h"
 #include "draw\Vertex.h"
 #include "draw\rgb.h"
 #include "draw\font\Font.h"
