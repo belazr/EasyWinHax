@@ -1,6 +1,6 @@
 #pragma once
 #include "AbstractDrawBuffer.h"
-#include "rgb.h"
+#include "Color.h"
 #include "..\vecmath.h"
 #include <stdint.h>
 

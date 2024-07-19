@@ -8,6 +8,8 @@
 // It is not working for AMD GPUs/vulkan runtimes!
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
+// It is important to note that Vulkan uses either ARGB or ABGR as the color format.
+// This is dependent on the target application and the colors have to be passed in the correct format to the draw calls.
 
 static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
 
@@ -29,7 +31,7 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 	
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::abgr::GRAY);
 
 	constexpr char TEXT[] = "EasyWinHax";
 	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
@@ -37,7 +39,7 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* 
 	
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 	
-	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::abgr::ORANGE);
 
 	engine.endFrame();
 

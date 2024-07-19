@@ -25,7 +25,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	const float heightRect = engine.frameHeight / 4.f;
 	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
 
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::rgb::gray);
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::abgr::GRAY);
 
 	constexpr char TEXT[] = "EasyWinHax";
 	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
@@ -33,7 +33,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 
 	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
 
-	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::rgb::orange);
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::abgr::ORANGE);
 
 	engine.endFrame();
 

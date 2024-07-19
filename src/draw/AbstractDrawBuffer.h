@@ -57,11 +57,11 @@ namespace hax {
 			// Amount of vertices in the data array.
 			//
 			// [in] color:
-			// Color that the vertices will be drawn in.
+			// Color that the vertices will be drawn in. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			//
 			// [in] offset:
 			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
-			void append(const Vector2 data[], uint32_t count, rgb::Color color, Vector2 offset = { 0.f, 0.f }) {
+			void append(const Vector2 data[], uint32_t count, Color color, Vector2 offset = { 0.f, 0.f }) {
 				const uint32_t newVertexCount = this->_curOffset + count;
 
 				if (newVertexCount * sizeof(Vertex) > this->_vertexBufferSize || newVertexCount * sizeof(uint32_t) > this->_indexBufferSize) {

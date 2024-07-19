@@ -60,7 +60,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
+		void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const {
 
 			if (!this->_frame) return;
 
@@ -109,7 +109,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawPLine(const Vector2* pos1, const Vector2* pos2, float width, rgb::Color color) const {
+		void Engine::drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const {
 			
 			if (!this->_frame) return;
 			
@@ -148,7 +148,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, rgb::Color color) const {
+		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, Color color) const {
 
 			if (!this->_frame) return;
 
@@ -171,7 +171,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, rgb::Color color) const {
+		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) const {
 
 			if (!this->_frame) return;
 
@@ -189,7 +189,7 @@ namespace hax {
 					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
 					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
 					this->_pPointListBuffer->append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-					this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, rgb::black, curPos);
+					this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
 				}
 
 			}
@@ -198,7 +198,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, rgb::Color color) const {
+		void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color) const {
 			
 			if (!this->_frame) return;
 			
@@ -229,7 +229,7 @@ namespace hax {
 		}
 
 
-		void Engine::draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, rgb::Color color) const {
+		void Engine::draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color) const {
 
 			if (!this->_frame) return;
 
@@ -250,7 +250,7 @@ namespace hax {
 		}
 
 
-		void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, rgb::Color color) const {
+		void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const {
 
 			if (!this->_frame) return;
 
