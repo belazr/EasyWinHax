@@ -51,7 +51,7 @@ namespace hax {
 			// Parameters:
 			// 
 			// [in] data:
-			// Pointer to an array of screen coordinates of verices to be appended to the buffer.
+			// Pointer to an array of screen coordinates of vertices to be appended to the buffer.
 			//
 			// [in] count:
 			// Amount of vertices in the data array.
