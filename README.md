@@ -67,7 +67,7 @@ Currently there are implementations of the IBackend interface for DirectX 11 to 
 Text rendering is done via a point list buffer with hardcoded point lists for supported characters.
 It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
 The vulkan implementation is only tested and working with NVIDIA gpus. It does not draw with AMD gpus. All hints to why are very welcome!
-See the headers in the "engine" folder for further documentation.
+See the headers in the "draw" folder for further documentation.
 ### Examples
 There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
 Build the following projects:
@@ -83,7 +83,6 @@ Press "END" to unhook and eject the DLL.
 ![Screenshot](https://github.com/belazr/EasyWinHax/assets/72708147/e304f46d-61ea-4291-8c1b-4c0a9095599e)
 
 ## TODO
-- Refactor engine for general clean up and to do more logic in the engine class instead of the IBackend implementations
 - Add further implementations of the IBackend interface (DirectX 12)
 - Better error handling for launch functions
 
