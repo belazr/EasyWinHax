@@ -30,26 +30,32 @@ namespace hax {
 
 				if (!this->getProcAddresses()) return false;
 
-				this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES);
-				this->_triangleListBuffer.destroy();
-
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
-
-				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
-
-				this->_pointListBuffer.initialize(this->_f, GL_POINTS);
-				this->_pointListBuffer.destroy();
-
-				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
-
-				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
-
 				return true;
 			}
 
 
 			bool Backend::beginFrame() {
-				glGetIntegerv(GL_VIEWPORT, this->_viewport);
+				GLint viewport[4]{};
+				glGetIntegerv(GL_VIEWPORT, viewport);
+
+				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
+					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES);
+					this->_triangleListBuffer.destroy();
+
+					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+
+					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+					this->_pointListBuffer.initialize(this->_f, GL_POINTS);
+					this->_pointListBuffer.destroy();
+
+					constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
+
+					if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
+				}
+
 				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
 
 				glDepthFunc(GL_ALWAYS);
