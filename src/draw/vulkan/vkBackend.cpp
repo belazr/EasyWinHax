@@ -109,20 +109,20 @@ namespace hax {
 			
 				if (!pVkEnumeratePhysicalDevices || !pVkGetPhysicalDeviceProperties) return VK_NULL_HANDLE;
 			
-				uint32_t gpuCount = 0u;
+				uint32_t tmpGpuCount{};
 
-				if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
-				if (!gpuCount) return VK_NULL_HANDLE;
+				if (!tmpGpuCount) return VK_NULL_HANDLE;
 
+				const uint32_t gpuCount = tmpGpuCount;
 				VkPhysicalDevice* const pPhysicalDeviceArray = new VkPhysicalDevice[gpuCount]{};
 
-				if (pVkEnumeratePhysicalDevices(hInstance, &gpuCount, pPhysicalDeviceArray) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, pPhysicalDeviceArray) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+				if (tmpGpuCount != gpuCount) return VK_NULL_HANDLE;
 
 				VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
-
-				#pragma warning(push)
-				#pragma warning(disable:6385)
 
 				for (uint32_t i = 0u; i < gpuCount; i++) {
 					VkPhysicalDeviceProperties properties{};
@@ -133,8 +133,6 @@ namespace hax {
 						break;
 					}
 				}
-
-				#pragma warning(pop)
 
 				delete[] pPhysicalDeviceArray;
 
@@ -183,19 +181,19 @@ namespace hax {
 
 				if (!pVkGetPhysicalDeviceQueueFamilyProperties) return 0xFFFFFFFF;
 			
-				uint32_t propertiesCount = 0u;
-				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &propertiesCount, nullptr);
+				uint32_t tmpPropertiesCount = 0u;
+				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &tmpPropertiesCount, nullptr);
 
-				if (!propertiesCount) return 0xFFFFFFFF;
+				if (!tmpPropertiesCount) return 0xFFFFFFFF;
 
-				const uint32_t bufferSize = propertiesCount;
-				VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[bufferSize]{};
+				const uint32_t propertiesCount = tmpPropertiesCount;
+				VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[propertiesCount]{};
 
-				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &propertiesCount, pProperties);
+				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &tmpPropertiesCount, pProperties);
 
 				uint32_t queueFamily = 0xFFFFFFFF;
 
-				for (uint32_t i = 0u; i < bufferSize; i++) {
+				for (uint32_t i = 0u; i < propertiesCount; i++) {
 
 					if (pProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 						queueFamily = i;
