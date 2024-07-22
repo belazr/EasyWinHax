@@ -70,18 +70,13 @@ namespace hax {
 
 				}
 
-				if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
-
 				for (uint32_t i = 0u; i < count; i++) {
-					const uint32_t curIndex = this->_curOffset + i;
-
 					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-					memcpy(&(this->_pLocalVertexBuffer[curIndex]), &curVertex, sizeof(Vertex));
+					memcpy(&(this->_pLocalVertexBuffer[this->_curOffset]), &curVertex, sizeof(Vertex));
 
-					this->_pLocalIndexBuffer[curIndex] = curIndex;
+					this->_pLocalIndexBuffer[this->_curOffset] = this->_curOffset;
+					this->_curOffset++;
 				}
-
-				this->_curOffset += count;
 
 				return;
 			}
