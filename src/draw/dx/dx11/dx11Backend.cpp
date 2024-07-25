@@ -92,7 +92,7 @@ namespace hax {
 
 			bool Backend::initialize() {
 
-				if (FAILED(this->_pSwapChain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&this->_pDevice)))) return false;
+				if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
 
 				if (!this->_pContext) {
 					this->_pDevice->GetImmediateContext(&this->_pContext);
