@@ -152,6 +152,17 @@ namespace hax {
 				return true;
 			}
 
+			protected:
+			void reset() {
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_vertexBufferSize = 0u;
+				this->_indexBufferSize = 0u;
+				this->_curOffset = 0u;
+				
+				return;
+			}
+
 		};
 
 	}
