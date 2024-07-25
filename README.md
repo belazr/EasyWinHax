@@ -66,7 +66,7 @@ The library provides an Engine class that can be used to draw geometric shapes a
 Currently there are implementations of the IBackend interface for DirectX 11 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
 Text rendering is done via a point list buffer with hardcoded point lists for supported characters.
 It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
-The vulkan implementation is only tested and working with NVIDIA gpus. It does not draw with AMD gpus. All hints to why are very welcome!
+The vulkan implementation is only tested and working with NVIDIA GPUs. It does not draw with AMD GPUs. All hints to why are very welcome!
 See the headers in the "draw" folder for further documentation.
 ### Examples
 There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
@@ -83,6 +83,7 @@ Press "END" to unhook and eject the DLL.
 ![Screenshot](https://github.com/belazr/EasyWinHax/assets/72708147/e304f46d-61ea-4291-8c1b-4c0a9095599e)
 
 ## TODO
+- Make IBackend implementation for Vulkan compatible with AMD GPUs
 - Add further implementations of the IBackend interface (DirectX 12)
 - Better error handling for launch functions
 
