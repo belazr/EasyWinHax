@@ -30,11 +30,8 @@ namespace hax{
 
 
 			bool DrawBuffer::create(uint32_t vertexCount) {
-				this->_pLocalVertexBuffer = nullptr;
-				this->_pLocalIndexBuffer = nullptr;
-				this->_vertexBufferSize = 0u;
-				this->_indexBufferSize = 0u;
-				this->_curOffset = 0u;
+				this->reset();
+
 				this->_hVertexBuffer = VK_NULL_HANDLE;
 				this->_hIndexBuffer = VK_NULL_HANDLE;
 				this->_hVertexMemory = VK_NULL_HANDLE;
@@ -80,11 +77,7 @@ namespace hax{
 					this->_hVertexBuffer = VK_NULL_HANDLE;
 				}
 
-				this->_pLocalVertexBuffer = nullptr;
-				this->_pLocalIndexBuffer = nullptr;
-				this->_vertexBufferSize = 0u;
-				this->_indexBufferSize = 0u;
-				this->_curOffset = 0u;
+				this->reset();
 
 				return;
 			}
