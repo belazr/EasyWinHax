@@ -373,9 +373,14 @@ namespace hax {
 				if (curViewport.right != this->_viewport.right || curViewport.bottom != this->_viewport.bottom) {
 					this->destroyFramebuffers();
 
-					if (!this->createFramebuffers(hSwapchain)) return false;
-				
 					this->_viewport = curViewport;
+
+					if (!this->createFramebuffers(hSwapchain)) {
+						memset(&this->_viewport, 0, sizeof(RECT));
+						
+						return false;
+					}
+
 				}
 
 				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return false;
@@ -1003,6 +1008,8 @@ namespace hax {
 				framebufferCreateInfo.renderPass = this->_hRenderPass;
 				framebufferCreateInfo.attachmentCount = 1u;
 				framebufferCreateInfo.layers = 1u;
+				framebufferCreateInfo.width = this->_viewport.right;
+				framebufferCreateInfo.height = this->_viewport.bottom;
 
 				for (uint32_t i = 0; i < this->_imageCount; i++) {				
 					imageViewCreateInfo.image = pImages[i];
