@@ -3,13 +3,16 @@
 
 // This is a example DLL for hooking and drawing within a Vulkan application.
 // Compile the project and inject it into a process rendering with Vulkan.
-// It is specific for NVIDIA vulkan runtimes (drivers 555.99).
+// It is specific for NVIDIA Vulkan runtimes (drivers 555.99) and AMD Vulkan runtimes (drivers 24.7.1).
 // Size parameter of tramp hook might have to be adjusted for different drivers/vulkan runtimes.
-// It is not working for AMD GPUs/vulkan runtimes!
+// The macros AMD or NVIDIA need to be defined depending on the GPU in the system the target application is running on.
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 // It is important to note that Vulkan uses either ARGB or ABGR as the color format.
 // This is dependent on the target application and the colors have to be passed in the correct format to the draw calls.
+
+#define AMD
+// #define NVIDIA
 
 static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
 
@@ -112,9 +115,25 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	// size 0x9 only applies for NVIDIA gpus an might be different with futures drivers/vulkan runtimes
+	// size and relative address offset are runtime specific
 	// look at src\hooks\TrampHook.h and assembly at initData.pVkQueuePresentKHR to figure out correct value
-	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), 0x9);
+	#if defined(AMD)
+	
+	constexpr size_t size = 0x9;
+	constexpr size_t relativeAddressOffset = 0x5;
+	
+	#elif defined(NVIDIA)
+
+	constexpr size_t size = 0x9;
+	constexpr size_t relativeAddressOffset = SIZE_MAX;
+	
+	#else
+
+	#error "Define AMD or NVIDIA"
+	
+	#endif
+
+	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), size, relativeAddressOffset);
 
 	if (!pQueuePresentHook) {
 		cleanup(hHookSemaphore, pQueuePresentHook, file);
