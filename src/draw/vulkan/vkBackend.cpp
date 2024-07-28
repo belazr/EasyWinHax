@@ -526,7 +526,7 @@ namespace hax {
 				attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-				attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 				attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 				VkAttachmentReference colorAttachment{};
