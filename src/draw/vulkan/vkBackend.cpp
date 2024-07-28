@@ -410,7 +410,10 @@ namespace hax {
 				if (this->_hQueue != this->_hFirstGraphicsQueue) return;
 
 				VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_phPresentInfo->waitSemaphoreCount];
-				memset(pStageMask, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, this->_phPresentInfo->waitSemaphoreCount * sizeof(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT));
+				
+				for (uint32_t i = 0u; i < this->_phPresentInfo->waitSemaphoreCount; i++) {
+					pStageMask[i] = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				}
 			
 				VkSubmitInfo submitInfo{};
 				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
