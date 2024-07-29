@@ -53,12 +53,13 @@ namespace hax {
 				VkPipeline _hPointListPipeline;
 				VkPhysicalDeviceMemoryProperties _memoryProperties;
 				VkQueue _hFirstGraphicsQueue;
+				VkViewport _viewport;
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
 				VkDeviceSize _bufferAlignment;
 				ImageData* _pCurImageData;
-				RECT _viewport;
+
 
 			public:
 				Backend();
@@ -130,6 +131,7 @@ namespace hax {
 				void destroyImageData(ImageData* pImageData) const;
 				bool createFramebuffers(VkSwapchainKHR hSwapchain);
 				void destroyFramebuffers();
+				bool getCurrentViewport(VkViewport* pViewport) const;
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			};
