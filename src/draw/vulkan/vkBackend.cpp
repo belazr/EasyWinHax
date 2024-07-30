@@ -365,10 +365,14 @@ namespace hax {
 				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
 				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
 
+				VkViewport curViewport{};
+
 				if (!this->getCurrentViewport(&curViewport)) return false;
 
 				if (curViewport.width != this->_viewport.width || curViewport.height != this->_viewport.height) {
 					this->destroyFramebuffers();
+
+					this->_viewport = curViewport;
 
 					if (!this->createFramebuffers(hSwapchain)) {
 						memset(&this->_viewport, 0, sizeof(this->_viewport));
