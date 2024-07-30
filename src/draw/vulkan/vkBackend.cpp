@@ -209,7 +209,7 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_hQueue{}, _phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _hInstance{}, _f{},
+				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _hInstance{}, _f{},
 				_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
@@ -275,10 +275,9 @@ namespace hax {
 			}
 
 
-			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
-				this->_hQueue = reinterpret_cast<VkQueue>(pArg1);
-				this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg2);
-				this->_hDevice = reinterpret_cast<VkDevice>(pArg3);
+			void Backend::setHookArguments(void* pArg1, void* pArg2) {
+				this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg1);
+				this->_hDevice = reinterpret_cast<VkDevice>(pArg2);
 
 				return;
 			}
@@ -366,18 +365,14 @@ namespace hax {
 				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
 				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
 
-				VkViewport curViewport{};
-
 				if (!this->getCurrentViewport(&curViewport)) return false;
 
 				if (curViewport.width != this->_viewport.width || curViewport.height != this->_viewport.height) {
 					this->destroyFramebuffers();
 
-					this->_viewport = curViewport;
-
 					if (!this->createFramebuffers(hSwapchain)) {
 						memset(&this->_viewport, 0, sizeof(this->_viewport));
-						
+
 						return false;
 					}
 
@@ -406,8 +401,6 @@ namespace hax {
 				this->_f.pVkCmdEndRenderPass(this->_pCurImageData->hCommandBuffer);
 				this->_f.pVkEndCommandBuffer(this->_pCurImageData->hCommandBuffer);
 
-				if (this->_hQueue != this->_hFirstGraphicsQueue) return;
-
 				VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_phPresentInfo->waitSemaphoreCount];
 				
 				for (uint32_t i = 0u; i < this->_phPresentInfo->waitSemaphoreCount; i++) {
@@ -424,7 +417,7 @@ namespace hax {
 				submitInfo.pSignalSemaphores = this->_phPresentInfo->pWaitSemaphores;
 				submitInfo.signalSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
 
-				this->_f.pVkQueueSubmit(this->_hQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
+				this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
 
 				delete[] pStageMask;
 

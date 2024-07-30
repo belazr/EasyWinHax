@@ -28,7 +28,6 @@ namespace hax {
 					VkFence hFence;
 				}ImageData;
 
-				VkQueue _hQueue;
 				const VkPresentInfoKHR* _phPresentInfo;
 				VkDevice _hDevice;
 
@@ -78,7 +77,7 @@ namespace hax {
 				//
 				// [in] pArg3:
 				// Pass the device handle that was retrieved by vk::getVulkanInitData().
-				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
 				// 

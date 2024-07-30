@@ -23,10 +23,10 @@ static hax::draw::Engine engine{ &backend };
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pQueuePresentHook;
 
-VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, const VkPresentInfoKHR* pPresentInfo) {
+VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, VkPresentInfoKHR* pPresentInfo) {
 	bench.start();
 
-	engine.beginFrame(hQueue, pPresentInfo, initData.hDevice);
+	engine.beginFrame(pPresentInfo, initData.hDevice);
 
 	const hax::Vector2 middleOfScreen{ engine.frameWidth / 2.f, engine.frameHeight / 2.f };
 
