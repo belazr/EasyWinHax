@@ -6,8 +6,27 @@
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 
+static hax::Bench bench("200 x hkPresent", 200u);
+
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
+
+HRESULT __stdcall hkPresent(IDXGISwapChain3* pSwapChain, UINT syncInterval, UINT flags) {
+	bench.start();
+	bench.end();
+	bench.printAvg();
+
+	if (GetAsyncKeyState(VK_END) & 1) {
+		pPresentHook->disable();
+		const hax::draw::dx12::tPresent pPresent = reinterpret_cast<hax::draw::dx12::tPresent>(pPresentHook->getOrigin());
+		const HRESULT res = pPresent(pSwapChain, syncInterval, flags);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
+
+		return res;
+	}
+
+	return reinterpret_cast<hax::draw::dx12::tPresent>(pPresentHook->getGateway())(pSwapChain, syncInterval, flags);
+}
 
 
 void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
@@ -64,6 +83,33 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
+
+	constexpr unsigned int PRESENT_OFFSET = 8ul;
+	BYTE* const pPresent = reinterpret_cast<BYTE*>(pDXGISwapChain3VTable[PRESENT_OFFSET]);
+
+	if (!pPresent) {
+		cleanup(hHookSemaphore, pPresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x5);
+
+	if (!pPresentHook) {
+		cleanup(hHookSemaphore, pPresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	if (!pPresentHook->enable()) {
+		cleanup(hHookSemaphore, pPresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pPresentHook->getOrigin()) << std::dec << std::endl;
+
+	WaitForSingleObject(hHookSemaphore, INFINITE);
 
 	cleanup(hHookSemaphore, pPresentHook, file);
 
