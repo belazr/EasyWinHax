@@ -26,6 +26,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectX11Hook", "examples\D
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectX12Hook", "examples\DirectX12Hook\DirectX12Hook.vcxproj", "{13E31923-0114-42E9-AAA8-799311E8CEF3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3E5DB86D-1911-4CA7-AB29-B9E2C01DC291} = {3E5DB86D-1911-4CA7-AB29-B9E2C01DC291}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

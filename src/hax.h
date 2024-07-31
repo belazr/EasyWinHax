@@ -26,6 +26,12 @@
 
 #include "draw\dx\dx11\dx11Backend.h"
 
+// Headers for DirectX 12
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
+
+#include "draw\dx\dx12\dx12Backend.h"
+
 // Headers for OpenGL 2
 #pragma comment( lib, "OpenGL32.lib" )
 
