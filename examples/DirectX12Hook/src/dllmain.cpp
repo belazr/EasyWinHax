@@ -57,6 +57,14 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
+	void* pDXGISwapChain3VTable[9]{};
+
+	if (!hax::draw::dx12::getDXGISwapChain3VTable(pDXGISwapChain3VTable, sizeof(pDXGISwapChain3VTable))) {
+		cleanup(hHookSemaphore, pPresentHook, file);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
 	cleanup(hHookSemaphore, pPresentHook, file);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
