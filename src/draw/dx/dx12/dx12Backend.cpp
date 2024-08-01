@@ -92,10 +92,14 @@ namespace hax {
             }
 
 
-            Backend::Backend() : _pSwapChain{}, _pDevice{}, _pCommandQueue{} {}
+            Backend::Backend() : _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{} {}
 
 
             Backend::~Backend() {
+
+                if (this->_pFence) {
+                    this->_pFence->Release();
+                }
 
                 if (this->_pCommandQueue) {
                     this->_pCommandQueue->Release();
@@ -132,11 +136,18 @@ namespace hax {
 
                 }
 
+                if (!this->_pFence) {
+
+                    if (FAILED(this->_pDevice->CreateFence(0ull, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&this->_pFence)))) return false;
+
+                }
+
                 return false;
             }
 
 
             bool Backend::beginFrame() {
+
 
                 return true;
             }

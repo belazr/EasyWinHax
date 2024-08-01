@@ -36,6 +36,7 @@ namespace hax {
 
 				ID3D12Device* _pDevice;
 				ID3D12CommandQueue* _pCommandQueue;
+				ID3D12Fence* _pFence;
 
 			public:
 				Backend();
