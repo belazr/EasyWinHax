@@ -213,7 +213,7 @@ namespace hax {
 				_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
-				_pImageDataArray{}, _imageCount{}, _bufferAlignment{ 4ull }, _pCurImageData{}, _viewport{} {}
+				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
 			Backend::~Backend() {
@@ -884,7 +884,7 @@ namespace hax {
 
 				if (imageCount == this->_imageCount) return true;
 
-				ImageData* const pOldImageData = this->_pImageDataArray;
+				ImageData* const pOldImageDataArray = this->_pImageDataArray;
 				uint32_t oldImageCount = this->_imageCount;
 			
 				this->_pImageDataArray = new ImageData[imageCount]{};
@@ -902,8 +902,8 @@ namespace hax {
 
 				for (uint32_t i = 0; i < this->_imageCount; i++) {
 
-					if (pOldImageData && i < oldImageCount) {
-						memcpy(&this->_pImageDataArray[i], &pOldImageData[i], sizeof(ImageData));
+					if (pOldImageDataArray && i < oldImageCount) {
+						memcpy(&this->_pImageDataArray[i], &pOldImageDataArray[i], sizeof(ImageData));
 					}
 					else {
 
@@ -927,8 +927,8 @@ namespace hax {
 
 				}
 
-				if (pOldImageData) {
-					delete[] pOldImageData;
+				if (pOldImageDataArray) {
+					delete[] pOldImageDataArray;
 				}
 
 				this->destroyFramebuffers();
