@@ -108,6 +108,18 @@ namespace hax {
                 return;
             }
 
+
+            bool Backend::initialize() {
+
+                if (!this->_pDevice) {
+
+                    if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
+
+                }
+
+                return true;
+            }
+
         }
 
     }
