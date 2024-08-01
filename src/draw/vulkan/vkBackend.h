@@ -28,7 +28,6 @@ namespace hax {
 					VkFence hFence;
 				}ImageData;
 
-				VkQueue _hQueue;
 				const VkPresentInfoKHR* _phPresentInfo;
 				VkDevice _hDevice;
 
@@ -53,12 +52,13 @@ namespace hax {
 				VkPipeline _hPointListPipeline;
 				VkPhysicalDeviceMemoryProperties _memoryProperties;
 				VkQueue _hFirstGraphicsQueue;
+				VkViewport _viewport;
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
 				VkDeviceSize _bufferAlignment;
 				ImageData* _pCurImageData;
-				RECT _viewport;
+
 
 			public:
 				Backend();
@@ -77,7 +77,7 @@ namespace hax {
 				//
 				// [in] pArg3:
 				// Pass the device handle that was retrieved by vk::getVulkanInitData().
-				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
 				// 
@@ -130,6 +130,7 @@ namespace hax {
 				void destroyImageData(ImageData* pImageData) const;
 				bool createFramebuffers(VkSwapchainKHR hSwapchain);
 				void destroyFramebuffers();
+				bool getCurrentViewport(VkViewport* pViewport) const;
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			};

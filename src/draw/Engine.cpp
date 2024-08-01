@@ -8,8 +8,8 @@ namespace hax {
 		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{}, _pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
 
 
-		void Engine::beginFrame(void* pArg1, const void* pArg2, void* pArg3) {
-			this->_pBackend->setHookArguments(pArg1, pArg2, pArg3);
+		void Engine::beginFrame(void* pArg1, void* pArg2) {
+			this->_pBackend->setHookArguments(pArg1, pArg2);
 
 			if (!this->_init) {
 				this->_init = this->_pBackend->initialize();
