@@ -35,6 +35,7 @@ namespace hax {
 				IDXGISwapChain3* _pSwapChain;
 
 				ID3D12Device* _pDevice;
+				ID3D12CommandQueue* _pCommandQueue;
 
 			public:
 				Backend();
