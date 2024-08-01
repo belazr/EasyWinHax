@@ -39,13 +39,13 @@ namespace hax{
 
 				uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
 
-				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize)) return false;
+				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
 				this->_vertexBufferSize = vertexBufferSize;
 
 				uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
 
-				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize)) return false;
+				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) return false;
 
 				this->_indexBufferSize = indexBufferSize;
 
@@ -130,13 +130,13 @@ namespace hax{
 			}
 
 
-			bool DrawBuffer::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize) {
+			bool DrawBuffer::createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlags usage) {
 				const VkDeviceSize sizeAligned = (((*pSize) - 1ul) / this->_bufferAlignment + 1ul) * this->_bufferAlignment;
 
 				VkBufferCreateInfo bufferCreateinfo{};
 				bufferCreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				bufferCreateinfo.size = sizeAligned;
-				bufferCreateinfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+				bufferCreateinfo.usage = usage;
 				bufferCreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 				if (!this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateinfo, nullptr, phBuffer) == VkResult::VK_SUCCESS) return false;

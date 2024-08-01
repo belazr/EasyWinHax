@@ -17,10 +17,9 @@ namespace hax {
 			}
 
 
-			void Backend::setHookArguments(void* pArg1, const void* pArg2, void* pArg3) {
+			void Backend::setHookArguments(void* pArg1, void* pArg2) {
 				UNREFERENCED_PARAMETER(pArg1);
 				UNREFERENCED_PARAMETER(pArg2);
-				UNREFERENCED_PARAMETER(pArg3);
 
 				return;
 			}

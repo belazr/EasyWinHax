@@ -55,10 +55,7 @@ namespace hax {
 				//
 				// [in] pArg2:
 				// Pass nothing
-				//
-				// [in] pArg3:
-				// Pass nothing
-				virtual void setHookArguments(void* pArg1 = nullptr, const void* pArg2 = nullptr, void* pArg3 = nullptr) override;
+				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
 				// 
