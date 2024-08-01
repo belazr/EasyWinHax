@@ -124,6 +124,37 @@ namespace hax {
                 return true;
             }
 
+
+            bool Backend::beginFrame() {
+
+                return true;
+            }
+
+
+
+            void Backend::endFrame() {
+
+                return;
+            }
+
+
+            AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+
+                return nullptr;
+            }
+
+
+            AbstractDrawBuffer* Backend::getPointListBuffer() {
+
+                return nullptr;
+            }
+
+
+            void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+
+                return;
+            }
+
         }
 
     }
