@@ -91,6 +91,23 @@ namespace hax {
                 return true;
             }
 
+
+            Backend::Backend() : _pSwapChain{} {}
+
+
+            Backend::~Backend() {
+
+            }
+
+
+            void Backend::setHookArguments(void* pArg1, void* pArg2) {
+                UNREFERENCED_PARAMETER(pArg2);
+
+                this->_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pArg1);
+
+                return;
+            }
+
         }
 
     }
