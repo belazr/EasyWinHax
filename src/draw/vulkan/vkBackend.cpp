@@ -927,6 +927,10 @@ namespace hax {
 
 				}
 
+				if (pOldImageData) {
+					delete[] pOldImageData;
+				}
+
 				this->destroyFramebuffers();
 
 				return this->createFramebuffers(hSwapchain);
