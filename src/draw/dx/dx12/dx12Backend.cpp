@@ -92,10 +92,14 @@ namespace hax {
             }
 
 
-            Backend::Backend() : _pSwapChain{}, _pDevice{} {}
+            Backend::Backend() : _pSwapChain{}, _pDevice{}, _pCommandQueue{} {}
 
 
             Backend::~Backend() {
+
+                if (this->_pCommandQueue) {
+                    this->_pCommandQueue->Release();
+                }
 
                 if (this->_pDevice) {
                     this->_pDevice->Release();
@@ -121,7 +125,14 @@ namespace hax {
 
                 }
 
-                return true;
+                if (!this->_pCommandQueue) {
+                    D3D12_COMMAND_QUEUE_DESC queueDesc{};
+
+                    if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&this->_pCommandQueue)))) return false;
+
+                }
+
+                return false;
             }
 
 
