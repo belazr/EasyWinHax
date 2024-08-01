@@ -8,11 +8,17 @@
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
+static hax::draw::dx12::Backend backend;
+static hax::draw::Engine engine{ &backend };
+
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
 
 HRESULT __stdcall hkPresent(IDXGISwapChain3* pSwapChain, UINT syncInterval, UINT flags) {
 	bench.start();
+
+	engine.beginFrame(pSwapChain);
+
 	bench.end();
 	bench.printAvg();
 
