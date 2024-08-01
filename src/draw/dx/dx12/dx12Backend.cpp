@@ -92,10 +92,14 @@ namespace hax {
             }
 
 
-            Backend::Backend() : _pSwapChain{} {}
+            Backend::Backend() : _pSwapChain{}, _pDevice{} {}
 
 
             Backend::~Backend() {
+
+                if (this->_pDevice) {
+                    this->_pDevice->Release();
+                }
 
             }
 
