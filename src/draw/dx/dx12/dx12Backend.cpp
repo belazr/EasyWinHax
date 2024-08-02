@@ -92,10 +92,14 @@ namespace hax {
             }
 
 
-            Backend::Backend() : _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{} {}
+            Backend::Backend() :
+                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{},
+                _pImageDataArray{}, _imageCount{} {}
 
 
             Backend::~Backend() {
+
+                this->destroyImageDataArray();
 
                 if (this->_pFence) {
                     this->_pFence->Release();
@@ -142,12 +146,20 @@ namespace hax {
 
                 }
 
-                return false;
+                return true;
             }
 
 
             bool Backend::beginFrame() {
+                DXGI_SWAP_CHAIN_DESC swapchainDesc{};
 
+                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
+
+                if (!this->resizeImageDataArray(swapchainDesc.BufferCount)) {
+                    this->destroyImageDataArray();
+
+                    return false;
+                }
 
                 return true;
             }
@@ -175,6 +187,74 @@ namespace hax {
             void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
 
                 return;
+            }
+
+
+            bool Backend::resizeImageDataArray(uint32_t imageCount) {
+
+                if (imageCount == this->_imageCount) return true;
+
+                if (imageCount < this->_imageCount) {
+
+                    for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
+                        this->destroyImageData(&this->_pImageDataArray[i]);
+                    }
+
+                    this->_imageCount = imageCount;
+
+                    return true;
+                }
+
+                ImageData* const pOldImageData = this->_pImageDataArray;
+                uint32_t oldImageCount = this->_imageCount;
+
+                this->_pImageDataArray = new ImageData[imageCount]{};
+                this->_imageCount = imageCount;
+
+                for (uint32_t i = 0; i < this->_imageCount; i++) {
+
+                    if (pOldImageData && i < oldImageCount) {
+                        memcpy(&this->_pImageDataArray[i], &pOldImageData[i], sizeof(ImageData));
+                    }
+                    else {
+
+                        if (FAILED(this->_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&this->_pImageDataArray[i].pRenderTargetResource)))) return false;
+
+                    }
+
+                }
+
+                if (pOldImageData) {
+                    delete[] pOldImageData;
+                }
+
+                return true;
+            }
+
+
+            void Backend::destroyImageDataArray() {
+
+                if (!this->_pImageDataArray) return;
+
+                for (uint32_t i = 0u; i < this->_imageCount; i++) {
+                    this->destroyImageData(&this->_pImageDataArray[i]);
+                }
+
+                delete[] this->_pImageDataArray;
+                this->_pImageDataArray = nullptr;
+                this->_imageCount = 0u;
+
+                return;
+            }
+
+
+            void Backend::destroyImageData(ImageData* pImageData) const {
+
+                if (pImageData->pRenderTargetResource) {
+                    pImageData->pRenderTargetResource->Release();
+                    pImageData->pRenderTargetResource = nullptr;
+                }
+
             }
 
         }
