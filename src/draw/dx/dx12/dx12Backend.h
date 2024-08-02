@@ -41,6 +41,7 @@ namespace hax {
 				ID3D12Device* _pDevice;
 				ID3D12CommandQueue* _pCommandQueue;
 				ID3D12Fence* _pFence;
+				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;

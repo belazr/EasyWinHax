@@ -93,13 +93,17 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{},
+                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{},
                 _pImageDataArray{}, _imageCount{} {}
 
 
             Backend::~Backend() {
 
                 this->destroyImageDataArray();
+
+                if (this->_pRtvDescriptorHeap) {
+                    this->_pRtvDescriptorHeap->Release();
+                }
 
                 if (this->_pFence) {
                     this->_pFence->Release();
@@ -143,6 +147,21 @@ namespace hax {
                 if (!this->_pFence) {
 
                     if (FAILED(this->_pDevice->CreateFence(0ull, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&this->_pFence)))) return false;
+
+                }
+
+                if (!this->_pRtvDescriptorHeap) {
+                    DXGI_SWAP_CHAIN_DESC swapchainDesc{};
+
+                    if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
+
+                    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+                    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+                    descriptorHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
+                    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+                    descriptorHeapDesc.NodeMask = 1;
+
+                    if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)))) return false;
 
                 }
 
