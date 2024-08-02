@@ -32,11 +32,18 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				typedef struct ImageData {
+					ID3D12Resource* pRenderTargetResource;
+				}ImageData;
+
 				IDXGISwapChain3* _pSwapChain;
 
 				ID3D12Device* _pDevice;
 				ID3D12CommandQueue* _pCommandQueue;
 				ID3D12Fence* _pFence;
+
+				ImageData* _pImageDataArray;
+				uint32_t _imageCount;
 
 			public:
 				Backend();
@@ -91,6 +98,11 @@ namespace hax {
 				// [out] frameHeight:
 				// Pointer that receives the current frame height in pixel.
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
+
+			private:
+				bool resizeImageDataArray(uint32_t imageCount);
+				void destroyImageDataArray();
+				void destroyImageData(ImageData* pImageData) const;
 			};
 
 		}
