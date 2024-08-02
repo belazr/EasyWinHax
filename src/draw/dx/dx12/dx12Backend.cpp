@@ -230,6 +230,18 @@ namespace hax {
                 this->_pImageDataArray = new ImageData[imageCount]{};
                 this->_imageCount = imageCount;
 
+                const UINT rtvHandleIncrement = this->_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+                if (!rtvHandleIncrement) return false;
+
+                const D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = this->_pRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+                if (!rtvHandle.ptr) return false;
+
+                D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
+                renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
                 for (uint32_t i = 0; i < this->_imageCount; i++) {
 
                     if (pOldImageData && i < oldImageCount) {
@@ -238,6 +250,10 @@ namespace hax {
                     else {
 
                         if (FAILED(this->_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&this->_pImageDataArray[i].pRenderTargetResource)))) return false;
+                        
+                        this->_pImageDataArray[i].hRenderTargetDescriptor = { rtvHandle.ptr + i * rtvHandleIncrement };
+
+                        this->_pDevice->CreateRenderTargetView(this->_pImageDataArray[i].pRenderTargetResource, &renderTargetViewDesc, this->_pImageDataArray[i].hRenderTargetDescriptor);
 
                     }
 
