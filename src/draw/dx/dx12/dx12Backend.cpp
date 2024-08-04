@@ -255,6 +255,8 @@ namespace hax {
 
                         this->_pDevice->CreateRenderTargetView(this->_pImageDataArray[i].pRenderTargetResource, &renderTargetViewDesc, this->_pImageDataArray[i].hRenderTargetDescriptor);
 
+                        if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
+
                     }
 
                 }
@@ -284,6 +286,11 @@ namespace hax {
 
 
             void Backend::destroyImageData(ImageData* pImageData) const {
+
+                if (pImageData->pCommandAllocator) {
+                    pImageData->pCommandAllocator->Release();
+                    pImageData->pCommandAllocator = nullptr;
+                }
 
                 if (pImageData->pRenderTargetResource) {
                     pImageData->pRenderTargetResource->Release();

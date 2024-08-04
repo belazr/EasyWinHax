@@ -35,6 +35,7 @@ namespace hax {
 				typedef struct ImageData {
 					ID3D12Resource* pRenderTargetResource;
 					D3D12_CPU_DESCRIPTOR_HANDLE hRenderTargetDescriptor;
+					ID3D12CommandAllocator* pCommandAllocator;
 				}ImageData;
 
 				IDXGISwapChain3* _pSwapChain;
