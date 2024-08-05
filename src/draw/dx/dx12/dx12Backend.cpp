@@ -93,11 +93,15 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{},
+                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{},
                 _pImageDataArray{}, _imageCount{} {}
 
 
             Backend::~Backend() {
+
+                if (this->_pCommandList) {
+                    this->_pCommandList->Release();
+                }
 
                 this->destroyImageDataArray();
 
@@ -178,6 +182,12 @@ namespace hax {
                     this->destroyImageDataArray();
 
                     return false;
+                }
+
+                if (!this->_pCommandList) {
+
+                    if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[0].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
+                
                 }
 
                 return true;
