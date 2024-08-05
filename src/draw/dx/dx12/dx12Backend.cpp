@@ -93,11 +93,15 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{},
+                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{},
                 _pImageDataArray{}, _imageCount{} {}
 
 
             Backend::~Backend() {
+
+                if (this->_pRootSignature) {
+                    this->_pRootSignature->Release();
+                }
 
                 if (this->_pCommandList) {
                     this->_pCommandList->Release();
@@ -169,6 +173,12 @@ namespace hax {
 
                 }
 
+                if (!this->_pRootSignature) {
+
+                    if (!this->createRootSignature()) return false;
+
+                }
+
                 return true;
             }
 
@@ -178,7 +188,7 @@ namespace hax {
 
                 if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
 
-                if (!this->resizeImageDataArray(swapchainDesc.BufferCount)) {
+                if (!this->resizeImageDataArray(swapchainDesc.BufferCount, swapchainDesc.BufferDesc.Format)) {
                     this->destroyImageDataArray();
 
                     return false;
@@ -219,7 +229,50 @@ namespace hax {
             }
 
 
-            bool Backend::resizeImageDataArray(uint32_t imageCount) {
+            bool Backend::createRootSignature() {
+                D3D12_DESCRIPTOR_RANGE descriptorRange{};
+                descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                descriptorRange.NumDescriptors = 1u;
+
+                D3D12_ROOT_PARAMETER parameters[2]{};
+
+                parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+                parameters[0].Constants.ShaderRegister = 0u;
+                parameters[0].Constants.RegisterSpace = 0u;
+                parameters[0].Constants.Num32BitValues = 16u;
+                parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+                parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+                parameters[1].DescriptorTable.NumDescriptorRanges = 1u;
+                parameters[1].DescriptorTable.pDescriptorRanges = &descriptorRange;
+                parameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+                D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+                rootSignatureDesc.NumParameters = _countof(parameters);
+                rootSignatureDesc.pParameters = parameters;
+                rootSignatureDesc.Flags =
+                    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+                    D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+                    D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+                    D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+
+                ID3DBlob* pSigantureBlob = nullptr;
+                
+                if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pSigantureBlob, nullptr))) return false;
+
+                if (FAILED(this->_pDevice->CreateRootSignature(0u, pSigantureBlob->GetBufferPointer(), pSigantureBlob->GetBufferSize(), IID_PPV_ARGS(&this->_pRootSignature)))) {
+                    pSigantureBlob->Release();
+
+                    return false;
+                }
+                
+                pSigantureBlob->Release();
+
+                return true;
+            }
+
+
+            bool Backend::resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format) {
 
                 if (imageCount == this->_imageCount) return true;
 
@@ -249,7 +302,7 @@ namespace hax {
                 if (!rtvHandle.ptr) return false;
 
                 D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
-                renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                renderTargetViewDesc.Format = format;
                 renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
                 for (uint32_t i = 0; i < this->_imageCount; i++) {

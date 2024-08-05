@@ -45,6 +45,7 @@ namespace hax {
 				ID3D12Fence* _pFence;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				ID3D12GraphicsCommandList* _pCommandList;
+				ID3D12RootSignature* _pRootSignature;
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
@@ -104,7 +105,8 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
 
 			private:
-				bool resizeImageDataArray(uint32_t imageCount);
+				bool createRootSignature();
+				bool resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
 			};
