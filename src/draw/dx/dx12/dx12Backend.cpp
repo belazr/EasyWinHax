@@ -216,6 +216,16 @@ namespace hax {
 
                 if (FAILED(this->_pCommandList->Reset(this->_pCurImageData->pCommandAllocator, nullptr))) return false;
 
+                D3D12_RESOURCE_BARRIER resourceBarrier{};
+                resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                resourceBarrier.Transition.pResource = g_mainRenderTargetResource[backBufferIdx];
+                resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+                resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+                this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
+                this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
+
                 return true;
             }
 
