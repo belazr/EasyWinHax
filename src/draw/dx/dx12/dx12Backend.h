@@ -50,6 +50,7 @@ namespace hax {
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
+				ImageData* _pCurImageData;
 
 			public:
 				Backend();
