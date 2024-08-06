@@ -93,7 +93,7 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{},
+                _pSwapChain{}, _hMainWindow{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{},
                 _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -141,7 +141,12 @@ namespace hax {
             }
 
 
+            static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
+
             bool Backend::initialize() {
+                EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+
+                if (!this->_hMainWindow) return false;
 
                 if (!this->_pDevice) {
 
@@ -210,6 +215,8 @@ namespace hax {
                 
                 }
 
+                if (!this->getCurrentViewport(&this->_viewport)) return false;
+
                 this->_pCurImageData = &this->_pImageDataArray[this->_pSwapChain->GetCurrentBackBufferIndex()];
                 
                 if (FAILED(this->_pCurImageData->pCommandAllocator->Reset())) return false;
@@ -219,7 +226,7 @@ namespace hax {
                 D3D12_RESOURCE_BARRIER resourceBarrier{};
                 resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                resourceBarrier.Transition.pResource = g_mainRenderTargetResource[backBufferIdx];
+                resourceBarrier.Transition.pResource = this->_pCurImageData->pRenderTargetResource;
                 resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -545,6 +552,40 @@ namespace hax {
                     pImageData->pRenderTargetResource = nullptr;
                 }
 
+            }
+
+
+            bool Backend::getCurrentViewport(D3D12_VIEWPORT* pViewport) const {
+                RECT clientRect{};
+
+                if (!GetClientRect(this->_hMainWindow, &clientRect)) return false;
+
+                pViewport->TopLeftX = static_cast<FLOAT>(clientRect.left);
+                pViewport->TopLeftY = static_cast<FLOAT>(clientRect.top);
+                pViewport->Width = static_cast<FLOAT>(clientRect.right - clientRect.left);
+                pViewport->Height = static_cast<FLOAT>(clientRect.bottom - clientRect.top);
+                pViewport->MinDepth = 0.f;
+                pViewport->MaxDepth = 1.f;
+
+                return true;
+            }
+
+
+            static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
+                DWORD processId = 0ul;
+                GetWindowThreadProcessId(hWnd, &processId);
+
+                if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+                char className[MAX_PATH]{};
+
+                if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+                if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+                *reinterpret_cast<HWND*>(lParam) = hWnd;
+
+                return FALSE;
             }
 
         }

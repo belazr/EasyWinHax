@@ -40,13 +40,15 @@ namespace hax {
 
 				IDXGISwapChain3* _pSwapChain;
 
+				HWND _hMainWindow;
 				ID3D12Device* _pDevice;
 				ID3D12CommandQueue* _pCommandQueue;
 				ID3D12Fence* _pFence;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
-				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12RootSignature* _pRootSignature;
 				ID3D12PipelineState* _pTriangleListPipelineState;
+				ID3D12GraphicsCommandList* _pCommandList;
+				D3D12_VIEWPORT _viewport;
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
@@ -112,6 +114,7 @@ namespace hax {
 				bool resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
+				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
 			};
 
 		}
