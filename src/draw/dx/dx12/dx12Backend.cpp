@@ -211,6 +211,10 @@ namespace hax {
                 }
 
                 this->_pCurImageData = &this->_pImageDataArray[this->_pSwapChain->GetCurrentBackBufferIndex()];
+                
+                if (FAILED(this->_pCurImageData->pCommandAllocator->Reset())) return false;
+
+                if (FAILED(this->_pCommandList->Reset(this->_pCurImageData->pCommandAllocator, nullptr))) return false;
 
                 return true;
             }
