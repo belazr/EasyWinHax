@@ -37,6 +37,9 @@ namespace hax {
 				// True on success, false on failure.
 				bool create(uint32_t vertexCount) override;
 
+				// Destroys the buffer and all internal resources.
+				void destroy() override;
+
 			private:
 				bool createBuffer(ID3D12Resource** ppBufferResource, uint32_t size) const;
 
