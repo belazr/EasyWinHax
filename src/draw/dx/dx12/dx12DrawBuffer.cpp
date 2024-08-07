@@ -10,6 +10,7 @@ namespace hax {
 
 
 			DrawBuffer::~DrawBuffer() {
+				this->destroy();
 
 				return;
 			}
@@ -40,6 +41,24 @@ namespace hax {
 				this->_indexBufferSize = indexBufferSize;
 
 				return true;
+			}
+
+
+			void DrawBuffer::destroy() {
+
+				if (this->_pVertexBufferResource) {
+					this->_pVertexBufferResource->Release();
+					this->_pVertexBufferResource = nullptr;
+				}
+
+				if (this->_pIndexBufferResource) {
+					this->_pIndexBufferResource->Release();
+					this->_pIndexBufferResource = nullptr;
+				}
+
+				this->reset();
+
+				return;
 			}
 
 
