@@ -233,6 +233,8 @@ namespace hax {
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
 
+
+
                 return true;
             }
 
@@ -257,6 +259,8 @@ namespace hax {
 
 
             void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+                *frameWidth = this->_viewport.Width;
+                *frameHeight = this->_viewport.Height;
 
                 return;
             }
