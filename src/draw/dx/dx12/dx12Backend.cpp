@@ -235,6 +235,9 @@ namespace hax {
                 
                 this->setGraphicsRootSignature();
 
+                constexpr float blendFactor[]{ 0.f, 0.f, 0.f, 0.f };
+                this->_pCommandList->OMSetBlendFactor(blendFactor);
+
                 return true;
             }
 
