@@ -232,6 +232,7 @@ namespace hax {
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
+                this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
                 this->setGraphicsRootSignature();
 
