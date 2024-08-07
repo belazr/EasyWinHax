@@ -233,7 +233,7 @@ namespace hax {
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
                 
-                this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
+                this->setGraphicsRootSignature();
 
                 return true;
             }
@@ -572,6 +572,26 @@ namespace hax {
                 pViewport->MaxDepth = 1.f;
 
                 return true;
+            }
+
+            void Backend::setGraphicsRootSignature() const {
+                this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
+                
+                const float viewLeft = this->_viewport.TopLeftX;
+                const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
+                const float viewTop = this->_viewport.TopLeftY;
+                const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
+
+                const float ortho[][4]{
+                    { 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
+                    { 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
+                    { 0.f, 0.f, .5f, 0.f },
+                    { (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+                };
+
+                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, 16u, &ortho, 0u);
+
+                return;
             }
 
 

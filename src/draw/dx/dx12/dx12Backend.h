@@ -115,6 +115,7 @@ namespace hax {
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
+				void setGraphicsRootSignature() const;
 			};
 
 		}
