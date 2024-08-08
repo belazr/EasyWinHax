@@ -64,6 +64,18 @@ namespace hax {
 
 			bool DrawBuffer::map() {
 
+				if (!this->_pLocalVertexBuffer) {
+					
+					if (FAILED(this->_pVertexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(&this->_pLocalVertexBuffer)))) return false;
+
+				}
+				
+				if (!this->_pLocalIndexBuffer) {
+
+					if (FAILED(this->_pVertexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)))) return false;
+
+				}
+
 				return true;
 			}
 
