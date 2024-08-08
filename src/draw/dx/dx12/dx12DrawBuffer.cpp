@@ -62,6 +62,18 @@ namespace hax {
 			}
 
 
+			bool DrawBuffer::map() {
+
+				return true;
+			}
+
+
+			void DrawBuffer::draw() {
+
+				return;
+			}
+
+
 			bool DrawBuffer::createBuffer(ID3D12Resource** ppBufferResource, uint32_t size) const {
 				D3D12_HEAP_PROPERTIES heapProperties{};
 				heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
