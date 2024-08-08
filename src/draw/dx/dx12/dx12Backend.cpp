@@ -93,7 +93,8 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _hMainWindow{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{},
+                _pSwapChain{}, _hMainWindow{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{},
+                _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{}, _pPointListPipelineState{},
                 _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -104,6 +105,10 @@ namespace hax {
                 }
 
                 this->destroyImageDataArray();
+
+                if (this->_pPointListPipelineState) {
+                    this->_pPointListPipelineState->Release();
+                }
 
                 if (this->_pTriangleListPipelineState) {
                     this->_pTriangleListPipelineState->Release();
@@ -193,6 +198,12 @@ namespace hax {
                 }
 
                 if (!this->_pTriangleListPipelineState) return false;
+
+                if (!this->_pPointListPipelineState) {
+                    this->_pPointListPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+                }
+
+                if (!this->_pPointListPipelineState) return false;
 
                 return true;
             }

@@ -50,6 +50,7 @@ namespace hax {
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				ID3D12RootSignature* _pRootSignature;
 				ID3D12PipelineState* _pTriangleListPipelineState;
+				ID3D12PipelineState* _pPointListPipelineState;
 				ID3D12GraphicsCommandList* _pCommandList;
 				D3D12_VIEWPORT _viewport;
 
