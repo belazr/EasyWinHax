@@ -520,6 +520,18 @@ namespace hax {
 
                         if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
 
+                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice);
+
+                        static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+
+                        if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice);
+
+                        static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+                        if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
                     }
 
                 }
@@ -549,6 +561,8 @@ namespace hax {
 
 
             void Backend::destroyImageData(ImageData* pImageData) const {
+                pImageData->pointListBuffer.destroy();
+                pImageData->triangleListBuffer.destroy();
 
                 if (pImageData->pCommandAllocator) {
                     pImageData->pCommandAllocator->Release();

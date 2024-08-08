@@ -40,6 +40,16 @@ namespace hax {
 				// Destroys the buffer and all internal resources.
 				void destroy() override;
 
+				// Maps the allocated VRAM into the address space of the current process. Needs to be called before the buffer can be filled.
+				//
+				// Return:
+				// True on success, false on failure.
+				bool map() override;
+
+				// Draws the content of the buffer to the screen.
+				// Needs to be called between a successful of vk::Backend::beginFrame and a call to vk::Backend::endFrame.
+				void draw() override;
+
 			private:
 				bool createBuffer(ID3D12Resource** ppBufferResource, uint32_t size) const;
 

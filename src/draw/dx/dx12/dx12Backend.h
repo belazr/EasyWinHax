@@ -1,4 +1,5 @@
 #pragma once
+#include "dx12DrawBuffer.h"
 #include "..\..\IBackend.h"
 #include "..\..\Vertex.h"
 #include <d3d12.h>
@@ -36,6 +37,8 @@ namespace hax {
 					ID3D12Resource* pRenderTargetResource;
 					D3D12_CPU_DESCRIPTOR_HANDLE hRenderTargetDescriptor;
 					ID3D12CommandAllocator* pCommandAllocator;
+					DrawBuffer triangleListBuffer;
+					DrawBuffer pointListBuffer;
 				}ImageData;
 
 				IDXGISwapChain3* _pSwapChain;
