@@ -257,13 +257,13 @@ namespace hax {
 
             AbstractDrawBuffer* Backend::getTriangleListBuffer() {
 
-                return nullptr;
+                return &this->_pCurImageData->triangleListBuffer;
             }
 
 
             AbstractDrawBuffer* Backend::getPointListBuffer() {
 
-                return nullptr;
+                return &this->_pCurImageData->pointListBuffer;
             }
 
 
