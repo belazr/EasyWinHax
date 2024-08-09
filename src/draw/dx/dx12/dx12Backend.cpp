@@ -220,12 +220,6 @@ namespace hax {
                     return false;
                 }
 
-                if (!this->_pCommandList) {
-
-                    if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[0].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
-                
-                }
-
                 if (!this->getCurrentViewport(&this->_viewport)) return false;
 
                 this->_pCurImageData = &this->_pImageDataArray[this->_pSwapChain->GetCurrentBackBufferIndex()];
@@ -531,13 +525,19 @@ namespace hax {
 
                         if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
 
-                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice);
+                        if (!this->_pCommandList) {
+
+                            if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[i].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
+
+                        }
+
+                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineState, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                         static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
                         if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice);
+                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPipelineState, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
 
                         static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
