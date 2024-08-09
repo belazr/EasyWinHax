@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			DrawBuffer::DrawBuffer() : _pDevice{}, _pVertexBufferResource {}, _pIndexBufferResource{} {}
+			DrawBuffer::DrawBuffer() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _topology{}, _pVertexBufferResource {}, _pIndexBufferResource{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -15,8 +15,11 @@ namespace hax {
 				return;
 			}
 
-			void DrawBuffer::initialize(ID3D12Device* pDevice) {
+			void DrawBuffer::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology) {
 				this->_pDevice = pDevice;
+				this->_pCommandList = pCommandList;
+				this->_pPipelineState = pPipelineState;
+				this->_topology = topology;
 
 				return;
 			}
@@ -81,6 +84,27 @@ namespace hax {
 
 
 			void DrawBuffer::draw() {
+				this->_pVertexBufferResource->Unmap(0u, nullptr);
+				this->_pLocalVertexBuffer = nullptr;
+
+				this->_pIndexBufferResource->Unmap(0u, nullptr);
+				this->_pLocalIndexBuffer = nullptr;
+
+				D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+				vertexBufferView.BufferLocation = this->_pVertexBufferResource->GetGPUVirtualAddress();
+				vertexBufferView.SizeInBytes = this->_vertexBufferSize;
+				vertexBufferView.StrideInBytes = sizeof(Vertex);
+				this->_pCommandList->IASetVertexBuffers(0u, 1u, &vertexBufferView);
+				
+				D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+				indexBufferView.BufferLocation = this->_pIndexBufferResource->GetGPUVirtualAddress();
+				indexBufferView.SizeInBytes = this->_indexBufferSize;
+				indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
+				
+				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
+				this->_pCommandList->SetPipelineState(this->_pPipelineState);
+				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0u, 0u);
 
 				return;
 			}
