@@ -244,6 +244,13 @@ namespace hax {
                 constexpr float blendFactor[]{ 0.f, 0.f, 0.f, 0.f };
                 this->_pCommandList->OMSetBlendFactor(blendFactor);
 
+                D3D12_RECT rect{};
+                rect.left = static_cast<LONG>(this->_viewport.TopLeftX);
+                rect.right = static_cast<LONG>(this->_viewport.Width - this->_viewport.TopLeftX);
+                rect.bottom = static_cast<LONG>(this->_viewport.Height - this->_viewport.TopLeftY);
+                rect.top = static_cast<LONG>(this->_viewport.TopLeftY);
+                this->_pCommandList->RSSetScissorRects(1u, &rect);
+
                 return true;
             }
 
