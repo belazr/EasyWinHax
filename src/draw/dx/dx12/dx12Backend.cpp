@@ -95,16 +95,16 @@ namespace hax {
             Backend::Backend() :
                 _pSwapChain{}, _hMainWindow{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{},
                 _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{}, _pPointListPipelineState{},
-                _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
+                _viewport{}, _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
 
 
             Backend::~Backend() {
 
+                this->destroyImageDataArray();
+
                 if (this->_pCommandList) {
                     this->_pCommandList->Release();
                 }
-
-                this->destroyImageDataArray();
 
                 if (this->_pPointListPipelineState) {
                     this->_pPointListPipelineState->Release();
@@ -250,6 +250,17 @@ namespace hax {
 
 
             void Backend::endFrame() {
+                D3D12_RESOURCE_BARRIER resourceBarrier{};
+                resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                resourceBarrier.Transition.pResource = this->_pCurImageData->pRenderTargetResource;
+                resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+                resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+                this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
+                this->_pCommandList->Close();
+                this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
 
                 return;
             }
@@ -528,6 +539,8 @@ namespace hax {
                         if (!this->_pCommandList) {
 
                             if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[i].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
+
+                            if (FAILED(this->_pCommandList->Close())) return false;
 
                         }
 
