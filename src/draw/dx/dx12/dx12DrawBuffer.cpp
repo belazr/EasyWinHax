@@ -121,6 +121,9 @@ namespace hax {
 				resourceDesc.Width = size;
 				resourceDesc.Height = 1u;
 				resourceDesc.DepthOrArraySize = 1u;
+				resourceDesc.MipLevels = 1u;
+				resourceDesc.SampleDesc.Count = 1u;
+				resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	
 				return SUCCEEDED(this->_pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(ppBufferResource)));
 			}
