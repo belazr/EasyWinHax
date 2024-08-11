@@ -75,7 +75,7 @@ namespace hax {
 				
 				if (!this->_pLocalIndexBuffer) {
 
-					if (FAILED(this->_pVertexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)))) return false;
+					if (FAILED(this->_pIndexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)))) return false;
 
 				}
 
@@ -105,6 +105,8 @@ namespace hax {
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
 				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0u, 0u);
+
+				this->_curOffset = 0u;
 
 				return;
 			}
