@@ -314,26 +314,17 @@ namespace hax {
 
 
             bool Backend::createRootSignature() {
-                D3D12_DESCRIPTOR_RANGE descriptorRange{};
-                descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                descriptorRange.NumDescriptors = 1u;
+                D3D12_ROOT_PARAMETER parameter{};
 
-                D3D12_ROOT_PARAMETER parameters[2]{};
-
-                parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-                parameters[0].Constants.ShaderRegister = 0u;
-                parameters[0].Constants.RegisterSpace = 0u;
-                parameters[0].Constants.Num32BitValues = 16u;
-                parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-                parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-                parameters[1].DescriptorTable.NumDescriptorRanges = 1u;
-                parameters[1].DescriptorTable.pDescriptorRanges = &descriptorRange;
-                parameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+                parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+                parameter.Constants.ShaderRegister = 0u;
+                parameter.Constants.RegisterSpace = 0u;
+                parameter.Constants.Num32BitValues = 16u;
+                parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
                 D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
-                rootSignatureDesc.NumParameters = _countof(parameters);
-                rootSignatureDesc.pParameters = parameters;
+                rootSignatureDesc.NumParameters = 1u;
+                rootSignatureDesc.pParameters = &parameter;
                 rootSignatureDesc.Flags =
                     D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
                     D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
@@ -470,7 +461,7 @@ namespace hax {
                 D3D12_RASTERIZER_DESC rasterizerDesc{};
                 rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
                 rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
-                rasterizerDesc.FrontCounterClockwise = FALSE;
+                rasterizerDesc.FrontCounterClockwise = TRUE;
                 rasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
                 rasterizerDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
                 rasterizerDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -481,10 +472,10 @@ namespace hax {
                 rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
                 D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-                depthStencilDesc.DepthEnable = false;
+                depthStencilDesc.DepthEnable = FALSE;
                 depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
                 depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-                depthStencilDesc.StencilEnable = false;
+                depthStencilDesc.StencilEnable = FALSE;
                 depthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
                 depthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
                 depthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
@@ -492,7 +483,7 @@ namespace hax {
                 depthStencilDesc.BackFace = depthStencilDesc.FrontFace;
 
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
-                pipelineStateDesc.NodeMask = 1;
+                pipelineStateDesc.NodeMask = 1u;
                 pipelineStateDesc.PrimitiveTopologyType = topology;
                 pipelineStateDesc.pRootSignature = this->_pRootSignature;
                 pipelineStateDesc.SampleMask = UINT_MAX;
@@ -502,7 +493,7 @@ namespace hax {
                 pipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
                 pipelineStateDesc.VS = { VERTEX_SHADER, sizeof(VERTEX_SHADER) };
                 pipelineStateDesc.PS = { PIXEL_SHADER, sizeof(PIXEL_SHADER) };
-                pipelineStateDesc.InputLayout = { INPUT_LAYOUT, 2 };
+                pipelineStateDesc.InputLayout = { INPUT_LAYOUT, 2u };
                 pipelineStateDesc.BlendState = blendDesc;
                 pipelineStateDesc.RasterizerState = rasterizerDesc;
                 pipelineStateDesc.DepthStencilState = depthStencilDesc;
