@@ -8,6 +8,7 @@
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
+static hax::draw::dx12::Dx12InitData initData{};
 static hax::draw::dx12::Backend backend;
 static hax::draw::Engine engine{ &backend };
 
@@ -17,7 +18,25 @@ static hax::in::TrampHook* pPresentHook;
 HRESULT __stdcall hkPresent(IDXGISwapChain3* pSwapChain, UINT syncInterval, UINT flags) {
 	bench.start();
 
-	engine.beginFrame(pSwapChain);
+	engine.beginFrame(pSwapChain, initData.pCommandQueue);
+
+	const hax::Vector2 middleOfScreen{ engine.frameWidth / 2.f, engine.frameHeight / 2.f };
+
+	const float widthRect = engine.frameWidth / 4.f;
+	const float heightRect = engine.frameHeight / 4.f;
+	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
+
+	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::abgr::GRAY);
+
+	constexpr char TEXT[] = "EasyWinHax";
+	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
+	const float heightText = hax::draw::font::medium.height;
+
+	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
+
+	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::abgr::ORANGE);
+
+	engine.endFrame();
 
 	bench.end();
 	bench.printAvg();
@@ -82,24 +101,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	void* pDXGISwapChain3VTable[9]{};
-
-	if (!hax::draw::dx12::getDXGISwapChain3VTable(pDXGISwapChain3VTable, sizeof(pDXGISwapChain3VTable))) {
+	if (!hax::draw::dx12::getDx12InitData(&initData)) {
 		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	constexpr unsigned int PRESENT_OFFSET = 8ul;
-	BYTE* const pPresent = reinterpret_cast<BYTE*>(pDXGISwapChain3VTable[PRESENT_OFFSET]);
-
-	if (!pPresent) {
-		cleanup(hHookSemaphore, pPresentHook, file);
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
-
-	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x5);
+	pPresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pPresent), reinterpret_cast<BYTE*>(hkPresent), 0x5);
 
 	if (!pPresentHook) {
 		cleanup(hHookSemaphore, pPresentHook, file);
