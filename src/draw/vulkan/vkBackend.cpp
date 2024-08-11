@@ -3,7 +3,6 @@
 #include "..\font\Font.h"
 #include "..\..\proc.h"
 #include "..\..\hooks\TrampHook.h"
-#include "..\..\Bench.h"
 
 namespace hax {
 
@@ -68,13 +67,21 @@ namespace hax {
 
 				if (!initData->pVkQueuePresentKHR || !pVkAcquireNextImageKHR) return false;
 
-				hHookSemaphore = CreateSemaphoreA(nullptr, 0, 1, nullptr);
+				hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
 
 				if (!hHookSemaphore) return false;
 
-				pAcquireHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pVkAcquireNextImageKHR), reinterpret_cast<BYTE*>(hkvkAcquireNextImageKHR), 0xC);
-				pAcquireHook->enable();
+				pAcquireHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pVkAcquireNextImageKHR), reinterpret_cast<BYTE*>(hkvkAcquireNextImageKHR), 0xCu);
+				
+				if (!pAcquireHook->enable()) {
+					delete pAcquireHook;
+					CloseHandle(hHookSemaphore);
+
+					return false;
+				}
+
 				WaitForSingleObject(hHookSemaphore, INFINITE);
+				CloseHandle(hHookSemaphore);
 				delete pAcquireHook;
 			
 				initData->hDevice = hHookDevice;
