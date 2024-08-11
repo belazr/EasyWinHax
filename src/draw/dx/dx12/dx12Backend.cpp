@@ -192,16 +192,16 @@ namespace hax {
 
                 }
 
+                DXGI_SWAP_CHAIN_DESC swapchainDesc{};
+
+                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
+
                 if (!this->_pRtvDescriptorHeap) {
-                    DXGI_SWAP_CHAIN_DESC swapchainDesc{};
-
-                    if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
-
                     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
                     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
                     descriptorHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
                     descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                    descriptorHeapDesc.NodeMask = 1;
+                    descriptorHeapDesc.NodeMask = 1u;
 
                     if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)))) return false;
 
@@ -214,13 +214,13 @@ namespace hax {
                 }
 
                 if (!this->_pTriangleListPipelineState) {
-                    this->_pTriangleListPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+                    this->_pTriangleListPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, swapchainDesc.BufferDesc.Format);
                 }
 
                 if (!this->_pTriangleListPipelineState) return false;
 
                 if (!this->_pPointListPipelineState) {
-                    this->_pPointListPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+                    this->_pPointListPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, swapchainDesc.BufferDesc.Format);
                 }
 
                 if (!this->_pPointListPipelineState) return false;
@@ -489,10 +489,10 @@ namespace hax {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             };
 
-            ID3D12PipelineState* Backend::createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const {
+            ID3D12PipelineState* Backend::createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, DXGI_FORMAT format) const {
                 constexpr D3D12_INPUT_ELEMENT_DESC INPUT_LAYOUT[]{
-                    { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u },
-                    { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, sizeof(Vector2), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u},
+                    { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u },
+                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, sizeof(Vector2), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u},
                 };
                 
                 D3D12_BLEND_DESC blendDesc{};
@@ -510,14 +510,7 @@ namespace hax {
                 rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
                 rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
                 rasterizerDesc.FrontCounterClockwise = TRUE;
-                rasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-                rasterizerDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-                rasterizerDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
                 rasterizerDesc.DepthClipEnable = TRUE;
-                rasterizerDesc.MultisampleEnable = FALSE;
-                rasterizerDesc.AntialiasedLineEnable = FALSE;
-                rasterizerDesc.ForcedSampleCount = 0u;
-                rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
                 D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
                 depthStencilDesc.DepthEnable = FALSE;
@@ -536,7 +529,7 @@ namespace hax {
                 pipelineStateDesc.pRootSignature = this->_pRootSignature;
                 pipelineStateDesc.SampleMask = UINT_MAX;
                 pipelineStateDesc.NumRenderTargets = 1u;
-                pipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+                pipelineStateDesc.RTVFormats[0] = format;
                 pipelineStateDesc.SampleDesc.Count = 1u;
                 pipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
                 pipelineStateDesc.VS = { VERTEX_SHADER, sizeof(VERTEX_SHADER) };
@@ -610,13 +603,13 @@ namespace hax {
 
                         }
 
-                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineState, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineState, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                         static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
                         if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPipelineState, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPipelineState, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
                         static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
