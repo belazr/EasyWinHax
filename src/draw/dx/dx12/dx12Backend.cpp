@@ -257,19 +257,29 @@ namespace hax {
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
+                
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
-                this->setGraphicsRootSignature();
-
-                constexpr float blendFactor[]{ 0.f, 0.f, 0.f, 0.f };
-                this->_pCommandList->OMSetBlendFactor(blendFactor);
+                constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
+                this->_pCommandList->OMSetBlendFactor(BLEND_FACTOR);
 
                 D3D12_RECT rect{};
                 rect.left = static_cast<LONG>(this->_viewport.TopLeftX);
                 rect.right = static_cast<LONG>(this->_viewport.Width - this->_viewport.TopLeftX);
                 rect.bottom = static_cast<LONG>(this->_viewport.Height - this->_viewport.TopLeftY);
                 rect.top = static_cast<LONG>(this->_viewport.TopLeftY);
+                
                 this->_pCommandList->RSSetScissorRects(1u, &rect);
+                this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
+
+                const float ortho[][4]{
+                    { 2.f / (rect.right - rect.left), 0.f, 0.f, 0.f  },
+                    { 0.f, 2.f / (rect.top - rect.bottom), 0.f, 0.f },
+                    { 0.f, 0.f, .5f, 0.f },
+                    { (rect.left + rect.right) / (rect.left - rect.right), (vierect.topwTop + rect.bottom) / (rect.bottom - rect.top), .5f, 1.f }
+                };
+
+                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, 16u, &ortho, 0u);
 
                 return true;
             }
@@ -632,26 +642,6 @@ namespace hax {
                 pViewport->MaxDepth = 1.f;
 
                 return true;
-            }
-
-            void Backend::setGraphicsRootSignature() const {
-                this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
-                
-                const float viewLeft = this->_viewport.TopLeftX;
-                const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
-                const float viewTop = this->_viewport.TopLeftY;
-                const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
-
-                const float ortho[][4]{
-                    { 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
-                    { 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
-                    { 0.f, 0.f, .5f, 0.f },
-                    { (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
-                };
-
-                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, 16u, &ortho, 0u);
-
-                return;
             }
 
 
