@@ -106,7 +106,7 @@ namespace hax {
 
 			private:
 				bool createRootSignature();
-				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
+				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, DXGI_FORMAT format) const;
 				bool resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
