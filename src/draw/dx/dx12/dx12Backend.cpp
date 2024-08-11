@@ -1,4 +1,6 @@
 #include "dx12Backend.h"
+#include "..\..\..\hooks\TrampHook.h"
+#include "..\..\..\mem.h"
 
 namespace hax {
 
@@ -6,7 +8,23 @@ namespace hax {
 
         namespace dx12 {
 
-            bool getDXGISwapChain3VTable(void** pSwapChainVTable, size_t size) {
+            static hax::in::TrampHook* pExecuteHook;
+            static HANDLE hHookSemaphore;
+            static ID3D12CommandQueue* pHookCommandQueue;
+
+            typedef void(WINAPI* tExecuteCommandLists)(ID3D12CommandQueue* pCommandQueue, UINT numCommandLists, ID3D12CommandList* ppCommandLists);
+
+            static void WINAPI hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT numCommandLists, ID3D12CommandList* ppCommandLists) {
+                pHookCommandQueue = pCommandQueue;
+                pExecuteHook->disable();
+                const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(pExecuteHook->getOrigin());
+                ReleaseSemaphore(hHookSemaphore, 1, nullptr);
+
+                return pExecuteCommandLists(pCommandQueue, numCommandLists, ppCommandLists);
+            }
+
+
+            bool getDx12InitData(Dx12InitData* pInitData) {
                 IDXGIFactory4* pDxgiFactory = nullptr;
 
                 if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&pDxgiFactory)))) return false;
@@ -35,11 +53,11 @@ namespace hax {
                 IDXGISwapChain1* pSwapChain1 = nullptr;
 
                 DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-                swapChainDesc.BufferCount = 3;
+                swapChainDesc.BufferCount = 3u;
                 swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                 swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
                 swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-                swapChainDesc.SampleDesc.Count = 1;
+                swapChainDesc.SampleDesc.Count = 1u;
                 swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
                 
                 const BOOL consoleAllocated = AllocConsole();
@@ -72,15 +90,8 @@ namespace hax {
                     return false;
                 }
                     
-                if (memcpy_s(pSwapChainVTable, size, *reinterpret_cast<void**>(pSwapChain3), size)) {
-                    pSwapChain3->Release();
-                    pSwapChain1->Release();
-                    pCommandQueue->Release();
-                    pDevice->Release();
-                    pDxgiFactory->Release();
-
-                    return false;
-                }
+                pInitData->pPresent = reinterpret_cast<tPresent>(hax::mem::in::getVirtualFunction(pSwapChain3, 8u));
+                const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(hax::mem::in::getVirtualFunction(pCommandQueue, 10u));
 
                 pSwapChain3->Release();
                 pSwapChain1->Release();
@@ -88,12 +99,33 @@ namespace hax {
                 pDevice->Release();
                 pDxgiFactory->Release();
 
-                return true;
+                if (!pInitData->pPresent || !pExecuteCommandLists) return false;
+
+                hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+                if (!hHookSemaphore) return false;
+
+                pExecuteHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(pExecuteCommandLists), reinterpret_cast<BYTE*>(hkExecuteCommandLists), 0x5u);
+                
+                if (!pExecuteHook->enable()) {
+                    delete pExecuteHook;
+                    CloseHandle(hHookSemaphore);
+
+                    return false;
+                }
+
+                WaitForSingleObject(hHookSemaphore, INFINITE);
+                CloseHandle(hHookSemaphore);
+                delete pExecuteHook;
+
+                pInitData->pCommandQueue = pHookCommandQueue;
+
+                return pInitData->pCommandQueue != nullptr;
             }
 
 
             Backend::Backend() :
-                _pSwapChain{}, _hMainWindow{}, _pDevice{}, _pCommandQueue{}, _pFence{}, _pRtvDescriptorHeap{},
+                _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pFence{}, _pRtvDescriptorHeap{},
                 _pCommandList{}, _pRootSignature{}, _pTriangleListPipelineState{}, _pPointListPipelineState{},
                 _viewport{}, _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
 
@@ -126,10 +158,6 @@ namespace hax {
                     this->_pFence->Release();
                 }
 
-                if (this->_pCommandQueue) {
-                    this->_pCommandQueue->Release();
-                }
-
                 if (this->_pDevice) {
                     this->_pDevice->Release();
                 }
@@ -138,9 +166,8 @@ namespace hax {
 
 
             void Backend::setHookArguments(void* pArg1, void* pArg2) {
-                UNREFERENCED_PARAMETER(pArg2);
-
                 this->_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pArg1);
+                this->_pCommandQueue = reinterpret_cast<ID3D12CommandQueue*>(pArg2);
 
                 return;
             }
@@ -156,13 +183,6 @@ namespace hax {
                 if (!this->_pDevice) {
 
                     if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
-
-                }
-
-                if (!this->_pCommandQueue) {
-                    D3D12_COMMAND_QUEUE_DESC queueDesc{};
-
-                    if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&this->_pCommandQueue)))) return false;
 
                 }
 
@@ -437,8 +457,8 @@ namespace hax {
                 };
                 
                 D3D12_BLEND_DESC blendDesc{};
-                blendDesc.AlphaToCoverageEnable = false;
-                blendDesc.RenderTarget[0].BlendEnable = true;
+                blendDesc.AlphaToCoverageEnable = FALSE;
+                blendDesc.RenderTarget[0].BlendEnable = TRUE;
                 blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
                 blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
                 blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
@@ -454,10 +474,10 @@ namespace hax {
                 rasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
                 rasterizerDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
                 rasterizerDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-                rasterizerDesc.DepthClipEnable = true;
+                rasterizerDesc.DepthClipEnable = TRUE;
                 rasterizerDesc.MultisampleEnable = FALSE;
                 rasterizerDesc.AntialiasedLineEnable = FALSE;
-                rasterizerDesc.ForcedSampleCount = 0;
+                rasterizerDesc.ForcedSampleCount = 0u;
                 rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
                 D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
