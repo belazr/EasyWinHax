@@ -263,20 +263,21 @@ namespace hax {
                 constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
                 this->_pCommandList->OMSetBlendFactor(BLEND_FACTOR);
 
-                D3D12_RECT rect{};
-                rect.left = static_cast<LONG>(this->_viewport.TopLeftX);
-                rect.right = static_cast<LONG>(this->_viewport.Width - this->_viewport.TopLeftX);
-                rect.bottom = static_cast<LONG>(this->_viewport.Height - this->_viewport.TopLeftY);
-                rect.top = static_cast<LONG>(this->_viewport.TopLeftY);
-                
+                const float left = this->_viewport.TopLeftX;
+                const float top = this->_viewport.TopLeftY;
+                const float right = this->_viewport.TopLeftX + this->_viewport.Width;
+                const float bottom = this->_viewport.TopLeftY + this->_viewport.Height;
+
+                const D3D12_RECT rect{ static_cast<LONG>(left), static_cast<LONG>(top), static_cast<LONG>(right), static_cast<LONG>(bottom) };                
                 this->_pCommandList->RSSetScissorRects(1u, &rect);
+
                 this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
 
                 const float ortho[][4]{
-                    { 2.f / (rect.right - rect.left), 0.f, 0.f, 0.f  },
-                    { 0.f, 2.f / (rect.top - rect.bottom), 0.f, 0.f },
+                    { 2.f / (right - left), 0.f, 0.f, 0.f  },
+                    { 0.f, 2.f / (top - bottom), 0.f, 0.f },
                     { 0.f, 0.f, .5f, 0.f },
-                    { (rect.left + rect.right) / (rect.left - rect.right), (vierect.topwTop + rect.bottom) / (rect.bottom - rect.top), .5f, 1.f }
+                    { (left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f }
                 };
 
                 this->_pCommandList->SetGraphicsRoot32BitConstants(0u, 16u, &ortho, 0u);
@@ -356,7 +357,32 @@ namespace hax {
                 return true;
             }
 
+            /*
+            cbuffer vertexBuffer : register(b0)
+            {
+              float4x4 ProjectionMatrix;
+            };
 
+            struct VS_INPUT
+            {
+              float2 pos : POSITION;
+              float4 col : COLOR0;
+            };
+            
+            struct PS_INPUT
+            {
+              float4 pos : SV_POSITION;
+              float4 col : COLOR0;
+            };
+            
+            PS_INPUT main(VS_INPUT input)
+            {
+              PS_INPUT output;
+              output.pos = mul(ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));
+              output.col = input.col;
+              return output;
+            }
+            */
             static constexpr BYTE VERTEX_SHADER[]{
                 0x44, 0x58, 0x42, 0x43, 0x9F, 0xD1, 0x09, 0x69, 0xC2, 0x2F, 0x52, 0x73, 0x23, 0x8F, 0x83, 0x77,
                 0xD1, 0xA5, 0xA9, 0xDB, 0x01, 0x00, 0x00, 0x00, 0x70, 0x03, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
@@ -415,6 +441,18 @@ namespace hax {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             };
 
+            /*
+            struct PS_INPUT
+            {
+              float4 pos : SV_POSITION;
+              float4 col : COLOR0;
+            };
+            
+            float4 main(PS_INPUT input) : SV_Target
+            {
+              return input.col;
+            }
+            */
             static constexpr BYTE PIXEL_SHADER[]{
                 0x44, 0x58, 0x42, 0x43, 0x29, 0x32, 0x26, 0xA8, 0x0C, 0xD2, 0xDF, 0x85, 0x93, 0x8E, 0x4A, 0x0F,
                 0x51, 0x32, 0xC0, 0xAE, 0x01, 0x00, 0x00, 0x00, 0x08, 0x02, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
