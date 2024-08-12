@@ -41,8 +41,7 @@ namespace hax {
 				ID3D12Fence* _pFence;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				ID3D12RootSignature* _pRootSignature;
-				ID3D12PipelineState* _pTriangleListPipelineState;
-				ID3D12PipelineState* _pPointListPipelineState;
+				ID3D12PipelineState* _pPipelineState;
 				ID3D12GraphicsCommandList* _pCommandList;
 				D3D12_VIEWPORT _viewport;
 
@@ -106,7 +105,7 @@ namespace hax {
 
 			private:
 				bool createRootSignature();
-				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, DXGI_FORMAT format) const;
+				bool createPipelineState(DXGI_FORMAT format);
 				bool resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
