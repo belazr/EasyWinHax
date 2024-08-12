@@ -12,7 +12,6 @@ namespace hax {
 			private:
 				ID3D12Device* _pDevice;
 				ID3D12GraphicsCommandList* _pCommandList;
-				ID3D12PipelineState* _pPipelineState;
 				D3D_PRIMITIVE_TOPOLOGY _topology;
 				ID3D12Resource* _pVertexBufferResource;
 				ID3D12Resource* _pIndexBufferResource;
@@ -27,7 +26,7 @@ namespace hax {
 				// 
 				// [in] hDevice:
 				// Logical device of the backend.
-				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology);
+				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, D3D_PRIMITIVE_TOPOLOGY topology);
 
 				// Creates a new buffer with all internal resources.
 				//
