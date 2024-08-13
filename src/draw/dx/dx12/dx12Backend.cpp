@@ -18,29 +18,27 @@ namespace hax {
                 pHookCommandQueue = pCommandQueue;
                 pExecuteHook->disable();
                 const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(pExecuteHook->getOrigin());
-                ReleaseSemaphore(hHookSemaphore, 1, nullptr);
+                ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
                 return pExecuteCommandLists(pCommandQueue, numCommandLists, ppCommandLists);
             }
 
+            static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue);
 
             bool getDx12InitData(Dx12InitData* pInitData) {
-                IDXGIFactory4* pDxgiFactory = nullptr;
+                IDXGIFactory4* pDxgiFactory{};
 
                 if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&pDxgiFactory)))) return false;
                 
-                ID3D12Device* pDevice = nullptr;
+                ID3D12Device* pDevice{};
 
-                D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
-
-                if (FAILED(D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(&pDevice)))) {
+                if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice)))) {
                     pDxgiFactory->Release();
                     
                     return false;
                 }
 
-                ID3D12CommandQueue* pCommandQueue = nullptr;
-
+                ID3D12CommandQueue* pCommandQueue{};
                 D3D12_COMMAND_QUEUE_DESC queueDesc{};
                 
                 if (FAILED(pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCommandQueue)))) {
@@ -50,39 +48,9 @@ namespace hax {
                     return false;
                 }
                     
-                IDXGISwapChain1* pSwapChain1 = nullptr;
+                IDXGISwapChain3* const pSwapChain3 = createDummySwapChain3(pDxgiFactory, pCommandQueue);
 
-                DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-                swapChainDesc.BufferCount = 3u;
-                swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
-                swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-                swapChainDesc.SampleDesc.Count = 1u;
-                swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-                
-                const BOOL consoleAllocated = AllocConsole();
-
-                if (FAILED(pDxgiFactory->CreateSwapChainForHwnd(pCommandQueue, GetConsoleWindow(), &swapChainDesc, nullptr, nullptr, &pSwapChain1))) {
-                    
-                    if (consoleAllocated) {
-                        FreeConsole();
-                    }
-                    
-                    pCommandQueue->Release();
-                    pDevice->Release();
-                    pDxgiFactory->Release();
-
-                    return false;
-                }
-
-                if (consoleAllocated) {
-                    FreeConsole();
-                }
-                    
-                IDXGISwapChain3* pSwapChain3 = nullptr;
-
-                if (FAILED(pSwapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain3)))) {
-                    pSwapChain1->Release();
+                if (!pSwapChain3) {
                     pCommandQueue->Release();
                     pDevice->Release();
                     pDxgiFactory->Release();
@@ -94,7 +62,6 @@ namespace hax {
                 const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(hax::mem::in::getVirtualFunction(pCommandQueue, 10u));
 
                 pSwapChain3->Release();
-                pSwapChain1->Release();
                 pCommandQueue->Release();
                 pDevice->Release();
                 pDxgiFactory->Release();
@@ -124,8 +91,47 @@ namespace hax {
             }
 
 
+            static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue) {
+                const BOOL consoleAllocated = AllocConsole();
+
+                IDXGISwapChain1* pSwapChain1{};
+                DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+                swapChainDesc.BufferCount = 3u;
+                swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+                swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+                swapChainDesc.SampleDesc.Count = 1u;
+                swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+                if (FAILED(pDxgiFactory->CreateSwapChainForHwnd(pCommandQueue, GetConsoleWindow(), &swapChainDesc, nullptr, nullptr, &pSwapChain1))) {
+
+                    if (consoleAllocated) {
+                        FreeConsole();
+                    }
+
+                    return nullptr;
+                }
+
+                if (consoleAllocated) {
+                    FreeConsole();
+                }
+
+                IDXGISwapChain3* pSwapChain3{};
+
+                if (FAILED(pSwapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain3)))) {
+                    pSwapChain1->Release();
+
+                    return nullptr;
+                }
+
+                pSwapChain1->Release();
+
+                return pSwapChain3;
+            }
+
+
             Backend::Backend() :
-                _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pFence{},
+                _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
                 _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{}, _pPipelineState{},
                 _viewport{}, _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
 
