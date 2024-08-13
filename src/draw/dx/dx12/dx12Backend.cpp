@@ -132,12 +132,17 @@ namespace hax {
 
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
-                _pRtvDescriptorHeap{}, _pCommandList{}, _pRootSignature{}, _pPipelineState{},
-                _viewport{}, _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
+                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pRootSignature{}, _pPipelineState{},
+                _pRtvResource{}, _viewport {}, _pCommandList{},
+                _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
 
 
             Backend::~Backend() {
 
+                if (this->_pRtvResource) {
+                    this->_pRtvResource->Release();
+                }
+                
                 this->destroyImageDataArray();
 
                 if (this->_pCommandList) {
@@ -154,10 +159,6 @@ namespace hax {
 
                 if (this->_pRtvDescriptorHeap) {
                     this->_pRtvDescriptorHeap->Release();
-                }
-
-                if (this->_pFence) {
-                    this->_pFence->Release();
                 }
 
                 if (this->_pDevice) {
@@ -188,12 +189,6 @@ namespace hax {
 
                 }
 
-                if (!this->_pFence) {
-
-                    if (FAILED(this->_pDevice->CreateFence(0ull, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&this->_pFence)))) return false;
-
-                }
-
                 DXGI_SWAP_CHAIN_DESC swapchainDesc{};
 
                 if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
@@ -202,12 +197,15 @@ namespace hax {
                     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
                     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
                     descriptorHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
-                    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
                     descriptorHeapDesc.NodeMask = 1u;
 
                     if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)))) return false;
 
                 }
+
+                this->_hRtvHeapStartDescriptor = this->_pRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+                if (!this->_hRtvHeapStartDescriptor.ptr) return false;
 
                 if (!this->_pRootSignature) {
 
@@ -230,30 +228,39 @@ namespace hax {
 
                 if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
 
-                if (!this->resizeImageDataArray(swapchainDesc.BufferCount, swapchainDesc.BufferDesc.Format)) {
+                if (!this->resizeImageDataArray(swapchainDesc.BufferCount)) {
                     this->destroyImageDataArray();
 
                     return false;
                 }
 
-                if (!this->getCurrentViewport(&this->_viewport)) return false;
-
-                this->_pCurImageData = &this->_pImageDataArray[this->_pSwapChain->GetCurrentBackBufferIndex()];
-                
+                const UINT backBufferIndex = this->_pSwapChain->GetCurrentBackBufferIndex();
+                this->_pCurImageData = &this->_pImageDataArray[backBufferIndex];
+                                
                 if (FAILED(this->_pCurImageData->pCommandAllocator->Reset())) return false;
 
                 if (FAILED(this->_pCommandList->Reset(this->_pCurImageData->pCommandAllocator, nullptr))) return false;
 
+                D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
+                renderTargetViewDesc.Format = swapchainDesc.BufferDesc.Format;
+                renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+                if (FAILED(this->_pSwapChain->GetBuffer(backBufferIndex, IID_PPV_ARGS(&this->_pRtvResource)))) return false;
+
+                this->_pDevice->CreateRenderTargetView(this->_pRtvResource, &renderTargetViewDesc, this->_hRtvHeapStartDescriptor);
+
                 D3D12_RESOURCE_BARRIER resourceBarrier{};
                 resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                resourceBarrier.Transition.pResource = this->_pCurImageData->pRenderTargetResource;
+                resourceBarrier.Transition.pResource = this->_pRtvResource;
                 resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
-                this->_pCommandList->OMSetRenderTargets(1u, &this->_pCurImageData->hRenderTargetDescriptor, FALSE, nullptr);
+                this->_pCommandList->OMSetRenderTargets(1u, &this->_hRtvHeapStartDescriptor, FALSE, nullptr);
                 
+                if (!this->getCurrentViewport(&this->_viewport)) return false;
+
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
                 constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
@@ -288,7 +295,7 @@ namespace hax {
                 D3D12_RESOURCE_BARRIER resourceBarrier{};
                 resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                resourceBarrier.Transition.pResource = this->_pCurImageData->pRenderTargetResource;
+                resourceBarrier.Transition.pResource = this->_pRtvResource;
                 resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -296,6 +303,9 @@ namespace hax {
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->Close();
                 this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
+
+                this->_pRtvResource->Release();
+                this->_pRtvResource = nullptr;
 
                 return;
             }
@@ -535,7 +545,7 @@ namespace hax {
             }
 
 
-            bool Backend::resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format) {
+            bool Backend::resizeImageDataArray(uint32_t imageCount) {
 
                 if (imageCount == this->_imageCount) return true;
 
@@ -556,30 +566,12 @@ namespace hax {
                 this->_pImageDataArray = new ImageData[imageCount]{};
                 this->_imageCount = imageCount;
 
-                const UINT rtvHandleIncrement = this->_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-                if (!rtvHandleIncrement) return false;
-
-                const D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = this->_pRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-
-                if (!rtvHandle.ptr) return false;
-
-                D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
-                renderTargetViewDesc.Format = format;
-                renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
                 for (uint32_t i = 0; i < this->_imageCount; i++) {
 
                     if (pOldImageData && i < oldImageCount) {
                         memcpy(&this->_pImageDataArray[i], &pOldImageData[i], sizeof(ImageData));
                     }
                     else {
-
-                        if (FAILED(this->_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&this->_pImageDataArray[i].pRenderTargetResource)))) return false;
-                        
-                        this->_pImageDataArray[i].hRenderTargetDescriptor = { rtvHandle.ptr + i * rtvHandleIncrement };
-
-                        this->_pDevice->CreateRenderTargetView(this->_pImageDataArray[i].pRenderTargetResource, &renderTargetViewDesc, this->_pImageDataArray[i].hRenderTargetDescriptor);
 
                         if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
 
@@ -638,11 +630,6 @@ namespace hax {
                 if (pImageData->pCommandAllocator) {
                     pImageData->pCommandAllocator->Release();
                     pImageData->pCommandAllocator = nullptr;
-                }
-
-                if (pImageData->pRenderTargetResource) {
-                    pImageData->pRenderTargetResource->Release();
-                    pImageData->pRenderTargetResource = nullptr;
                 }
 
             }
