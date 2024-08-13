@@ -26,8 +26,6 @@ namespace hax {
 			class Backend : public IBackend {
 			private:
 				typedef struct ImageData {
-					ID3D12Resource* pRenderTargetResource;
-					D3D12_CPU_DESCRIPTOR_HANDLE hRenderTargetDescriptor;
 					ID3D12CommandAllocator* pCommandAllocator;
 					DrawBuffer triangleListBuffer;
 					DrawBuffer pointListBuffer;
@@ -40,9 +38,11 @@ namespace hax {
 				ID3D12Device* _pDevice;
 				ID3D12Fence* _pFence;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
+				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
 				ID3D12RootSignature* _pRootSignature;
 				ID3D12PipelineState* _pPipelineState;
 				ID3D12GraphicsCommandList* _pCommandList;
+				ID3D12Resource* _pRtvResource;
 				D3D12_VIEWPORT _viewport;
 
 				ImageData* _pImageDataArray;
@@ -106,7 +106,7 @@ namespace hax {
 			private:
 				bool createRootSignature();
 				bool createPipelineState(DXGI_FORMAT format);
-				bool resizeImageDataArray(uint32_t imageCount, DXGI_FORMAT format);
+				bool resizeImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
