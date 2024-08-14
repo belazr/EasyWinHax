@@ -255,9 +255,6 @@ namespace hax {
 
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
-                constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
-                this->_pCommandList->OMSetBlendFactor(BLEND_FACTOR);
-
                 const float left = this->_viewport.TopLeftX;
                 const float top = this->_viewport.TopLeftY;
                 const float right = this->_viewport.TopLeftX + this->_viewport.Width;
