@@ -36,7 +36,6 @@ namespace hax {
 
 				HWND _hMainWindow;
 				ID3D12Device* _pDevice;
-				ID3D12Fence* _pFence;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
 				ID3D12RootSignature* _pRootSignature;
