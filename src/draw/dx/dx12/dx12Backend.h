@@ -103,8 +103,9 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
 
 			private:
+				bool createDescriptorHeap();
 				bool createRootSignature();
-				bool createPipelineState(DXGI_FORMAT format);
+				bool createPipelineState();
 				bool resizeImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;

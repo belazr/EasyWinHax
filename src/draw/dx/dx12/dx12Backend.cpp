@@ -189,17 +189,9 @@ namespace hax {
 
                 }
 
-                DXGI_SWAP_CHAIN_DESC swapchainDesc{};
-
-                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
-
                 if (!this->_pRtvDescriptorHeap) {
-                    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-                    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-                    descriptorHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
-                    descriptorHeapDesc.NodeMask = 1u;
 
-                    if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)))) return false;
+                    if (!this->createDescriptorHeap()) return false;
 
                 }
 
@@ -215,7 +207,7 @@ namespace hax {
 
                 if (!this->_pPipelineState) {
                     
-                    if (!this->createPipelineState(swapchainDesc.BufferDesc.Format)) return false;
+                    if (!this->createPipelineState()) return false;
                     
                 }
 
@@ -330,6 +322,16 @@ namespace hax {
                 *frameHeight = this->_viewport.Height;
 
                 return;
+            }
+
+
+            bool Backend::createDescriptorHeap() {
+                D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+                descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+                descriptorHeapDesc.NumDescriptors = 1u;
+                descriptorHeapDesc.NodeMask = 1u;
+
+                return SUCCEEDED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)));
             }
 
 
@@ -498,7 +500,11 @@ namespace hax {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             };
 
-            bool Backend::createPipelineState(DXGI_FORMAT format) {
+            bool Backend::createPipelineState() {
+                DXGI_SWAP_CHAIN_DESC swapchainDesc{};
+
+                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
+
                 constexpr D3D12_INPUT_ELEMENT_DESC INPUT_LAYOUT[]{
                     { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u },
                     { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, sizeof(Vector2), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u},
@@ -536,7 +542,7 @@ namespace hax {
                 pipelineStateDesc.pRootSignature = this->_pRootSignature;
                 pipelineStateDesc.SampleMask = UINT_MAX;
                 pipelineStateDesc.NumRenderTargets = 1u;
-                pipelineStateDesc.RTVFormats[0] = format;
+                pipelineStateDesc.RTVFormats[0] = swapchainDesc.BufferDesc.Format;
                 pipelineStateDesc.SampleDesc.Count = 1u;
                 pipelineStateDesc.InputLayout = { INPUT_LAYOUT, 2u };
                 pipelineStateDesc.BlendState = blendDesc;
