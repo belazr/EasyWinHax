@@ -301,7 +301,9 @@ namespace hax {
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
-                this->_pCommandList->Close();
+                
+                if (FAILED(this->_pCommandList->Close())) return;
+                
                 this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
 
                 this->_pRtvResource->Release();
