@@ -226,6 +226,8 @@ namespace hax {
                     return false;
                 }
 
+                if (!this->getCurrentViewport(&this->_viewport)) return false;
+
                 const UINT backBufferIndex = this->_pSwapChain->GetCurrentBackBufferIndex();
                 this->_pCurImageData = &this->_pImageDataArray[backBufferIndex];
                                 
@@ -248,11 +250,9 @@ namespace hax {
                 resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
                 resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_hRtvHeapStartDescriptor, FALSE, nullptr);
-                
-                if (!this->getCurrentViewport(&this->_viewport)) return false;
-
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
                 const float left = this->_viewport.TopLeftX;
@@ -265,14 +265,14 @@ namespace hax {
 
                 this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
 
-                const float ortho[][4]{
-                    { 2.f / (right - left), 0.f, 0.f, 0.f  },
-                    { 0.f, 2.f / (top - bottom), 0.f, 0.f },
-                    { 0.f, 0.f, .5f, 0.f },
-                    { (left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f }
+                const float ortho[]{
+                    2.f / (right - left), 0.f, 0.f, 0.f,
+                    0.f, 2.f / (top - bottom), 0.f, 0.f,
+                    0.f, 0.f, .5f, 0.f,
+                    (left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f
                 };
 
-                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, 16u, &ortho, 0u);
+                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, _countof(ortho), &ortho, 0u);
                 this->_pCommandList->SetPipelineState(this->_pPipelineState);
 
                 return true;
@@ -291,9 +291,9 @@ namespace hax {
 
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 
-                if (FAILED(this->_pCommandList->Close())) return;
-                
-                this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
+                if (SUCCEEDED(this->_pCommandList->Close())) {
+                    this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
+                }
 
                 this->_pRtvResource->Release();
                 this->_pRtvResource = nullptr;
