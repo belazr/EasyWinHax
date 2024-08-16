@@ -235,13 +235,7 @@ namespace hax {
 
                 if (FAILED(this->_pCommandList->Reset(this->_pCurImageData->pCommandAllocator, nullptr))) return false;
 
-                D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
-                renderTargetViewDesc.Format = swapchainDesc.BufferDesc.Format;
-                renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-                if (FAILED(this->_pSwapChain->GetBuffer(backBufferIndex, IID_PPV_ARGS(&this->_pRtvResource)))) return false;
-
-                this->_pDevice->CreateRenderTargetView(this->_pRtvResource, &renderTargetViewDesc, this->_hRtvHeapStartDescriptor);
+                if (!this->createRenderTargetView(swapchainDesc.BufferDesc.Format, backBufferIndex)) return false;
 
                 D3D12_RESOURCE_BARRIER resourceBarrier{};
                 resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -253,6 +247,7 @@ namespace hax {
 
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_hRtvHeapStartDescriptor, FALSE, nullptr);
+                
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
                 const float left = this->_viewport.TopLeftX;
@@ -637,6 +632,19 @@ namespace hax {
                     pImageData->pCommandAllocator = nullptr;
                 }
 
+            }
+
+
+            bool Backend::createRenderTargetView(DXGI_FORMAT format, UINT backBufferIndex) {
+                D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc{};
+                renderTargetViewDesc.Format = format;
+                renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+                if (FAILED(this->_pSwapChain->GetBuffer(backBufferIndex, IID_PPV_ARGS(&this->_pRtvResource)))) return false;
+
+                this->_pDevice->CreateRenderTargetView(this->_pRtvResource, &renderTargetViewDesc, this->_hRtvHeapStartDescriptor);
+
+                return true;
             }
 
 
