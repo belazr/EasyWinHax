@@ -109,6 +109,7 @@ namespace hax {
 				bool resizeImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
+				bool createRenderTargetView(DXGI_FORMAT format, UINT backBufferIndex);
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
 			};
 
