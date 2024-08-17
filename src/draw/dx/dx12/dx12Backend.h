@@ -21,6 +21,19 @@ namespace hax {
 				ID3D12CommandQueue* pCommandQueue;
 			}Dx12InitData;
 
+			// Gets data to needed to setup drawing with an engine object in a DirectX 12 present hook.
+			// This function should be called from a thread of the DirectX 12 target application.
+			// On success the Dx12InitData structure will contain a pointer to the present function that should be hook
+			// and a pointer to the command queue that should be passed to the engine objects beginFrame function.
+			// See the Engine.h header and the DirectX12Hook example for more details.
+			//
+			// Parameters:
+			// 
+			// [out] pInitData:
+			// Pointer to an empty Dx12InitData structure.
+			// 
+			// Return:
+			// True on success, false on failure.
 			bool getDx12InitData(Dx12InitData* pInitData);
 
 			class Backend : public IBackend {
@@ -63,7 +76,7 @@ namespace hax {
 				// Pass the IDXGISwapChain3*.
 				//
 				// [in] pArg2:
-				// Pass nothing
+				// Pass the ID3D12CommandQueue*.
 				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
@@ -72,7 +85,7 @@ namespace hax {
 				// True on success, false on failure.
 				virtual bool initialize() override;
 
-				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
+				// Starts a frame within a hook. Should be called by an Engine object every frame at the beginning of the hook.
 				// 
 				// Return:
 				// True on success, false on failure.
