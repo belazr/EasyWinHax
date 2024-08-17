@@ -21,9 +21,9 @@ namespace hax {
 				ID3D12CommandQueue* pCommandQueue;
 			}Dx12InitData;
 
-			// Gets data to needed to setup drawing with an engine object in a DirectX 12 present hook.
+			// Gets data to needed to setup drawing with an engine object in a DirectX 12 Present hook.
 			// This function should be called from a thread of the DirectX 12 target application.
-			// On success the Dx12InitData structure will contain a pointer to the present function that should be hook
+			// On success the Dx12InitData structure will contain a pointer to the Present function that should be hook
 			// and a pointer to the command queue that should be passed to the engine objects beginFrame function.
 			// See the Engine.h header and the DirectX12Hook example for more details.
 			//
