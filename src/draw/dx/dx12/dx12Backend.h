@@ -108,7 +108,7 @@ namespace hax {
 				bool createDescriptorHeap();
 				bool createRootSignature();
 				bool createPipelineState();
-				bool resizeImageDataArray(uint32_t imageCount);
+				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
 				bool createRenderTargetView(DXGI_FORMAT format, UINT backBufferIndex);
