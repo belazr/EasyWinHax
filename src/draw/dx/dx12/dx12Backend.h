@@ -27,6 +27,7 @@ namespace hax {
 			private:
 				typedef struct ImageData {
 					ID3D12CommandAllocator* pCommandAllocator;
+					HANDLE hEvent;
 					DrawBuffer triangleListBuffer;
 					DrawBuffer pointListBuffer;
 				}ImageData;
@@ -40,6 +41,7 @@ namespace hax {
 				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
 				ID3D12RootSignature* _pRootSignature;
 				ID3D12PipelineState* _pPipelineState;
+				ID3D12Fence* _pFence;
 				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12Resource* _pRtvResource;
 				D3D12_VIEWPORT _viewport;
