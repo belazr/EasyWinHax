@@ -132,8 +132,8 @@ namespace hax {
 
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
-                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pRootSignature{}, _pPipelineState{},
-                _pRtvResource{}, _viewport {}, _pCommandList{},
+                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pRootSignature{}, _pPipelineState{}, _pFence{},
+                _pCommandList{}, _viewport{}, _pRtvResource{},
                 _pImageDataArray {}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -147,6 +147,10 @@ namespace hax {
 
                 if (this->_pCommandList) {
                     this->_pCommandList->Release();
+                }
+
+                if (this->_pFence) {
+                    this->_pFence->Release();
                 }
 
                 if (this->_pPipelineState) {
@@ -211,6 +215,12 @@ namespace hax {
                     
                 }
 
+                if (!this->_pFence) {
+                    
+                    if (FAILED(this->_pDevice->CreateFence(UINT64_MAX, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&this->_pFence)))) return false;
+
+                }
+
                 return true;
             }
 
@@ -226,10 +236,12 @@ namespace hax {
                     return false;
                 }
 
-                if (!this->getCurrentViewport(&this->_viewport)) return false;
-
                 const UINT backBufferIndex = this->_pSwapChain->GetCurrentBackBufferIndex();
                 this->_pCurImageData = &this->_pImageDataArray[backBufferIndex];
+
+                if (WaitForSingleObject(this->_pCurImageData->hEvent, INFINITE) != WAIT_OBJECT_0) return false;
+
+                if (!this->getCurrentViewport(&this->_viewport)) return false;
                                 
                 if (FAILED(this->_pCurImageData->pCommandAllocator->Reset())) return false;
 
@@ -287,7 +299,9 @@ namespace hax {
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 
                 if (SUCCEEDED(this->_pCommandList->Close())) {
+                    this->_pFence->SetEventOnCompletion(static_cast<UINT64>(this->_pSwapChain->GetCurrentBackBufferIndex()), this->_pCurImageData->hEvent);
                     this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
+                    this->_pCommandQueue->Signal(this->_pFence, static_cast<UINT64>(this->_pSwapChain->GetCurrentBackBufferIndex()));
                 }
 
                 this->_pRtvResource->Release();
@@ -583,6 +597,10 @@ namespace hax {
 
                         }
 
+                        this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
+
+                        if (!this->_pImageDataArray[i].hEvent) return false;
+
                         this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                         static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
@@ -626,6 +644,12 @@ namespace hax {
             void Backend::destroyImageData(ImageData* pImageData) const {
                 pImageData->pointListBuffer.destroy();
                 pImageData->triangleListBuffer.destroy();
+
+                if (pImageData->hEvent) {
+                    WaitForSingleObject(pImageData->hEvent, INFINITE);
+                    CloseHandle(pImageData->hEvent);
+                    pImageData->hEvent = nullptr;
+                }
 
                 if (pImageData->pCommandAllocator) {
                     pImageData->pCommandAllocator->Release();
