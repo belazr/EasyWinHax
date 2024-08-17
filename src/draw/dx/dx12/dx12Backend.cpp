@@ -235,10 +235,15 @@ namespace hax {
 
                 if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
 
-                if (!this->resizeImageDataArray(swapchainDesc.BufferCount)) {
+                if (this->_imageCount != swapchainDesc.BufferCount) {
                     this->destroyImageDataArray();
 
-                    return false;
+                    if (!this->createImageDataArray(swapchainDesc.BufferCount)) {
+                        this->destroyImageDataArray();
+
+                        return false;
+                    }
+
                 }
 
                 const UINT backBufferIndex = this->_pSwapChain->GetCurrentBackBufferIndex();
@@ -564,66 +569,38 @@ namespace hax {
             }
 
 
-            bool Backend::resizeImageDataArray(uint32_t imageCount) {
-
-                if (imageCount == this->_imageCount) return true;
-
-                if (imageCount < this->_imageCount) {
-
-                    for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
-                        this->destroyImageData(&this->_pImageDataArray[i]);
-                    }
-
-                    this->_imageCount = imageCount;
-
-                    return true;
-                }
-
-                ImageData* const pOldImageData = this->_pImageDataArray;
-                uint32_t oldImageCount = this->_imageCount;
-
+            bool Backend::createImageDataArray(uint32_t imageCount) {
                 this->_pImageDataArray = new ImageData[imageCount]{};
                 this->_imageCount = imageCount;
 
                 for (uint32_t i = 0; i < this->_imageCount; i++) {
 
-                    if (pOldImageData && i < oldImageCount) {
-                        memcpy(&this->_pImageDataArray[i], &pOldImageData[i], sizeof(ImageData));
-                    }
-                    else {
+                    if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
 
-                        if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
+                    if (!this->_pCommandList) {
 
-                        if (!this->_pCommandList) {
+                        if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[i].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
 
-                            if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[i].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
-
-                            if (FAILED(this->_pCommandList->Close())) return false;
-
-                        }
-
-                        this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
-
-                        if (!this->_pImageDataArray[i].hEvent) return false;
-
-                        this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                        static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
-
-                        if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-                        this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-                        static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-
-                        if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+                        if (FAILED(this->_pCommandList->Close())) return false;
 
                     }
 
-                }
+                    this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
 
-                if (pOldImageData) {
-                    delete[] pOldImageData;
+                    if (!this->_pImageDataArray[i].hEvent) return false;
+
+                    this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+                    static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+
+                    if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+                    this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+                    static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+                    if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
                 }
 
                 return true;
