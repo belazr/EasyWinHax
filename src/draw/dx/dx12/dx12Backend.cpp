@@ -15,12 +15,17 @@ namespace hax {
             typedef void(WINAPI* tExecuteCommandLists)(ID3D12CommandQueue* pCommandQueue, UINT numCommandLists, ID3D12CommandList* ppCommandLists);
 
             static void WINAPI hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT numCommandLists, ID3D12CommandList* ppCommandLists) {
-                pHookCommandQueue = pCommandQueue;
-                pExecuteHook->disable();
-                const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(pExecuteHook->getOrigin());
-                ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
-                return pExecuteCommandLists(pCommandQueue, numCommandLists, ppCommandLists);
+                if (pCommandQueue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+                    pHookCommandQueue = pCommandQueue;
+                    pExecuteHook->disable();
+                    const tExecuteCommandLists pExecuteCommandLists = reinterpret_cast<tExecuteCommandLists>(pExecuteHook->getOrigin());
+                    ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
+
+                    return pExecuteCommandLists(pCommandQueue, numCommandLists, ppCommandLists);
+                }
+
+                return reinterpret_cast<tExecuteCommandLists>(pExecuteHook->getGateway())(pCommandQueue, numCommandLists, ppCommandLists);
             }
 
             static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue);
