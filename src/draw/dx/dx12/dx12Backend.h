@@ -61,6 +61,7 @@ namespace hax {
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
+				UINT _curBackBufferIndex;
 				ImageData* _pCurImageData;
 
 			public:
@@ -124,7 +125,7 @@ namespace hax {
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
-				bool createRenderTargetView(DXGI_FORMAT format, UINT backBufferIndex);
+				bool createRenderTargetView(DXGI_FORMAT format);
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
 			};
 
