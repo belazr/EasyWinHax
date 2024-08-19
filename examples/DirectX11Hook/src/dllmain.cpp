@@ -117,7 +117,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x8);
+	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x8u);
 
 	if (!pPresentHook) {
 		cleanup(hHookSemaphore, pPresentHook, file);

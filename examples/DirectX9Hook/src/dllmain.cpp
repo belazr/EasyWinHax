@@ -120,7 +120,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), 0x7);
+	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), 0x7u);
 
 	if (!pEndSceneHook) {
 		cleanup(hHookSemaphore, pEndSceneHook, file);
