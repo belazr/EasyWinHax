@@ -24,8 +24,14 @@ namespace hax {
 				//
 				// Parameters:
 				// 
-				// [in] hDevice:
+				// [in] pDevice:
 				// Logical device of the backend.
+				// 
+				// [in] pCommandList:
+				// Command list of the image the buffer belongs to.
+				// 
+				// [in] topology:
+				// The topology with which the buffer draw its content.
 				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, D3D_PRIMITIVE_TOPOLOGY topology);
 
 				// Creates a new buffer with all internal resources.
@@ -49,7 +55,7 @@ namespace hax {
 				bool map() override;
 
 				// Draws the content of the buffer to the screen.
-				// Needs to be called between a successful of vk::Backend::beginFrame and a call to vk::Backend::endFrame.
+				// Needs to be called between a successful of dx12::Backend::beginFrame and a call to dx12::Backend::endFrame.
 				void draw() override;
 
 			private:
