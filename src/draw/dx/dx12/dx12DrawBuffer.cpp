@@ -102,7 +102,7 @@ namespace hax {
 				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
 				
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
-				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0u, 0u);
+				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0, 0u);
 
 				this->_curOffset = 0u;
 
@@ -113,8 +113,6 @@ namespace hax {
 			bool DrawBuffer::createBuffer(ID3D12Resource** ppBufferResource, uint32_t size) const {
 				D3D12_HEAP_PROPERTIES heapProperties{};
 				heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-				heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-				heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
 				D3D12_RESOURCE_DESC resourceDesc{};
 				resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
