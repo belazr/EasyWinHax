@@ -82,8 +82,9 @@ Press "END" to unhook and eject the DLL.
 ![Screenshot](https://github.com/belazr/EasyWinHax/assets/72708147/e304f46d-61ea-4291-8c1b-4c0a9095599e)
 
 ## TODO
-- Make IBackend implementation for Vulkan compatible with AMD GPUs
 - Add further implementations of the IBackend interface (DirectX 12)
+- Support texture drawing with IBackend interface
+- Make IBackend interface compatible with ImGui frontend
 - Better error handling for launch functions
 
 ## References

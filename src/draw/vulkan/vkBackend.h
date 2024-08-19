@@ -56,7 +56,6 @@ namespace hax {
 
 				ImageData* _pImageDataArray;
 				uint32_t _imageCount;
-				VkDeviceSize _bufferAlignment;
 				ImageData* _pCurImageData;
 
 

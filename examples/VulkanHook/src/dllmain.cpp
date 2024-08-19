@@ -119,12 +119,12 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	// look at src\hooks\TrampHook.h and assembly at initData.pVkQueuePresentKHR to figure out correct value
 	#if defined(AMD)
 	
-	constexpr size_t size = 0x9;
-	constexpr size_t relativeAddressOffset = 0x5;
+	constexpr size_t size = 0x9u;
+	constexpr size_t relativeAddressOffset = 0x5u;
 	
 	#elif defined(NVIDIA)
 
-	constexpr size_t size = 0x9;
+	constexpr size_t size = 0x9u;
 	constexpr size_t relativeAddressOffset = SIZE_MAX;
 	
 	#else
