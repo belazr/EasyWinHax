@@ -40,9 +40,9 @@ namespace hax {
 			private:
 				typedef struct ImageData {
 					ID3D12CommandAllocator* pCommandAllocator;
-					HANDLE hEvent;
 					DrawBuffer triangleListBuffer;
 					DrawBuffer pointListBuffer;
+					HANDLE hEvent;
 				}ImageData;
 
 				IDXGISwapChain3* _pSwapChain;
