@@ -48,7 +48,7 @@ namespace hax {
 			// For OpenGL 2 wglSwapBuffers hooks pass nothing.
 			// For DirectX 9 EndScene hooks pass nothing.
 			// For DirectX 11 Present hooks pass nothing.
-			// For DirectX 12 Present hooks pass the ID3D12CommandQueue* that was retrieved by dx12::getDx12InitData().
+			// For DirectX 12 Present hooks pass the ID3D12CommandQueue* that was retrieved by dx12::getInitData().
 			// For Vulkan QueuePresentKHR hooks pass the VkDevice that was retrieved by vk::getVulkanInitData().
 			void beginFrame(void* pArg1 = nullptr, void* pArg2 = nullptr);
 

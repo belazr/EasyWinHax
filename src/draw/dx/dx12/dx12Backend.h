@@ -16,25 +16,25 @@ namespace hax {
 
 			typedef HRESULT(__stdcall* tPresent)(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 
-			typedef struct Dx12InitData {
+			typedef struct InitData {
 				tPresent pPresent;
 				ID3D12CommandQueue* pCommandQueue;
-			}Dx12InitData;
+			}InitData;
 
 			// Gets data to needed to setup drawing with an engine object in a DirectX 12 Present hook.
 			// This function should be called from a thread of the DirectX 12 target application.
-			// On success the Dx12InitData structure will contain a pointer to the Present function that should be hook
+			// On success the InitData structure will contain a pointer to the Present function that should be hook
 			// and a pointer to the command queue that should be passed to the engine objects beginFrame function.
 			// See the Engine.h header and the DirectX12Hook example for more details.
 			//
 			// Parameters:
 			// 
 			// [out] pInitData:
-			// Pointer to an empty Dx12InitData structure.
+			// Pointer to an empty InitData structure.
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool getDx12InitData(Dx12InitData* pInitData);
+			bool getInitData(InitData* pInitData);
 
 			class Backend : public IBackend {
 			private:

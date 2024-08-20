@@ -8,7 +8,7 @@
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
-static hax::draw::dx12::Dx12InitData initData{};
+static hax::draw::dx12::InitData initData{};
 static hax::draw::dx12::Backend backend;
 static hax::draw::Engine engine{ &backend };
 
@@ -101,7 +101,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	if (!hax::draw::dx12::getDx12InitData(&initData)) {
+	if (!hax::draw::dx12::getInitData(&initData)) {
 		cleanup(hHookSemaphore, pPresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
