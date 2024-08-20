@@ -30,7 +30,7 @@ namespace hax {
 
             static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue);
 
-            bool getDx12InitData(Dx12InitData* pInitData) {
+            bool getInitData(InitData* pInitData) {
                 IDXGIFactory4* pDxgiFactory{};
 
                 if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&pDxgiFactory)))) return false;
