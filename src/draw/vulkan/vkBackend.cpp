@@ -28,7 +28,7 @@ namespace hax {
 			static VkPhysicalDevice getPhysicalDevice(HMODULE hVulkan, VkInstance hInstance);
 			static VkDevice createDummyDevice(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice);
 
-			bool getVulkanInitData(VulkanInitData* initData) {
+			bool getInitData(InitData* initData) {
 				const HMODULE hVulkan = hax::proc::in::getModuleHandle("vulkan-1.dll");
 
 				if (!hVulkan) return false;

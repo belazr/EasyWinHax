@@ -16,7 +16,7 @@
 
 static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
 
-static hax::draw::vk::VulkanInitData initData;
+static hax::draw::vk::InitData initData;
 static hax::draw::vk::Backend backend;
 static hax::draw::Engine engine{ &backend };
 
@@ -109,7 +109,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	if (!hax::draw::vk::getVulkanInitData(&initData)) {
+	if (!hax::draw::vk::getInitData(&initData)) {
 		cleanup(hHookSemaphore, pQueuePresentHook, file);
 
 		FreeLibraryAndExitThread(hModule, 0ul);

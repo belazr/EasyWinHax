@@ -30,7 +30,7 @@ namespace hax {
 			// For OpenGL 2 wglSwapBuffers hooks pass nothing.
 			// For DirectX 9 EndScene hooks pass nothing.
 			// For DirectX 11 Present hooks pass nothing.
-			// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getVulkanInitData().
+			// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getInitData().
 			virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) = 0;
 
 			// Initializes the backend. Should be called by an Engine object until success.

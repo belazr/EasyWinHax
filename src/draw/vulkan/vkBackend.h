@@ -10,12 +10,12 @@ namespace hax {
 
 		namespace vk {
 
-			typedef struct VulkanInitData {
+			typedef struct InitData {
 				PFN_vkQueuePresentKHR pVkQueuePresentKHR;
 				VkDevice hDevice;
-			}VulkanInitData;
+			}InitData;
 
-			bool getVulkanInitData(VulkanInitData* initData);
+			bool getInitData(InitData* initData);
 
 			class Backend : public IBackend {
 			private:
@@ -75,7 +75,7 @@ namespace hax {
 				// Pass the VkPresentInfoKHR*.
 				//
 				// [in] pArg3:
-				// Pass the device handle that was retrieved by vk::getVulkanInitData().
+				// Pass the device handle that was retrieved by vk::getInitData().
 				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
