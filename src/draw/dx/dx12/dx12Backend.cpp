@@ -585,10 +585,6 @@ namespace hax {
 
                     }
 
-                    this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
-
-                    if (!this->_pImageDataArray[i].hEvent) return false;
-
                     this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                     static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
@@ -600,6 +596,10 @@ namespace hax {
                     static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
                     if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+                    this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
+
+                    if (!this->_pImageDataArray[i].hEvent) return false;
 
                 }
 
@@ -624,14 +624,15 @@ namespace hax {
 
 
             void Backend::destroyImageData(ImageData* pImageData) const {
-                pImageData->pointListBuffer.destroy();
-                pImageData->triangleListBuffer.destroy();
-
+                
                 if (pImageData->hEvent) {
                     WaitForSingleObject(pImageData->hEvent, INFINITE);
                     CloseHandle(pImageData->hEvent);
                     pImageData->hEvent = nullptr;
                 }
+
+                pImageData->pointListBuffer.destroy();
+                pImageData->triangleListBuffer.destroy();
 
                 if (pImageData->pCommandAllocator) {
                     pImageData->pCommandAllocator->Release();
