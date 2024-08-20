@@ -77,7 +77,7 @@ namespace hax {
 				// Pass the IDXGISwapChain3*.
 				//
 				// [in] pArg2:
-				// Pass the ID3D12CommandQueue*.
+				// Pass the ID3D12CommandQueue* that was retrieved by dx12::getInitData().
 				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
