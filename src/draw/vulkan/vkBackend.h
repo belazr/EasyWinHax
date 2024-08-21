@@ -124,12 +124,12 @@ namespace hax {
 				VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
 				bool createPipelineLayout();
 				bool createDescriptorSetLayout();
-				bool resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount);
+				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
-				bool createFramebuffers(VkSwapchainKHR hSwapchain);
-				void destroyFramebuffers();
 				bool getCurrentViewport(VkViewport* pViewport) const;
+				bool createFramebuffers(VkViewport viewport);
+				void destroyFramebuffers();
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			};

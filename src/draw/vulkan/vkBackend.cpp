@@ -355,40 +355,42 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
-				const VkSwapchainKHR hSwapchain = this->_phPresentInfo->pSwapchains[0];
-				uint32_t curImageCount = 0u;
+				uint32_t imageCount{};
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &curImageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
 
-				if (!curImageCount) return false;
+				if (!imageCount) return false;
 
-				if (!this->resizeImageDataArray(hSwapchain, curImageCount)) {
+				if (this->_imageCount != imageCount) {
 					this->destroyImageDataArray();
 
-					return false;
-				}
-
-				this->_pCurImageData = &this->_pImageDataArray[this->_phPresentInfo->pImageIndices[0]];
-
-				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, ~0ull);
-				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
-
-				VkViewport curViewport{};
-
-				if (!this->getCurrentViewport(&curViewport)) return false;
-
-				if (curViewport.width != this->_viewport.width || curViewport.height != this->_viewport.height) {
-					this->destroyFramebuffers();
-
-					this->_viewport = curViewport;
-
-					if (!this->createFramebuffers(hSwapchain)) {
-						memset(&this->_viewport, 0, sizeof(this->_viewport));
+					if (!this->createImageDataArray(imageCount)) {
+						this->destroyImageDataArray();
 
 						return false;
 					}
 
 				}
+
+				VkViewport viewport{};
+
+				if (!this->getCurrentViewport(&viewport)) return false;
+
+				if (this->_viewport.width != viewport.width || this->_viewport.height != viewport.height) {
+					this->destroyFramebuffers();
+
+					if (!this->createFramebuffers(viewport)) {
+						this->destroyFramebuffers();
+
+						return false;
+					}
+
+				}
+
+				this->_pCurImageData = &this->_pImageDataArray[this->_phPresentInfo->pImageIndices[0]];
+
+				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, UINT64_MAX);
+				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
 
 				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return false;
 
@@ -877,70 +879,40 @@ namespace hax {
 			}
 
 
-			bool Backend::resizeImageDataArray(VkSwapchainKHR hSwapchain, uint32_t imageCount) {
-
-				if (imageCount < this->_imageCount) {
-
-					for (uint32_t i = this->_imageCount; i >= imageCount; i--) {
-						this->destroyImageData(&this->_pImageDataArray[i]);
-					}
-
-					this->_imageCount = imageCount;
-
-					return true;
-				}
-
-				if (imageCount == this->_imageCount) return true;
-
-				ImageData* const pOldImageDataArray = this->_pImageDataArray;
-				uint32_t oldImageCount = this->_imageCount;
-			
+			bool Backend::createImageDataArray(uint32_t imageCount) {
 				this->_pImageDataArray = new ImageData[imageCount]{};
 				this->_imageCount = imageCount;
 			
 				for (uint32_t i = 0; i < this->_imageCount; i++) {
-
-					if (pOldImageDataArray && i < oldImageCount) {
-						memcpy(&this->_pImageDataArray[i], &pOldImageDataArray[i], sizeof(ImageData));
-					}
-					else {
-						VkCommandBufferAllocateInfo commandBufferAllocInfo{};
-						commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-						commandBufferAllocInfo.commandPool = this->_hCommandPool;
-						commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-						commandBufferAllocInfo.commandBufferCount = 1u;
+					VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+					commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+					commandBufferAllocInfo.commandPool = this->_hCommandPool;
+					commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+					commandBufferAllocInfo.commandBufferCount = 1u;
 						
-						if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageDataArray[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageDataArray[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
 
-						this->_pImageDataArray[i].triangleListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hTriangleListPipeline, this->_memoryProperties);
+					this->_pImageDataArray[i].triangleListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hTriangleListPipeline, this->_memoryProperties);
 
-						static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+					static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
-						if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-						this->_pImageDataArray[i].pointListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hPointListPipeline, this->_memoryProperties);
+					this->_pImageDataArray[i].pointListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hPointListPipeline, this->_memoryProperties);
 
-						static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+					static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
-						if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+					if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-						VkFenceCreateInfo fenceCreateInfo{};
-						fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-						fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+					VkFenceCreateInfo fenceCreateInfo{};
+					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+					fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-						if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VkResult::VK_SUCCESS) return false;
-
-					}
+					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VkResult::VK_SUCCESS) return false;
 
 				}
 
-				if (pOldImageDataArray) {
-					delete[] pOldImageDataArray;
-				}
-
-				this->destroyFramebuffers();
-
-				return this->createFramebuffers(hSwapchain);
+				return true;
 			}
 
 
@@ -990,48 +962,46 @@ namespace hax {
 			}
 
 
-			bool Backend::createFramebuffers(VkSwapchainKHR hSwapchain) {
+			bool Backend::createFramebuffers(VkViewport viewport) {
 				VkImage* const pImages = new VkImage[this->_imageCount]{};
 
 				uint32_t imageCount = this->_imageCount;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, hSwapchain, &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
 					delete[] pImages;
 
 					return false;
 				}
-			
-				VkImageSubresourceRange imageSubresourceRange{};
-				imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				imageSubresourceRange.baseMipLevel = 0u;
-				imageSubresourceRange.levelCount = 1u;
-				imageSubresourceRange.baseArrayLayer = 0u;
-				imageSubresourceRange.layerCount = 1u;
 
-				VkImageViewCreateInfo imageViewCreateInfo{};
-				imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-				imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-				imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-				imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+				for (uint32_t i = 0; i < this->_imageCount; i++) {
+					VkImageSubresourceRange imageSubresourceRange{};
+					imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					imageSubresourceRange.baseMipLevel = 0u;
+					imageSubresourceRange.levelCount = 1u;
+					imageSubresourceRange.baseArrayLayer = 0u;
+					imageSubresourceRange.layerCount = 1u;
 
-				VkFramebufferCreateInfo framebufferCreateInfo{};
-				framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-				framebufferCreateInfo.renderPass = this->_hRenderPass;
-				framebufferCreateInfo.attachmentCount = 1u;
-				framebufferCreateInfo.layers = 1u;
-				framebufferCreateInfo.width = static_cast<uint32_t>(this->_viewport.width);
-				framebufferCreateInfo.height = static_cast<uint32_t>(this->_viewport.height);
-
-				for (uint32_t i = 0; i < this->_imageCount; i++) {				
+					VkImageViewCreateInfo imageViewCreateInfo{};
+					imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 					imageViewCreateInfo.image = pImages[i];
-
+					imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+					imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+					imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+					
 					if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageDataArray[i].hImageView) != VkResult::VK_SUCCESS) {
 						delete[] pImages;
 					
 						return false;
 					}
 
+					VkFramebufferCreateInfo framebufferCreateInfo{};
+					framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+					framebufferCreateInfo.renderPass = this->_hRenderPass;
+					framebufferCreateInfo.attachmentCount = 1u;
 					framebufferCreateInfo.pAttachments = &this->_pImageDataArray[i].hImageView;
+					framebufferCreateInfo.layers = 1u;
+					framebufferCreateInfo.width = static_cast<uint32_t>(viewport.width);
+					framebufferCreateInfo.height = static_cast<uint32_t>(viewport.height);
 
 					if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VkResult::VK_SUCCESS) {
 						delete[] pImages;
@@ -1042,6 +1012,8 @@ namespace hax {
 				}
 
 				delete[] pImages;
+				
+				this->_viewport = viewport;
 
 				return true;
 			}
@@ -1050,6 +1022,10 @@ namespace hax {
 			void Backend::destroyFramebuffers() {
 			
 				for (uint32_t i = 0u; i < this->_imageCount; i++) {
+
+					if (this->_pImageDataArray[i].hFence != VK_NULL_HANDLE) {
+						this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pImageDataArray[i].hFence, VK_TRUE, UINT64_MAX);
+					}
 				
 					if (this->_pImageDataArray[i].hFrameBuffer != VK_NULL_HANDLE) {
 						this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageDataArray[i].hFrameBuffer, nullptr);
