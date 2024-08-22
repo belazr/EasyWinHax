@@ -574,12 +574,11 @@ namespace hax {
 			layout(location = 1) in vec4 inColor;
 
 			layout(push_constant) uniform uPushConstant { vec2 uScale; vec2 uTranslate; } pc;
-
-			out gl_PerVertex { vec4 gl_Position; };
 			layout(location = 0) out vec4 fragColor;
 
 			void main()
 			{
+				gl_PointSize = 1.0f;
 				gl_Position = vec4(inPosition * pc.uScale + pc.uTranslate, 0, 1);
 				fragColor = inColor;
 			}
