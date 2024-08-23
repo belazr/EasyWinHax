@@ -33,7 +33,6 @@ namespace hax {
 
 				HMODULE _hVulkan;
 				HWND _hMainWindow;
-				VkInstance _hInstance;
 
 				union {
 					Functions _f;
@@ -117,6 +116,7 @@ namespace hax {
 
 			private:
 				bool getProcAddresses();
+				bool getPhysicalDeviceProperties();
 				bool createRenderPass();
 				bool createCommandPool();
 				VkPipeline createPipeline(VkPrimitiveTopology topology);
