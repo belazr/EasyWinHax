@@ -42,7 +42,6 @@ namespace hax {
 				uint32_t _graphicsQueueFamilyIndex;
 				VkRenderPass _hRenderPass;
 				VkCommandPool _hCommandPool;
-				VkDescriptorSetLayout _hDescriptorSetLayout;
 				VkPipelineLayout _hPipelineLayout;
 				VkPipeline _hTriangleListPipeline;
 				VkPipeline _hPointListPipeline;
@@ -118,9 +117,9 @@ namespace hax {
 				bool createRenderPass();
 				bool createCommandPool();
 				VkPipeline createPipeline(VkPrimitiveTopology topology);
-				VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
 				bool createPipelineLayout();
-				bool createDescriptorSetLayout();
+				VkDescriptorSetLayout createDescriptorSetLayout() const;
+				VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
