@@ -9,7 +9,6 @@ namespace hax {
 		namespace vk {
 
 			typedef struct Functions {
-				PFN_vkGetPhysicalDeviceMemoryProperties pVkGetPhysicalDeviceMemoryProperties;
 				PFN_vkGetSwapchainImagesKHR pVkGetSwapchainImagesKHR;
 				PFN_vkCreateCommandPool pVkCreateCommandPool;
 				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
