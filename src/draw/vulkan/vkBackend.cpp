@@ -156,7 +156,7 @@ namespace hax {
 			
 				const uint32_t graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(hVulkan, hPhysicalDevice);
 
-				if (graphicsQueueFamilyIndex == 0xFFFFFFFF) return VK_NULL_HANDLE;
+				if (graphicsQueueFamilyIndex == UINT32_MAX) return VK_NULL_HANDLE;
 
 				constexpr float QUEUE_PRIORITY = 1.f;
 
@@ -186,19 +186,19 @@ namespace hax {
 			static uint32_t getGraphicsQueueFamilyIndex(HMODULE hVulkan, VkPhysicalDevice hPhysicalDevice) {
 				const PFN_vkGetPhysicalDeviceQueueFamilyProperties pVkGetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(proc::in::getProcAddress(hVulkan, "vkGetPhysicalDeviceQueueFamilyProperties"));
 
-				if (!pVkGetPhysicalDeviceQueueFamilyProperties) return 0xFFFFFFFF;
+				if (!pVkGetPhysicalDeviceQueueFamilyProperties) return UINT32_MAX;
 			
 				uint32_t tmpPropertiesCount = 0u;
 				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &tmpPropertiesCount, nullptr);
 
-				if (!tmpPropertiesCount) return 0xFFFFFFFF;
+				if (!tmpPropertiesCount) return UINT32_MAX;
 
 				const uint32_t propertiesCount = tmpPropertiesCount;
 				VkQueueFamilyProperties* const pProperties = new VkQueueFamilyProperties[propertiesCount]{};
 
 				pVkGetPhysicalDeviceQueueFamilyProperties(hPhysicalDevice, &tmpPropertiesCount, pProperties);
 
-				uint32_t queueFamily = 0xFFFFFFFF;
+				uint32_t queueFamily = UINT32_MAX;
 
 				for (uint32_t i = 0u; i < propertiesCount; i++) {
 
@@ -217,7 +217,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _hInstance{}, _f{},
-				_graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
+				_graphicsQueueFamilyIndex{ UINT32_MAX }, _hRenderPass{}, _hCommandPool{},
 				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
@@ -316,7 +316,7 @@ namespace hax {
 
 				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, hPhysicalDevice);
 
-				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
+				if (this->_graphicsQueueFamilyIndex == UINT32_MAX) return false;
 
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
