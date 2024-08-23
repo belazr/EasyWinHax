@@ -217,7 +217,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hRenderPass{}, _hCommandPool{},
+				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hRenderPass{},
 				_hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
@@ -250,12 +250,12 @@ namespace hax {
 					this->_f.pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
 				}
 
-				if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyCommandPool(this->_hDevice, this->_hCommandPool, nullptr);
-				}
-
 				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
+				}
+
+				if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyCommandPool(this->_hDevice, this->_hCommandPool, nullptr);
 				}
 
 			}
@@ -284,15 +284,21 @@ namespace hax {
 
 				if (!this->getPhysicalDeviceProperties()) return false;
 
+				if (this->_hCommandPool == VK_NULL_HANDLE) {
+
+					if (!this->createCommandPool()) return false;
+
+				}
+
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
 					if (!this->createRenderPass()) return false;
 
 				}
 
-				if (this->_hCommandPool == VK_NULL_HANDLE) {
+				if (this->_hPipelineLayout == VK_NULL_HANDLE) {
 
-					if (!this->createCommandPool()) return false;
+					if (!this->createPipelineLayout()) return VK_NULL_HANDLE;
 
 				}
 
@@ -421,28 +427,29 @@ namespace hax {
 			}
 
 
-			#define ASSIGN_DEVICE_PROC_ADDRESS(f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGetDeviceProcAddress(this->_hDevice, "vk"#f))
+			#define ASSIGN_DEVICE_PROC_ADDRESS(f) this->_f.pVk##f = reinterpret_cast<PFN_vk##f>(pVkGetDeviceProcAddr(this->_hDevice, "vk"#f))
 
 			bool Backend::getProcAddresses() {
-				const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddress = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
+				const PFN_vkGetDeviceProcAddr pVkGetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(proc::in::getProcAddress(this->_hVulkan, "vkGetDeviceProcAddr"));
 			
-				if (!pVkGetDeviceProcAddress) return false;
+				if (!pVkGetDeviceProcAddr) return false;
 				
 				ASSIGN_DEVICE_PROC_ADDRESS(GetSwapchainImagesKHR);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateCommandPool);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyCommandPool);
-				ASSIGN_DEVICE_PROC_ADDRESS(AllocateCommandBuffers);
-				ASSIGN_DEVICE_PROC_ADDRESS(FreeCommandBuffers);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateRenderPass);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyRenderPass);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateShaderModule);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyShaderModule);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreatePipelineLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyPipelineLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateDescriptorSetLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyDescriptorSetLayout);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateRenderPass);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyRenderPass);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateShaderModule);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyShaderModule);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateGraphicsPipelines);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyPipeline);
+				ASSIGN_DEVICE_PROC_ADDRESS(GetDeviceQueue);
+				ASSIGN_DEVICE_PROC_ADDRESS(AllocateCommandBuffers);
+				ASSIGN_DEVICE_PROC_ADDRESS(FreeCommandBuffers);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(GetBufferMemoryRequirements);
@@ -472,7 +479,6 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdPushConstants);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetScissor);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdDrawIndexed);
-				ASSIGN_DEVICE_PROC_ADDRESS(GetDeviceQueue);
 				ASSIGN_DEVICE_PROC_ADDRESS(QueueSubmit);
 
 				for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
@@ -533,6 +539,16 @@ namespace hax {
 
 				return true;
 			}
+			
+			
+			bool Backend::createCommandPool() {
+				VkCommandPoolCreateInfo commandPoolCreateInfo{};
+				commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+				commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+				commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
+
+				return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
+			}
 
 
 			bool Backend::createRenderPass() {
@@ -566,13 +582,51 @@ namespace hax {
 			}
 
 
-			bool Backend::createCommandPool() {
-				VkCommandPoolCreateInfo commandPoolCreateInfo{};
-				commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-				commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
+			bool Backend::createPipelineLayout() {
+				const VkDescriptorSetLayout hDescriptorSetLayout = this->createDescriptorSetLayout();
 
-				return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
+				if (hDescriptorSetLayout == VK_NULL_HANDLE) return false;
+
+				VkPushConstantRange pushConstants{};
+				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				pushConstants.offset = 0u;
+				pushConstants.size = sizeof(float) * 4u;
+
+				VkPipelineLayoutCreateInfo layoutCreateInfo{};
+				layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+				layoutCreateInfo.setLayoutCount = 1u;
+				layoutCreateInfo.pSetLayouts = &hDescriptorSetLayout;
+				layoutCreateInfo.pushConstantRangeCount = 1u;
+				layoutCreateInfo.pPushConstantRanges = &pushConstants;
+
+				if (this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) != VkResult::VK_SUCCESS) {
+					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
+
+					return false;
+				}
+
+				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
+
+				return true;
+			}
+
+
+			VkDescriptorSetLayout Backend::createDescriptorSetLayout() const {
+				VkDescriptorSetLayoutBinding binding{};
+				binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				binding.descriptorCount = 1u;
+				binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+				VkDescriptorSetLayoutCreateInfo descCreateinfo{};
+				descCreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				descCreateinfo.bindingCount = 1u;
+				descCreateinfo.pBindings = &binding;
+
+				VkDescriptorSetLayout hDescriptorSetLayout{};
+
+				if (this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &hDescriptorSetLayout) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+				return hDescriptorSetLayout;
 			}
 
 
@@ -708,14 +762,7 @@ namespace hax {
 				0x38, 0x00, 0x01, 0x00
 			};
 
-			VkPipeline Backend::createPipeline(VkPrimitiveTopology topology) {
-
-				if (this->_hPipelineLayout == VK_NULL_HANDLE) {
-
-					if (!this->createPipelineLayout()) return VK_NULL_HANDLE;
-
-				}
-
+			VkPipeline Backend::createPipeline(VkPrimitiveTopology topology) const {
 				const VkShaderModule hShaderModuleVert = this->createShaderModule(GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT));
 
 				if (hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
@@ -829,54 +876,6 @@ namespace hax {
 				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
 
 				return hPipeline;
-			}
-
-
-			bool Backend::createPipelineLayout() {
-				const VkDescriptorSetLayout hDescriptorSetLayout = this->createDescriptorSetLayout();
-
-				if (hDescriptorSetLayout == VK_NULL_HANDLE) return false;
-
-				VkPushConstantRange pushConstants{};
-				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-				pushConstants.offset = 0u;
-				pushConstants.size = sizeof(float) * 4u;
-			
-				VkPipelineLayoutCreateInfo layoutCreateInfo{};
-				layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-				layoutCreateInfo.setLayoutCount = 1u;
-				layoutCreateInfo.pSetLayouts = &hDescriptorSetLayout;
-				layoutCreateInfo.pushConstantRangeCount = 1u;
-				layoutCreateInfo.pPushConstantRanges = &pushConstants;
-				
-				if (this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) != VkResult::VK_SUCCESS) {
-					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
-
-					return false;
-				}
-
-				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
-
-				return true;
-			}
-
-
-			VkDescriptorSetLayout Backend::createDescriptorSetLayout() const {
-				VkDescriptorSetLayoutBinding binding{};
-				binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				binding.descriptorCount = 1;
-				binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-				VkDescriptorSetLayoutCreateInfo descCreateinfo{};
-				descCreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				descCreateinfo.bindingCount = 1;
-				descCreateinfo.pBindings = &binding;
-
-				VkDescriptorSetLayout hDescriptorSetLayout{};
-
-				if (this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &hDescriptorSetLayout) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
-
-				return hDescriptorSetLayout;
 			}
 
 

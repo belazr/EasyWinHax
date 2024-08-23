@@ -14,22 +14,23 @@ namespace hax {
 				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
 				PFN_vkCreateRenderPass pVkCreateRenderPass;
 				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
-				PFN_vkCreateShaderModule pVkCreateShaderModule;
-				PFN_vkDestroyShaderModule pVkDestroyShaderModule;
 				PFN_vkCreatePipelineLayout pVkCreatePipelineLayout;
 				PFN_vkDestroyPipelineLayout pVkDestroyPipelineLayout;
 				PFN_vkCreateDescriptorSetLayout pVkCreateDescriptorSetLayout;
 				PFN_vkDestroyDescriptorSetLayout pVkDestroyDescriptorSetLayout;
+				PFN_vkCreateShaderModule pVkCreateShaderModule;
+				PFN_vkDestroyShaderModule pVkDestroyShaderModule;
 				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
 				PFN_vkDestroyPipeline pVkDestroyPipeline;
+				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
+				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
+				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
 				PFN_vkCreateBuffer pVkCreateBuffer;
 				PFN_vkDestroyBuffer pVkDestroyBuffer;
 				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
 				PFN_vkAllocateMemory pVkAllocateMemory;
 				PFN_vkBindBufferMemory pVkBindBufferMemory;
 				PFN_vkFreeMemory pVkFreeMemory;
-				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
-				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
 				PFN_vkCreateImageView pVkCreateImageView;
 				PFN_vkDestroyImageView pVkDestroyImageView;
 				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
@@ -53,7 +54,6 @@ namespace hax {
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
 				PFN_vkCmdDrawIndexed pVkCmdDrawIndexed;
 				PFN_vkCmdSetScissor pVkCmdSetScissor;
-				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
 				PFN_vkQueueSubmit pVkQueueSubmit;
 			}Functions;
 
