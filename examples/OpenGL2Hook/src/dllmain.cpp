@@ -53,7 +53,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 }
 
 
-void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
 
 	if (pHook) {
 		delete pHook;
@@ -64,30 +64,27 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
 		// just to be save
 		Sleep(10ul);
 	}
-	
+
 	if (file) {
 		fclose(file);
 	}
 
-	FreeConsole();
+	if (freeConsole) {
+		FreeConsole();
+	}
+
 	// just to be save
 	Sleep(500ul);
 }
 
 
 DWORD WINAPI haxThread(HMODULE hModule) {
-
-	if (!AllocConsole()) {
-		// just to be save
-		Sleep(500ul);
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
+	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		cleanup(hHookSemaphore, pSwapBuffersHook, file);
+		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -95,7 +92,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
 
 	if (!hHookSemaphore) {
-		cleanup(hHookSemaphore, pSwapBuffersHook, file);
+		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -103,13 +100,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkWglSwapBuffers), 0x5u);
 
 	if (!pSwapBuffersHook) {
-		cleanup(hHookSemaphore, pSwapBuffersHook, file);
+		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pSwapBuffersHook->enable()) {
-		cleanup(hHookSemaphore, pSwapBuffersHook, file);
+		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -118,7 +115,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 	WaitForSingleObject(hHookSemaphore, INFINITE);
 	
-	cleanup(hHookSemaphore, pSwapBuffersHook, file);
+	cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
