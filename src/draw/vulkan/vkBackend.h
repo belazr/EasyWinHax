@@ -40,7 +40,6 @@ namespace hax {
 					void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 				};
 
-				VkPhysicalDevice _hPhysicalDevice;
 				uint32_t _graphicsQueueFamilyIndex;
 				VkRenderPass _hRenderPass;
 				VkCommandPool _hCommandPool;

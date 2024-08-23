@@ -217,7 +217,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _hInstance{}, _f{},
-				_hPhysicalDevice{}, _graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
+				_graphicsQueueFamilyIndex{ 0xFFFFFFFF }, _hRenderPass{}, _hCommandPool{},
 				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
@@ -310,11 +310,11 @@ namespace hax {
 
 				if (!this->getProcAddresses()) return false;
 
-				this->_hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
+				const VkPhysicalDevice hPhysicalDevice = getPhysicalDevice(this->_hVulkan, this->_hInstance);
 
-				if (this->_hPhysicalDevice == VK_NULL_HANDLE) return false;
+				if (hPhysicalDevice == VK_NULL_HANDLE) return false;
 
-				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, this->_hPhysicalDevice);
+				this->_graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(this->_hVulkan, hPhysicalDevice);
 
 				if (this->_graphicsQueueFamilyIndex == 0xFFFFFFFF) return false;
 
@@ -342,7 +342,7 @@ namespace hax {
 
 				if (this->_hPointListPipeline == VK_NULL_HANDLE) return false;
 
-				this->_f.pVkGetPhysicalDeviceMemoryProperties(this->_hPhysicalDevice, &this->_memoryProperties);
+				this->_f.pVkGetPhysicalDeviceMemoryProperties(hPhysicalDevice, &this->_memoryProperties);
 
 				if (!this->_memoryProperties.memoryTypeCount) return false;
 
