@@ -62,7 +62,7 @@ VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, VkPresentInfoKHR* pPrese
 }
 
 
-void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
 
 	if (pHook) {
 		delete pHook;
@@ -78,25 +78,22 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
 		fclose(file);
 	}
 
-	FreeConsole();
+	if (freeConsole) {
+		FreeConsole();
+	}
+
 	// just to be save
 	Sleep(500ul);
 }
 
 
 DWORD WINAPI haxThread(HMODULE hModule) {
-
-	if (!AllocConsole()) {
-		// just to be save
-		Sleep(500ul);
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
+	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		cleanup(hHookSemaphore, pQueuePresentHook, file);
+		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -104,13 +101,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
 
 	if (!hHookSemaphore) {
-		cleanup(hHookSemaphore, pQueuePresentHook, file);
+		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!hax::draw::vk::getInitData(&initData)) {
-		cleanup(hHookSemaphore, pQueuePresentHook, file);
+		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -136,13 +133,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), size, relativeAddressOffset);
 
 	if (!pQueuePresentHook) {
-		cleanup(hHookSemaphore, pQueuePresentHook, file);
+		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pQueuePresentHook->enable()) {
-		cleanup(hHookSemaphore, pQueuePresentHook, file);
+		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -151,7 +148,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 	WaitForSingleObject(hHookSemaphore, INFINITE);
 
-	cleanup(hHookSemaphore, pQueuePresentHook, file);
+	cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }

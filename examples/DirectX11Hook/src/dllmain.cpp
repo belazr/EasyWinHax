@@ -53,7 +53,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 }
 
 
-void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
 
 	if (pHook) {
 		delete pHook;
@@ -69,25 +69,22 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file) {
 		fclose(file);
 	}
 
-	FreeConsole();
+	if (freeConsole) {
+		FreeConsole();
+	}
+
 	// just to be save
 	Sleep(500ul);
 }
 
 
 DWORD WINAPI haxThread(HMODULE hModule) {
-
-	if (!AllocConsole()) {
-		// just to be save
-		Sleep(500ul);
-
-		FreeLibraryAndExitThread(hModule, 0ul);
-	}
+	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file{};
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -95,7 +92,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
 
 	if (!hHookSemaphore) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -103,7 +100,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	void* pD3D11SwapChainVTable[9]{};
 
 	if (!hax::draw::dx11::getD3D11SwapChainVTable(pD3D11SwapChainVTable, sizeof(pD3D11SwapChainVTable))) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -112,7 +109,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	BYTE* const pPresent = reinterpret_cast<BYTE*>(pD3D11SwapChainVTable[PRESENT_OFFSET]);
 
 	if (!pPresent) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -120,13 +117,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x8u);
 
 	if (!pPresentHook) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
 	if (!pPresentHook->enable()) {
-		cleanup(hHookSemaphore, pPresentHook, file);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -135,7 +132,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 
 	WaitForSingleObject(hHookSemaphore, INFINITE);
 
-	cleanup(hHookSemaphore, pPresentHook, file);
+	cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
