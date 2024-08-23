@@ -116,9 +116,9 @@ namespace hax {
 				bool getPhysicalDeviceProperties();
 				bool createRenderPass();
 				bool createCommandPool();
-				VkPipeline createPipeline(VkPrimitiveTopology topology);
 				bool createPipelineLayout();
 				VkDescriptorSetLayout createDescriptorSetLayout() const;
+				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
 				VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
