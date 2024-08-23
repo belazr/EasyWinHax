@@ -42,8 +42,6 @@ namespace hax {
 				uint32_t _graphicsQueueFamilyIndex;
 				VkRenderPass _hRenderPass;
 				VkCommandPool _hCommandPool;
-				VkShaderModule _hShaderModuleVert;
-				VkShaderModule _hShaderModuleFrag;
 				VkDescriptorSetLayout _hDescriptorSetLayout;
 				VkPipelineLayout _hPipelineLayout;
 				VkPipeline _hTriangleListPipeline;
