@@ -217,10 +217,9 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_graphicsQueueFamilyIndex{ UINT32_MAX }, _hRenderPass{}, _hCommandPool{},
-				_hShaderModuleVert{}, _hShaderModuleFrag{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
-				_hTriangleListPipeline{}, _hPointListPipeline{}, _memoryProperties{}, _hFirstGraphicsQueue{},
-				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
+				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hRenderPass{}, _hCommandPool{},
+				_hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{},
+				_hFirstGraphicsQueue{}, _viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
 			Backend::~Backend() {
@@ -253,14 +252,6 @@ namespace hax {
 
 				if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
-				}
-
-				if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleFrag != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleFrag, nullptr);
-				}
-
-				if (this->_f.pVkDestroyShaderModule && this->_hShaderModuleVert != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyShaderModule(this->_hDevice, this->_hShaderModuleVert, nullptr);
 				}
 
 				if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
@@ -723,36 +714,32 @@ namespace hax {
 
 			VkPipeline Backend::createPipeline(VkPrimitiveTopology topology) {
 
-				if (this->_hShaderModuleVert == VK_NULL_HANDLE) {
-
-					this->_hShaderModuleVert = this->createShaderModule(GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT));
-
-				}
-
-				if (this->_hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
-
-				if (this->_hShaderModuleFrag == VK_NULL_HANDLE) {
-
-					this->_hShaderModuleFrag = this->createShaderModule(GLSL_SHADER_FRAG, sizeof(GLSL_SHADER_FRAG));
-
-				}
-
-				if (this->_hShaderModuleFrag == VK_NULL_HANDLE) return VK_NULL_HANDLE;
-			
 				if (this->_hPipelineLayout == VK_NULL_HANDLE) {
 
 					if (!this->createPipelineLayout()) return VK_NULL_HANDLE;
 
 				}
 
+				const VkShaderModule hShaderModuleVert = this->createShaderModule(GLSL_SHADER_VERT, sizeof(GLSL_SHADER_VERT));
+
+				if (hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
+
+				const VkShaderModule hShaderModuleFrag = this->createShaderModule(GLSL_SHADER_FRAG, sizeof(GLSL_SHADER_FRAG));
+				
+				if (hShaderModuleFrag == VK_NULL_HANDLE) {
+					this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
+
+					return VK_NULL_HANDLE;
+				}
+
 				VkPipelineShaderStageCreateInfo stageCreateInfo[2]{};
 				stageCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				stageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-				stageCreateInfo[0].module = this->_hShaderModuleVert;
+				stageCreateInfo[0].module = hShaderModuleVert;
 				stageCreateInfo[0].pName = "main";
 				stageCreateInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				stageCreateInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-				stageCreateInfo[1].module = this->_hShaderModuleFrag;
+				stageCreateInfo[1].module = hShaderModuleFrag;
 				stageCreateInfo[1].pName = "main";
 
 				VkVertexInputBindingDescription bindingDesc{};
@@ -841,6 +828,9 @@ namespace hax {
 				VkPipeline hPipeline{};
 
 				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleFrag, nullptr);
+				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
 
 				return hPipeline;
 			}
