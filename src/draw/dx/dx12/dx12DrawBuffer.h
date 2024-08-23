@@ -12,6 +12,7 @@ namespace hax {
 			private:
 				ID3D12Device* _pDevice;
 				ID3D12GraphicsCommandList* _pCommandList;
+				ID3D12PipelineState* _pPipelineState;
 				D3D_PRIMITIVE_TOPOLOGY _topology;
 				ID3D12Resource* _pVertexBufferResource;
 				ID3D12Resource* _pIndexBufferResource;
@@ -30,9 +31,12 @@ namespace hax {
 				// [in] pCommandList:
 				// Command list of the image the buffer belongs to.
 				// 
+				// [in] pPipelineState:
+				// Pipeline state with the appropriate primitive topology type.
+				// 
 				// [in] topology:
-				// The topology with which the buffer draw its content.
-				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, D3D_PRIMITIVE_TOPOLOGY topology);
+				// The topology with which the buffer draws its content.
+				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology);
 
 				// Creates a new buffer with all internal resources.
 				//

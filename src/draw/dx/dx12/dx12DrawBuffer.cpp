@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			DrawBuffer::DrawBuffer() : _pDevice{}, _pCommandList{}, _topology{}, _pVertexBufferResource {}, _pIndexBufferResource{} {}
+			DrawBuffer::DrawBuffer() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _topology {}, _pVertexBufferResource{}, _pIndexBufferResource{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -15,9 +15,10 @@ namespace hax {
 				return;
 			}
 
-			void DrawBuffer::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, D3D_PRIMITIVE_TOPOLOGY topology) {
+			void DrawBuffer::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology) {
 				this->_pDevice = pDevice;
 				this->_pCommandList = pCommandList;
+				this->_pPipelineState = pPipelineState;
 				this->_topology = topology;
 
 				return;
@@ -102,6 +103,7 @@ namespace hax {
 				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
 				
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
+				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0, 0u);
 
 				this->_curOffset = 0u;
