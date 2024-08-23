@@ -53,7 +53,8 @@ namespace hax {
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
 				ID3D12RootSignature* _pRootSignature;
-				ID3D12PipelineState* _pPipelineState;
+				ID3D12PipelineState* _pTriangleListPipelineState;
+				ID3D12PipelineState* _pPointListPipelineState;
 				ID3D12Fence* _pFence;
 				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12Resource* _pRtvResource;
@@ -121,7 +122,7 @@ namespace hax {
 			private:
 				bool createDescriptorHeap();
 				bool createRootSignature();
-				bool createPipelineState();
+				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
