@@ -67,7 +67,7 @@ namespace hax {
 			// This address is called by the detour function at the address given by originCall.
 			// The stolen bytes of the orgin function are located here.
 			// Call VirtualFreeEx on the return value to free the memory in the target process.
-			BYTE* trampHook(HANDLE hProc, BYTE* origin, BYTE* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset = SIZE_MAX);
+			void* trampHook(HANDLE hProc, void* origin, void* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			#ifdef _WIN64
 
@@ -91,7 +91,7 @@ namespace hax {
 			// Return:
 			// Pointer to the allocated memory region.
 			// Nullpointer if no memory is available or the function failed for other reasons.
-			BYTE* virtualAllocNear(HANDLE hProc, const BYTE* address, size_t size);
+			void* virtualAllocNear(HANDLE hProc, const void* address, size_t size);
 
 			#endif // _WIN64
 
@@ -117,7 +117,7 @@ namespace hax {
 			// 
 			// Return:
 			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			BYTE* relJmp(HANDLE hProc, BYTE* origin, const BYTE* detour, size_t size);
+			void* relJmp(HANDLE hProc, void* origin, const void* detour, size_t size);
 
 			#ifdef _WIN64
 
@@ -142,7 +142,7 @@ namespace hax {
 			// 
 			// Return:
 			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			BYTE* absJumpX64(HANDLE hProc, BYTE* origin, const BYTE* detour, size_t size);
+			void* absJumpX64(HANDLE hProc, void* origin, const void* detour, size_t size);
 
 			#endif
 
@@ -162,7 +162,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool nop(HANDLE hProc, BYTE* dst, size_t size);
+			bool nop(HANDLE hProc, void* dst, size_t size);
 
 			// Patches an external process. Overwrites the given amount of bytes in the target process with the bytes in a buffer.
 			// 
@@ -183,7 +183,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool patch(HANDLE hProc, BYTE* dst, const BYTE src[], size_t size);
+			bool patch(HANDLE hProc, void* dst, const void* src, size_t size);
 
 			// Gets the address of a virtual function within the virtual address space of an external process.
 			// 
@@ -223,7 +223,7 @@ namespace hax {
 			// Return:
 			// The address pointed to by dereferencing the multi level pointer or nullpointer on failure.
 			// Example: *(*(*(base + offset[0]) + offset[1]) + offset[2])
-			BYTE* getMultiLevelPointer(HANDLE hProc, const BYTE* base, const size_t offsets[], size_t size);
+			void* getMultiLevelPointer(HANDLE hProc, const void* base, const size_t* offsets, size_t size);
 
 			// Finds the address of a byte signature within the virtual address space of an external process.
 			// 
@@ -247,7 +247,7 @@ namespace hax {
 			// Return:
 			// The address where the byte signature was found within the virtual address space of the target process.
 			// Nullpointer if the signature was not found or the function failed.
-			BYTE* findSigAddress(HANDLE hProc, const BYTE* base, size_t size, const char* signature);
+			void* findSigAddress(HANDLE hProc, const void* base, size_t size, const char* signature);
 
 			// Copies a nullterminated string from an external process to a buffer allocated in the virtual memory of the caller process.
 			// Copies characters until a null character is copied or the target buffer is full.
@@ -269,7 +269,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure or if no null char was copied.
-			bool copyRemoteString(HANDLE hProc, char* dst, const BYTE* src, size_t size);
+			bool copyRemoteString(HANDLE hProc, char* dst, const void* src, size_t size);
 
 			// Unlinks an entry of a Win32 API doubly linked list in an external process.
 			// Found for example in the loader data of the process environment block of a process (see undocWinTypes.h).
@@ -332,7 +332,7 @@ namespace hax {
 			// Pointer to the gateway. This address should be called by the detour function with the same calling convention as the origin function.
 			// The stolen bytes of the orgin function are located here.
 			// Call VirtualFree on the return value to free the memory in the process.
-			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
+			void* trampHook(void* origin, const void* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
 
 			#ifdef _WIN64
 
@@ -352,7 +352,7 @@ namespace hax {
 			// Return:
 			// Pointer to the allocated memory region
 			// Nullpointer if no memory is available or the function failed.
-			BYTE* virtualAllocNear(const BYTE* address, size_t size);
+			void* virtualAllocNear(const void* address, size_t size);
 
 			#endif // _WIN64
 
@@ -374,7 +374,7 @@ namespace hax {
 			// 
 			// Return:
 			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			BYTE* relJmp(BYTE* origin, const BYTE* detour, size_t size);
+			void* relJmp(void* origin, const void* detour, size_t size);
 
 			#ifdef _WIN64
 
@@ -395,7 +395,7 @@ namespace hax {
 			// 
 			// Return:
 			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			BYTE* absJumpX64(BYTE* origin, const BYTE* detour, size_t size);
+			void* absJumpX64(void* origin, const void* detour, size_t size);
 
 			#endif
 
@@ -411,7 +411,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool nop(BYTE* dst, size_t size);
+			bool nop(void* dst, size_t size);
 
 			// Patches the caller process. Overwrites the given amount of bytes in the caller process with the bytes in a buffer.
 			// 
@@ -428,7 +428,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool patch(BYTE* dst, const BYTE src[], size_t size);
+			bool patch(void* dst, const void* src, size_t size);
 
 			// Gets the address of a virtual function within the virtual address space of an external process.
 			// 
@@ -460,7 +460,7 @@ namespace hax {
 			// Return:
 			// The address pointed to by dereferencing the multi level pointer or nullpointer on failure.
 			// Example: *(*(*(base + offset[0]) + offset[1]) + offset[2])
-			BYTE* getMultiLevelPointer(const BYTE* base, const size_t offsets[], size_t size);
+			void* getMultiLevelPointer(const void* base, const size_t* offsets, size_t size);
 
 			// Finds the address of a byte signature within the virtual address space of the caller process.
 			// 
@@ -480,7 +480,7 @@ namespace hax {
 			// Return:
 			// The address where the byte signature was found within the virtual address space of the caller process.
 			// Nullpointer if the signature was not found or the function failed.
-			BYTE* findSigAddress(const BYTE* base, size_t size, const char* signature);
+			void* findSigAddress(const void* base, size_t size, const char* signature);
 
 			// Unlinks an entry of a Win32 API doubly linked list in the target process.
 			// Found for example in the loader data of the process environment block of a process (see undocWinDefs.h).
@@ -550,7 +550,7 @@ namespace hax {
 			// Return:
 			// The address where the byte signature was found within the memory region of the caller process.
 			// Nullpointer if the signature was not found.
-			BYTE* findSignature(const BYTE* base, size_t size, const int* signature, size_t sigSize);
+			void* findSignature(const void* base, size_t size, const int* signature, size_t sigSize);
 
 		}
 

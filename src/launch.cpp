@@ -577,7 +577,7 @@ namespace hax {
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
 
 				constexpr size_t LEN_STOLEN = 10;
-				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x1A, LEN_STOLEN);
+				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x1A, LEN_STOLEN);
 
 				if (!pGateway) return false;
 
@@ -931,7 +931,7 @@ namespace hax {
 				}
 
 				constexpr size_t LEN_STOLEN = 8;
-				BYTE* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x32, LEN_STOLEN);
+				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x32, LEN_STOLEN);
 
 				if (!pGateway) return false;
 
