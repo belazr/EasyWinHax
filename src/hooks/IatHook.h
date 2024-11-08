@@ -19,9 +19,9 @@ namespace hax {
 		class IatHook : public IHook {
 		private:
 			const HANDLE _hProc;
-			BYTE* _origin;
-			BYTE* _detour;
-			BYTE* _pIatEntry;
+			const void* _origin;
+			void* _detour;
+			void* _pIatEntry;
 			bool _hooked;
 			BOOL _isWow64Proc;
 
@@ -77,9 +77,9 @@ namespace hax {
 			bool isHooked() const;
 
 
-			BYTE* getDetour() const;
-			BYTE* getOrigin() const;
-			BYTE* getIatEntryAddress() const;
+			void* getDetour() const;
+			void* getOrigin() const;
+			void* getIatEntryAddress() const;
 		};
 
 	}
@@ -95,9 +95,9 @@ namespace hax {
 		// The hook automatically uninstalls on desctuction of the installing object.
 		class IatHook : public IHook {
 		private:
-			const BYTE* _origin;
-			const BYTE* const _detour;
-			BYTE* _pIatEntry;
+			const void* _origin;
+			const void* const _detour;
+			void* _pIatEntry;
 			bool _hooked;
 
 		public:
@@ -142,9 +142,9 @@ namespace hax {
 			bool isHooked() const;
 
 
-			BYTE* getDetour() const;
-			BYTE* getOrigin() const;
-			BYTE* getIatEntryAddress() const;
+			void* getDetour() const;
+			void* getOrigin() const;
+			void* getIatEntryAddress() const;
 		};
 
 	}

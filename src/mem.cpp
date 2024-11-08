@@ -16,7 +16,7 @@ namespace hax {
 		}AddressRange;
 
 		// gets the range of address that is reachable by a relative jump
-		static void getNearAddressRange(const BYTE* pBase, AddressRange* pAddrRange);
+		static void getNearAddressRange(const void* pBase, AddressRange* pAddrRange);
 
 		// ASM:
 		// jmp QWORD PTR[rip + 0x0000000000000000]
@@ -34,14 +34,14 @@ namespace hax {
 
 		namespace ex {
 
-			BYTE* trampHook(HANDLE hProc, BYTE* origin, BYTE* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset) {
+			void* trampHook(HANDLE hProc, void* origin, void* detour, size_t originCallOffset, size_t size, size_t relativeAddressOffset) {
 
 				if (relativeAddressOffset != SIZE_MAX && relativeAddressOffset + sizeof(uint32_t) > size)
 				{
 					return nullptr;
 				}
 
-				BYTE* gateway = nullptr;
+				void* gateway = nullptr;
 				size_t targetPtrSize = 0;
 
 				BOOL isWow64 = false;
@@ -50,7 +50,7 @@ namespace hax {
 				if (isWow64) {
 					// allocate enough memory for the relative jump (gateway to origin)
 					// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
-					gateway = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+					gateway = VirtualAllocEx(hProc, nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 					targetPtrSize = sizeof(uint32_t);
 				}
 				else {
@@ -68,8 +68,10 @@ namespace hax {
 
 				if (!gateway) return nullptr;
 
+				void* const pDetourOriginCall = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(detour) + originCallOffset);
+				
 				// overwrite the origin call placeholder
-				if (!WriteProcessMemory(hProc, detour + originCallOffset, &gateway, targetPtrSize, nullptr)) {
+				if (!WriteProcessMemory(hProc, pDetourOriginCall, &gateway, targetPtrSize, nullptr)) {
 					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -97,9 +99,10 @@ namespace hax {
 				// correct the relative address
 				if (relativeAddressOffset != SIZE_MAX) {
 
+					const void* const pOriginRelativeAddress = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + relativeAddressOffset);
 					int32_t oldRelativeAddress = 0;
 
-					if (!ReadProcessMemory(hProc, origin + relativeAddressOffset, &oldRelativeAddress, sizeof(oldRelativeAddress), nullptr)) {
+					if (!ReadProcessMemory(hProc, pOriginRelativeAddress, &oldRelativeAddress, sizeof(oldRelativeAddress), nullptr)) {
 						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
@@ -112,7 +115,9 @@ namespace hax {
 						return nullptr;
 					}
 
-					if (!WriteProcessMemory(hProc, gateway + relativeAddressOffset, &correctedRelativeAddress, sizeof(uint32_t), nullptr)) {
+					void* const pGatewayRelativeAddress = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + relativeAddressOffset);
+					
+					if (!WriteProcessMemory(hProc, pGatewayRelativeAddress, &correctedRelativeAddress, sizeof(uint32_t), nullptr)) {
 						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
@@ -120,8 +125,11 @@ namespace hax {
 
 				}
 
+				void* const pGatewayJump = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size);
+				const void* const pOriginJumpDst = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X86_JUMP));
+
 				// relative jump from the gateway to the origin
-				if (!relJmp(hProc, gateway + size, origin + sizeof(X86_JUMP), sizeof(X86_JUMP))) {
+				if (!relJmp(hProc, pGatewayJump, pOriginJumpDst, sizeof(X86_JUMP))) {
 					VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -144,7 +152,7 @@ namespace hax {
 
 					// in x64 targets an absolute jump is needed to reliably jump from the origin to the detour
 					// instead of patching the origin with a longer absolute jump, a relay is used that can be reached by a relative jump
-					BYTE* const relay = gateway + size + sizeof(X86_JUMP);
+					void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 					// absolute jump from the relay to the detour function
 					if (!absJumpX64(hProc, relay, detour, sizeof(X64_JUMP))) {
@@ -170,7 +178,7 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			BYTE* virtualAllocNear(HANDLE hProc, const BYTE* address, size_t size) {
+			void* virtualAllocNear(HANDLE hProc, const void* address, size_t size) {
 				AddressRange range{};
 				getNearAddressRange(address, &range);
 
@@ -207,10 +215,10 @@ namespace hax {
 			#endif // _WIN64
 
 
-			BYTE* relJmp(HANDLE hProc, BYTE* origin, const BYTE* detour, size_t size) {
+			void* relJmp(HANDLE hProc, void* origin, const void* detour, size_t size) {
 				#ifdef _WIN64
 
-				const uint64_t distance = abs(detour - origin);
+				const uint64_t distance = abs(reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin));
 
 				// checks if detour is reachable from origin by a relative jump
 				if (distance != (distance & UINT32_MAX)) return nullptr;
@@ -225,20 +233,20 @@ namespace hax {
 
 				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
 				
-				const uint32_t offset = static_cast<uint32_t>(detour - origin - sizeof(jump));
+				const uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(detour) - reinterpret_cast<uintptr_t>(origin) - sizeof(jump));
 
 				// copies the jump offset to after the relative jump op code in the stack buffer
 				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return nullptr;
 
-				return origin + size;
+				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
 			}
 
 
 			#ifdef _WIN64
 
-			BYTE* absJumpX64(HANDLE hProc, BYTE* origin, const BYTE* detour, size_t size) {
+			void* absJumpX64(HANDLE hProc, void* origin, const void* detour, size_t size) {
 				if (size < sizeof(X64_JUMP)) return nullptr;
 
 				if (!nop(hProc, origin, size)) return nullptr;
@@ -252,13 +260,13 @@ namespace hax {
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return nullptr;
 
-				return origin + size;
+				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
 			}
 
 			#endif
 
 
-			bool nop(HANDLE hProc, BYTE* dst, size_t size) {
+			bool nop(HANDLE hProc, void* dst, size_t size) {
 				BYTE* const nops = new BYTE[size]{};
 				memset(nops, NOP, size);
 				bool result = patch(hProc, dst, nops, size);
@@ -268,7 +276,7 @@ namespace hax {
 			}
 
 
-			bool patch(HANDLE hProc, BYTE* dst, const BYTE src[], size_t size) {
+			bool patch(HANDLE hProc, void* dst, const void* src, size_t size) {
 				DWORD protect = 0ul;
 
 				if (!VirtualProtectEx(hProc, dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
@@ -298,8 +306,8 @@ namespace hax {
 			}
 
 
-			BYTE* getMultiLevelPointer(HANDLE hProc, const BYTE* base, const size_t offsets[], size_t size) {
-				BYTE* address = const_cast<BYTE*>(base);
+			void* getMultiLevelPointer(HANDLE hProc, const void* base, const size_t* offsets, size_t size) {
+				BYTE* address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base));
 
 				for (size_t i = 0u; i < size; i++) {
 
@@ -312,7 +320,7 @@ namespace hax {
 			}
 
 
-			BYTE* findSigAddress(HANDLE hProc, const BYTE* base, size_t size, const char* signature) {
+			void* findSigAddress(HANDLE hProc, const void* base, size_t size, const char* signature) {
 				// size of byte string signature of format "DE AD"
 				const size_t sigSize = (strlen(signature) + 1u) / 3u;
 				int* const sig = new int[sigSize] {};
@@ -330,7 +338,7 @@ namespace hax {
 				for (size_t i = 0; i < size; i += mbi.RegionSize) {
 
 					// scan only if commited and accessable
-					if (!VirtualQueryEx(hProc, &base[i], &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
+					if (!VirtualQueryEx(hProc, reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
 
 					DWORD oldProtect = 0ul;
 
@@ -352,10 +360,10 @@ namespace hax {
 					}
 
 					// address of found signature within heap buffer
-					const BYTE* const inBufferAddress = helper::findSignature(buffer, mbi.RegionSize, sig, sigSize);
+					const void* const inBufferAddress = helper::findSignature(buffer, mbi.RegionSize, sig, sigSize);
 
 					if (inBufferAddress) {
-						address = const_cast<BYTE*>(&base[i]) + (inBufferAddress - buffer);
+						address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i) + (reinterpret_cast<const BYTE*>(inBufferAddress) - buffer);
 					}
 
 					delete[] buffer;
@@ -367,14 +375,15 @@ namespace hax {
 			}
 
 
-			bool copyRemoteString(HANDLE hProc, char* dst, const BYTE* src, size_t size) {
+			bool copyRemoteString(HANDLE hProc, char* dst, const void* src, size_t size) {
 
 				for (size_t i = 0; i < size; i++) {
 
-					if (!ReadProcessMemory(hProc, &src[i], &dst[i], sizeof(char), nullptr)) return false;
+					if (!ReadProcessMemory(hProc, reinterpret_cast<const BYTE*>(src) + i, &dst[i], sizeof(char), nullptr)) return false;
 
 					// end of string
 					if (dst[i] == '\0') return true;
+
 				}
 
 				// did not contain a null charater so something went wrong
@@ -405,7 +414,7 @@ namespace hax {
 
 		namespace in {
 
-			BYTE* trampHook(BYTE* origin, const BYTE* detour, size_t size, size_t relativeAddressOffset) {
+			void* trampHook(void* origin, const void* detour, size_t size, size_t relativeAddressOffset) {
 
 				if (relativeAddressOffset != SIZE_MAX && relativeAddressOffset + sizeof(uint32_t) > size)
 				{
@@ -416,13 +425,13 @@ namespace hax {
 				#ifdef _WIN64
 
 				// allocate enough memory for the relative jump (gateway to origin) and the absolute relay jump (relay to detour) near the origin (reachable by relative jump)
-				BYTE* const gateway = virtualAllocNear(origin, size + sizeof(X86_JUMP) + sizeof(X64_JUMP));
+				void* const gateway = virtualAllocNear(origin, size + sizeof(X86_JUMP) + sizeof(X64_JUMP));
 
 				#else
 
 				// allocate enough memory for the relative jump (gateway to origin)
 				// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
-				BYTE* gateway = static_cast<BYTE*>(VirtualAlloc(nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+				void* const gateway = VirtualAlloc(nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 				#endif
 
@@ -438,24 +447,23 @@ namespace hax {
 				// correct the relative address
 				if (relativeAddressOffset != SIZE_MAX) {
 
-					const int32_t oldRelativeAddress = *reinterpret_cast<int32_t*>(origin + relativeAddressOffset);
-					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
+					const int32_t oldRelativeAddress = *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(origin) + relativeAddressOffset);
+					const int32_t correctedRelativeAddress = static_cast<int32_t>(oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway));
 
 					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
 
 						return nullptr;
 					}
-					
-					if (memcpy_s(gateway + relativeAddressOffset, sizeof(uint32_t), &correctedRelativeAddress, sizeof(uint32_t))) {
-						VirtualFree(gateway, 0, MEM_RELEASE);
 
-						return nullptr;
-					}
+					*reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(gateway) + relativeAddressOffset) = correctedRelativeAddress;
 
 				}
 
+				void* const pGatewayJump = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size);
+				const void* const pOriginJumpDst = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X86_JUMP));
+
 				// relative jump from the gateway to the origin
-				if (!relJmp(gateway + size, origin + sizeof(X86_JUMP), sizeof(X86_JUMP))) {
+				if (!relJmp(pGatewayJump, pOriginJumpDst, sizeof(X86_JUMP))) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -465,7 +473,7 @@ namespace hax {
 
 				// in x64 targets an absolute jump is needed to reliably jump from the origin to the detour
 				// instead of patching the origin with a longer absolute jump, a relay is used that can be reached by a relative jump
-				BYTE* const relay = gateway + size + sizeof(X86_JUMP);
+				void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 				// absolute jump from the relay to the detour function
 				if (!absJumpX64(relay, detour, sizeof(X64_JUMP))) {
@@ -498,7 +506,7 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			BYTE* virtualAllocNear(const BYTE* address, size_t size) {
+			void* virtualAllocNear(const void* address, size_t size) {
 				AddressRange range{};
 				getNearAddressRange(address, &range);
 
@@ -535,10 +543,10 @@ namespace hax {
 			#endif // _WIN64
 
 
-			BYTE* relJmp(BYTE* origin, const BYTE* detour, size_t size) {
+			void* relJmp(void* origin, const void* detour, size_t size) {
 				#ifdef _WIN64
 
-				const uint64_t distance = abs(detour - origin);
+				const uint64_t distance = abs(reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin));
 
 				// checks if detour is reachable from origin by a relative jump
 				if (distance != (distance & UINT32_MAX)) return nullptr;
@@ -553,20 +561,20 @@ namespace hax {
 
 				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
 
-				const uint32_t offset = static_cast<uint32_t>(detour - origin - sizeof(jump));
+				const uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(detour) - reinterpret_cast<uintptr_t>(origin) - sizeof(jump));
 
 				// copies the jump offset after the relative jump op code in the stack buffer
 				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
 
 				if (!patch(origin, jump, sizeof(jump))) return nullptr;
 
-				return origin + size;
+				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
 			}
 
 
 			#ifdef _WIN64
 
-			BYTE* absJumpX64(BYTE* origin, const BYTE* detour, size_t size) {
+			void* absJumpX64(void* origin, const void* detour, size_t size) {
 				if (size < sizeof(X64_JUMP)) return nullptr;
 
 				if (!nop(origin, size)) return nullptr;
@@ -580,13 +588,13 @@ namespace hax {
 
 				if (!patch(origin, jump, sizeof(jump))) return nullptr;
 
-				return origin + size;
+				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
 			}
 
 			#endif
 
 
-			bool nop(BYTE* dst, size_t size) {
+			bool nop(void* dst, size_t size) {
 				BYTE* const nops = new BYTE[size]{};
 				memset(nops, NOP, size);
 				bool result = patch(dst, nops, size);
@@ -596,7 +604,7 @@ namespace hax {
 			}
 
 
-			bool patch(BYTE* dst, const BYTE src[], size_t size) {
+			bool patch(void* dst, const void* src, size_t size) {
 				DWORD protect = 0ul;
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
@@ -620,8 +628,8 @@ namespace hax {
 			}
 
 
-			BYTE* getMultiLevelPointer(const BYTE* base, const size_t offsets[], size_t size) {
-				BYTE* address = const_cast<BYTE*>(base);
+			void* getMultiLevelPointer(const void* base, const size_t* offsets, size_t size) {
+				BYTE* address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base));
 
 				for (size_t i = 0; i < size; i++) {
 					address = *reinterpret_cast<BYTE**>(address);
@@ -632,7 +640,7 @@ namespace hax {
 			}
 
 
-			BYTE* findSigAddress(const BYTE* base, size_t size, const char* signature) {
+			void* findSigAddress(const void* base, size_t size, const char* signature) {
 				// size of byte string signature of format "DE AD"
 				const size_t sigSize = (strlen(signature) + 1) / 3;
 				int* const sig = new int[sigSize] {};
@@ -643,16 +651,16 @@ namespace hax {
 					return nullptr;
 				}
 
-				BYTE* address = nullptr;
+				void* address = nullptr;
 				MEMORY_BASIC_INFORMATION mbi{};
 
 				// scan each memory region at a time
 				for (size_t i = 0; i < size; i += mbi.RegionSize) {
 
 					// scan only if commited and accessable
-					if (!VirtualQuery(&base[i], &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
+					if (!VirtualQuery(reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
 
-					address = helper::findSignature(&base[i], mbi.RegionSize, sig, sigSize);
+					address = helper::findSignature(reinterpret_cast<const BYTE*>(base) + i, mbi.RegionSize, sig, sigSize);
 
 					if (address) break;
 
@@ -687,7 +695,7 @@ namespace hax {
 
 		#ifdef _WIN64
 
-		static void getNearAddressRange(const BYTE* pBase, AddressRange* pAddrRange) {
+		static void getNearAddressRange(const void* pBase, AddressRange* pAddrRange) {
 			SYSTEM_INFO sysInfo{};
 			GetSystemInfo(&sysInfo);
 
@@ -736,7 +744,7 @@ namespace hax {
 			}
 
 
-			BYTE* findSignature(const BYTE* base, size_t size, const int* signature, size_t sigSize) {
+			void* findSignature(const void* base, size_t size, const int* signature, size_t sigSize) {
 				BYTE* address = nullptr;
 
 				// loop over the memory to be searched
@@ -747,7 +755,7 @@ namespace hax {
 					for (size_t j = 0; j < sigSize; j++) {
 
 						// -1 acts as wildcard
-						if (base[i + j] != signature[j] && signature[j] != -1) {
+						if (reinterpret_cast<const BYTE*>(base)[i + j] != signature[j] && signature[j] != -1) {
 							found = false;
 							break;
 						}
@@ -755,7 +763,7 @@ namespace hax {
 					}
 
 					if (found) {
-						address = const_cast<BYTE*>(&base[i]);
+						address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i);
 						break;
 					}
 

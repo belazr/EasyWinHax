@@ -24,8 +24,8 @@ namespace hax {
 		// True if the hook is installed, false if it is not installed.
 		virtual bool isHooked() const = 0;
 
-		virtual BYTE* getOrigin() const = 0;
-		virtual BYTE* getDetour() const = 0;
+		virtual void* getOrigin() const = 0;
+		virtual void* getDetour() const = 0;
 	};
 
 }

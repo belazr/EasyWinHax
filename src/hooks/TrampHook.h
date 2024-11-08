@@ -21,10 +21,10 @@ namespace hax {
 		class TrampHook : public IHook {
 		private:
 			const HANDLE _hProc;
-			BYTE* _origin;
-			BYTE* _detour;
-			BYTE* _detourOriginCall;
-			BYTE* _gateway;
+			void* _origin;
+			void* _detour;
+			void* _detourOriginCall;
+			void* _gateway;
 			const size_t _size;
 			const size_t _relativeAddressOffset;
 			uint32_t _relativeAddress;
@@ -123,9 +123,9 @@ namespace hax {
 			// True if the hook is installed, false if it is not installed.
 			bool isHooked() const;
 
-			BYTE* getOrigin() const;
-			BYTE* getDetour() const;
-			BYTE* getGateway() const;
+			void* getOrigin() const;
+			void* getDetour() const;
+			void* getGateway() const;
 		};
 
 	}
@@ -143,9 +143,9 @@ namespace hax {
 		// The hook automatically uninstalls on desctuction of the installing object.
 		class TrampHook : public IHook {
 		private:
-			BYTE* _origin;
-			const BYTE* const _detour;
-			BYTE* _gateway;
+			void* _origin;
+			const void* const _detour;
+			void* _gateway;
 			const size_t _size;
 			const size_t _relativeAddressOffset;
 			uint32_t _relativeAddress;
@@ -220,9 +220,9 @@ namespace hax {
 			// True if the hook is installed, false if it is not installed.
 			bool isHooked() const;
 
-			BYTE* getOrigin() const;
-			BYTE* getDetour() const;
-			BYTE* getGateway() const;
+			void* getOrigin() const;
+			void* getDetour() const;
+			void* getGateway() const;
 		};
 
 	}

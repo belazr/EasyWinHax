@@ -34,7 +34,7 @@ namespace hax {
 
 			if (originCallPattern) {
 				// scan for the origin call in the shell code
-				BYTE* const shellOriginCall = mem::in::findSigAddress(shell, shellSize, originCallPattern);
+				void* const shellOriginCall = mem::in::findSigAddress(shell, shellSize, originCallPattern);
 
 				if (shellOriginCall) {
 					
@@ -144,19 +144,19 @@ namespace hax {
 		}
 
 
-		BYTE* IatHook::getOrigin() const {
+		void* IatHook::getOrigin() const {
 
-			return const_cast<BYTE*>(this->_origin);
+			return const_cast<void*>(this->_origin);
 		}
 
 
-		BYTE* IatHook::getDetour() const {
+		void* IatHook::getDetour() const {
 
-			return const_cast<BYTE*>(this->_detour);
+			return this->_detour;
 		}
 
 
-		BYTE* IatHook::getIatEntryAddress() const {
+		void* IatHook::getIatEntryAddress() const {
 
 			return this->_pIatEntry;
 		}
@@ -216,19 +216,19 @@ namespace hax {
 		}
 
 
-		BYTE* IatHook::getOrigin() const {
+		void* IatHook::getOrigin() const {
 
-			return const_cast<BYTE*>(this->_origin);
+			return const_cast<void*>(this->_origin);
 		}
 
 
-		BYTE* IatHook::getDetour() const {
+		void* IatHook::getDetour() const {
 
-			return const_cast<BYTE*>(this->_detour);
+			return const_cast<void*>(this->_detour);
 		}
 
 
-		BYTE* IatHook::getIatEntryAddress() const {
+		void* IatHook::getIatEntryAddress() const {
 
 			return this->_pIatEntry;
 		}
