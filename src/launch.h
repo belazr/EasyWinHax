@@ -10,8 +10,36 @@ namespace hax {
 
 	namespace launch {
 
+		typedef enum Status {
+			SUCCESS = 0,
+			ERR_CHECK_SHELL_FLAG,
+			ERR_CREATE_THREAD,
+			ERR_GET_MOD_HANDLE,
+			ERR_GET_PAGE_SIZE,
+			ERR_GET_PROC_ADDR,
+			ERR_GET_PROC_ENTRIES,
+			ERR_GET_PROC_ID,
+			ERR_GET_THREAD_CONTEXT,
+			ERR_GET_THREAD_ENTRIES,
+			ERR_MEM_ALLOC,
+			ERR_MEM_CPY,
+			ERR_NO_SLEEPING_THREAD,
+			ERR_OPEN_THREAD,
+			ERR_PATCH,
+			ERR_QUEUE_APC_WOW64_THREAD,
+			ERR_QUEUE_USER_APC,
+			ERR_READ_PROC_MEM,
+			ERR_RESUME_THREAD,
+			ERR_SET_THREAD_CONTEXT,
+			ERR_SUSPEND_THREAD,
+			ERR_THREAD_TIMEOUT,
+			ERR_TRAMP_HOOK,
+			ERR_WINDOWS_HOOK,
+			ERR_WRITE_PROC_MEM
+		}Status;
+
 		typedef void* (WINAPI* tLaunchableFunc)(void* pArg);
-		typedef bool (*tLaunchFunc)(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		typedef Status (*tLaunchFunc)(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		// Launches code execution by creating a thread in the target process via NtCreateThreadEx.
 		// Waits for the thread and retrives the return value. Can retrive 8 byte return values for x64 targets (unlike GetExitCodeThread).
@@ -37,7 +65,7 @@ namespace hax {
 		// 
 		// Return:
 		// True on success or false on failure.
-		bool createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		Status createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		// Launches code execution by hijacking an existing thread of the target process.
 		// Suspends the thread, switches it's context and resumes it executing the desired code.
@@ -65,7 +93,7 @@ namespace hax {
 		// 
 		// Return:
 		// True on success or false on failure.
-		bool hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		Status hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		// Launches code execution by setting a windows hook.
 		// Hooks the window procedure to process messages for a window of the target process.
@@ -96,7 +124,7 @@ namespace hax {
 		// 
 		// Return:
 		// True on success or false on failure.
-		bool setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		Status setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		// Launches code execution by hooking NtUserBeginPaint from win32u.dll.
 		// NtUserBeginPaint gets called when a window is resized or moved.
@@ -126,7 +154,7 @@ namespace hax {
 		// 
 		// Return:
 		// True on success or false on failure.
-		bool hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		Status hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		// Launches code execution by queuing a user-mode APC.
 		// Waits for successfull execution and retrives the return value.
@@ -154,7 +182,7 @@ namespace hax {
 		// 
 		// Return:
 		// True on success or false on failure.
-		bool queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
+		Status queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 	}
 

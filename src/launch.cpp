@@ -25,17 +25,17 @@ namespace hax {
 		// x86 specific parts of the implementations
 		namespace x86 {
 
-			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 			#ifndef _WIN64
 
-			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 			#endif // !_WIN64
 
-			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		}
 
@@ -44,34 +44,34 @@ namespace hax {
 		// x64 specific parts of the implementations
 		namespace x64 {
 
-			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
-			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet);
+			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet);
 
 		}
 
 		#endif // _WIN64
 
 
-		bool createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+		Status createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const HMODULE hNtdll = proc::in::getModuleHandle("Ntdll.dll");
 
-			if (!hNtdll) return false;
+			if (!hNtdll) return Status::ERR_GET_MOD_HANDLE;
 
 			const tNtCreateThreadEx pNtCreateThreadEx = reinterpret_cast<tNtCreateThreadEx>(proc::in::getProcAddress(hNtdll, "NtCreateThreadEx"));
 
-			if (!pNtCreateThreadEx) return false;
+			if (!pNtCreateThreadEx) return Status::ERR_GET_PROC_ADDR;
 
 			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success = false;
+			Status status = Status::SUCCESS;
 
 			if (isWow64) {
 
-				success = x86::createThread(hProc, pNtCreateThreadEx, pFunc, pArg, pRet);
+				status = x86::createThread(hProc, pNtCreateThreadEx, pFunc, pArg, pRet);
 
 			}
 			else {
@@ -81,15 +81,15 @@ namespace hax {
 
 				const DWORD pageSize = getPageSize();
 
-				if (!pageSize) return false;
+				if (!pageSize) return Status::ERR_GET_PAGE_SIZE;
 
 				// shell coding for x64 processes is done just to get the full 8 byte return value of x64 threads
 				// GetExitCodeThread only gets a DWORD value
 				BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-				if (!pShellCode) return false;
+				if (!pShellCode) return Status::ERR_MEM_ALLOC;
 
-				success = x64::createThread(hProc, pNtCreateThreadEx, pShellCode, pFunc, pArg, pRet);
+				status = x64::createThread(hProc, pNtCreateThreadEx, pShellCode, pFunc, pArg, pRet);
 
 				VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
@@ -97,44 +97,44 @@ namespace hax {
 
 			}
 
-			return success;
+			return status;
 		}
 
 
-		bool hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+		Status hijackThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const DWORD processId = GetProcessId(hProc);
 
-			if (!processId) return false;
+			if (!processId) return Status::ERR_GET_PROC_ID;
 
 			// get the first/main thread entry
 			proc::ThreadEntry threadEntry{};
 			
-			if (!proc::getProcessThreadEntries(processId, &threadEntry, 1)) return false;
+			if (!proc::getProcessThreadEntries(processId, &threadEntry, 1)) return Status::ERR_GET_THREAD_ENTRIES;
 
 			const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, threadEntry.threadId);
 
-			if (!hThread) return false;
+			if (!hThread) return Status::ERR_OPEN_THREAD;
 
 			const DWORD pageSize = getPageSize();
 
-			if (!pageSize) return false;
+			if (!pageSize) return Status::ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) {
 				CloseHandle(hThread);
 
-				return false;
+				return Status::ERR_MEM_ALLOC;
 			}
 
 			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success = false;
+			Status status = Status::SUCCESS;
 
 			if (isWow64) {
 
-				success = x86::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
+				status = x86::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
 
 			}
 			else {
@@ -142,7 +142,7 @@ namespace hax {
 				// x64 targets only feasable for x64 compilations
 				#ifdef _WIN64
 
-				success = x64::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
+				status = x64::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
 
 				#endif // _WIN64
 
@@ -151,35 +151,35 @@ namespace hax {
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 			CloseHandle(hThread);
 
-			return success;
+			return status;
 		}
 
 
-		bool setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+		Status setWindowsHook(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const DWORD processId = GetProcessId(hProc);
 
-			if (!processId) return false;
+			if (!processId) return Status::ERR_GET_PROC_ID;
 
 			// arbitrary but has to be loaded in both caller and target process
 			const HMODULE hHookedMod = proc::in::getModuleHandle("Kernel32.dll");
 
-			if (!hHookedMod) return false;
+			if (!hHookedMod) return Status::ERR_GET_MOD_HANDLE;
 
 			const HMODULE hUser32 = proc::ex::getModuleHandle(hProc, "User32.dll");
 
-			if (!hUser32) return false;
+			if (!hUser32) return Status::ERR_GET_MOD_HANDLE;;
 
 			const FARPROC pCallNextHookEx = proc::ex::getProcAddress(hProc, hUser32, "CallNextHookEx");
 
-			if (!pCallNextHookEx) return false;
+			if (!pCallNextHookEx) return Status::ERR_GET_PROC_ADDR;
 
 			const DWORD pageSize = getPageSize();
 
-			if (!pageSize) return false;
+			if (!pageSize) return Status::ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (!pShellCode) return false;
+			if (!pShellCode) return Status::ERR_MEM_ALLOC;
 
 			HookData hookData{};
 			hookData.processId = processId;
@@ -190,14 +190,14 @@ namespace hax {
 			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success = false;
+			Status status = Status::SUCCESS;
 
 			// installing hook only possible from process with matching architechture
 			if (isWow64) {
 
 				#ifndef _WIN64
 
-				success = x86::setWindowsHook(hProc, pShellCode, &hookData, pFunc, pArg, pRet);
+				status = x86::setWindowsHook(hProc, pShellCode, &hookData, pFunc, pArg, pRet);
 
 				#endif // !_WIN64
 
@@ -206,7 +206,7 @@ namespace hax {
 
 				#ifdef _WIN64
 
-				success = x64::setWindowsHook(hProc, pShellCode, &hookData, pFunc, pArg, pRet);
+				status = x64::setWindowsHook(hProc, pShellCode, &hookData, pFunc, pArg, pRet);
 
 				#endif // _WIN64
 
@@ -214,35 +214,35 @@ namespace hax {
 
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-			return success;
+			return status;
 		}
 
 
-		bool hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+		Status hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const HMODULE hNtdll = proc::ex::getModuleHandle(hProc, "win32u.dll");
 
-			if (!hNtdll) return false;
+			if (!hNtdll) return Status::ERR_GET_MOD_HANDLE;
 
 			BYTE* const pNtUserBeginPaint = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hNtdll, "NtUserBeginPaint"));
 
-			if (!pNtUserBeginPaint) return false;
+			if (!pNtUserBeginPaint) return Status::ERR_GET_PROC_ADDR;
 
 			const DWORD pageSize = getPageSize();
 
-			if (!pageSize) return false;
+			if (!pageSize) return Status::ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (!pShellCode) return false;
+			if (!pShellCode) return Status::ERR_MEM_ALLOC;
 
 			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success = false;
+			Status status = Status::SUCCESS;
 
 			if (isWow64) {
 
-				success = x86::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
+				status = x86::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
 
 			}
 			else {
@@ -250,7 +250,7 @@ namespace hax {
 				// x64 targets only feasable for x64 compilations
 				#ifdef _WIN64
 
-				success = x64::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
+				status = x64::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
 
 				#endif // _WIN64
 
@@ -258,23 +258,25 @@ namespace hax {
 
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-			return success;
+			return status;
 		}
 
 
-		bool queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+		Status queueUserApc(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 			const DWORD processId = GetProcessId(hProc);
+
+			if (!processId) return Status::ERR_GET_PROC_ID;
 
 			proc::ProcessEntry procEntry{};
 
-			if (!proc::getProcessEntry(processId, &procEntry)) return false;
+			if (!proc::getProcessEntry(processId, &procEntry)) return Status::ERR_GET_PROC_ENTRIES;
 
 			proc::ThreadEntry* const pThreadEntries = new proc::ThreadEntry[procEntry.threadCount];
 
 			if (!proc::getProcessThreadEntries(processId, pThreadEntries, procEntry.threadCount)) {
 				delete[] pThreadEntries;
 
-				return false;
+				return Status::ERR_GET_THREAD_ENTRIES;
 			}
 
 			DWORD threadId = 0ul;
@@ -294,32 +296,32 @@ namespace hax {
 
 			delete[] pThreadEntries;
 
-			if (!threadId) return false;
+			if (!threadId) return Status::ERR_NO_SLEEPING_THREAD;
 
 			const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, threadId);
 
-			if (!hThread) return false;
+			if (!hThread) return Status::ERR_OPEN_THREAD;
 
 			const DWORD pageSize = getPageSize();
 
-			if (!pageSize) return false;
+			if (!pageSize) return Status::ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) {
 				CloseHandle(hThread);
 
-				return false;
+				return Status::ERR_MEM_ALLOC;
 			}
 
 			BOOL isWow64 = FALSE;
 			IsWow64Process(hProc, &isWow64);
 
-			bool success = false;
+			Status status = Status::SUCCESS;
 
 			if (isWow64) {
 
-				success = x86::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
+				status = x86::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
 
 			}
 			else {
@@ -327,7 +329,7 @@ namespace hax {
 				// x64 targets only feasable for x64 compilations
 				#ifdef _WIN64
 
-				success = x64::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
+				status = x64::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
 
 				#endif // _WIN64
 
@@ -336,7 +338,7 @@ namespace hax {
 			VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 			CloseHandle(hThread);
 
-			return success;
+			return status;
 		}
 
 
@@ -364,12 +366,12 @@ namespace hax {
 				uint8_t flag;
 			}LaunchData;
 
-			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				HANDLE hThread = nullptr;
 
-				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
+				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pFunc), pArg, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return Status::ERR_CREATE_THREAD;
 
-				if (!hThread) return false;
+				if (!hThread) return Status::ERR_CREATE_THREAD;
 
 				if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT) != WAIT_OBJECT_0) {
 
@@ -380,13 +382,13 @@ namespace hax {
 
 					CloseHandle(hThread);
 
-					return false;
+					return Status::ERR_THREAD_TIMEOUT;
 				}
 
 				GetExitCodeThread(hThread, reinterpret_cast<DWORD*>(pRet));
 				CloseHandle(hThread);
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 			// ASM:
@@ -410,9 +412,9 @@ namespace hax {
 			// ret									return to old eip
 			static constexpr BYTE HIJACK_THREAD_SHELL[]{ 0x68, 0x00, 0x00, 0x00, 0x00, 0x51, 0x50, 0x52, 0x9C, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x41, 0x04, 0x51, 0xFF, 0x31, 0xFF, 0xD0, 0x59, 0x89, 0x41, 0x08, 0x9D, 0x5A, 0x58, 0xC6, 0x41, 0x0C, 0x01, 0x59, 0xC3 };
 
-			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
-				if (SuspendThread(hThread) == 0xFFFFFFFF) return false;
+				if (SuspendThread(hThread) == 0xFFFFFFFF) return Status::ERR_SUSPEND_THREAD;
 
 				WOW64_CONTEXT wow64Context{};
 				wow64Context.ContextFlags = CONTEXT_CONTROL;
@@ -420,12 +422,12 @@ namespace hax {
 				if (!Wow64GetThreadContext(hThread, &wow64Context)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_GET_THREAD_CONTEXT;
 				}
 
 				BYTE localShell[sizeof(HIJACK_THREAD_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -441,7 +443,7 @@ namespace hax {
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_WRITE_PROC_MEM;
 				}
 
 				wow64Context.Eip = LOW_DWORD(pShellCode);
@@ -449,7 +451,7 @@ namespace hax {
 				if (!Wow64SetThreadContext(hThread, &wow64Context)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_SET_THREAD_CONTEXT;
 				}
 
 				// post thread message to ensure thread execution
@@ -460,7 +462,7 @@ namespace hax {
 					Wow64SetThreadContext(hThread, &wow64Context);
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_RESUME_THREAD;
 				}
 
 				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
@@ -471,12 +473,12 @@ namespace hax {
 						ResumeThread(hThread);
 					}
 
-					return false;
+					return Status::ERR_CHECK_SHELL_FLAG;
 				}
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 
@@ -507,10 +509,10 @@ namespace hax {
 			// ret    0xc
 			static constexpr BYTE WINDOWS_HOOK_SHELL[]{ 0x55, 0x89, 0xE5, 0xEB, 0x00, 0x50, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xD0, 0x1B, 0x53, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x5B, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0x58, 0xFF, 0x75, 0x10, 0xFF, 0x75, 0x0C, 0xFF, 0x75, 0x08, 0x6A, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x5D, 0xC2, 0x0C, 0x00 };
 
-			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(WINDOWS_HOOK_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -521,11 +523,11 @@ namespace hax {
 				*reinterpret_cast<uint32_t*>(localShell + 0x08) = reinterpret_cast<uint32_t>(pLaunchDataEx);
 				*reinterpret_cast<uint32_t*>(localShell + 0x2C) = reinterpret_cast<uint32_t>(pHookData->pCallNextHookEx) - (reinterpret_cast<uint32_t>(pShellCode) + 0x30);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(pHookData));
 
-				if (!pHookData->hHook || !pHookData->hWnd) return false;
+				if (!pHookData->hHook || !pHookData->hWnd) return Status::ERR_WINDOWS_HOOK;
 
 				// foreground window to activate the hook
 				const HWND hFgWnd = GetForegroundWindow();
@@ -535,14 +537,14 @@ namespace hax {
 				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
 					UnhookWindowsHookEx(pHookData->hHook);
 
-					return false;
+					return Status::ERR_CHECK_SHELL_FLAG;
 				}
 
 				UnhookWindowsHookEx(pHookData->hHook);
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 			#endif // !_WIN64
@@ -562,10 +564,10 @@ namespace hax {
 			// jmp    eax
 			static constexpr BYTE HOOK_BEGIN_PAINT_SHELL[]{ 0xEB, 0x00, 0x53, 0xBB, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x43, 0xE1, 0x17, 0xFF, 0x33, 0xFF, 0x53, 0x04, 0x89, 0x43, 0x08, 0xC6, 0x43, 0x0C, 0x01, 0x5B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
 
-			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(HOOK_BEGIN_PAINT_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -575,12 +577,12 @@ namespace hax {
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				*reinterpret_cast<uint32_t*>(localShell + 0x04) = LOW_DWORD(pLaunchDataEx);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				constexpr size_t LEN_STOLEN = 10;
 				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x1A, LEN_STOLEN);
 
-				if (!pGateway) return false;
+				if (!pGateway) return Status::ERR_TRAMP_HOOK;
 
 				const DWORD processId = GetProcessId(hProc);
 
@@ -589,7 +591,7 @@ namespace hax {
 					EnumWindows(resizeCallback, reinterpret_cast<LPARAM>(&processId));
 				}
 
-				const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
+				const bool shellFlagSet = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
 				BYTE* const stolen = new BYTE[LEN_STOLEN]{};
 
@@ -598,7 +600,7 @@ namespace hax {
 					// if gateway gets deallocated here, the process will crash
 					delete[] stolen;
 
-					return false;
+					return Status::ERR_READ_PROC_MEM;
 				}
 
 				// patch the stolen bytes back
@@ -606,18 +608,18 @@ namespace hax {
 					// if gateway gets deallocated here, the process will crash
 					delete[] stolen;
 
-					return false;
+					return Status::ERR_PATCH;
 				}
 
 				delete[] stolen;
 				// now gateway can be deallocated safely
 				VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
 
-				if (!success) return false;
+				if (!shellFlagSet) return Status::ERR_CHECK_SHELL_FLAG;
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 
@@ -635,35 +637,35 @@ namespace hax {
 			// ret    0x4
 			static constexpr BYTE QUEUE_USER_APC_SHELL[]{ 0x55, 0x89, 0xE5, 0x8B, 0x4D, 0x08, 0x51, 0xFF, 0x31, 0xFF, 0x51, 0x04, 0x59, 0x89, 0x41, 0x08, 0xC6, 0x41, 0x0C, 0x01, 0x5D, 0xC2, 0x04, 0x00 };
 
-			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(QUEUE_USER_APC_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = LOW_DWORD(pArg);
 				pLaunchData->pFunc = LOW_DWORD(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				const HMODULE hNtdll = proc::in::getModuleHandle("ntdll.dll");
 
-				if (!hNtdll) return false;
+				if (!hNtdll) return Status::ERR_GET_MOD_HANDLE;
 
 				const tRtlQueueApcWow64Thread pRtlQueueApcWow64Thread = reinterpret_cast<tRtlQueueApcWow64Thread>(proc::in::getProcAddress(hNtdll, "RtlQueueApcWow64Thread"));
 
-				if (!pRtlQueueApcWow64Thread) return false;
+				if (!pRtlQueueApcWow64Thread) return Status::ERR_GET_PROC_ADDR;
 
 				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
-				if (pRtlQueueApcWow64Thread(hThread, pShellCode, pLaunchDataEx, nullptr, nullptr) != STATUS_SUCCESS) return false;
+				if (pRtlQueueApcWow64Thread(hThread, pShellCode, pLaunchDataEx, nullptr, nullptr) != STATUS_SUCCESS) return Status::ERR_QUEUE_APC_WOW64_THREAD;
 
-				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) return false;
+				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) return Status::ERR_CHECK_SHELL_FLAG;
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint32_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 		}
@@ -694,24 +696,24 @@ namespace hax {
 			// ret
 			static constexpr BYTE CREATE_THREAD_SHELL[]{ 0x51, 0x48, 0x8B, 0xC1, 0x48, 0x8B, 0x08, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0x50, 0x08, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0x48, 0x31, 0xC0, 0xC3 };
 
-			static bool createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(CREATE_THREAD_SHELL) + sizeof(LaunchData)]{};
 
-				if (memcpy_s(localShell, sizeof(localShell), CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 				HANDLE hThread = nullptr;
 
-				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return false;
+				if (pNtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, nullptr, hProc, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellCode), pLaunchDataEx, 0, 0, 0, 0, nullptr) != STATUS_SUCCESS) return Status::ERR_CREATE_THREAD;
 
-				if (!hThread) return false;
+				if (!hThread) return Status::ERR_CREATE_THREAD;
 
 				if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT)) {
 
@@ -722,13 +724,13 @@ namespace hax {
 
 					CloseHandle(hThread);
 
-					return false;
+					return Status::ERR_THREAD_TIMEOUT;
 				}
 
 				ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr);
 				CloseHandle(hThread);
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 
@@ -760,9 +762,9 @@ namespace hax {
 			// ret
 			static constexpr BYTE HIJACK_THREAD_SHELL[]{ 0xFF, 0x35, 0x4F, 0x00, 0x00, 0x00, 0x50, 0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53, 0x9C, 0x48, 0x8B, 0x0D, 0x2C, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x05, 0x2D, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x48, 0x89, 0x05, 0x24, 0x00, 0x00, 0x00, 0x9D, 0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59, 0x58, 0xC6, 0x05, 0x19, 0x00, 0x00, 0x00, 0x01, 0xC3 };
 
-			static bool hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status hijackThread(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, DWORD threadId, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 
-				if (SuspendThread(hThread) == 0xFFFFFFFF) return false;
+				if (SuspendThread(hThread) == 0xFFFFFFFF) return Status::ERR_SUSPEND_THREAD;
 
 				CONTEXT context{};
 				context.ContextFlags = CONTEXT_CONTROL;
@@ -770,12 +772,12 @@ namespace hax {
 				if (!GetThreadContext(hThread, &context)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_GET_THREAD_CONTEXT;
 				}
 
 				BYTE localShell[sizeof(HIJACK_THREAD_SHELL) + sizeof(LaunchData)]{};
 
-				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -790,7 +792,7 @@ namespace hax {
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_WRITE_PROC_MEM;
 				}
 
 				context.Rip = reinterpret_cast<uint64_t>(pShellCode);
@@ -798,7 +800,7 @@ namespace hax {
 				if (!SetThreadContext(hThread, &context)) {
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_SET_THREAD_CONTEXT;
 				}
 
 				// post thread message to ensure thread execution
@@ -809,7 +811,7 @@ namespace hax {
 					SetThreadContext(hThread, &context);
 					ResumeThread(hThread);
 
-					return false;
+					return Status::ERR_RESUME_THREAD;
 				}
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
@@ -822,12 +824,12 @@ namespace hax {
 						ResumeThread(hThread);
 					}
 
-					return false;
+					return Status::ERR_CHECK_SHELL_FLAG;
 				}
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 
@@ -859,10 +861,10 @@ namespace hax {
 			// ret
 			static constexpr BYTE WINDOWS_HOOK_SHELL[]{ 0x55, 0x54, 0x53, 0x41, 0x50, 0x52, 0x51, 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2A, 0x48, 0x8B, 0x0D, 0x39, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x37, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x34, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x35, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x41, 0x58, 0x41, 0x59, 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0xD3, 0x48, 0x83, 0xC4, 0x28, 0x5B, 0x5C, 0x5D, 0xC3 };
 
-			static bool setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(WINDOWS_HOOK_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -873,11 +875,11 @@ namespace hax {
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				EnumWindows(setHookCallback, reinterpret_cast<LPARAM>(pHookData));
 
-				if (!pHookData->hHook || !pHookData->hWnd) return false;
+				if (!pHookData->hHook || !pHookData->hWnd) return Status::ERR_WINDOWS_HOOK;
 
 				// foreground window to activate the hook
 				const HWND hFgWnd = GetForegroundWindow();
@@ -887,14 +889,14 @@ namespace hax {
 				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) {
 					UnhookWindowsHookEx(pHookData->hHook);
 
-					return false;
+					return Status::ERR_CHECK_SHELL_FLAG;
 				}
 
 				UnhookWindowsHookEx(pHookData->hHook);
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 
@@ -915,10 +917,10 @@ namespace hax {
 			// jmp    rax
 			static constexpr BYTE HOOK_BEGIN_PAINT_SHELL[]{ 0xEB, 0x00, 0xC6, 0x05, 0xF8, 0xFF, 0xFF, 0xFF, 0x2E, 0x51, 0x52, 0x48, 0x8B, 0x0D, 0x2A, 0x00, 0x00, 0x00, 0x48, 0x83, 0xEC, 0x28, 0xFF, 0x15, 0x28, 0x00, 0x00, 0x00, 0x48, 0x83, 0xC4, 0x28, 0x48, 0x89, 0x05, 0x25, 0x00, 0x00, 0x00, 0xC6, 0x05, 0x26, 0x00, 0x00, 0x00, 0x01, 0x5A, 0x59, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
 
-			static bool hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(HOOK_BEGIN_PAINT_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -928,13 +930,13 @@ namespace hax {
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
 					VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
 
-					return false;
+					return Status::ERR_WRITE_PROC_MEM;
 				}
 
 				constexpr size_t LEN_STOLEN = 8;
 				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x32, LEN_STOLEN);
 
-				if (!pGateway) return false;
+				if (!pGateway) return Status::ERR_TRAMP_HOOK;
 
 				const DWORD processId = GetProcessId(hProc);
 
@@ -944,7 +946,7 @@ namespace hax {
 				}
 
 				const LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
-				const bool success = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
+				const bool shellFlagSet = checkShellCodeFlag(hProc, &pLaunchDataEx->flag);
 
 				BYTE* const pStolen = new BYTE[LEN_STOLEN]{};
 
@@ -953,7 +955,7 @@ namespace hax {
 					// if gateway gets deallocated here, the process will crash
 					delete[] pStolen;
 
-					return false;
+					return Status::ERR_READ_PROC_MEM;
 				}
 
 				// patch the stolen bytes back
@@ -961,18 +963,18 @@ namespace hax {
 					// if gateway gets deallocated here, the process will crash
 					delete[] pStolen;
 
-					return false;
+					return Status::ERR_PATCH;
 				}
 
 				delete[] pStolen;
 				// now gateway can be deallocated safely
 				VirtualFreeEx(hProc, pGateway, 0, MEM_RELEASE);
 
-				if (!success) return false;
+				if (!shellFlagSet) return Status::ERR_CHECK_SHELL_FLAG;
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 			// ASM:
@@ -988,27 +990,27 @@ namespace hax {
 			// ret
 			static constexpr BYTE QUEUE_USER_APC_SHELL[]{ 0x51, 0x48, 0x8B, 0x41, 0x08, 0x48, 0x8B, 0x09, 0x48, 0x83, 0xEC, 0x20, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x20, 0x59, 0x48, 0x89, 0x41, 0x10, 0xC6, 0x41, 0x18, 0x01, 0xC3 };
 
-			static bool queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(QUEUE_USER_APC_SHELL) + sizeof(LaunchData)]{};
 				
-				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return false;
+				if (memcpy_s(localShell, sizeof(localShell), QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return Status::ERR_MEM_CPY;
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
 				LaunchData* const pLaunchDataEx = reinterpret_cast<LaunchData*>(pShellCode + LAUNCH_DATA_OFFSET);
 
-				if (!QueueUserAPC(reinterpret_cast<PAPCFUNC>(pShellCode), hThread, reinterpret_cast<ULONG_PTR>(pLaunchDataEx))) return false;
+				if (!QueueUserAPC(reinterpret_cast<PAPCFUNC>(pShellCode), hThread, reinterpret_cast<ULONG_PTR>(pLaunchDataEx))) return Status::ERR_QUEUE_USER_APC;
 
-				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) return false;
+				if (!checkShellCodeFlag(hProc, &pLaunchDataEx->flag)) return Status::ERR_CHECK_SHELL_FLAG;
 
-				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return false;
+				if (!ReadProcessMemory(hProc, &pLaunchDataEx->pRet, pRet, sizeof(uint64_t), nullptr)) return Status::ERR_READ_PROC_MEM;
 
-				return true;
+				return Status::SUCCESS;
 			}
 
 		}
