@@ -290,11 +290,11 @@ namespace hax {
 
 
 			void* getVirtualFunction(HANDLE hProc, const void* pInterface, size_t index) {
-				void* const * pVTable = nullptr;
+				const void* const * pVTable = nullptr;
 
 				if (!ReadProcessMemory(hProc, pInterface, &pVTable, sizeof(void**), 0u)) return nullptr;
 
-				void* const * const pFuncAddress = pVTable + index;
+				const void* const * const pFuncAddress = pVTable + index;
 
 				if (!pFuncAddress) return nullptr;
 
@@ -618,7 +618,7 @@ namespace hax {
 
 
 			void* getVirtualFunction(const void* pInterface, size_t index) {
-				void* const* pVTable = *reinterpret_cast<void***>(const_cast<void*>(pInterface));
+				void* const* const pVTable = *reinterpret_cast<void***>(const_cast<void*>(pInterface));
 
 				void* const* const pFuncAddress = pVTable + index;
 
