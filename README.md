@@ -85,7 +85,6 @@ Press "END" to unhook and eject the DLL.
 ## TODO
 - Support texture drawing with IBackend interface
 - Make IBackend interface compatible with ImGui frontend
-- Better error handling for launch functions
 
 ## References
 - https://guidedhacking.com/
