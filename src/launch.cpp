@@ -108,7 +108,8 @@ namespace hax {
 
 			// get the first/main thread entry
 			proc::ThreadEntry threadEntry{};
-			proc::getProcessThreadEntries(processId, &threadEntry, 1);
+			
+			if (!proc::getProcessThreadEntries(processId, &threadEntry, 1)) return false;
 
 			const HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, threadEntry.threadId);
 
@@ -370,7 +371,7 @@ namespace hax {
 
 				if (!hThread) return false;
 
-				if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT)) {
+				if (WaitForSingleObject(hThread, LAUNCH_TIMEOUT) != WAIT_OBJECT_0) {
 
 					#pragma warning (push)
 					#pragma warning (disable: 6258)
