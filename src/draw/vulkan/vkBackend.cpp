@@ -879,7 +879,7 @@ namespace hax {
 			}
 
 
-			VkShaderModule Backend::createShaderModule(const BYTE shader[], size_t size) const {
+			VkShaderModule Backend::createShaderModule(const BYTE* shader, size_t size) const {
 				VkShaderModuleCreateInfo fragCreateInfo{};
 				fragCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				fragCreateInfo.codeSize = size;

@@ -119,7 +119,7 @@ namespace hax {
 				bool createPipelineLayout();
 				VkDescriptorSetLayout createDescriptorSetLayout() const;
 				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
-				VkShaderModule createShaderModule(const BYTE shader[], size_t size) const;
+				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;

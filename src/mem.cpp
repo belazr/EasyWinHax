@@ -718,7 +718,7 @@ namespace hax {
 
 		namespace helper {
 
-			bool bytestringToInt(const char* charSig, int intSig[], size_t sigSize) {
+			bool bytestringToInt(const char* charSig, int* intSig, size_t sigSize) {
 
 				// checks for format "DE AD" by character count and asserts the correct size
 				if (!((strlen(charSig) + 1) % 3 == 0) || ((strlen(charSig) + 1) / 3 != sigSize)) return false;
