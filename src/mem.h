@@ -530,7 +530,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false if the buffer has an invalid size.
-			bool bytestringToInt(const char* charSig, int intSig[], size_t size);
+			bool bytestringToInt(const char* charSig, int* intSig, size_t size);
 
 			// Finds the address of a byte signature within a single memory region of the caller process.
 			// Do not use across multiple memory regions. Use findSignatureAddress instead.
