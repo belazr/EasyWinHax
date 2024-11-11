@@ -93,7 +93,7 @@ namespace hax {
 
 				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
 
-					for (ULONG i = 0; i < pCurSysProcInfo->NumberOfThreads && i < size; i++) {
+					for (ULONG i = 0ul; i < pCurSysProcInfo->NumberOfThreads && i < size; i++) {
 						pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
 						pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
 						pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
@@ -133,10 +133,10 @@ namespace hax {
 
 			HANDLE hProc = nullptr;
 
-			for (ULONG i = 0; i < pSysHandleInfoBuffer->NumberOfHandles; i++) {
+			for (ULONG i = 0ul; i < pSysHandleInfoBuffer->NumberOfHandles; i++) {
 				const SYSTEM_HANDLE_TABLE_ENTRY_INFO curHandleInfo = pSysHandleInfoBuffer->Handles[i];
 
-				constexpr UCHAR PROCESS_TYPE = 7;
+				constexpr UCHAR PROCESS_TYPE = 7u;
 				
 				if (curHandleInfo.ObjectTypeIndex != PROCESS_TYPE) continue;
 
@@ -188,7 +188,7 @@ namespace hax {
 
 			if (!pNtQuerySystemInformation) return nullptr;
 
-			ULONG outSize = 0;
+			ULONG outSize = 0ul;
 			ITYPE sysInfo{};
 			NTSTATUS ntStatus = pNtQuerySystemInformation(infoClass, &sysInfo, sizeof(ITYPE), &outSize);
 
@@ -261,7 +261,7 @@ namespace hax {
 
 				DWORD funcRva = 0ul;
 				// export by ordinal if everything but the lowest word of name param is zero
-				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0;
+				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0u;
 
 				if (byOrdinal) {
 					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & MAXWORD) - exportDir.Base);
@@ -472,7 +472,7 @@ namespace hax {
 
 
 			HMODULE getModuleHandle(HANDLE hProc, const char* modName) {
-				uintptr_t modBase = 0;
+				uintptr_t modBase = 0u;
 
 				BOOL isWow64 = FALSE;
 				IsWow64Process(hProc, &isWow64);
@@ -752,7 +752,7 @@ namespace hax {
 
 				DWORD funcRva = 0ul;
 				// export by ordinal if everything but the lowest word of name param is zero
-				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0;
+				const bool byOrdinal = (reinterpret_cast<uintptr_t>(funcName) >> sizeof(WORD) * 0x8) == 0u;
 
 				if (byOrdinal) {
 					const WORD index = static_cast<WORD>((reinterpret_cast<uintptr_t>(funcName) & MAXWORD) - pExportDir->Base);
