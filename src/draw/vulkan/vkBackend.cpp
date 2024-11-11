@@ -116,7 +116,7 @@ namespace hax {
 			
 				if (!pVkEnumeratePhysicalDevices || !pVkGetPhysicalDeviceProperties) return VK_NULL_HANDLE;
 			
-				uint32_t tmpGpuCount{};
+				uint32_t tmpGpuCount = 0u;
 
 				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
@@ -323,7 +323,7 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
-				uint32_t imageCount{};
+				uint32_t imageCount = 0u;
 
 				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
 
