@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx9 {
 
-			DrawBuffer::DrawBuffer() : _pDevice{}, _pVertexBuffer {}, _pIndexBuffer{}, _primitiveType{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pVertexBuffer {}, _pIndexBuffer{}, _primitiveType{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -87,7 +87,7 @@ namespace hax {
 
 
 			void DrawBuffer::draw() {
-				UINT primitiveCount{};
+				UINT primitiveCount = 0u;
 
 				switch (this->_primitiveType) {
 				case D3DPRIMITIVETYPE::D3DPT_POINTLIST:

@@ -14,13 +14,15 @@ namespace hax {
 
 		class AbstractDrawBuffer {
 		protected:
-			Vertex* _pLocalVertexBuffer{};
-			uint32_t* _pLocalIndexBuffer{};
-			uint32_t _vertexBufferSize{};
-			uint32_t _indexBufferSize{};
-			uint32_t _curOffset{};
+			Vertex* _pLocalVertexBuffer;
+			uint32_t* _pLocalIndexBuffer;
+			uint32_t _vertexBufferSize;
+			uint32_t _indexBufferSize;
+			uint32_t _curOffset;
 
 		public:
+			AbstractDrawBuffer() : _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _vertexBufferSize{}, _indexBufferSize{}, _curOffset{} {}
+
 			// Creates a new buffer with all internal resources.
 			//
 			// Parameters:
