@@ -140,7 +140,7 @@ namespace hax {
 				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
 				// so it has to be acquired every frame as well
 				// this is done so resolution changes do not break rendering
-				ID3D11Texture2D* pBackBuffer{};
+				ID3D11Texture2D* pBackBuffer = nullptr;
 				if (FAILED(this->_pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return false;
 
 				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
@@ -355,7 +355,7 @@ namespace hax {
 				*pViewport = viewports[0];
 
 				if (!viewportCount || !pViewport->Width) {
-					HWND hMainWnd{};
+					HWND hMainWnd = nullptr;
 
 					EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
 

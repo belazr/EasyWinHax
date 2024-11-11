@@ -81,7 +81,7 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL free
 DWORD WINAPI haxThread(HMODULE hModule) {
 	const BOOL wasConsoleAllocated = AllocConsole();
 
-	FILE* file{};
+	FILE* file = nullptr;
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
 		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);

@@ -31,11 +31,11 @@ namespace hax {
             static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue);
 
             bool getInitData(InitData* pInitData) {
-                IDXGIFactory4* pDxgiFactory{};
+                IDXGIFactory4* pDxgiFactory = nullptr;
 
                 if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&pDxgiFactory)))) return false;
                 
-                ID3D12Device* pDevice{};
+                ID3D12Device* pDevice = nullptr;
 
                 if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice)))) {
                     pDxgiFactory->Release();
@@ -99,7 +99,7 @@ namespace hax {
             static IDXGISwapChain3* createDummySwapChain3(IDXGIFactory4* pDxgiFactory, ID3D12CommandQueue* pCommandQueue) {
                 const BOOL consoleAllocated = AllocConsole();
 
-                IDXGISwapChain1* pSwapChain1{};
+                IDXGISwapChain1* pSwapChain1 = nullptr;
                 DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
                 swapChainDesc.BufferCount = 3u;
                 swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -121,7 +121,7 @@ namespace hax {
                     FreeConsole();
                 }
 
-                IDXGISwapChain3* pSwapChain3{};
+                IDXGISwapChain3* pSwapChain3 = nullptr;
 
                 if (FAILED(pSwapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain3)))) {
                     pSwapChain1->Release();
@@ -383,7 +383,7 @@ namespace hax {
                     D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
                     D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
-                ID3DBlob* pSigantureBlob{};
+                ID3DBlob* pSigantureBlob = nullptr;
                 
                 if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pSigantureBlob, nullptr))) return false;
 
@@ -579,7 +579,7 @@ namespace hax {
                 pipelineStateDesc.RasterizerState = rasterizerDesc;
                 pipelineStateDesc.DepthStencilState = depthStencilDesc;
 
-                ID3D12PipelineState* pPipelineState{};
+                ID3D12PipelineState* pPipelineState = nullptr;
 
                 if (FAILED(this->_pDevice->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pPipelineState)))) return nullptr;
                 
