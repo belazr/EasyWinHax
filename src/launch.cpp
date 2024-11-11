@@ -579,7 +579,7 @@ namespace hax {
 
 				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return Status::ERR_WRITE_PROC_MEM;
 
-				constexpr size_t LEN_STOLEN = 10;
+				constexpr size_t LEN_STOLEN = 10u;
 				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x1A, LEN_STOLEN);
 
 				if (!pGateway) return Status::ERR_TRAMP_HOOK;

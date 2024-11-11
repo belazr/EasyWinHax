@@ -31,14 +31,14 @@ namespace hax {
 		if (this->_counter >= this->_runs) {
 			double avg = 0.;
 
-			for (size_t i = 0; i < this->_counter; i++) {
+			for (size_t i = 0u; i < this->_counter; i++) {
 				avg += this->_durations[i];
 			}
 
 			avg /= this->_counter;
 			std::cout << "Average time " << this->_label << ": " << avg << std::endl;
 			
-			this->_counter = 0;
+			this->_counter = 0u;
 		}
 
 	}

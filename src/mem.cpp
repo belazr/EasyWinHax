@@ -42,7 +42,7 @@ namespace hax {
 				}
 
 				void* gateway = nullptr;
-				size_t targetPtrSize = 0;
+				size_t targetPtrSize = 0u;
 
 				BOOL isWow64 = false;
 				IsWow64Process(hProc, &isWow64);
@@ -189,7 +189,7 @@ namespace hax {
 				// try to allocte the memory at the beginning of every memory page in range until successful
 				while (!exhausted) {
 					const uintptr_t high = range.start + offset;
-					const uintptr_t low = (range.start > offset) ? range.start - offset : 0;
+					const uintptr_t low = (range.start > offset) ? range.start - offset : 0u;
 
 					if (high < range.max) {
 						retAddress = static_cast<BYTE*>(VirtualAllocEx(hProc, reinterpret_cast<void*>(high), size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
@@ -335,7 +335,7 @@ namespace hax {
 				MEMORY_BASIC_INFORMATION mbi{};
 
 				// scan each memory region at a time
-				for (size_t i = 0; i < size; i += mbi.RegionSize) {
+				for (size_t i = 0u; i < size; i += mbi.RegionSize) {
 
 					// scan only if commited and accessable
 					if (!VirtualQueryEx(hProc, reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
@@ -377,7 +377,7 @@ namespace hax {
 
 			bool copyRemoteString(HANDLE hProc, char* dst, const void* src, size_t size) {
 
-				for (size_t i = 0; i < size; i++) {
+				for (size_t i = 0u; i < size; i++) {
 
 					if (!ReadProcessMemory(hProc, reinterpret_cast<const BYTE*>(src) + i, &dst[i], sizeof(char), nullptr)) return false;
 
@@ -517,7 +517,7 @@ namespace hax {
 				// try to allocte the memory at the beginning of every memory page in range until successful
 				while (!exhausted) {
 					const uintptr_t high = range.start + offset;
-					const uintptr_t low = (range.start > offset) ? range.start - offset : 0;
+					const uintptr_t low = (range.start > offset) ? range.start - offset : 0u;
 
 					if (high < range.max) {
 						retAddress = static_cast<BYTE*>(VirtualAlloc(reinterpret_cast<void*>(high), size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
@@ -631,7 +631,7 @@ namespace hax {
 			void* getMultiLevelPointer(const void* base, const size_t* offsets, size_t size) {
 				BYTE* address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base));
 
-				for (size_t i = 0; i < size; i++) {
+				for (size_t i = 0u; i < size; i++) {
 					address = *reinterpret_cast<BYTE**>(address);
 					address += offsets[i];
 				}
@@ -655,7 +655,7 @@ namespace hax {
 				MEMORY_BASIC_INFORMATION mbi{};
 
 				// scan each memory region at a time
-				for (size_t i = 0; i < size; i += mbi.RegionSize) {
+				for (size_t i = 0u; i < size; i += mbi.RegionSize) {
 
 					// scan only if commited and accessable
 					if (!VirtualQuery(reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
@@ -705,7 +705,7 @@ namespace hax {
 
 			const uintptr_t range = INT32_MAX;
 			// checks int underflow
-			const uintptr_t minAddress = (pAddrRange->start > range) ? pAddrRange->start - range : 0;
+			const uintptr_t minAddress = (pAddrRange->start > range) ? pAddrRange->start - range : 0u;
 			// checks int overflow
 			const uintptr_t maxAddress = (UINTPTR_MAX - pAddrRange->start > range) ? pAddrRange->start + range : UINTPTR_MAX;
 
@@ -725,7 +725,7 @@ namespace hax {
 
 				const char* cur = charSig;
 
-				for (size_t i = 0; i < sigSize; i++) {
+				for (size_t i = 0u; i < sigSize; i++) {
 
 					if (*cur == '?') {
 						// wildcard gets converted to -1
@@ -748,11 +748,11 @@ namespace hax {
 				BYTE* address = nullptr;
 
 				// loop over the memory to be searched
-				for (size_t i = 0; i < size - sigSize; i++) {
+				for (size_t i = 0u; i < size - sigSize; i++) {
 					bool found = true;
 
 					// loop over signature at every position in memory to be searched
-					for (size_t j = 0; j < sigSize; j++) {
+					for (size_t j = 0u; j < sigSize; j++) {
 
 						// -1 acts as wildcard
 						if (reinterpret_cast<const BYTE*>(base)[i + j] != signature[j] && signature[j] != -1) {

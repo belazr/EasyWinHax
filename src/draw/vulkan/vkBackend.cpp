@@ -897,7 +897,7 @@ namespace hax {
 				this->_pImageDataArray = new ImageData[imageCount]{};
 				this->_imageCount = imageCount;
 			
-				for (uint32_t i = 0; i < this->_imageCount; i++) {
+				for (uint32_t i = 0u; i < this->_imageCount; i++) {
 					VkCommandBufferAllocateInfo commandBufferAllocInfo{};
 					commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 					commandBufferAllocInfo.commandPool = this->_hCommandPool;
@@ -987,7 +987,7 @@ namespace hax {
 					return false;
 				}
 
-				for (uint32_t i = 0; i < this->_imageCount; i++) {
+				for (uint32_t i = 0u; i < this->_imageCount; i++) {
 					VkImageSubresourceRange imageSubresourceRange{};
 					imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 					imageSubresourceRange.baseMipLevel = 0u;
