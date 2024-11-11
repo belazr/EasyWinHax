@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			DrawBuffer::DrawBuffer() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _topology {}, _pVertexBufferResource{}, _pIndexBufferResource{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pCommandList{}, _pPipelineState{}, _topology {}, _pVertexBufferResource{}, _pIndexBufferResource{} {}
 
 
 			DrawBuffer::~DrawBuffer() {

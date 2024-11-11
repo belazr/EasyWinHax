@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace ogl2 {
 
-			DrawBuffer::DrawBuffer() : _f{}, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _mode{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _f{}, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _mode{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -49,7 +49,7 @@ namespace hax {
 			void DrawBuffer::destroy() {
 
 				if (this->_indexBufferId != UINT_MAX) {
-					GLuint curBufferId{};
+					GLuint curBufferId = 0u;
 					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
 					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
@@ -61,7 +61,7 @@ namespace hax {
 				}
 
 				if (this->_vertexBufferId != UINT_MAX) {
-					GLuint curArrayBufferId{};
+					GLuint curArrayBufferId = 0;
 					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curArrayBufferId));
 
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
@@ -81,7 +81,7 @@ namespace hax {
 			bool DrawBuffer::map() {
 
 				if (!this->_pLocalVertexBuffer) {
-					GLuint curBufferId{};
+					GLuint curBufferId = 0u;
 					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
@@ -95,7 +95,7 @@ namespace hax {
 				}
 
 				if (!this->_pLocalIndexBuffer) {
-					GLuint curBufferId{};
+					GLuint curBufferId = 0u;
 					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
 
 					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
@@ -113,10 +113,10 @@ namespace hax {
 
 
 			void DrawBuffer::draw() {
-				GLuint curVertexBufferId{};
+				GLuint curVertexBufferId = 0u;
 				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curVertexBufferId));
 
-				GLuint curIndexBufferId{};
+				GLuint curIndexBufferId = 0u;
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curIndexBufferId));
 
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
