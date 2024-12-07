@@ -30,11 +30,9 @@ namespace hax {
 				this->_pVertexBuffer = nullptr;
 				this->_pIndexBuffer = nullptr;
 
-				constexpr DWORD D3DFVF_CUSTOM = D3DFVF_XYZ | D3DFVF_DIFFUSE;
-
 				const UINT vertexBufferSize = vertexCount * sizeof(Vertex);
 
-				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOM, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
+				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, 0u, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
 
 				this->_vertexBufferSize = vertexBufferSize;
 
@@ -110,10 +108,6 @@ namespace hax {
 					return;
 				}
 
-				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return;
-
-				if (FAILED(this->_pDevice->SetIndices(this->_pIndexBuffer))) return;
-
 				if (FAILED(this->_pVertexBuffer->Unlock())) return;
 
 				this->_pLocalVertexBuffer = nullptr;
@@ -121,6 +115,10 @@ namespace hax {
 				if (FAILED(this->_pIndexBuffer->Unlock())) return;
 
 				this->_pLocalIndexBuffer = nullptr;
+
+				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return;
+
+				if (FAILED(this->_pDevice->SetIndices(this->_pIndexBuffer))) return;
 
 				this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->_curOffset, 0u, primitiveCount);
 				
