@@ -105,7 +105,7 @@ namespace hax {
 			corners[5].x = pos2->x - cosAtan;
 			corners[5].y = pos2->y - sinAtan;
 
-			this->_pTriangleListBuffer->append(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, 6u, color);
 		}
 
 
@@ -167,7 +167,7 @@ namespace hax {
 			corners[5].x = pos->x + width;
 			corners[5].y = pos->y;
 
-			this->_pTriangleListBuffer->append(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, 6u, color);
 		}
 
 
