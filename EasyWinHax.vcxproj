@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\draw\dx\dx10\dx10DrawBuffer.h" />
+    <ClInclude Include="src\draw\dx\dx10\dx10Backend.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12DrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12Backend.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11DrawBuffer.h" />
@@ -52,6 +54,8 @@
     <ClInclude Include="src\draw\vulkan\vkDrawBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\draw\dx\dx10\dx10DrawBuffer.cpp" />
+    <ClCompile Include="src\draw\dx\dx10\dx10Backend.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12DrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12Backend.cpp" />
     <ClCompile Include="src\draw\dx\dx11\dx11DrawBuffer.cpp" />
