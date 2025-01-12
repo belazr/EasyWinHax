@@ -144,7 +144,7 @@ namespace hax {
 					return false;
 				}
 
-				if (!this->setVertexShaderConstant())) {
+				if (!this->setVertexShaderConstant()) {
 					this->restoreState();
 
 					return false;
