@@ -32,6 +32,14 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
+	void* pD3D10SwapChainVTable[9]{};
+
+	if (!hax::draw::dx10::getD3D10SwapChainVTable(pD3D10SwapChainVTable, sizeof(pD3D10SwapChainVTable))) {
+		cleanup(file, wasConsoleAllocated);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
 
