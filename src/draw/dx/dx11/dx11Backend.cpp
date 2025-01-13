@@ -91,7 +91,11 @@ namespace hax {
 
 			bool Backend::initialize() {
 
-				if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
+				if (!this->_pDevice) {
+
+					if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
+				
+				}
 
 				if (!this->_pContext) {
 					this->_pDevice->GetImmediateContext(&this->_pContext);
@@ -141,6 +145,7 @@ namespace hax {
 				// so it has to be acquired every frame as well
 				// this is done so resolution changes do not break rendering
 				ID3D11Texture2D* pBackBuffer = nullptr;
+				
 				if (FAILED(this->_pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return false;
 
 				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
@@ -182,8 +187,8 @@ namespace hax {
 
 
 			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
-				*frameWidth = static_cast<float>(this->_viewport.Width);
-				*frameHeight = static_cast<float>(this->_viewport.Height);
+				*frameWidth = this->_viewport.Width;
+				*frameHeight = this->_viewport.Height;
 
 				return;
 			}
@@ -275,7 +280,8 @@ namespace hax {
 				float4 col : COLOR0;
 			};
 
-			float4 main(PSI input) : SV_TARGET{
+			float4 main(PSI input) : SV_TARGET {
+				
 				return input.col;
 			}
 			*/
@@ -344,6 +350,19 @@ namespace hax {
 			}
 
 
+			bool Backend::createConstantBuffer() {
+				this->_pConstantBuffer = nullptr;
+
+				D3D11_BUFFER_DESC bufferDesc{};
+				bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+				bufferDesc.ByteWidth = 16u * sizeof(float);
+				bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+				return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
+			}
+
+
 			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
 
 			bool Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
@@ -375,19 +394,6 @@ namespace hax {
 				}
 
 				return true;
-			}
-
-
-			bool Backend::createConstantBuffer() {
-				this->_pConstantBuffer = nullptr;
-
-				D3D11_BUFFER_DESC bufferDesc{};
-				bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-				bufferDesc.ByteWidth = 16u * sizeof(float);
-				bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-				return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
 			}
 
 
