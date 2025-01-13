@@ -18,6 +18,7 @@ namespace hax {
 
 			public:
 				DrawBuffer();
+
 				~DrawBuffer();
 
 				// Initializes members.
