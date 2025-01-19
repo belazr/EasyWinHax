@@ -38,10 +38,14 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader {}, _pVertexLayout{}, _pPixelShader{} {}
+				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{} {}
 
 
 			Backend::~Backend() {
+
+				if (this->_pConstantBuffer) {
+					this->_pConstantBuffer->Release();
+				}
 
 				if (this->_pPixelShader) {
 					this->_pPixelShader->Release();
@@ -80,6 +84,12 @@ namespace hax {
 				}
 
 				if (!this->createShaders()) return false;
+
+				if (!this->_pConstantBuffer) {
+
+					if (!this->createConstantBuffer()) return false;
+
+				}
 
 				return true;
 			}
@@ -228,6 +238,17 @@ namespace hax {
 				}
 
 				return true;
+			}
+
+
+			bool Backend::createConstantBuffer() {
+				D3D10_BUFFER_DESC bufferDesc{};
+				bufferDesc.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
+				bufferDesc.ByteWidth = 16u * sizeof(float);
+				bufferDesc.Usage = D3D10_USAGE_DYNAMIC;
+				bufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+
+				return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
 			}
 
 		}

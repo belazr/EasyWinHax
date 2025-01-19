@@ -38,6 +38,7 @@ namespace hax {
 				ID3D10VertexShader* _pVertexShader;
 				ID3D10InputLayout* _pVertexLayout;
 				ID3D10PixelShader* _pPixelShader;
+				ID3D10Buffer* _pConstantBuffer;
 
 			public:
 				Backend();
@@ -63,6 +64,7 @@ namespace hax {
 
 			private:
 				bool createShaders();
+				bool createConstantBuffer();
 			};
 
 		}
