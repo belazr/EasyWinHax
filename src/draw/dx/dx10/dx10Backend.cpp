@@ -38,10 +38,16 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{} {}
+				_pSwapChain{}, _pDevice{} {}
 
 
-			Backend::~Backend() {}
+			Backend::~Backend() {
+
+				if (this->_pDevice) {
+					this->_pDevice->Release();
+				}
+
+			}
 
 
 			void Backend::setHookArguments(void* pArg1, void* pArg2) {
@@ -50,6 +56,18 @@ namespace hax {
 				this->_pSwapChain = reinterpret_cast<IDXGISwapChain*>(pArg1);
 
 				return;
+			}
+
+
+			bool Backend::initialize() {
+
+				if (!this->_pDevice) {
+
+					if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
+
+				}
+
+				return true;
 			}
 
 		}
