@@ -39,6 +39,7 @@ namespace hax {
 				ID3D10InputLayout* _pVertexLayout;
 				ID3D10PixelShader* _pPixelShader;
 				ID3D10Buffer* _pConstantBuffer;
+				D3D10_VIEWPORT _viewport;
 
 			public:
 				Backend();
@@ -61,10 +62,17 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+				
+				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool beginFrame() override;
 
 			private:
 				bool createShaders();
 				bool createConstantBuffer();
+				bool getCurrentViewport(D3D10_VIEWPORT* pViewport) const;
 			};
 
 		}
