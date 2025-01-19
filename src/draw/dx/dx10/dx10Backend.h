@@ -34,6 +34,8 @@ namespace hax {
 			private:
 				IDXGISwapChain* _pSwapChain;
 
+				ID3D10Device* _pDevice;
+
 			public:
 				Backend();
 
@@ -49,6 +51,12 @@ namespace hax {
 				// [in] pArg2:
 				// Pass nothing
 				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
+
+				// Initializes the backend. Should be called by an Engine object until success.
+				// 
+				// Return:
+				// True on success, false on failure.
+				virtual bool initialize() override;
 			};
 
 		}
