@@ -38,7 +38,7 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{} {}
+				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _viewport{} {}
 
 
 			Backend::~Backend() {
@@ -90,6 +90,15 @@ namespace hax {
 					if (!this->createConstantBuffer()) return false;
 
 				}
+
+				return true;
+			}
+
+
+			bool Backend::beginFrame() {
+				D3D10_VIEWPORT curViewport{};
+
+				if (!this->getCurrentViewport(&curViewport)) return false;
 
 				return true;
 			}
@@ -249,6 +258,58 @@ namespace hax {
 				bufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
 				return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
+			}
+
+
+			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
+
+			bool Backend::getCurrentViewport(D3D10_VIEWPORT* pViewport) const {
+				D3D10_VIEWPORT viewports[D3D10_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
+				UINT viewportCount = _countof(viewports);
+
+				this->_pDevice->RSGetViewports(&viewportCount, viewports);
+
+				*pViewport = viewports[0];
+
+				if (!viewportCount || !pViewport->Width) {
+					HWND hMainWnd = nullptr;
+
+					EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
+
+					if (!hMainWnd) return false;
+
+					RECT windowRect{};
+
+					if (!GetClientRect(hMainWnd, &windowRect)) return false;
+
+					pViewport->Width = static_cast<UINT>(windowRect.right);
+					pViewport->Height = static_cast<UINT>(windowRect.bottom);
+					pViewport->TopLeftX = static_cast<UINT>(windowRect.left);
+					pViewport->TopLeftY = static_cast<UINT>(windowRect.top);
+					pViewport->MinDepth = 0.f;
+					pViewport->MaxDepth = 1.f;
+					this->_pDevice->RSSetViewports(1u, pViewport);
+				}
+
+				return true;
+			}
+
+
+			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
+				DWORD processId = 0ul;
+				GetWindowThreadProcessId(hWnd, &processId);
+
+				if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+				char className[MAX_PATH]{};
+
+				if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+				if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+				*reinterpret_cast<HWND*>(lParam) = hWnd;
+
+				return FALSE;
 			}
 
 		}
