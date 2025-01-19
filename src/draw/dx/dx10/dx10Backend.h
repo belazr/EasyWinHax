@@ -32,11 +32,23 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				IDXGISwapChain* _pSwapChain;
 
 			public:
 				Backend();
 
 				~Backend();
+
+				// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
+				//
+				// Parameters:
+				// 
+				// [in] pArg1:
+				// Pass the IDXGISwapChain*.
+				//
+				// [in] pArg2:
+				// Pass nothing
+				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 			};
 
 		}
