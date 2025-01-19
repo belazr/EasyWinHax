@@ -35,6 +35,9 @@ namespace hax {
 				IDXGISwapChain* _pSwapChain;
 
 				ID3D10Device* _pDevice;
+				ID3D10VertexShader* _pVertexShader;
+				ID3D10InputLayout* _pVertexLayout;
+				ID3D10PixelShader* _pPixelShader;
 
 			public:
 				Backend();
@@ -57,6 +60,9 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+
+			private:
+				bool createShaders();
 			};
 
 		}
