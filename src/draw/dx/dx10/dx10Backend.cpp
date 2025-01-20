@@ -107,6 +107,11 @@ namespace hax {
 					this->_viewport = curViewport;
 				}
 
+				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
+				this->_pDevice->VSSetShader(this->_pVertexShader);
+				this->_pDevice->IASetInputLayout(this->_pVertexLayout);
+				this->_pDevice->PSSetShader(this->_pPixelShader);
+
 				return true;
 			}
 
