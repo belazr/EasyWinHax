@@ -100,6 +100,13 @@ namespace hax {
 
 				if (!this->getCurrentViewport(&curViewport)) return false;
 
+				if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
+
+					if (!this->updateConstantBuffer(curViewport)) return false;
+
+					this->_viewport = curViewport;
+				}
+
 				return true;
 			}
 
@@ -290,6 +297,31 @@ namespace hax {
 					pViewport->MaxDepth = 1.f;
 					this->_pDevice->RSSetViewports(1u, pViewport);
 				}
+
+				return true;
+			}
+
+
+			bool Backend::updateConstantBuffer(D3D10_VIEWPORT viewport) const {
+				const float viewLeft = static_cast<float>(viewport.TopLeftX);
+				const float viewRight = static_cast<float>(viewport.TopLeftX + viewport.Width);
+				const float viewTop = static_cast<float>(viewport.TopLeftY);
+				const float viewBottom = static_cast<float>(viewport.TopLeftY + viewport.Height);
+
+				const float ortho[][4]{
+					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
+					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
+					{ 0.f, 0.f, .5f, 0.f },
+					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+				};
+
+				void* pData = nullptr;
+
+				if (FAILED(this->_pConstantBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, &pData))) return false;
+
+				memcpy(pData, ortho, sizeof(ortho));
+
+				this->_pConstantBuffer->Unmap();
 
 				return true;
 			}
