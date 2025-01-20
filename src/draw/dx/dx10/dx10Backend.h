@@ -73,6 +73,7 @@ namespace hax {
 				bool createShaders();
 				bool createConstantBuffer();
 				bool getCurrentViewport(D3D10_VIEWPORT* pViewport) const;
+				bool updateConstantBuffer(D3D10_VIEWPORT viewport) const;
 			};
 
 		}
