@@ -47,6 +47,12 @@ namespace hax {
 
 				// Destroys the buffer and all internal resources.
 				void destroy() override;
+
+				// Maps the allocated VRAM into the address space of the current process. Needs to be called before the buffer can be filled.
+				//
+				// Return:
+				// True on success, false on failure.
+				bool map() override;
 			};
 
 		}
