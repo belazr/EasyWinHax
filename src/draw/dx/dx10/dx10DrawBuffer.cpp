@@ -66,6 +66,24 @@ namespace hax {
 				return;
 			}
 
+
+			bool DrawBuffer::map() {
+
+				if (!this->_pLocalVertexBuffer) {
+
+					if (FAILED(this->_pVertexBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, reinterpret_cast<void**>(&this->_pLocalVertexBuffer)))) return false;
+
+				}
+
+				if (!this->_pLocalIndexBuffer) {
+
+					if (FAILED(this->_pIndexBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)))) return false;
+
+				}
+
+				return true;
+			}
+
 		}
 
 	}
