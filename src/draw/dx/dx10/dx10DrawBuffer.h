@@ -44,6 +44,9 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				bool create(uint32_t vertexCount) override;
+
+				// Destroys the buffer and all internal resources.
+				void destroy() override;
 			};
 
 		}

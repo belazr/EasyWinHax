@@ -46,6 +46,26 @@ namespace hax {
 				return true;
 			}
 
+
+			void DrawBuffer::destroy() {
+
+				if (this->_pVertexBuffer) {
+					this->_pVertexBuffer->Unmap();
+					this->_pVertexBuffer->Release();
+					this->_pVertexBuffer = nullptr;
+				}
+
+				if (this->_pIndexBuffer) {
+					this->_pIndexBuffer->Unmap();
+					this->_pIndexBuffer->Release();
+					this->_pIndexBuffer = nullptr;
+				}
+
+				this->reset();
+
+				return;
+			}
+
 		}
 
 	}
