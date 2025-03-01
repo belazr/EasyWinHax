@@ -122,6 +122,12 @@ namespace hax {
 			}
 
 
+			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+
+				return &this->_triangleListBuffer;
+			}
+
+
 			/*
 			cbuffer vertexBuffer : register(b0) {
 				float4x4 projectionMatrix;

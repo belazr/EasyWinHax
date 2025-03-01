@@ -72,6 +72,12 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
+				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer.
+				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+
 			private:
 				bool createShaders();
 				bool createConstantBuffer();
