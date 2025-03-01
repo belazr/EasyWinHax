@@ -87,6 +87,17 @@ namespace hax {
 				// Pointer to the point list buffer.
 				virtual AbstractDrawBuffer* getPointListBuffer() override;
 
+				// Gets the resolution of the current frame. Should be called by an Engine object.
+				//
+				// Parameters:
+				// 
+				// [out] frameWidth:
+				// Pointer that receives the current frame width in pixel.
+				//
+				// [out] frameHeight:
+				// Pointer that receives the current frame height in pixel.
+				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
+
 			private:
 				bool createShaders();
 				bool createConstantBuffer();
