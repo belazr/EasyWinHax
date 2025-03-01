@@ -116,6 +116,12 @@ namespace hax {
 			}
 
 
+			void Backend::endFrame() {
+
+				return;
+			}
+
+
 			/*
 			cbuffer vertexBuffer : register(b0) {
 				float4x4 projectionMatrix;

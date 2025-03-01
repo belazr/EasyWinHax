@@ -69,6 +69,9 @@ namespace hax {
 				// True on success, false on failure.
 				virtual bool beginFrame() override;
 
+				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
+				virtual void endFrame() override;
+
 			private:
 				bool createShaders();
 				bool createConstantBuffer();
