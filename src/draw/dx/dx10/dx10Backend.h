@@ -41,6 +41,9 @@ namespace hax {
 				ID3D10Buffer* _pConstantBuffer;
 				D3D10_VIEWPORT _viewport;
 
+				DrawBuffer _triangleListBuffer;
+				DrawBuffer _pointListBuffer;
+
 			public:
 				Backend();
 

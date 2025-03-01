@@ -85,6 +85,20 @@ namespace hax {
 
 				if (!this->createShaders()) return false;
 
+				this->_triangleListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_triangleListBuffer.destroy();
+
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+
+				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				this->_pointListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+				this->_pointListBuffer.destroy();
+
+				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
+				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
 				if (!this->_pConstantBuffer) {
 
 					if (!this->createConstantBuffer()) return false;
