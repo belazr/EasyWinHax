@@ -9,6 +9,13 @@ namespace hax {
 			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _topology{}, _pVertexBuffer{}, _pIndexBuffer{} {}
 
 
+			DrawBuffer::~DrawBuffer() {
+				this->destroy();
+
+				return;
+			}
+
+
 			void DrawBuffer::initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology) {
 				this->_pDevice = pDevice;
 				this->_topology = topology;
