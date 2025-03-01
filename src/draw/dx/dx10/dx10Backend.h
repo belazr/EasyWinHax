@@ -78,6 +78,12 @@ namespace hax {
 				// Pointer to the triangle list buffer.
 				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
 
+				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// 
+				// Return:
+				// Pointer to the point list buffer.
+				virtual AbstractDrawBuffer* getPointListBuffer() override;
+
 			private:
 				bool createShaders();
 				bool createConstantBuffer();

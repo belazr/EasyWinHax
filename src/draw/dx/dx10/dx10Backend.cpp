@@ -128,6 +128,12 @@ namespace hax {
 			}
 
 
+			AbstractDrawBuffer* Backend::getPointListBuffer() {
+
+				return &this->_pointListBuffer;
+			}
+
+
 			/*
 			cbuffer vertexBuffer : register(b0) {
 				float4x4 projectionMatrix;
