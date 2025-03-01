@@ -53,6 +53,10 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				bool map() override;
+
+				// Draws the content of the buffer to the screen.
+				// Needs to be called between a successful of vk::Backend::beginFrame and a call to vk::Backend::endFrame.
+				void draw() override;
 			};
 
 		}
