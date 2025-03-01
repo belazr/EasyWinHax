@@ -84,6 +84,32 @@ namespace hax {
 				return true;
 			}
 
+
+			void DrawBuffer::draw() {
+				D3D10_PRIMITIVE_TOPOLOGY curTopology{};
+				this->_pDevice->IAGetPrimitiveTopology(&curTopology);
+
+				if (!curTopology) return;
+
+				this->_pVertexBuffer->Unmap();
+				this->_pLocalVertexBuffer = nullptr;
+
+				this->_pIndexBuffer->Unmap();
+				this->_pLocalIndexBuffer = nullptr;
+
+				constexpr UINT STRIDE = sizeof(Vertex);
+				constexpr UINT OFFSET = 0u;
+				this->_pDevice->IASetVertexBuffers(0u, 1u, &this->_pVertexBuffer, &STRIDE, &OFFSET);
+				this->_pDevice->IASetIndexBuffer(this->_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
+				this->_pDevice->IASetPrimitiveTopology(this->_topology);
+				this->_pDevice->DrawIndexed(this->_curOffset, 0u, 0u);
+				this->_pDevice->IASetPrimitiveTopology(curTopology);
+
+				this->_curOffset = 0u;
+
+				return;
+			}
+
 		}
 
 	}
