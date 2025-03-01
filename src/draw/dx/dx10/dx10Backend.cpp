@@ -148,6 +148,14 @@ namespace hax {
 			}
 
 
+			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+				*frameWidth = static_cast<float>(this->_viewport.Width);
+				*frameHeight = static_cast<float>(this->_viewport.Height);
+
+				return;
+			}
+
+
 			/*
 			cbuffer vertexBuffer : register(b0) {
 				float4x4 projectionMatrix;
