@@ -96,8 +96,6 @@ namespace hax {
 				D3D10_PRIMITIVE_TOPOLOGY curTopology{};
 				this->_pDevice->IAGetPrimitiveTopology(&curTopology);
 
-				if (!curTopology) return;
-
 				this->_pVertexBuffer->Unmap();
 				this->_pLocalVertexBuffer = nullptr;
 
