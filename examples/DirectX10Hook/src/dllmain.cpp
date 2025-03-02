@@ -6,10 +6,15 @@
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 
+static hax::Bench bench("200 x hkPresent", 200u);
+
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
+	bench.start();
+	bench.end();
+	bench.printAvg();
 
 	if (GetAsyncKeyState(VK_END) & 1) {
 		pPresentHook->disable();
