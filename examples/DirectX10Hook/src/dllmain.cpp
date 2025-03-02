@@ -6,7 +6,35 @@
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
 
-void cleanup(FILE* file, BOOL freeConsole) {
+static HANDLE hHookSemaphore;
+static hax::in::TrampHook* pPresentHook;
+
+HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
+
+	if (GetAsyncKeyState(VK_END) & 1) {
+		pPresentHook->disable();
+		const hax::draw::dx11::tPresent pPresent = reinterpret_cast<hax::draw::dx11::tPresent>(pPresentHook->getOrigin());
+		const HRESULT res = pPresent(pSwapChain, syncInterval, flags);
+		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
+
+		return res;
+	}
+
+	return reinterpret_cast<hax::draw::dx11::tPresent>(pPresentHook->getGateway())(pSwapChain, syncInterval, flags);
+}
+
+
+void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
+
+	if (pHook) {
+		delete pHook;
+	}
+
+	if (hSemaphore) {
+		CloseHandle(hSemaphore);
+		// just to be save
+		Sleep(10ul);
+	}
 
 	if (file) {
 		fclose(file);
@@ -27,7 +55,15 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	FILE* file = nullptr;
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		cleanup(file, wasConsoleAllocated);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
+
+	if (!hHookSemaphore) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -35,10 +71,39 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	void* pD3D10SwapChainVTable[9]{};
 
 	if (!hax::draw::dx10::getD3D10SwapChainVTable(pD3D10SwapChainVTable, sizeof(pD3D10SwapChainVTable))) {
-		cleanup(file, wasConsoleAllocated);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
+
+	constexpr unsigned int PRESENT_OFFSET = 8ul;
+	BYTE* const pPresent = reinterpret_cast<BYTE*>(pD3D10SwapChainVTable[PRESENT_OFFSET]);
+
+	if (!pPresent) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), 0x8u);
+
+	if (!pPresentHook) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	if (!pPresentHook->enable()) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
+
+		FreeLibraryAndExitThread(hModule, 0ul);
+	}
+
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pPresentHook->getOrigin()) << std::dec << std::endl;
+
+	WaitForSingleObject(hHookSemaphore, INFINITE);
+
+	cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
