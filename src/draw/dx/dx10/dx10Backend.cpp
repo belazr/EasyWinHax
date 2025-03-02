@@ -38,13 +38,20 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{}, _pConstantBuffer{}, _viewport{} {}
+				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{},
+				_pConstantBuffer{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
 
 				if (this->_pConstantBuffer) {
 					this->_pConstantBuffer->Release();
+				}
+
+
+				if (this->_pDevice) {
+					this->_pointListBuffer.destroy();
+					this->_triangleListBuffer.destroy();
 				}
 
 				if (this->_pPixelShader) {
@@ -80,9 +87,9 @@ namespace hax {
 				if (!this->_pDevice) {
 
 					if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
-
+				
 				}
-
+				
 				if (!this->createShaders()) return false;
 
 				this->_triangleListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -175,7 +182,7 @@ namespace hax {
 				PSI output;
 				output.pos = mul(projectionMatrix, float4(input.pos.xy, 0.f, 1.f));
 				output.col = input.col;
-
+				
 				return output;
 			}
 			*/
@@ -237,7 +244,7 @@ namespace hax {
 			};
 
 			float4 main(PSI input) : SV_TARGET{
-
+				
 				return input.col;
 			}
 			*/
