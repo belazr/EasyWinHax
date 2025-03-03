@@ -63,7 +63,7 @@ The library provides a simple file loader class to load files from disk into mem
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
 The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IBackend interfaces.
-Currently there are implementations of the IBackend interface for DirectX 11 and DirectX 12 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
+Currently there are implementations of the IBackend interface for DirectX 10, DirectX 11 and DirectX 12 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
 Text rendering is done via a point list buffer with hardcoded point lists for supported characters.
 It is not nice but it works and it is reasonably fast. There might be support for texture drawing in the future.
 See the headers in the "draw" folder for further documentation.
@@ -71,6 +71,7 @@ See the headers in the "draw" folder for further documentation.
 There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
 Build the following projects:
 
+- DirectX10Hook
 - DirectX11Hook
 - DirectX12Hook
 - DirectX9Hook
