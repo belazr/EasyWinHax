@@ -352,8 +352,6 @@ namespace hax {
 
 
 			bool Backend::createConstantBuffer() {
-				this->_pConstantBuffer = nullptr;
-
 				D3D11_BUFFER_DESC bufferDesc{};
 				bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 				bufferDesc.ByteWidth = 16u * sizeof(float);
