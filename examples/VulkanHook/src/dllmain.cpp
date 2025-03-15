@@ -116,13 +116,13 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	// look at src\hooks\TrampHook.h and assembly at initData.pVkQueuePresentKHR to figure out correct value
 	#if defined(AMD)
 	
-	constexpr size_t size = 0x9u;
-	constexpr size_t relativeAddressOffset = 0x5u;
+	constexpr size_t HOOK_SIZE = 0x9u;
+	constexpr size_t RELATIVE_ADDRESS_OFFSET = 0x5u;
 	
 	#elif defined(NVIDIA)
 
-	constexpr size_t size = 0x9u;
-	constexpr size_t relativeAddressOffset = SIZE_MAX;
+	constexpr size_t HOOK_SIZE = 0x9u;
+	constexpr size_t RELATIVE_ADDRESS_OFFSET = SIZE_MAX;
 	
 	#else
 
@@ -130,7 +130,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 	
 	#endif
 
-	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), size, relativeAddressOffset);
+	pQueuePresentHook = new hax::in::TrampHook(reinterpret_cast<BYTE*>(initData.pVkQueuePresentKHR), reinterpret_cast<BYTE*>(hkVkQueuePresentKHR), HOOK_SIZE, RELATIVE_ADDRESS_OFFSET);
 
 	if (!pQueuePresentHook) {
 		cleanup(hHookSemaphore, pQueuePresentHook, file, wasConsoleAllocated);
