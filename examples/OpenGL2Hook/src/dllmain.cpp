@@ -97,7 +97,17 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkWglSwapBuffers), 0x5u);
+	#ifdef _WIN64
+
+	constexpr size_t HOOK_SIZE = 0x7u;
+
+	#else
+
+	constexpr size_t HOOK_SIZE = 0x5u;
+
+	#endif
+
+	pSwapBuffersHook = new hax::in::TrampHook("opengl32.dll", "wglSwapBuffers", reinterpret_cast<BYTE*>(hkWglSwapBuffers), HOOK_SIZE);
 
 	if (!pSwapBuffersHook) {
 		cleanup(hHookSemaphore, pSwapBuffersHook, file, wasConsoleAllocated);
