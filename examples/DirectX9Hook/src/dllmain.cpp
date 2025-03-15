@@ -117,7 +117,17 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), 0x7u);
+	#ifdef _WIN64
+
+	constexpr size_t HOOK_SIZE = 0x5u;
+
+	#else
+
+	constexpr size_t HOOK_SIZE = 0x7u;
+
+	#endif
+
+	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), HOOK_SIZE);
 
 	if (!pEndSceneHook) {
 		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
