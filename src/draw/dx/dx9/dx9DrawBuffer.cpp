@@ -6,7 +6,8 @@ namespace hax {
 
 		namespace dx9 {
 
-			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pVertexBuffer {}, _pIndexBuffer{}, _primitiveType{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _primitiveType{}, _pPixelShader{},
+				_pVertexBuffer{}, _pIndexBuffer{}, _pTextureArray{}, _textureCount{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -16,9 +17,10 @@ namespace hax {
 			}
 
 
-			void DrawBuffer::initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType) {
+			void DrawBuffer::initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType, IDirect3DPixelShader9* pPixelShader) {
 				this->_pDevice = pDevice;
 				this->_primitiveType = primitiveType;
+				this->_pPixelShader = pPixelShader;
 
 				return;
 			}
@@ -116,12 +118,32 @@ namespace hax {
 
 				this->_pLocalIndexBuffer = nullptr;
 
+				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) return;
+
 				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return;
 
 				if (FAILED(this->_pDevice->SetIndices(this->_pIndexBuffer))) return;
 
-				this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->_curOffset, 0u, primitiveCount);
-				
+				if (this->_textureCount) {
+
+					constexpr UINT VERTICES_PER_TEXTURE = 6u;
+
+					if (this->_primitiveType != D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST || this->_curOffset % VERTICES_PER_TEXTURE) return;
+
+					for (uint32_t i = 0; i < this->_textureCount; i++) {
+						
+						if (FAILED(this->_pDevice->SetTexture(0u, this->_pTextureArray[i]))) continue;
+
+						constexpr UINT PRIMITVES_PER_TEXTURE = 2u;
+
+						this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, VERTICES_PER_TEXTURE, i * VERTICES_PER_TEXTURE, PRIMITVES_PER_TEXTURE);
+					}
+
+				}
+				else {
+					this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->_curOffset, 0u, primitiveCount);
+				}
+
 				this->_curOffset = 0u;
 
 				return;

@@ -35,12 +35,14 @@ namespace hax {
 				IDirect3DDevice9* _pDevice;
 				IDirect3DVertexDeclaration9* _pVertexDeclaration;
 				IDirect3DVertexShader9* _pVertexShader;
-				IDirect3DPixelShader9* _pPixelShader;
+				IDirect3DPixelShader9* _pPixelShaderPassthrough;
+				IDirect3DPixelShader9* _pPixelShaderTexture;
 				D3DVIEWPORT9 _viewport;
 				IDirect3DStateBlock9* _pStateBlock;
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 
 				DrawBuffer _triangleListBuffer;
+				DrawBuffer _textureBuffer;
 				DrawBuffer _pointListBuffer;
 
 			public:
