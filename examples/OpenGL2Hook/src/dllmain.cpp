@@ -14,7 +14,7 @@ static hax::draw::Engine engine{ &backend };
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pSwapBuffersHook;
 
-BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
+static BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 	bench.start();
 
 	engine.beginFrame();
@@ -53,7 +53,7 @@ BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 }
 
 
-void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
+static void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
 
 	if (pHook) {
 		delete pHook;
@@ -78,7 +78,7 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL free
 }
 
 
-DWORD WINAPI haxThread(HMODULE hModule) {
+static DWORD WINAPI haxThread(HMODULE hModule) {
 	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file = nullptr;
@@ -131,7 +131,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 }
 
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reasonForCall, LPVOID) {
+static BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reasonForCall, LPVOID) {
 
 	if (reasonForCall != DLL_PROCESS_ATTACH) {
 
