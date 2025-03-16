@@ -14,7 +14,7 @@ static hax::draw::Engine engine{ &backend };
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
 
-HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
+static HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT flags) {
 	bench.start();
 
 	engine.beginFrame(pSwapChain);
@@ -53,7 +53,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval, UINT 
 }
 
 
-void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
+static void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL freeConsole) {
 
 	if (pHook) {
 		delete pHook;
@@ -78,7 +78,7 @@ void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BOOL free
 }
 
 
-DWORD WINAPI haxThread(HMODULE hModule) {
+static DWORD WINAPI haxThread(HMODULE hModule) {
 	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file = nullptr;
@@ -148,7 +148,7 @@ DWORD WINAPI haxThread(HMODULE hModule) {
 }
 
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID) {
+static BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID) {
 
 	if (reasonForCall != DLL_PROCESS_ATTACH) {
 
