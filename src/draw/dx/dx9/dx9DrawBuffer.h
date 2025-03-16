@@ -12,8 +12,11 @@ namespace hax {
 			private:
 				IDirect3DDevice9* _pDevice;
 				D3DPRIMITIVETYPE _primitiveType;
+				IDirect3DPixelShader9* _pPixelShader;
 				IDirect3DVertexBuffer9* _pVertexBuffer;
 				IDirect3DIndexBuffer9* _pIndexBuffer;
+				IDirect3DTexture9** _pTextureArray;
+				uint32_t _textureCount;
 
 			public:
 				DrawBuffer();
@@ -29,7 +32,10 @@ namespace hax {
 				//
 				// [in] primitiveType:
 				// Primitive topology the vertices in the buffer should be drawn in.
-				void initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType);
+				//
+				// [in] pPixelShader:
+				// Pixel shader with which the vertices in the buffer should be drawn.
+				void initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType, IDirect3DPixelShader9* pPixelShader);
 
 				// Creates a new buffer with all internal resources.
 				//
