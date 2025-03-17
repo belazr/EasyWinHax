@@ -176,6 +176,26 @@ namespace hax {
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const;
+
+			// Draws a rectangular texture.
+			//
+			// Parameters:
+			//
+			// [in] data:
+			// The pixel data of the texture.
+			// 
+			// [in] width:
+			// Width of the texture in pixels.
+			// 
+			// [in] height:
+			// Height of the texture in pixels.
+			// 
+			// [in] pos:
+			// Coordinates of the top left corner of the texture.
+			// 
+			// [in] scale:
+			// Scale at which the texture should be drawn. width and height are multipled with scale to get the actual size of the texture on the screen.
+			void drawTexture(const Color* data, uint32_t width, uint32_t height, const Vector2* pos, float scale) const;
 		};
 
 	}

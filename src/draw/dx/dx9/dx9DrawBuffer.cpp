@@ -6,8 +6,8 @@ namespace hax {
 
 		namespace dx9 {
 
-			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _primitiveType{}, _pPixelShader{},
-				_pVertexBuffer{}, _pIndexBuffer{}, _pTextureArray{}, _textureCount{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _primitiveType{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
+				_pVertexBuffer{}, _pIndexBuffer{}, _textureArray{}, _textureCount{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -17,10 +17,11 @@ namespace hax {
 			}
 
 
-			void DrawBuffer::initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType, IDirect3DPixelShader9* pPixelShader) {
+			void DrawBuffer::initialize(IDirect3DDevice9* pDevice, D3DPRIMITIVETYPE primitiveType, IDirect3DPixelShader9* pPixelShaderPassthrough, IDirect3DPixelShader9* pPixelShaderTexture) {
 				this->_pDevice = pDevice;
 				this->_primitiveType = primitiveType;
-				this->_pPixelShader = pPixelShader;
+				this->_pPixelShaderPassthrough = pPixelShaderPassthrough;
+				this->_pPixelShaderTexture = pPixelShaderTexture;
 
 				return;
 			}
@@ -31,6 +32,7 @@ namespace hax {
 
 				this->_pVertexBuffer = nullptr;
 				this->_pIndexBuffer = nullptr;
+				this->_pTextureBuffer = nullptr;
 
 				const UINT vertexBufferSize = vertexCount * sizeof(Vertex);
 
@@ -43,6 +45,10 @@ namespace hax {
 				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
 
 				this->_indexBufferSize = indexBufferSize;
+
+				const UINT textureBufferSize = vertexCount * sizeof(void*);
+				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(textureBufferSize));
+				this->_textureBufferSize = textureBufferSize;
 
 				return true;
 			}
@@ -62,6 +68,19 @@ namespace hax {
 					this->_pIndexBuffer = nullptr;
 				}
 
+				if (this->_pTextureBuffer) {
+					free(this->_pTextureBuffer);
+					this->_pTextureBuffer = nullptr;
+				}
+
+				for (uint32_t i = 0u; i < this->_textureCount; i++) {
+					this->_textureArray[i].data = nullptr;
+					this->_textureArray[i].texture->Release();
+					this->_textureArray[i].texture = nullptr;
+
+				}
+
+				this->_textureCount = 0u;
 				this->reset();
 
 				return;
@@ -86,29 +105,53 @@ namespace hax {
 			}
 
 
-			void DrawBuffer::draw() {
-				UINT primitiveCount = 0u;
+			void* DrawBuffer::load(const Color* data, uint32_t width, uint32_t height) {
+				
+				for (size_t i = 0u; i < this->_textureCount; i++) {
 
-				switch (this->_primitiveType) {
-				case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
-					primitiveCount = this->_curOffset;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_LINELIST:
-					primitiveCount = this->_curOffset / 2;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_LINESTRIP:
-					primitiveCount = this->_curOffset - 1;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST:
-					primitiveCount = this->_curOffset / 3;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLESTRIP:
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLEFAN:
-					primitiveCount = this->_curOffset - 2;
-					break;
-				default:
-					return;
+					if (this->_textureArray[i].data == data) {
+
+						return this->_textureArray[i].texture;
+					}
+
 				}
+				
+				if (this->_textureCount >= _countof(this->_textureArray)) return nullptr;
+				
+				IDirect3DTexture9* pTexture = nullptr;
+
+				if (FAILED(this->_pDevice->CreateTexture(width, height, 1u, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture, nullptr))) return nullptr;
+
+				D3DLOCKED_RECT rect{};
+
+				if (FAILED(pTexture->LockRect(0u, &rect, nullptr, 0u)) || !rect.pBits) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				uint8_t* dst = reinterpret_cast<uint8_t*>(rect.pBits);
+
+				for (uint32_t i = 0; i < height; i++) {
+					memcpy(dst, data + i * width, width * sizeof(Color));
+					dst += rect.Pitch;
+				}
+
+				if (FAILED(pTexture->UnlockRect(0u))) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				this->_textureArray[this->_textureCount].data = data;
+				this->_textureArray[this->_textureCount].texture = pTexture;
+				this->_textureCount++;
+
+				return pTexture;
+			}
+
+
+			void DrawBuffer::draw() {
 
 				if (FAILED(this->_pVertexBuffer->Unlock())) return;
 
@@ -118,30 +161,55 @@ namespace hax {
 
 				this->_pLocalIndexBuffer = nullptr;
 
-				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) return;
-
 				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return;
 
 				if (FAILED(this->_pDevice->SetIndices(this->_pIndexBuffer))) return;
 
-				if (this->_textureCount) {
+				uint32_t drawCount = 1u;
 
-					constexpr UINT VERTICES_PER_TEXTURE = 6u;
+				for (uint32_t i = 0u; i < this->_curOffset; i += drawCount) {
+					drawCount = 1u;
 
-					if (this->_primitiveType != D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST || this->_curOffset % VERTICES_PER_TEXTURE) return;
+					IDirect3DTexture9* const pCurTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[i]);
 
-					for (uint32_t i = 0; i < this->_textureCount; i++) {
+					for (uint32_t j = i + 1u; j < this->_curOffset; j++) {
+						IDirect3DTexture9* const pNextTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[j]);
+
+						if (pNextTexture != pCurTexture) break;
 						
-						if (FAILED(this->_pDevice->SetTexture(0u, this->_pTextureArray[i]))) continue;
-
-						constexpr UINT PRIMITVES_PER_TEXTURE = 2u;
-
-						this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, VERTICES_PER_TEXTURE, i * VERTICES_PER_TEXTURE, PRIMITVES_PER_TEXTURE);
+						drawCount++;
 					}
 
-				}
-				else {
-					this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, this->_curOffset, 0u, primitiveCount);
+					IDirect3DPixelShader9* const pPixelShader = pCurTexture ? this->_pPixelShaderTexture : this->_pPixelShaderPassthrough;
+
+					if (FAILED(this->_pDevice->SetPixelShader(pPixelShader))) continue;
+
+					if (FAILED(this->_pDevice->SetTexture(0u, pCurTexture))) continue;
+
+					UINT primitiveCount = 0u;
+
+					switch (this->_primitiveType) {
+					case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
+						primitiveCount = drawCount;
+						break;
+					case D3DPRIMITIVETYPE::D3DPT_LINELIST:
+						primitiveCount = drawCount / 2;
+						break;
+					case D3DPRIMITIVETYPE::D3DPT_LINESTRIP:
+						primitiveCount = drawCount - 1;
+						break;
+					case D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST:
+						primitiveCount = drawCount / 3;
+						break;
+					case D3DPRIMITIVETYPE::D3DPT_TRIANGLESTRIP:
+					case D3DPRIMITIVETYPE::D3DPT_TRIANGLEFAN:
+						primitiveCount = drawCount - 2;
+						break;
+					default:
+						return;
+					}
+
+					this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, drawCount, i, primitiveCount);
 				}
 
 				this->_curOffset = 0u;

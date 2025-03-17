@@ -41,7 +41,7 @@ namespace hax {
 
 
 			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{}, _viewport{},
-				_pStateBlock{}, _pOriginalVertexDeclaration{}, _triangleListBuffer{}, _textureBuffer{}, _pointListBuffer {} {}
+				_pStateBlock{}, _pOriginalVertexDeclaration{}, _triangleListBuffer{}, _pointListBuffer {} {}
 
 
 			Backend::~Backend() {
@@ -55,7 +55,6 @@ namespace hax {
 				}
 
 				this->_pointListBuffer.destroy();
-				this->_textureBuffer.destroy();
 				this->_triangleListBuffer.destroy();
 
 				if (this->_pPixelShaderTexture) {
@@ -102,21 +101,14 @@ namespace hax {
 
 				}
 
-				this->_triangleListBuffer.initialize(this->_pDevice, D3DPT_TRIANGLELIST, this->_pPixelShaderPassthrough);
+				this->_triangleListBuffer.initialize(this->_pDevice, D3DPT_TRIANGLELIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
 				this->_triangleListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
 				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
-				this->_textureBuffer.initialize(this->_pDevice, D3DPT_TRIANGLELIST, this->_pPixelShaderTexture);
-				this->_textureBuffer.destroy();
-
-				constexpr uint32_t INITIAL_TEXTURE_BUFFER_SIZE = 60u;
-
-				if (!this->_textureBuffer.create(INITIAL_TEXTURE_BUFFER_SIZE)) return false;
-
-				this->_pointListBuffer.initialize(this->_pDevice, D3DPT_POINTLIST, this->_pPixelShaderPassthrough);
+				this->_pointListBuffer.initialize(this->_pDevice, D3DPT_POINTLIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
 				this->_pointListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
@@ -146,6 +138,30 @@ namespace hax {
 				}
 
 				if (FAILED(this->_pDevice->SetVertexShader(this->_pVertexShader))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA))) {
 					this->restoreState();
 
 					return false;
