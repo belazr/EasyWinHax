@@ -129,7 +129,7 @@ static DWORD WINAPI haxThread(HMODULE hModule) {
 }
 
 
-static BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID) {
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID) {
 
 	if (reasonForCall != DLL_PROCESS_ATTACH) {
 
