@@ -42,7 +42,6 @@ namespace hax {
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 
 				DrawBuffer _triangleListBuffer;
-				DrawBuffer _textureBuffer;
 				DrawBuffer _pointListBuffer;
 
 			public:

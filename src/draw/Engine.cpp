@@ -5,7 +5,8 @@ namespace hax {
 
 	namespace draw {
 
-		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{}, _pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
+		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{},
+			_pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
 
 
 		void Engine::beginFrame(void* pArg1, void* pArg2) {
@@ -275,6 +276,26 @@ namespace hax {
 				const Vector2 topCol{ top[i].x, top[i].y - halfWidth };
 				this->drawLine(&botCol, &topCol, width, color);
 			}
+
+			return;
+		}
+
+		void Engine::drawTexture(const Color* data, uint32_t width, uint32_t height, const Vector2* pos, float scale) const {
+			
+			if (!this->_frame) return;
+
+			void* const pTexture = this->_pTriangleListBuffer->load(data, width, height);
+
+			const Vector2 textureRect[]{
+				{ pos->x, pos->y },
+				{ pos->x + width * scale, pos->y },
+				{ pos->x, pos->y + height * scale },
+				{ pos->x + width * scale, pos->y + height * scale },
+				{ pos->x, pos->y + height * scale },
+				{ pos->x + width * scale, pos->y }
+			};
+
+			this->_pTriangleListBuffer->append(textureRect, _countof(textureRect), static_cast<Color>(0), {}, pTexture);
 
 			return;
 		}
