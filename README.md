@@ -57,6 +57,8 @@ The x64 compilation of the external class is able to hook IATs of modules of x64
 See the "hooks\IatHook.h" header for further documentation.
 ### Benchmarking
 The library provides a simple benchmarking class to benchmark code execution. It is useful for measuring the average execution time of code in a function hook. See the "Bench.h" header for further documentation.
+### Vector
+The library provides a simple and low-overhead vector class inspired by the STL implementation. See the "Vector.h" header for further documentation.
 ### Loading files
 The library provides a simple file loader class to load files from disk into memory. See the "FileLoader.h" header for further documentation.
 ### Undocumented windows structures and function types
