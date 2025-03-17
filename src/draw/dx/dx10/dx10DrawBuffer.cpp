@@ -24,7 +24,7 @@ namespace hax {
 			}
 
 
-			bool DrawBuffer::create(uint32_t vertexCount) {
+			bool DrawBuffer::create(uint32_t capacity) {
 				this->reset();
 
 				this->_pVertexBuffer = nullptr;
@@ -32,23 +32,21 @@ namespace hax {
 
 				D3D10_BUFFER_DESC vertexBufferDesc{};
 				vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;
-				vertexBufferDesc.ByteWidth = vertexCount * sizeof(Vertex);
+				vertexBufferDesc.ByteWidth = capacity * sizeof(Vertex);
 				vertexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
 				vertexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
 				if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &this->_pVertexBuffer))) return false;
 
-				this->_vertexBufferSize = vertexBufferDesc.ByteWidth;
-
 				D3D10_BUFFER_DESC indexBufferDesc{};
 				indexBufferDesc.BindFlags = D3D10_BIND_INDEX_BUFFER;
-				indexBufferDesc.ByteWidth = vertexCount * sizeof(uint32_t);
+				indexBufferDesc.ByteWidth = capacity * sizeof(uint32_t);
 				indexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
 				indexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
 				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
 
-				this->_indexBufferSize = indexBufferDesc.ByteWidth;
+				this->_capacity = capacity;
 
 				return true;
 			}
@@ -107,10 +105,10 @@ namespace hax {
 				this->_pDevice->IASetVertexBuffers(0u, 1u, &this->_pVertexBuffer, &STRIDE, &OFFSET);
 				this->_pDevice->IASetIndexBuffer(this->_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
 				this->_pDevice->IASetPrimitiveTopology(this->_topology);
-				this->_pDevice->DrawIndexed(this->_curOffset, 0u, 0u);
+				this->_pDevice->DrawIndexed(this->_size, 0u, 0u);
 				this->_pDevice->IASetPrimitiveTopology(curTopology);
 
-				this->_curOffset = 0u;
+				this->_size = 0u;
 
 				return;
 			}

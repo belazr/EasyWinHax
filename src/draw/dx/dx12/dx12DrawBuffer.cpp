@@ -25,23 +25,21 @@ namespace hax {
 			}
 
 
-			bool DrawBuffer::create(uint32_t vertexCount) {
+			bool DrawBuffer::create(uint32_t capacity) {
 				this->reset();
 
 				this->_pVertexBufferResource = nullptr;
 				this->_pIndexBufferResource = nullptr;
 
-				const uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
+				const uint32_t vertexBufferSize = capacity * sizeof(Vertex);
 
 				if (!this->createBuffer(&this->_pVertexBufferResource, vertexBufferSize)) return false;
 
-				this->_vertexBufferSize = vertexBufferSize;
-
-				const uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
+				const uint32_t indexBufferSize = capacity * sizeof(uint32_t);
 
 				if (!this->createBuffer(&this->_pIndexBufferResource, indexBufferSize)) return false;
 
-				this->_indexBufferSize = indexBufferSize;
+				this->_capacity = capacity;
 
 				return true;
 			}
@@ -92,21 +90,21 @@ namespace hax {
 
 				D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 				vertexBufferView.BufferLocation = this->_pVertexBufferResource->GetGPUVirtualAddress();
-				vertexBufferView.SizeInBytes = this->_vertexBufferSize;
+				vertexBufferView.SizeInBytes = this->_size * sizeof(Vertex);
 				vertexBufferView.StrideInBytes = sizeof(Vertex);
 				this->_pCommandList->IASetVertexBuffers(0u, 1u, &vertexBufferView);
 				
 				D3D12_INDEX_BUFFER_VIEW indexBufferView{};
 				indexBufferView.BufferLocation = this->_pIndexBufferResource->GetGPUVirtualAddress();
-				indexBufferView.SizeInBytes = this->_indexBufferSize;
+				indexBufferView.SizeInBytes = this->_size * sizeof(uint32_t);
 				indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
 				
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
 				this->_pCommandList->SetPipelineState(this->_pPipelineState);
-				this->_pCommandList->DrawIndexedInstanced(this->_curOffset, 1u, 0u, 0, 0u);
+				this->_pCommandList->DrawIndexedInstanced(this->_size, 1u, 0u, 0, 0u);
 
-				this->_curOffset = 0u;
+				this->_size = 0u;
 
 				return;
 			}
