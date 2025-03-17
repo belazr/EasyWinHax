@@ -4,7 +4,6 @@
 #include <string.h>
 
 // Basic vector class inspired by the STL version. It does only what is needed in this library and ommits safety checks for performance reasons.
-// It never calls destructors of the contained elements implicitly!
 
 namespace hax {
 
@@ -39,6 +38,7 @@ namespace hax {
 
 
 		~Vector() {
+			this->destruct();
 			free(this->_data);
 
 			return;
@@ -107,6 +107,17 @@ namespace hax {
 
 			this->_data[this->_size] = t;
 			this->_size++;
+
+			return;
+		}
+
+
+		// Destructs all elements in the vector.
+		void destruct() {
+
+			for (size_t i = 0u; i < this->_size; i++) {
+				this->_data[i].~T();
+			}
 
 			return;
 		}
