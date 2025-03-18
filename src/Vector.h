@@ -53,8 +53,25 @@ namespace hax {
 			return *this;
 		}
 
-		Vector(Vector&&) = delete;
-		Vector& operator=(Vector&&) = delete;
+		Vector(Vector&& v) {
+
+			operator=(static_cast<Vector<T>&&>(v));
+		}
+
+
+		Vector& operator=(Vector&& v) {
+			this->_data = v._data;
+			this->_size = v._size;
+			this->_capacity = v._capacity;
+
+			v._data = nullptr;
+			v._size = 0u;
+			v._capacity = 0u;
+
+			return *this;
+		}
+
+
 
 
 		~Vector() {
