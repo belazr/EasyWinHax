@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <string.h>
 
 // Basic vector class inspired by the STL version. It does only what is needed in this library and ommits safety checks for performance reasons.
 
@@ -13,13 +14,7 @@ namespace hax {
 		size_t _capacity;
 
 	public:
-		Vector() = delete;
-
-		Vector(const Vector&) = delete;
-		Vector& operator=(const Vector&) = delete;
-
-		Vector(Vector&&) = delete;
-		Vector& operator=(Vector&&) = delete;
+		Vector() : _data{}, _size{}, _capacity{} {}
 
 
 		// Initializes a vector with an initial capacity.
@@ -33,6 +28,33 @@ namespace hax {
 
 			return;
 		}
+
+
+		Vector(const Vector& v) {
+		
+			operator=(v);
+		}
+
+
+		Vector& operator=(const Vector& v) {
+			this->destruct();
+			this->reserve(2 * v._size);
+
+			if (v._data) {
+				
+				for (size_t i = 0; i < v._size; i++) {
+					this->_data[i] = T(v._data[i]);
+				}
+
+			}
+
+			this->_size = v._size;
+
+			return *this;
+		}
+
+		Vector(Vector&&) = delete;
+		Vector& operator=(Vector&&) = delete;
 
 
 		~Vector() {
