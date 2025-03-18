@@ -46,6 +46,8 @@ namespace hax {
 
 
 		T* operator[](size_t i) const {
+
+			if (i >= this->_size) return nullptr;
 			
 			return &this->_data[i];
 		}
