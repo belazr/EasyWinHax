@@ -1,7 +1,5 @@
 #pragma once
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 // Basic vector class inspired by the STL version. It does only what is needed in this library and ommits safety checks for performance reasons.
 
@@ -81,14 +79,13 @@ namespace hax {
 
 			if (capacity <= this->_capacity) return;
 
-			T* data = reinterpret_cast<T*>(calloc(capacity, sizeof(T)));
-
-			if (this->_data && this->_size) {
-				memcpy(data, this->_data, this->_size * sizeof(T));
-				free(this->_data);
+			if (this->_data) {
+				this->_data = reinterpret_cast<T*>(realloc(this->_data, capacity * sizeof(T)));
+			}
+			else {
+				this->_data = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
 			}
 
-			this->_data = data;
 			this->_capacity = capacity;
 
 			return;
