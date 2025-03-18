@@ -27,28 +27,26 @@ namespace hax {
 			}
 
 
-			bool DrawBuffer::create(uint32_t vertexCount) {
+			bool DrawBuffer::create(uint32_t capacity) {
 				this->reset();
 
 				this->_pVertexBuffer = nullptr;
 				this->_pIndexBuffer = nullptr;
 				this->_pTextureBuffer = nullptr;
 
-				const UINT vertexBufferSize = vertexCount * sizeof(Vertex);
+				const UINT vertexBufferSize = capacity * sizeof(Vertex);
 
 				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, 0u, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
 
-				this->_vertexBufferSize = vertexBufferSize;
-
-				const UINT indexBufferSize = vertexCount * sizeof(uint32_t);
+				const UINT indexBufferSize = capacity * sizeof(uint32_t);
 
 				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
 
-				this->_indexBufferSize = indexBufferSize;
+				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(capacity * sizeof(void*)));
 
-				const UINT textureBufferSize = vertexCount * sizeof(void*);
-				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(textureBufferSize));
-				this->_textureBufferSize = textureBufferSize;
+				if (!this->_pTextureBuffer) return false;
+
+				this->_capacity = capacity;
 
 				return true;
 			}
@@ -91,13 +89,13 @@ namespace hax {
 
 				if (!this->_pLocalVertexBuffer) {
 
-					if (FAILED(this->_pVertexBuffer->Lock(0u, this->_vertexBufferSize, reinterpret_cast<void**>(&this->_pLocalVertexBuffer), D3DLOCK_DISCARD))) return false;
+					if (FAILED(this->_pVertexBuffer->Lock(0u, this->_capacity * sizeof(Vertex), reinterpret_cast<void**>(&this->_pLocalVertexBuffer), D3DLOCK_DISCARD))) return false;
 
 				}
 
 				if (!this->_pLocalIndexBuffer) {
 
-					if (FAILED(this->_pIndexBuffer->Lock(0u, this->_indexBufferSize, reinterpret_cast<void**>(&this->_pLocalIndexBuffer), D3DLOCK_DISCARD))) return false;
+					if (FAILED(this->_pIndexBuffer->Lock(0u, this->_capacity * sizeof(uint32_t), reinterpret_cast<void**>(&this->_pLocalIndexBuffer), D3DLOCK_DISCARD))) return false;
 
 				}
 
@@ -167,12 +165,12 @@ namespace hax {
 
 				uint32_t drawCount = 1u;
 
-				for (uint32_t i = 0u; i < this->_curOffset; i += drawCount) {
+				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
 					drawCount = 1u;
 
 					IDirect3DTexture9* const pCurTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[i]);
 
-					for (uint32_t j = i + 1u; j < this->_curOffset; j++) {
+					for (uint32_t j = i + 1u; j < this->_size; j++) {
 						IDirect3DTexture9* const pNextTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[j]);
 
 						if (pNextTexture != pCurTexture) break;
@@ -212,7 +210,7 @@ namespace hax {
 					this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, drawCount, i, primitiveCount);
 				}
 
-				this->_curOffset = 0u;
+				this->_size = 0u;
 
 				return;
 			}

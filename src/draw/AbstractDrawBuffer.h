@@ -17,25 +17,23 @@ namespace hax {
 			Vertex* _pLocalVertexBuffer;
 			uint32_t* _pLocalIndexBuffer;
 			void** _pTextureBuffer;
-			uint32_t _vertexBufferSize;
-			uint32_t _indexBufferSize;
-			uint32_t _textureBufferSize;
-			uint32_t _curOffset;
+
+			uint32_t _size;
+			uint32_t _capacity;
 
 		public:
-			AbstractDrawBuffer() : _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _pTextureBuffer{},
-				_vertexBufferSize{}, _indexBufferSize{}, _textureBufferSize{}, _curOffset {} {}
+			AbstractDrawBuffer() : _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _pTextureBuffer{}, _size{}, _capacity{} {}
 
 			// Creates a new buffer with all internal resources.
 			//
 			// Parameters:
 			// 
-			// [in] vertexCount:
-			// Size of the buffer in vertices.
+			// [in] capacity:
+			// Capacity of the buffer.
 			//
 			// Return:
 			// True on success, false on failure.
-			virtual bool create(uint32_t vertexCount) = 0;
+			virtual bool create(uint32_t capacity) = 0;
 
 			// Destroys the buffer and all internal resources.
 			virtual void destroy() = 0;
@@ -87,11 +85,11 @@ namespace hax {
 			// [in] offset:
 			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
 			void append(const Vector2* data, uint32_t count, Color color, Vector2 offset = { 0.f, 0.f }, void* texture = nullptr) {
-				const uint32_t newVertexCount = this->_curOffset + count;
+				const uint32_t newSize = this->_size + count;
 
-				if (newVertexCount * sizeof(Vertex) > this->_vertexBufferSize || newVertexCount * sizeof(uint32_t) > this->_indexBufferSize || newVertexCount * sizeof(void*) > this->_textureBufferSize) {
+				if (newSize > this->_capacity) {
 
-					if (!this->resize(newVertexCount * 2u)) return;
+					if (!this->reserve(newSize * 2u)) return;
 
 				}
 
@@ -122,43 +120,41 @@ namespace hax {
 						}
 					}
 
-					this->_pLocalVertexBuffer[this->_curOffset] = { { data[i].x + offset.x, data[i].y + offset.y }, color, uv };
-					this->_pLocalIndexBuffer[this->_curOffset] = this->_curOffset;
-					this->_pTextureBuffer[this->_curOffset] = texture;
-					this->_curOffset++;
+					this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color, uv };
+					this->_pLocalIndexBuffer[this->_size] = this->_size;
+					this->_pTextureBuffer[this->_size] = texture;
+					this->_size++;
 				}
 
 				return;
 			}
 
 
-			// Resizes the buffer.
+			// Increases the capacity of the buffer if the desired capacity is greater than the current one.
 			//
 			// Parameters:
 			// 
-			// [in] newVertexCount:
-			// New size of the buffer in vertices after the resize.
+			// [in] capacity:
+			// New capacity of the buffer in vertices after the resize.
 			//
 			// Return:
 			// True on success, false on failure.
-			bool resize(uint32_t newVertexCount) {
+			bool reserve(uint32_t capacity) {
 
-				if (newVertexCount <= this->_curOffset) return true;
+				if (capacity <= this->_capacity) return true;
 
-				const uint32_t oldOffset = this->_curOffset;
-
-				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(calloc(oldOffset, sizeof(Vertex)));
+				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(calloc(this->_size, sizeof(Vertex)));
 
 				if (!pTmpVertexBuffer) return false;
 
 				if (this->_pLocalVertexBuffer) {
-					memcpy(pTmpVertexBuffer, this->_pLocalVertexBuffer, oldOffset * sizeof(Vertex));
+					memcpy(pTmpVertexBuffer, this->_pLocalVertexBuffer, this->_size * sizeof(Vertex));
 				}
 				else {
-					memset(pTmpVertexBuffer, 0, oldOffset * sizeof(Vertex));
+					memset(pTmpVertexBuffer, 0, this->_size);
 				}
 
-				int32_t* const pTmpIndexBuffer = reinterpret_cast<int32_t*>(calloc(oldOffset, sizeof(int32_t)));
+				int32_t* const pTmpIndexBuffer = reinterpret_cast<int32_t*>(calloc(this->_size, sizeof(int32_t)));
 
 				if (!pTmpIndexBuffer) {
 					free(pTmpVertexBuffer);
@@ -167,13 +163,13 @@ namespace hax {
 				}
 
 				if (this->_pLocalIndexBuffer) {
-					memcpy(pTmpIndexBuffer, this->_pLocalIndexBuffer, oldOffset * sizeof(uint32_t));
+					memcpy(pTmpIndexBuffer, this->_pLocalIndexBuffer, this->_size * sizeof(uint32_t));
 				}
 				else {
-					memset(pTmpIndexBuffer, 0, oldOffset * sizeof(uint32_t));
+					memset(pTmpIndexBuffer, 0, this->_size * sizeof(uint32_t));
 				}
 
-				int32_t* const pTmpTextureBuffer = reinterpret_cast<int32_t*>(calloc(oldOffset, sizeof(void*)));
+				int32_t* const pTmpTextureBuffer = reinterpret_cast<int32_t*>(calloc(this->_size, sizeof(void*)));
 
 				if (!pTmpTextureBuffer) {
 					free(pTmpVertexBuffer);
@@ -183,17 +179,19 @@ namespace hax {
 				}
 
 				if (this->_pTextureBuffer) {
-					memcpy(pTmpTextureBuffer, this->_pTextureBuffer, oldOffset * sizeof(void*));
+					memcpy(pTmpTextureBuffer, this->_pTextureBuffer, this->_size * sizeof(void*));
 				}
 				else {
-					memset(pTmpTextureBuffer, 0, oldOffset * sizeof(void*));
+					memset(pTmpTextureBuffer, 0, this->_size * sizeof(void*));
 				}
 
+				const uint32_t oldSize = this->_size;
 				this->destroy();
 
-				if (!this->create(newVertexCount)) {
+				if (!this->create(capacity)) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
+					free(pTmpTextureBuffer);
 
 					return false;
 				}
@@ -201,16 +199,17 @@ namespace hax {
 				if (!this->map()) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
+					free(pTmpTextureBuffer);
 
 					return false;
 				}
 
 				if (this->_pLocalVertexBuffer && this->_pLocalIndexBuffer && this->_pTextureBuffer) {
-					memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldOffset * sizeof(Vertex));
-					memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldOffset * sizeof(uint32_t));
-					memcpy(this->_pTextureBuffer, pTmpTextureBuffer, oldOffset * sizeof(void*));
+					memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldSize * sizeof(Vertex));
+					memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldSize * sizeof(uint32_t));
+					memcpy(this->_pTextureBuffer, pTmpTextureBuffer, oldSize * sizeof(void*));
 
-					this->_curOffset = oldOffset;
+					this->_size = oldSize;
 				}
 				
 				free(pTmpVertexBuffer);
@@ -225,10 +224,8 @@ namespace hax {
 				this->_pLocalVertexBuffer = nullptr;
 				this->_pLocalIndexBuffer = nullptr;
 				this->_pTextureBuffer = nullptr;
-				this->_vertexBufferSize = 0u;
-				this->_indexBufferSize = 0u;
-				this->_textureBufferSize = 0u;
-				this->_curOffset = 0u;
+				this->_size = 0u;
+				this->_capacity = 0u;
 				
 				return;
 			}

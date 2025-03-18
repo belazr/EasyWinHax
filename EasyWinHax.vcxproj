@@ -52,6 +52,7 @@
     <ClInclude Include="src\vecmath.h" />
     <ClInclude Include="src\draw\vulkan\vkBackend.h" />
     <ClInclude Include="src\draw\vulkan\vkDrawBuffer.h" />
+    <ClInclude Include="src\Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\draw\dx\dx10\dx10DrawBuffer.cpp" />
