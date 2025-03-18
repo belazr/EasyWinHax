@@ -51,12 +51,12 @@ namespace hax {
 				//
 				// Parameters:
 				// 
-				// [in] vertexCount:
-				// Size of the buffer in vertices.
+				// [in] capacity:
+				// Capacity of the buffer.
 				//
 				// Return:
 				// True on success, false on failure.
-				bool create(uint32_t vertexCount) override;
+				bool create(uint32_t capacity) override;
 
 				// Destroys the buffer and all internal resources.
 				void destroy() override;

@@ -29,7 +29,7 @@ namespace hax{
 			}
 
 
-			bool DrawBuffer::create(uint32_t vertexCount) {
+			bool DrawBuffer::create(uint32_t capacity) {
 				this->reset();
 
 				this->_hVertexBuffer = VK_NULL_HANDLE;
@@ -37,17 +37,15 @@ namespace hax{
 				this->_hVertexMemory = VK_NULL_HANDLE;
 				this->_hIndexMemory = VK_NULL_HANDLE;
 
-				uint32_t vertexBufferSize = vertexCount * sizeof(Vertex);
+				uint32_t vertexBufferSize = capacity * sizeof(Vertex);
 
 				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
 
-				this->_vertexBufferSize = vertexBufferSize;
-
-				uint32_t indexBufferSize = vertexCount * sizeof(uint32_t);
+				uint32_t indexBufferSize = capacity * sizeof(uint32_t);
 
 				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) return false;
 
-				this->_indexBufferSize = indexBufferSize;
+				this->_capacity = capacity;
 
 				return true;
 			}
@@ -87,13 +85,13 @@ namespace hax{
 
 				if (!this->_pLocalVertexBuffer) {
 
-					if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->_vertexBufferSize, 0ull, reinterpret_cast<void**>(&this->_pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->_capacity * sizeof(Vertex), 0ull, reinterpret_cast<void**>(&this->_pLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 				}
 
 				if (!this->_pLocalIndexBuffer) {
 
-					if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->_indexBufferSize, 0ull, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->_capacity * sizeof(uint32_t), 0ull, reinterpret_cast<void**>(&this->_pLocalIndexBuffer)) != VkResult::VK_SUCCESS) return false;
 
 				}
 
@@ -122,9 +120,9 @@ namespace hax{
 				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &offset);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
-				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_curOffset, 1u, 0u, 0u, 0u);
+				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_size, 1u, 0u, 0u, 0u);
 
-				this->_curOffset = 0u;
+				this->_size = 0u;
 
 				return;
 			}

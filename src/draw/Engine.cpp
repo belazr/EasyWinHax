@@ -86,25 +86,19 @@ namespace hax {
 			}
 			// horizontal has to be drawn from left to right
 			else if (pos2->x < pos1->x) {
-				const Vector2* tmp = pos1;
+				const Vector2* const tmp = pos1;
 				pos1 = pos2;
 				pos2 = tmp;
 			}
 
-			Vector2 corners[6]{};
-			corners[0].x = pos1->x - cosAtan;
-			corners[0].y = pos1->y - sinAtan;
-			corners[1].x = pos2->x - cosAtan;
-			corners[1].y = pos2->y - sinAtan;
-			corners[2].x = pos1->x + cosAtan;
-			corners[2].y = pos1->y + sinAtan;
-
-			corners[3].x = pos2->x + cosAtan;
-			corners[3].y = pos2->y + sinAtan;
-			corners[4].x = pos1->x + cosAtan;
-			corners[4].y = pos1->y + sinAtan;
-			corners[5].x = pos2->x - cosAtan;
-			corners[5].y = pos2->y - sinAtan;
+			const Vector2 corners[]{
+				{ pos1->x - cosAtan, pos1->y - sinAtan },
+				{ pos2->x - cosAtan, pos2->y - sinAtan },
+				{ pos1->x + cosAtan, pos1->y + sinAtan },
+				{ pos2->x + cosAtan, pos2->y + sinAtan },
+				{ pos1->x + cosAtan, pos1->y + sinAtan },
+				{ pos2->x - cosAtan, pos2->y - sinAtan }
+			};
 
 			this->_pTriangleListBuffer->append(corners, 6u, color);
 		}
@@ -130,20 +124,14 @@ namespace hax {
 				pos2 = tmp;
 			}
 
-			Vector2 corners[6]{};
-			corners[0].x = pos1->x - cosAtan - omega * sinAtan;
-			corners[0].y = pos1->y;
-			corners[1].x = pos2->x - cosAtan - omega * sinAtan;
-			corners[1].y = pos2->y;
-			corners[2].x = pos1->x + cosAtan + omega * sinAtan;
-			corners[2].y = pos1->y;
-
-			corners[3].x = pos2->x + cosAtan + omega * sinAtan;
-			corners[3].y = pos2->y;
-			corners[4].x = pos1->x + cosAtan + omega * sinAtan;
-			corners[4].y = pos1->y;
-			corners[5].x = pos2->x - cosAtan - omega * sinAtan;
-			corners[5].y = pos2->y;
+			const Vector2 corners[]{
+				{ pos1->x - cosAtan - omega * sinAtan, pos1->y },
+				{ pos2->x - cosAtan - omega * sinAtan, pos2->y },
+				{ pos1->x + cosAtan + omega * sinAtan, pos1->y },
+				{ pos2->x + cosAtan + omega * sinAtan, pos2->y },
+				{ pos1->x + cosAtan + omega * sinAtan, pos1->y },
+				{ pos2->x - cosAtan - omega * sinAtan, pos2->y }
+			};
 
 			this->_pTriangleListBuffer->append(corners, 6, color);
 		}
@@ -153,20 +141,14 @@ namespace hax {
 
 			if (!this->_frame) return;
 
-			Vector2 corners[6]{};
-			corners[0].x = pos->x;
-			corners[0].y = pos->y;
-			corners[1].x = pos->x + width;
-			corners[1].y = pos->y;
-			corners[2].x = pos->x;
-			corners[2].y = pos->y + height;
-
-			corners[3].x = pos->x + width;
-			corners[3].y = pos->y + height;
-			corners[4].x = pos->x;
-			corners[4].y = pos->y + height;
-			corners[5].x = pos->x + width;
-			corners[5].y = pos->y;
+			const Vector2 corners[]{
+				{ pos->x, pos->y },
+				{ pos->x + width, pos->y },
+				{ pos->x, pos->y + height },
+				{ pos->x + width, pos->y + height },
+				{ pos->x, pos->y + height },
+				{ pos->x + width, pos->y }
+			};
 
 			this->_pTriangleListBuffer->append(corners, 6u, color);
 		}

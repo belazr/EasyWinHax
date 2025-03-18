@@ -3,17 +3,22 @@
 // Headers for functionallity not related to graphics apis
 #include "Bench.h"
 #include "FileLoader.h"
-#include "vecmath.h"
-#include "hooks\TrampHook.h"
-#include "hooks\IatHook.h"
+#include "launch.h"
 #include "mem.h"
 #include "proc.h"
-#include "launch.h"
+#include "undocWinTypes.h"
+#include "vecmath.h"
+#include "Vector.h"
+
+// Headers for hooks
+#include "hooks\TrampHook.h"
+#include "hooks\IatHook.h"
 
 // Headers for engine
+#include "draw\Color.h"
 #include "draw\Engine.h"
 #include "draw\Vertex.h"
-#include "draw\Color.h"
+
 #include "draw\font\Font.h"
 
 // Headers for DirectX 9

@@ -33,17 +33,17 @@ namespace hax {
 				// [in] topology:
 				// Primitive topology the vertices in the buffer should be drawn in.
 				void initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology);
-
+				
 				// Creates a new buffer with all internal resources.
 				//
 				// Parameters:
 				// 
-				// [in] vertexCount:
-				// Size of the buffer in vertices.
+				// [in] capacity:
+				// Capacity of the buffer.
 				//
 				// Return:
 				// True on success, false on failure.
-				bool create(uint32_t vertexCount) override;
+				bool create(uint32_t capacity) override;
 
 				// Destroys the buffer and all internal resources.
 				void destroy() override;
