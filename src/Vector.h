@@ -105,7 +105,7 @@ namespace hax {
 
 			if (this->_size == this->_capacity) {
 				const size_t capacity = this->_capacity ? this->_capacity + this->_capacity / 2u : 8u;
-				this->reserve(this->_capacity + this->_capacity / 2u);
+				this->reserve(capacity);
 			}
 
 			this->_data[this->_size] = t;
