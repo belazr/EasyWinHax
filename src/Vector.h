@@ -135,7 +135,8 @@ namespace hax {
 		// 
 		// [in] t:
 		// The element to append.
-		void append(const T& t) {
+		template <typename R>
+		void append(R&& t) {
 
 			if (this->_size == this->_capacity) {
 				const size_t capacity = this->_capacity ? 2 * this->_capacity : 8u;
