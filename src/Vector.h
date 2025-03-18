@@ -43,12 +43,6 @@ namespace hax {
 		}
 
 
-		T& operator[](size_t i) const {
-
-			return this->_data[i];
-		}
-
-
 		size_t  data() const {
 
 			return this->_data;
@@ -64,6 +58,20 @@ namespace hax {
 		size_t  capacity() const {
 
 			return this->_capacity;
+		}
+
+
+		T& operator[](size_t i) const {
+
+			return this->_data[i];
+		}
+
+
+		T* addr(size_t i) const {
+			
+			if (i >= this->_size) return nullptr;
+
+			return this->_data + i;
 		}
 
 
