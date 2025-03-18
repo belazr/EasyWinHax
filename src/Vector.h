@@ -43,11 +43,9 @@ namespace hax {
 		}
 
 
-		T* operator[](size_t i) const {
+		T& operator[](size_t i) const {
 
-			if (i >= this->_size) return nullptr;
-			
-			return &this->_data[i];
+			return this->_data[i];
 		}
 
 
@@ -103,7 +101,7 @@ namespace hax {
 		// 
 		// [in] t:
 		// The element to append.
-		void append(T t) {
+		void append(const T& t) {
 
 			if (this->_size == this->_capacity) {
 				const size_t capacity = this->_capacity ? this->_capacity + this->_capacity / 2u : 8u;
