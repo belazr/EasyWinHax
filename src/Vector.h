@@ -80,7 +80,15 @@ namespace hax {
 			if (capacity <= this->_capacity) return;
 
 			if (this->_data) {
-				this->_data = reinterpret_cast<T*>(realloc(this->_data, capacity * sizeof(T)));
+				T* data = reinterpret_cast<T*>(realloc(this->_data, capacity * sizeof(T)));
+				
+				if (!data) {
+					data = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
+					memcpy(data, this->_data, this->_size);
+					free(this->_data);
+				}
+
+				this->_data = data;
 			}
 			else {
 				this->_data = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
