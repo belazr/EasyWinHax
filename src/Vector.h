@@ -217,8 +217,11 @@ namespace hax {
 		// Number of elements the vector should be shrunk by.
 		void shrink(size_t n) {
 
-			for (size_t i = this->_size - 1u; i >= this->_size - n && i >= 0u; i--) {
+			for (size_t i = this->_size - 1u; i >= this->_size - n; i--) {
 				this->_data[i].~T();
+
+				if (i == 0u) break;
+
 			}
 
 			this->_size -= n;
