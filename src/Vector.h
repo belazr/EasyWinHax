@@ -37,11 +37,11 @@ namespace hax {
 
 
 		Vector& operator=(const Vector& v) {
-			this->destruct();
-			this->reserve(2 * v._size);
-
+			this->shrink(this->_size);
+			
 			if (v._data) {
-				
+				this->reserve(2 * v._size);
+
 				for (size_t i = 0; i < v._size; i++) {
 					this->_data[i] = T(v._data[i]);
 				}
@@ -72,10 +72,8 @@ namespace hax {
 		}
 
 
-
-
 		~Vector() {
-			this->destruct();
+			this->shrink(this->_size);
 			free(this->_data);
 
 			return;
@@ -161,22 +159,11 @@ namespace hax {
 			if (size == this->_size) return;
 
 			if (size > this->_size) {
-				this->reserve(2u * size);
-
-				for (size_t i = this->_size; i < size; i++) {
-					this->_data[i] = T();
-				}
-
+				this->append(T());
 			}
 			else {
-
-				for (size_t i = this->_size - 1u; i >= size; i--) {
-					this->_data[i].~T();
-				}
-
+				shrink(this->_size - size);
 			}
-
-			this->_size = size;
 
 			return;
 		}
@@ -195,23 +182,32 @@ namespace hax {
 				const size_t capacity = this->_capacity ? 2 * this->_capacity : 8u;
 				this->reserve(capacity);
 			}
-
-			this->_data[this->_size] = t;
+			
+			// inplace construction to avoid assignment operator calls
+			new(&this->_data[this->_size]) T(static_cast<R&&>(t));
 			this->_size++;
 
 			return;
 		}
 
 
-		// Destructs all elements in the vector.
-		void destruct() {
+		// Shrinks the size of the vector.
+		//		
+		// Parameters:
+		// 
+		// [in] n:
+		// Number of elements the vector should be shrunk by.
+		void shrink(size_t n) {
 
-			for (size_t i = 0u; i < this->_size; i++) {
+			for (size_t i = this->_size - 1; i >= this->_size - n && i; i--) {
 				this->_data[i].~T();
 			}
+
+			this->_size -= n;
 
 			return;
 		}
 
 	};
+
 }
