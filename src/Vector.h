@@ -194,6 +194,22 @@ namespace hax {
 		}
 
 
+		// Grows the size of the vector.
+		//		
+		// Parameters:
+		// 
+		// [in] n:
+		// Number of elements the vector should be grown by.
+		void grow(size_t n) {
+
+			for (size_t i = 0u; i < n; i++) {
+				this->append(T());
+			}
+
+			return;
+		}
+
+
 		// Shrinks the size of the vector.
 		//		
 		// Parameters:
