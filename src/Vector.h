@@ -60,6 +60,9 @@ namespace hax {
 
 
 		Vector& operator=(Vector&& v) {
+			this->shrink(this->_size);
+			free(this->_data);
+
 			this->_data = v._data;
 			this->_size = v._size;
 			this->_capacity = v._capacity;
