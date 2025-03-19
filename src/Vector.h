@@ -60,8 +60,7 @@ namespace hax {
 
 
 		Vector& operator=(Vector&& v) {
-			this->shrink(this->_size);
-			free(this->_data);
+			this->~Vector();
 
 			this->_data = v._data;
 			this->_size = v._size;
@@ -162,10 +161,10 @@ namespace hax {
 			if (size == this->_size) return;
 
 			if (size > this->_size) {
-				this->append(T());
+				this->grow(size - this->_size);
 			}
 			else {
-				shrink(this->_size - size);
+				this->shrink(this->_size - size);
 			}
 
 			return;
@@ -218,7 +217,7 @@ namespace hax {
 		// Number of elements the vector should be shrunk by.
 		void shrink(size_t n) {
 
-			for (size_t i = this->_size - 1; i >= this->_size - n && i; i--) {
+			for (size_t i = this->_size - 1u; i >= this->_size - n && i >= 0u; i--) {
 				this->_data[i].~T();
 			}
 
