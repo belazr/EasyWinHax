@@ -9,6 +9,14 @@ namespace hax {
 			_pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
 
 
+		void* Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+
+			if (!this->_init) return nullptr;
+			
+			return this->_pBackend->loadTexture(data, width, height);
+		}
+
+
 		void Engine::beginFrame(void* pArg1, void* pArg2) {
 			this->_pBackend->setHookArguments(pArg1, pArg2);
 
@@ -154,6 +162,25 @@ namespace hax {
 		}
 
 
+		void Engine::drawTexture(void* id, const Vector2* pos, float width, float height) const {
+
+			if (!this->_frame) return;
+
+			const Vector2 corners[]{
+				{ pos->x, pos->y },
+				{ pos->x + width, pos->y },
+				{ pos->x, pos->y + height },
+				{ pos->x + width, pos->y + height },
+				{ pos->x, pos->y + height },
+				{ pos->x + width, pos->y }
+			};
+
+			this->_pTriangleListBuffer->append(corners, _countof(corners), static_cast<Color>(0), {}, id);
+
+			return;
+		}
+
+
 		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) const {
 
 			if (!this->_frame) return;
@@ -258,26 +285,6 @@ namespace hax {
 				const Vector2 topCol{ top[i].x, top[i].y - halfWidth };
 				this->drawLine(&botCol, &topCol, width, color);
 			}
-
-			return;
-		}
-
-		void Engine::drawTexture(const Color* data, uint32_t width, uint32_t height, const Vector2* pos, float scale) const {
-			
-			if (!this->_frame) return;
-
-			void* const pTexture = this->_pTriangleListBuffer->load(data, width, height);
-
-			const Vector2 textureRect[]{
-				{ pos->x, pos->y },
-				{ pos->x + width * scale, pos->y },
-				{ pos->x, pos->y + height * scale },
-				{ pos->x + width * scale, pos->y + height * scale },
-				{ pos->x, pos->y + height * scale },
-				{ pos->x + width * scale, pos->y }
-			};
-
-			this->_pTriangleListBuffer->append(textureRect, _countof(textureRect), static_cast<Color>(0), {}, pTexture);
 
 			return;
 		}
