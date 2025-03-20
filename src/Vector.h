@@ -1,4 +1,5 @@
 #pragma once
+#include <new>
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,19 +83,19 @@ namespace hax {
 		}
 
 
-		size_t  data() const {
+		void* data() const {
 
 			return this->_data;
 		}
 
 
-		size_t  size() const {
+		size_t size() const {
 
 			return this->_size;
 		}
 
 
-		size_t  capacity() const {
+		size_t capacity() const {
 
 			return this->_capacity;
 		}
@@ -161,7 +162,7 @@ namespace hax {
 			if (size == this->_size) return;
 
 			if (size > this->_size) {
-				this->grow(this->_size - size);
+				this->grow(size - this->_size);
 			}
 			else {
 				this->shrink(this->_size - size);
@@ -217,8 +218,11 @@ namespace hax {
 		// Number of elements the vector should be shrunk by.
 		void shrink(size_t n) {
 
-			for (size_t i = this->_size - 1u; i >= this->_size - n && i >= 0u; i--) {
+			for (size_t i = this->_size - 1u; i >= this->_size - n; i--) {
 				this->_data[i].~T();
+
+				if (i == 0u) break;
+
 			}
 
 			this->_size -= n;
