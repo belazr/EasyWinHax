@@ -12,6 +12,8 @@ namespace hax {
 			private:
 				ID3D10Device* _pDevice;
 				D3D10_PRIMITIVE_TOPOLOGY _topology;
+				ID3D10PixelShader* _pPixelShaderPassthrough;
+				ID3D10PixelShader* _pPixelShaderTexture;
 				ID3D10Buffer* _pVertexBuffer;
 				ID3D10Buffer* _pIndexBuffer;
 
@@ -32,7 +34,13 @@ namespace hax {
 				// 
 				// [in] topology:
 				// Primitive topology the vertices in the buffer should be drawn in.
-				void initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology);
+				//
+				// [in] pPixelShaderPassthrough:
+				// Pixel shader for drawing without textures.
+				// 
+				// [in] pPixelShaderTexture:
+				// Pixel shader for drawing with textures.
+				void initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology, ID3D10PixelShader* pPixelShaderPassthrough, ID3D10PixelShader* _pPixelShaderTexture);
 				
 				// Creates a new buffer with all internal resources.
 				//
