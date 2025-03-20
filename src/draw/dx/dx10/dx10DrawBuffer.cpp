@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx10 {
 
-			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _topology{}, _pVertexBuffer{}, _pIndexBuffer{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _topology{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{}, _pVertexBuffer {}, _pIndexBuffer{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -16,9 +16,11 @@ namespace hax {
 			}
 
 
-			void DrawBuffer::initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology) {
+			void DrawBuffer::initialize(ID3D10Device* pDevice, D3D10_PRIMITIVE_TOPOLOGY topology, ID3D10PixelShader* pPixelShaderPassthrough, ID3D10PixelShader* pPixelShaderTexture) {
 				this->_pDevice = pDevice;
 				this->_topology = topology;
+				this->_pPixelShaderPassthrough = pPixelShaderPassthrough;
+				this->_pPixelShaderTexture = pPixelShaderTexture;
 
 				return;
 			}
@@ -105,7 +107,29 @@ namespace hax {
 				this->_pDevice->IASetVertexBuffers(0u, 1u, &this->_pVertexBuffer, &STRIDE, &OFFSET);
 				this->_pDevice->IASetIndexBuffer(this->_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
 				this->_pDevice->IASetPrimitiveTopology(this->_topology);
-				this->_pDevice->DrawIndexed(this->_size, 0u, 0u);
+
+				uint32_t drawCount = 1u;
+
+				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
+					drawCount = 1u;
+
+					ID3D10ShaderResourceView* const pCurTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(this->_pTextureBuffer[i]);
+
+					for (uint32_t j = i + 1u; j < this->_size; j++) {
+						ID3D10ShaderResourceView* const pNextTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(this->_pTextureBuffer[j]);
+
+						if (pNextTextureView != pCurTextureView) break;
+
+						drawCount++;
+					}
+
+					ID3D10PixelShader* const pPixelShader = pCurTextureView ? this->_pPixelShaderTexture : this->_pPixelShaderPassthrough;
+					this->_pDevice->PSSetShader(pPixelShader);
+					this->_pDevice->PSSetShaderResources(0u, 1u, &pCurTextureView);
+					this->_pDevice->DrawIndexed(drawCount, i, 0u);
+				}
+
+
 				this->_pDevice->IASetPrimitiveTopology(curTopology);
 
 				this->_size = 0u;
