@@ -116,6 +116,58 @@ namespace hax {
 			}
 
 
+			void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+				D3D10_TEXTURE2D_DESC textureDesc{};
+				textureDesc.Width = width;
+				textureDesc.Height = height;
+				textureDesc.MipLevels = 1u;
+				textureDesc.ArraySize = 1u;
+				textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+				textureDesc.SampleDesc.Count = 1u;
+				textureDesc.Usage = D3D10_USAGE_DYNAMIC;
+				textureDesc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+				textureDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+
+				ID3D10Texture2D* pTexture = nullptr;
+
+				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture))) return nullptr;
+
+				D3D10_MAPPED_TEXTURE2D mappedTexture{};
+				
+				if (FAILED(pTexture->Map(0u, D3D10_MAP_WRITE_DISCARD, 0u, &mappedTexture))) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				uint8_t* dst = reinterpret_cast<uint8_t*>(mappedTexture.pData);
+
+				for (uint32_t i = 0; i < height; i++) {
+					memcpy(dst, data + i * width, width * sizeof(Color));
+					dst += mappedTexture.RowPitch;
+				}
+
+				pTexture->Unmap(0u);
+
+				D3D10_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+				viewDesc.Format = textureDesc.Format;
+				viewDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+				viewDesc.Texture2D.MipLevels = 1u;
+
+				ID3D10ShaderResourceView* pTextureView = nullptr;
+
+				if (FAILED(this->_pDevice->CreateShaderResourceView(pTexture, &viewDesc, &pTextureView))) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				this->_textures.append(TextureData{ pTexture, pTextureView });
+
+				return pTextureView;
+			}
+
+
 			bool Backend::beginFrame() {
 				D3D10_VIEWPORT curViewport{};
 

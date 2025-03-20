@@ -2,6 +2,7 @@
 #include "dx10DrawBuffer.h"
 #include "..\..\IBackend.h"
 #include "..\..\Vertex.h"
+#include "..\..\..\Vector.h"
 #include <d3d10_1.h>
 
 // Class for drawing within a DirectX 10 Present hook.
@@ -32,6 +33,11 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				typedef struct TextureData {
+					ID3D10Texture2D* pTexture;
+					ID3D10ShaderResourceView* pTextureView;
+				}TextureData;
+
 				IDXGISwapChain* _pSwapChain;
 
 				ID3D10Device* _pDevice;
@@ -43,6 +49,8 @@ namespace hax {
 
 				DrawBuffer _triangleListBuffer;
 				DrawBuffer _pointListBuffer;
+
+				Vector<TextureData> _textures;
 
 			public:
 				Backend();
@@ -65,6 +73,23 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+
+				// Loads a texture into VRAM.
+				//
+				// Parameters:
+				// 
+				// [in] data:
+				// Texture colors in argb format.
+				// 
+				// [in] width:
+				// Width of the texture.
+				// 
+				// [in] height:
+				// Height of the texture.
+				//
+				// Return:
+				// Pointer to the internal texture structure in VRAM that can be passed to DrawBuffer::append. nullptr on failure.
+				virtual void* loadTexture(const Color* texture, uint32_t width, uint32_t height);
 				
 				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
 				// 
