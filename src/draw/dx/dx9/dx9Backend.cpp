@@ -73,6 +73,10 @@ namespace hax {
 					this->_pVertexDeclaration->Release();
 				}
 
+				for (size_t i = 0; i < this->_textures.size(); i++) {
+					this->_textures[i]->Release();
+				}
+
 			}
 
 
@@ -116,6 +120,38 @@ namespace hax {
 				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
 
 				return true;
+			}
+
+
+			void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+				IDirect3DTexture9* pTexture = nullptr;
+
+				if (FAILED(this->_pDevice->CreateTexture(width, height, 1u, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture, nullptr))) return nullptr;
+
+				D3DLOCKED_RECT rect{};
+
+				if (FAILED(pTexture->LockRect(0u, &rect, nullptr, 0u)) || !rect.pBits) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				uint8_t* dst = reinterpret_cast<uint8_t*>(rect.pBits);
+
+				for (uint32_t i = 0; i < height; i++) {
+					memcpy(dst, data + i * width, width * sizeof(Color));
+					dst += rect.Pitch;
+				}
+
+				if (FAILED(pTexture->UnlockRect(0u))) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				this->_textures.append(pTexture);
+
+				return pTexture;
 			}
 
 

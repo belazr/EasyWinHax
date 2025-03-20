@@ -41,6 +41,23 @@ namespace hax {
 			// True on success, false on failure.
 			virtual bool initialize() = 0;
 
+			// Loads a texture into VRAM.
+			//
+			// Parameters:
+			// 
+			// [in] data:
+			// Texture colors in argb format.
+			// 
+			// [in] width:
+			// Width of the texture.
+			// 
+			// [in] height:
+			// Height of the texture.
+			//
+			// Return:
+			// Pointer to the internal texture structure in VRAM that can be passed to AbstractDrawBuffer::append. nullptr on failure.
+			virtual void* loadTexture(const Color* texture, uint32_t width, uint32_t height) = 0;
+
 			// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
 			// 
 			// Return:

@@ -7,7 +7,7 @@ namespace hax {
 		namespace dx9 {
 
 			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _primitiveType{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pVertexBuffer{}, _pIndexBuffer{}, _textureArray{}, _textureCount{} {}
+				_pVertexBuffer{}, _pIndexBuffer{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -71,14 +71,6 @@ namespace hax {
 					this->_pTextureBuffer = nullptr;
 				}
 
-				for (uint32_t i = 0u; i < this->_textureCount; i++) {
-					this->_textureArray[i].data = nullptr;
-					this->_textureArray[i].texture->Release();
-					this->_textureArray[i].texture = nullptr;
-
-				}
-
-				this->_textureCount = 0u;
 				this->reset();
 
 				return;
@@ -100,52 +92,6 @@ namespace hax {
 				}
 
 				return true;
-			}
-
-
-			void* DrawBuffer::load(const Color* data, uint32_t width, uint32_t height) {
-				
-				for (size_t i = 0u; i < this->_textureCount; i++) {
-
-					if (this->_textureArray[i].data == data) {
-
-						return this->_textureArray[i].texture;
-					}
-
-				}
-				
-				if (this->_textureCount >= _countof(this->_textureArray)) return nullptr;
-				
-				IDirect3DTexture9* pTexture = nullptr;
-
-				if (FAILED(this->_pDevice->CreateTexture(width, height, 1u, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture, nullptr))) return nullptr;
-
-				D3DLOCKED_RECT rect{};
-
-				if (FAILED(pTexture->LockRect(0u, &rect, nullptr, 0u)) || !rect.pBits) {
-					pTexture->Release();
-
-					return nullptr;
-				}
-
-				uint8_t* dst = reinterpret_cast<uint8_t*>(rect.pBits);
-
-				for (uint32_t i = 0; i < height; i++) {
-					memcpy(dst, data + i * width, width * sizeof(Color));
-					dst += rect.Pitch;
-				}
-
-				if (FAILED(pTexture->UnlockRect(0u))) {
-					pTexture->Release();
-
-					return nullptr;
-				}
-
-				this->_textureArray[this->_textureCount].data = data;
-				this->_textureArray[this->_textureCount].texture = pTexture;
-				this->_textureCount++;
-
-				return pTexture;
 			}
 
 

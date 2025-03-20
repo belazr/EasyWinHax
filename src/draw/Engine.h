@@ -30,6 +30,23 @@ namespace hax {
 			// Pointer to an appropriate IBackend interface to backend within a hook.
 			Engine(IBackend* pBackend);
 
+			// Loads a texture into VRAM. Has to be called after beginFrame.
+			//
+			// Parameters:
+			// 
+			// [in] data:
+			// Texture colors in argb format.
+			// 
+			// [in] width:
+			// Width of the texture.
+			// 
+			// [in] height:
+			// Height of the texture.
+			//
+			// Return:
+			// Pointer to the internal texture structure in VRAM that can be passed to drawTexture. nullptr on failure.
+			void* loadTexture(const Color* data, uint32_t width, uint32_t height);
+
 			// Inititalizes the backend if neccessary and starts a frame within a hook.
 			// Has to be called before any drawing calls.
 			//
@@ -106,6 +123,23 @@ namespace hax {
 			// Color of the rectangle. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			void drawFilledRectangle(const Vector2* pos, float width, float height, Color color) const;
 
+			// Draws a loaded texture.
+			//
+			// Parameters:
+			//
+			// [in] id:
+			// The ID of the texture returned by loadTexture.
+			//
+			// [in] pos:
+			// Coordinates of the top left corner of the texture.
+			// 
+			// [in] width:
+			// Width of the drawn texture in pixels.
+			// 
+			// [in] height:
+			// Height of the drawn texture in pixels.
+			void drawTexture(void* id, const Vector2* pos, float width, float height) const;
+
 			// Draws text to the screen.
 			//
 			// Parameters:
@@ -176,26 +210,6 @@ namespace hax {
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const;
-
-			// Draws a rectangular texture.
-			//
-			// Parameters:
-			//
-			// [in] data:
-			// The pixel data of the texture.
-			// 
-			// [in] width:
-			// Width of the texture in pixels.
-			// 
-			// [in] height:
-			// Height of the texture in pixels.
-			// 
-			// [in] pos:
-			// Coordinates of the top left corner of the texture.
-			// 
-			// [in] scale:
-			// Scale at which the texture should be drawn. width and height are multipled with scale to get the actual size of the texture on the screen.
-			void drawTexture(const Color* data, uint32_t width, uint32_t height, const Vector2* pos, float scale) const;
 		};
 
 	}

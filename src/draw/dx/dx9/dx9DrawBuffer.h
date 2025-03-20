@@ -17,14 +17,6 @@ namespace hax {
 				IDirect3DVertexBuffer9* _pVertexBuffer;
 				IDirect3DIndexBuffer9* _pIndexBuffer;
 
-				typedef struct LoadedTexture {
-					const Color* data;
-					IDirect3DTexture9* texture;
-				}LoadedTexture;
-
-				LoadedTexture _textureArray[20];
-				uint32_t _textureCount;
-
 			public:
 				DrawBuffer();
 
@@ -66,23 +58,6 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				bool map() override;
-
-				// Loads a texture into VRAM.
-				//
-				// Parameters:
-				// 
-				// [in] data:
-				// Texture colors in argb format.
-				// 
-				// [in] width:
-				// Width of the texture.
-				// 
-				// [in] height:
-				// Height of the texture.
-				//
-				// Return:
-				// Pointer to the internal texture structure in VRAM that can be passed to append. nullptr on failure.
-				void* load(const Color* texture, uint32_t width, uint32_t height) override;
 
 				// Draws the content of the buffer to the screen.
 				// Needs to be called between a successful of vk::Backend::beginFrame and a call to vk::Backend::endFrame.
