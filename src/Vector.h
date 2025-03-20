@@ -1,4 +1,5 @@
 #pragma once
+#include <new>
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,19 +83,19 @@ namespace hax {
 		}
 
 
-		size_t  data() const {
+		void* data() const {
 
 			return this->_data;
 		}
 
 
-		size_t  size() const {
+		size_t size() const {
 
 			return this->_size;
 		}
 
 
-		size_t  capacity() const {
+		size_t capacity() const {
 
 			return this->_capacity;
 		}
