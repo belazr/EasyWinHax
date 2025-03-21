@@ -175,7 +175,7 @@ namespace hax {
 				{ pos->x + width, pos->y }
 			};
 
-			this->_pTriangleListBuffer->append(corners, _countof(corners), static_cast<Color>(0), {}, id);
+			this->_pTriangleListBuffer->append(corners, _countof(corners), argb::WHITE, {}, id);
 
 			return;
 		}
