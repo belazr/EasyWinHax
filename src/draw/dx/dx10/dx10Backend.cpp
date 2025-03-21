@@ -38,7 +38,7 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShader{},
+				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
 				_pConstantBuffer{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
@@ -54,8 +54,12 @@ namespace hax {
 					this->_triangleListBuffer.destroy();
 				}
 
-				if (this->_pPixelShader) {
-					this->_pPixelShader->Release();
+				if (this->_pPixelShaderTexture) {
+					this->_pPixelShaderTexture->Release();
+				}
+
+				if (this->_pPixelShaderPassthrough) {
+					this->_pPixelShaderPassthrough->Release();
 				}
 
 				if (this->_pVertexLayout) {
@@ -92,14 +96,14 @@ namespace hax {
 				
 				if (!this->createShaders()) return false;
 
-				this->_triangleListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, this->_pPixelShader, this->_pPixelShader);
+				this->_triangleListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
 				this->_triangleListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
 				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-				this->_pointListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST, this->_pPixelShader, this->_pPixelShader);
+				this->_pointListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
 				this->_pointListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
@@ -233,7 +237,7 @@ namespace hax {
 				PSI output;
 				output.pos = mul(projectionMatrix, float4(input.pos.xy, 0.f, 1.f));
 				output.col = input.col;
-				
+
 				return output;
 			}
 			*/
@@ -295,11 +299,11 @@ namespace hax {
 			};
 
 			float4 main(PSI input) : SV_TARGET{
-				
+
 				return input.col;
 			}
 			*/
-			static constexpr BYTE PIXEL_SHADER[]{
+			static constexpr BYTE PIXEL_SHADER_PASSTHROUGH[]{
 				0x44, 0x58, 0x42, 0x43, 0x05, 0x91, 0x8A, 0x59, 0xBE, 0x79, 0x95, 0x18, 0x19, 0x0A, 0x37, 0xDB,
 				0x37, 0xC6, 0x25, 0x9F, 0x01, 0x00, 0x00, 0x00, 0xC4, 0x01, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
 				0x34, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xD4, 0x00, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00,
@@ -331,6 +335,38 @@ namespace hax {
 				0x00, 0x00, 0x00, 0x00
 			};
 
+			/*
+			Texture2D texture : register(t0);
+			SamplerState texSampler : register(s0);
+
+			struct PSI {
+				float4 pos : SV_POSITION;
+				float4 col : COLOR0;
+				float2 uv : TEXCOORD0;
+			};
+
+			float4 main(PS_INPUT input) : SV_Target {
+				float4 texColor = texture.Sample(texSampler, input.uv);
+
+				return texColor * input.col;
+			}
+			*/
+			static constexpr BYTE PIXEL_SHADER_TEXTURE[]{
+				0x00, 0x03, 0xFF, 0xFF, 0xFE, 0xFF, 0x20, 0x00, 0x43, 0x54, 0x41, 0x42, 0x1C, 0x00, 0x00, 0x00,
+				0x53, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00,
+				0x00, 0x01, 0x00, 0x00, 0x4C, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x02, 0x00, 0x3C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x74, 0x65, 0x78, 0x53,
+				0x61, 0x6D, 0x70, 0x6C, 0x65, 0x72, 0x00, 0xAB, 0x04, 0x00, 0x0C, 0x00, 0x01, 0x00, 0x01, 0x00,
+				0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x70, 0x73, 0x5F, 0x33, 0x5F, 0x30, 0x00, 0x4D,
+				0x69, 0x63, 0x72, 0x6F, 0x73, 0x6F, 0x66, 0x74, 0x20, 0x28, 0x52, 0x29, 0x20, 0x48, 0x4C, 0x53,
+				0x4C, 0x20, 0x53, 0x68, 0x61, 0x64, 0x65, 0x72, 0x20, 0x43, 0x6F, 0x6D, 0x70, 0x69, 0x6C, 0x65,
+				0x72, 0x20, 0x31, 0x30, 0x2E, 0x31, 0x00, 0xAB, 0x1F, 0x00, 0x00, 0x02, 0x05, 0x00, 0x00, 0x80,
+				0x00, 0x00, 0x03, 0x90, 0x1F, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x90, 0x00, 0x08, 0x0F, 0xA0,
+				0x42, 0x00, 0x00, 0x03, 0x00, 0x08, 0x0F, 0x80, 0x00, 0x00, 0xE4, 0x90, 0x00, 0x08, 0xE4, 0xA0,
+				0xFF, 0xFF, 0x00, 0x00
+			};
+
+
 			bool Backend::createShaders() {
 
 				if (!this->_pVertexShader) {
@@ -350,9 +386,15 @@ namespace hax {
 
 				}
 
-				if (!this->_pPixelShader) {
+				if (!this->_pPixelShaderPassthrough) {
 
-					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER, sizeof(PIXEL_SHADER), &this->_pPixelShader))) return false;
+					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH), &this->_pPixelShaderPassthrough))) return false;
+
+				}
+
+				if (!this->_pPixelShaderTexture) {
+
+					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE), &this->_pPixelShaderTexture))) return false;
 
 				}
 

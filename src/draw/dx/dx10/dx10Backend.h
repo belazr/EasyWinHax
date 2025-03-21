@@ -43,7 +43,8 @@ namespace hax {
 				ID3D10Device* _pDevice;
 				ID3D10VertexShader* _pVertexShader;
 				ID3D10InputLayout* _pVertexLayout;
-				ID3D10PixelShader* _pPixelShader;
+				ID3D10PixelShader* _pPixelShaderPassthrough;
+				ID3D10PixelShader* _pPixelShaderTexture;
 				ID3D10Buffer* _pConstantBuffer;
 				D3D10_VIEWPORT _viewport;
 
