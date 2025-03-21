@@ -196,6 +196,7 @@ namespace hax {
 				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 				this->_pDevice->VSSetShader(this->_pVertexShader);
 				this->_pDevice->IASetInputLayout(this->_pVertexLayout);
+				this->_pDevice->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 
 				return true;
 			}
@@ -384,9 +385,10 @@ namespace hax {
 
 				}
 
-				constexpr D3D10_INPUT_ELEMENT_DESC INPUT_ELEMENT_DESC[2]{
+				constexpr D3D10_INPUT_ELEMENT_DESC INPUT_ELEMENT_DESC[]{
 					{"POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D10_INPUT_PER_VERTEX_DATA, 0u},
-					{"COLOR", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, D3D10_APPEND_ALIGNED_ELEMENT, D3D10_INPUT_PER_VERTEX_DATA, 0u}
+					{"COLOR", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, D3D10_APPEND_ALIGNED_ELEMENT, D3D10_INPUT_PER_VERTEX_DATA, 0u},
+					{"TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, D3D10_APPEND_ALIGNED_ELEMENT, D3D10_INPUT_PER_VERTEX_DATA, 0u},
 				};
 
 				if (!this->_pVertexLayout) {
