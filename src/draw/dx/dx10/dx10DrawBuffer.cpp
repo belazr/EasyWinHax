@@ -48,6 +48,10 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
 
+				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(capacity * sizeof(void*)));
+
+				if (!this->_pTextureBuffer) return false;
+
 				this->_capacity = capacity;
 
 				return true;
