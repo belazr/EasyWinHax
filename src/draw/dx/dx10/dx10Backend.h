@@ -46,6 +46,7 @@ namespace hax {
 				ID3D10PixelShader* _pPixelShaderPassthrough;
 				ID3D10PixelShader* _pPixelShaderTexture;
 				ID3D10Buffer* _pConstantBuffer;
+				ID3D10SamplerState* _pSamplerState;
 				D3D10_VIEWPORT _viewport;
 
 				DrawBuffer _triangleListBuffer;
@@ -127,6 +128,7 @@ namespace hax {
 			private:
 				bool createShaders();
 				bool createConstantBuffer();
+				bool createSamplerState();
 				bool getCurrentViewport(D3D10_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer(D3D10_VIEWPORT viewport) const;
 			};
