@@ -39,10 +39,14 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pSamplerState{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
+
+				if (this->_pBlendState) {
+					this->_pBlendState->Release();
+				}
 
 				if (this->_pSamplerState) {
 					this->_pSamplerState->Release();
@@ -125,6 +129,12 @@ namespace hax {
 
 				}
 
+				if (!this->_pBlendState) {
+
+					if (!this->createBlendState()) return false;
+
+				}
+
 				return true;
 			}
 
@@ -197,6 +207,9 @@ namespace hax {
 				this->_pDevice->VSSetShader(this->_pVertexShader);
 				this->_pDevice->IASetInputLayout(this->_pVertexLayout);
 				this->_pDevice->PSSetSamplers(0u, 1u, &this->_pSamplerState);
+				
+				constexpr float BLEND_FACTOR[] { 0.f, 0.f, 0.f, 0.f };
+				this->_pDevice->OMSetBlendState(this->_pBlendState, BLEND_FACTOR, 0xffffffffu);
 
 				return true;
 			}
@@ -477,6 +490,22 @@ namespace hax {
 				samplerDesc.MaxLOD = 0.f;
 
 				return SUCCEEDED(this->_pDevice->CreateSamplerState(&samplerDesc, &this->_pSamplerState));
+			}
+
+
+			bool Backend::createBlendState() {
+				D3D10_BLEND_DESC blendDesc{};
+				blendDesc.AlphaToCoverageEnable = false;
+				blendDesc.BlendEnable[0] = true;
+				blendDesc.SrcBlend = D3D10_BLEND_SRC_ALPHA;
+				blendDesc.DestBlend = D3D10_BLEND_INV_SRC_ALPHA;
+				blendDesc.BlendOp = D3D10_BLEND_OP_ADD;
+				blendDesc.SrcBlendAlpha = D3D10_BLEND_ONE;
+				blendDesc.DestBlendAlpha = D3D10_BLEND_INV_SRC_ALPHA;
+				blendDesc.BlendOpAlpha = D3D10_BLEND_OP_ADD;
+				blendDesc.RenderTargetWriteMask[0] = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+				return SUCCEEDED(this->_pDevice->CreateBlendState(&blendDesc, &this->_pBlendState));
 			}
 
 
