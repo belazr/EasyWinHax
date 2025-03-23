@@ -39,7 +39,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pRenderTargetView{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pRenderTargetView{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -48,6 +48,10 @@ namespace hax {
 					this->_pRenderTargetView->Release();
 				}
 
+				if (this->_pSamplerState) {
+					this->_pSamplerState->Release();
+				}
+				
 				if (this->_pConstantBuffer) {
 					this->_pConstantBuffer->Release();
 				}
@@ -206,6 +210,7 @@ namespace hax {
 				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 				this->_pContext->IASetInputLayout(this->_pVertexLayout);
+				this->_pContext->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 
 				return true;
 			}
@@ -479,6 +484,21 @@ namespace hax {
 				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 				return SUCCEEDED(this->_pDevice->CreateBuffer(&bufferDesc, nullptr, &this->_pConstantBuffer));
+			}
+
+
+			bool Backend::createSamplerState() {
+				D3D11_SAMPLER_DESC samplerDesc{};
+				samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+				samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+				samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+				samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+				samplerDesc.MipLODBias = 0.f;
+				samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+				samplerDesc.MinLOD = 0.f;
+				samplerDesc.MaxLOD = 0.f;
+
+				return SUCCEEDED(this->_pDevice->CreateSamplerState(&samplerDesc, &this->_pSamplerState));
 			}
 
 
