@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx11 {
 
-			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pContext{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pContext{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -16,10 +16,12 @@ namespace hax {
 			}
 
 
-			void DrawBuffer::initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology) {
+			void DrawBuffer::initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology, ID3D11PixelShader* pPixelShaderPassthrough, ID3D11PixelShader* pPixelShaderTexture) {
 				this->_pDevice = pDevice;
 				this->_pContext = pContext;
 				this->_topology = topology;
+				this->_pPixelShaderPassthrough = pPixelShaderPassthrough;
+				this->_pPixelShaderTexture = pPixelShaderTexture;
 
 				return;
 			}
@@ -46,6 +48,10 @@ namespace hax {
 				indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
+
+				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(capacity * sizeof(void*)));
+
+				if (!this->_pTextureBuffer) return false;
 
 				this->_capacity = capacity;
 
@@ -110,7 +116,28 @@ namespace hax {
 				this->_pContext->IASetVertexBuffers(0u, 1u, &this->_pVertexBuffer, &STRIDE, &OFFSET);
 				this->_pContext->IASetIndexBuffer(this->_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0u);
 				this->_pContext->IASetPrimitiveTopology(this->_topology);
-				this->_pContext->DrawIndexed(this->_size, 0u, 0u);
+
+				uint32_t drawCount = 1u;
+
+				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
+					drawCount = 1u;
+
+					ID3D11ShaderResourceView* const pCurTextureView = reinterpret_cast<ID3D11ShaderResourceView*>(this->_pTextureBuffer[i]);
+
+					for (uint32_t j = i + 1u; j < this->_size; j++) {
+						ID3D11ShaderResourceView* const pNextTextureView = reinterpret_cast<ID3D11ShaderResourceView*>(this->_pTextureBuffer[j]);
+
+						if (pNextTextureView != pCurTextureView) break;
+
+						drawCount++;
+					}
+
+					ID3D11PixelShader* const pPixelShader = pCurTextureView ? this->_pPixelShaderTexture : this->_pPixelShaderPassthrough;
+					this->_pContext->PSSetShader(pPixelShader, nullptr, 0u);
+					this->_pContext->PSSetShaderResources(0u, 1u, &pCurTextureView);
+					this->_pContext->DrawIndexed(drawCount, i, 0u);
+				}
+
 				this->_pContext->IASetPrimitiveTopology(curTopology);
 
 				this->_size = 0u;
