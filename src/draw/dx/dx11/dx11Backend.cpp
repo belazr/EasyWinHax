@@ -39,7 +39,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pContext{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pSamplerState{}, _pRenderTargetView{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _pRenderTargetView{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -50,6 +50,10 @@ namespace hax {
 
 				if (this->_pSamplerState) {
 					this->_pSamplerState->Release();
+				}
+
+				if (this->_pBlendState) {
+					this->_pBlendState->Release();
 				}
 				
 				if (this->_pConstantBuffer) {
@@ -163,7 +167,7 @@ namespace hax {
 				D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
 				viewDesc.Format = textureDesc.Format;
 				viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-				viewDesc.Texture2D.MipLevels = 1u;
+				viewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
 
 				ID3D11ShaderResourceView* pTextureView = nullptr;
 
@@ -211,6 +215,9 @@ namespace hax {
 				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 				this->_pContext->IASetInputLayout(this->_pVertexLayout);
 				this->_pContext->PSSetSamplers(0u, 1u, &this->_pSamplerState);
+
+				constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
+				this->_pContext->OMSetBlendState(this->_pBlendState, BLEND_FACTOR, 0xffffffffu);
 
 				return true;
 			}
@@ -499,6 +506,22 @@ namespace hax {
 				samplerDesc.MaxLOD = 0.f;
 
 				return SUCCEEDED(this->_pDevice->CreateSamplerState(&samplerDesc, &this->_pSamplerState));
+			}
+
+
+			bool Backend::createBlendState() {
+				D3D11_BLEND_DESC blendDesc{};
+				blendDesc.AlphaToCoverageEnable = FALSE;
+				blendDesc.RenderTarget[0].BlendEnable = TRUE;
+				blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+				blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+				blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+				blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+				blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+				blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+				blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+				return SUCCEEDED(this->_pDevice->CreateBlendState(&blendDesc, &this->_pBlendState));
 			}
 
 

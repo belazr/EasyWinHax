@@ -49,6 +49,7 @@ namespace hax {
 				ID3D11RenderTargetView* _pRenderTargetView;
 				ID3D11Buffer* _pConstantBuffer;
 				ID3D11SamplerState* _pSamplerState;
+				ID3D11BlendState* _pBlendState;
 				D3D11_VIEWPORT _viewport;
 				
 				DrawBuffer _triangleListBuffer;
@@ -131,6 +132,7 @@ namespace hax {
 				bool createShaders();
 				bool createConstantBuffer();
 				bool createSamplerState();
+				bool createBlendState();
 				bool getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer(D3D11_VIEWPORT viewport) const;
 			};
