@@ -13,6 +13,8 @@ namespace hax {
 				ID3D11Device* _pDevice;
 				ID3D11DeviceContext* _pContext;
 				D3D11_PRIMITIVE_TOPOLOGY _topology;
+				ID3D11PixelShader* _pPixelShaderPassthrough;
+				ID3D11PixelShader* _pPixelShaderTexture;
 				ID3D11Buffer* _pVertexBuffer;
 				ID3D11Buffer* _pIndexBuffer;
 
@@ -33,7 +35,13 @@ namespace hax {
 				// 
 				// [in] topology:
 				// Primitive topology the vertices in the buffer should be drawn in.
-				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology);
+				//
+				// [in] pPixelShaderPassthrough:
+				// Pixel shader for drawing without textures.
+				// 
+				// [in] pPixelShaderTexture:
+				// Pixel shader for drawing with textures.
+				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, D3D11_PRIMITIVE_TOPOLOGY topology, ID3D11PixelShader* pPixelShaderPassthrough, ID3D11PixelShader* _pPixelShaderTexture);
 
 				// Creates a new buffer with all internal resources.
 				//
