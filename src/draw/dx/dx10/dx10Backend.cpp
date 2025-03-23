@@ -152,35 +152,20 @@ namespace hax {
 				textureDesc.ArraySize = 1u;
 				textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 				textureDesc.SampleDesc.Count = 1u;
-				textureDesc.Usage = D3D10_USAGE_DYNAMIC;
 				textureDesc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
-				textureDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+
+				D3D10_SUBRESOURCE_DATA subResData = {};
+				subResData.pSysMem = data;
+				subResData.SysMemPitch = width * sizeof(Color);
 
 				ID3D10Texture2D* pTexture = nullptr;
 
-				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture))) return nullptr;
-
-				D3D10_MAPPED_TEXTURE2D mappedTexture{};
-				
-				if (FAILED(pTexture->Map(0u, D3D10_MAP_WRITE_DISCARD, 0u, &mappedTexture))) {
-					pTexture->Release();
-
-					return nullptr;
-				}
-
-				uint8_t* dst = reinterpret_cast<uint8_t*>(mappedTexture.pData);
-
-				for (uint32_t i = 0; i < height; i++) {
-					memcpy(dst, data + i * width, width * sizeof(Color));
-					dst += mappedTexture.RowPitch;
-				}
-
-				pTexture->Unmap(0u);
+				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, &subResData, &pTexture))) return nullptr;
 
 				D3D10_SHADER_RESOURCE_VIEW_DESC viewDesc{};
 				viewDesc.Format = textureDesc.Format;
 				viewDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-				viewDesc.Texture2D.MipLevels = 1u;
+				viewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
 
 				ID3D10ShaderResourceView* pTextureView = nullptr;
 
@@ -500,8 +485,8 @@ namespace hax {
 
 			bool Backend::createBlendState() {
 				D3D10_BLEND_DESC blendDesc{};
-				blendDesc.AlphaToCoverageEnable = false;
-				blendDesc.BlendEnable[0] = true;
+				blendDesc.AlphaToCoverageEnable = FALSE;
+				blendDesc.BlendEnable[0] = TRUE;
 				blendDesc.SrcBlend = D3D10_BLEND_SRC_ALPHA;
 				blendDesc.DestBlend = D3D10_BLEND_INV_SRC_ALPHA;
 				blendDesc.BlendOp = D3D10_BLEND_OP_ADD;
