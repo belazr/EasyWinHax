@@ -142,6 +142,18 @@ namespace hax {
 
 				}
 
+				if (!this->_pSamplerState) {
+
+					if (!this->createSamplerState()) return false;
+
+				}
+
+				if (!this->_pBlendState) {
+
+					if (!this->createBlendState()) return false;
+
+				}
+
 				return true;
 			}
 
