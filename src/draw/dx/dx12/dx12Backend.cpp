@@ -137,10 +137,10 @@ namespace hax {
 
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
-                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pRootSignature{},
-                _pPointListPipelineState{}, _pTriangleListPipelineState {},
-                _pFence{}, _pCommandList{}, _viewport{}, _pRtvResource{},
-                _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData {} {}
+                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{}, _srvHeapDescriptorIncrementSize{},
+                _pRootSignature{}, _pPointListPipelineState{}, _pTriangleListPipelineState {}, _pFence{}, _pCommandList{}, _viewport{}, _pRtvResource{},
+                _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData{}, _textures{} {
+            }
 
 
             Backend::~Backend() {
@@ -171,8 +171,16 @@ namespace hax {
                     this->_pRootSignature->Release();
                 }
 
+                if (this->_pSrvDescriptorHeap) {
+                    this->_pRtvDescriptorHeap->Release();
+                }
+
                 if (this->_pRtvDescriptorHeap) {
                     this->_pRtvDescriptorHeap->Release();
+                }
+
+                for (size_t i = 0u; i < this->_textures.size(); i++) {
+                    this->_textures[i]->Release();
                 }
 
                 if (this->_pDevice) {
@@ -203,15 +211,7 @@ namespace hax {
 
                 }
 
-                if (!this->_pRtvDescriptorHeap) {
-
-                    if (!this->createDescriptorHeap()) return false;
-
-                }
-
-                this->_hRtvHeapStartDescriptor = this->_pRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-
-                if (!this->_hRtvHeapStartDescriptor.ptr) return false;
+                if (!this->createDescriptorHeaps()) return false;
 
                 if (!this->_pRootSignature) {
 
@@ -242,6 +242,194 @@ namespace hax {
                 }
 
                 return true;
+            }
+
+
+            void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+                D3D12_HEAP_PROPERTIES heapProps{};
+                heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+                D3D12_RESOURCE_DESC resDesc{};
+                resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+                resDesc.Alignment = 0u;
+                resDesc.Width = width;
+                resDesc.Height = height;
+                resDesc.DepthOrArraySize = 1u;
+                resDesc.MipLevels = 1u;
+                resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                resDesc.SampleDesc.Count = 1u;
+                resDesc.SampleDesc.Quality = 0u;
+
+                ID3D12Resource* pTexture = nullptr;
+                
+                if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture)))) return nullptr;
+
+                const UINT uploadPitch = (width * sizeof(Color) + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+                const UINT uploadSize = height * uploadPitch;
+                
+                heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+                resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+                resDesc.Width = uploadSize;
+                resDesc.Height = 1u;
+                resDesc.Format = DXGI_FORMAT_UNKNOWN;
+                resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+                ID3D12Resource* pBuffer = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&pBuffer)))) {
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                BYTE* pLocalBuffer = nullptr;
+                const D3D12_RANGE range{ 0u, uploadSize };
+                
+                if (FAILED(pBuffer->Map(0u, &range, reinterpret_cast<void**>(&pLocalBuffer)))) {
+                    pBuffer->Release();
+                    pTexture->Release();
+                    
+                    return nullptr;
+                }
+
+                for (uint32_t i = 0u; i < height; i++) {
+                    memcpy(pLocalBuffer + i * uploadPitch, reinterpret_cast<const BYTE*>(data) + i * width * sizeof(Color), width * sizeof(Color));
+                }
+
+                pBuffer->Unmap(0u, &range);
+
+                D3D12_COMMAND_QUEUE_DESC queueDesc{};
+                queueDesc.NodeMask = 1u;
+
+                ID3D12CommandQueue* pCmdQueue = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCmdQueue)))) {
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                ID3D12CommandAllocator* pCmdAlloc = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pCmdAlloc)))) {
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                ID3D12GraphicsCommandList* pCmdList = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, pCmdAlloc, nullptr, IID_PPV_ARGS(&pCmdList)))) {
+                    pCmdAlloc->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                D3D12_TEXTURE_COPY_LOCATION srcLocation{};
+                srcLocation.pResource = pBuffer;
+                srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+                srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                srcLocation.PlacedFootprint.Footprint.Width = width;
+                srcLocation.PlacedFootprint.Footprint.Height = height;
+                srcLocation.PlacedFootprint.Footprint.Depth = 1u;
+                srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
+
+                D3D12_TEXTURE_COPY_LOCATION dstLocation{};
+                dstLocation.pResource = pTexture;
+                dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+                pCmdList->CopyTextureRegion(&dstLocation, 0u, 0u, 0u, &srcLocation, nullptr);
+
+                D3D12_RESOURCE_BARRIER barrier{};
+                barrier.Transition.pResource = pTexture;
+                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+                barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+                pCmdList->ResourceBarrier(1u, &barrier);
+
+                if (FAILED(pCmdList->Close())) {
+                    pCmdList->Release();
+                    pCmdAlloc->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&pCmdList));
+
+                ID3D12Fence* pFence = nullptr;
+
+                if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) {
+                    pCmdList->Release();
+                    pCmdAlloc->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
+                    pFence->Release();
+                    pCmdList->Release();
+                    pCmdAlloc->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                HANDLE hEvent = CreateEventA(nullptr, FALSE, FALSE, nullptr);
+
+                if (hEvent == nullptr) {
+                    pFence->Release();
+                    pCmdList->Release();
+                    pCmdAlloc->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return nullptr;
+                }
+
+                pFence->SetEventOnCompletion(1u, hEvent);
+                WaitForSingleObject(hEvent, INFINITE);
+
+                pFence->Release();
+                pCmdList->Release();
+                pCmdAlloc->Release();
+                pCmdQueue->Release();
+                pBuffer->Release();
+
+                const D3D12_CPU_DESCRIPTOR_HANDLE hSrvHeapCpuDescriptor{
+                    this->_hSrvHeapStartCpuDescriptor.ptr + this->_srvHeapDescriptorIncrementSize * this->_textures.size()
+                };
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC shaderResDesc;
+                shaderResDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                shaderResDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                shaderResDesc.Texture2D.MipLevels = resDesc.MipLevels;
+                shaderResDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                this->_pDevice->CreateShaderResourceView(pTexture, &shaderResDesc, hSrvHeapCpuDescriptor);
+                
+                const D3D12_GPU_DESCRIPTOR_HANDLE hSrvHeapGpuDescriptor{
+                    this->_hSrvHeapStartGpuDescriptor.ptr + this->_srvHeapDescriptorIncrementSize * this->_textures.size() 
+                };
+                
+                this->_textures.append(pTexture);
+
+                return reinterpret_cast<void*>(hSrvHeapGpuDescriptor.ptr);
             }
 
 
@@ -355,13 +543,43 @@ namespace hax {
             }
 
 
-            bool Backend::createDescriptorHeap() {
-                D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-                descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-                descriptorHeapDesc.NumDescriptors = 1u;
-                descriptorHeapDesc.NodeMask = 1u;
+            bool Backend::createDescriptorHeaps() {
+                
+                if (!this->_pRtvDescriptorHeap) {
+                    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+                    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+                    descriptorHeapDesc.NumDescriptors = 1u;
+                    descriptorHeapDesc.NodeMask = 1u;
 
-                return SUCCEEDED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)));
+                    if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pRtvDescriptorHeap)))) return false;
+
+                }
+
+                this->_hRtvHeapStartDescriptor = this->_pRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+                if (!this->_hRtvHeapStartDescriptor.ptr) return false;
+
+                if (!this->_pSrvDescriptorHeap) {
+                    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+                    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+                    descriptorHeapDesc.NumDescriptors = 1u;
+                    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+                    if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pSrvDescriptorHeap)))) return false;
+
+                }
+                
+                this->_hSrvHeapStartCpuDescriptor = this->_pSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+                if (!this->_hSrvHeapStartCpuDescriptor.ptr) return false;
+
+                this->_hSrvHeapStartGpuDescriptor = this->_pSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+                if (!this->_hSrvHeapStartGpuDescriptor.ptr) return false;
+
+                this->_srvHeapDescriptorIncrementSize = this->_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+                return true;
             }
 
 

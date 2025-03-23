@@ -2,6 +2,7 @@
 #include "dx12DrawBuffer.h"
 #include "..\..\IBackend.h"
 #include "..\..\Vertex.h"
+#include "..\..\..\Vector.h"
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
@@ -51,7 +52,11 @@ namespace hax {
 				HWND _hMainWindow;
 				ID3D12Device* _pDevice;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
+				ID3D12DescriptorHeap* _pSrvDescriptorHeap;
 				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
+				D3D12_CPU_DESCRIPTOR_HANDLE _hSrvHeapStartCpuDescriptor;
+				D3D12_GPU_DESCRIPTOR_HANDLE _hSrvHeapStartGpuDescriptor;
+				UINT _srvHeapDescriptorIncrementSize;
 				ID3D12RootSignature* _pRootSignature;
 				ID3D12PipelineState* _pTriangleListPipelineState;
 				ID3D12PipelineState* _pPointListPipelineState;
@@ -64,6 +69,8 @@ namespace hax {
 				uint32_t _imageCount;
 				UINT _curBackBufferIndex;
 				ImageData* _pCurImageData;
+
+				Vector<ID3D12Resource*> _textures;
 
 			public:
 				Backend();
@@ -86,6 +93,23 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+
+				// Loads a texture into VRAM.
+				//
+				// Parameters:
+				// 
+				// [in] data:
+				// Texture colors in argb format.
+				// 
+				// [in] width:
+				// Width of the texture.
+				// 
+				// [in] height:
+				// Height of the texture.
+				//
+				// Return:
+				// Pointer to the internal texture structure in VRAM that can be passed to DrawBuffer::append. nullptr on failure.
+				virtual void* loadTexture(const Color* data, uint32_t width, uint32_t height) override;
 
 				// Starts a frame within a hook. Should be called by an Engine object every frame at the beginning of the hook.
 				// 
@@ -120,7 +144,7 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
 
 			private:
-				bool createDescriptorHeap();
+				bool createDescriptorHeaps();
 				bool createRootSignature();
 				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
 				bool createImageDataArray(uint32_t imageCount);
