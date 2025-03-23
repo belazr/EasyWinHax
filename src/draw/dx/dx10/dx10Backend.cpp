@@ -77,6 +77,11 @@ namespace hax {
 					this->_pVertexShader->Release();
 				}
 
+				for (size_t i = 0; i < this->_textures.size(); i++) {
+					this->_textures[i].pTextureView->Release();
+					this->_textures[i].pTexture->Release();
+				}
+
 				if (this->_pDevice) {
 					this->_pDevice->Release();
 				}
