@@ -105,14 +105,14 @@ namespace hax {
 
 				if (!this->createShaders()) return false;
 
-				this->_triangleListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, this->_pPixelShader, this->_pPixelShader);
 				this->_triangleListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
 				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-				this->_pointListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+				this->_pointListBuffer.initialize(this->_pDevice, this->_pContext, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, this->_pPixelShader, this->_pPixelShader);
 				this->_pointListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
@@ -126,6 +126,43 @@ namespace hax {
 				}
 
 				return true;
+			}
+
+
+			void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+				D3D11_TEXTURE2D_DESC textureDesc{};
+				textureDesc.Width = width;
+				textureDesc.Height = height;
+				textureDesc.MipLevels = 1u;
+				textureDesc.ArraySize = 1u;
+				textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+				textureDesc.SampleDesc.Count = 1u;
+				textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+				D3D11_SUBRESOURCE_DATA subResData = {};
+				subResData.pSysMem = data;
+				subResData.SysMemPitch = width * sizeof(Color);
+
+				ID3D11Texture2D* pTexture = nullptr;
+
+				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, &subResData, &pTexture))) return nullptr;
+
+				D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+				viewDesc.Format = textureDesc.Format;
+				viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				viewDesc.Texture2D.MipLevels = 1u;
+
+				ID3D11ShaderResourceView* pTextureView = nullptr;
+
+				if (FAILED(this->_pDevice->CreateShaderResourceView(pTexture, &viewDesc, &pTextureView))) {
+					pTexture->Release();
+
+					return nullptr;
+				}
+
+				this->_textures.append(TextureData{ pTexture, pTextureView });
+
+				return pTextureView;
 			}
 
 
