@@ -756,9 +756,10 @@ namespace hax {
 
                 constexpr D3D12_INPUT_ELEMENT_DESC INPUT_LAYOUT[]{
                     { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u },
-                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, sizeof(Vector2), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u},
+                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u},
+                    { "TEXCOORD",    0u, DXGI_FORMAT_R32G32_FLOAT, 0u, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u}
                 };
-                
+
                 D3D12_BLEND_DESC blendDesc{};
                 blendDesc.AlphaToCoverageEnable = FALSE;
                 blendDesc.RenderTarget[0].BlendEnable = TRUE;
