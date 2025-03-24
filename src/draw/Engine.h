@@ -44,8 +44,8 @@ namespace hax {
 			// Height of the texture.
 			//
 			// Return:
-			// Pointer to the internal texture structure in VRAM that can be passed to drawTexture. nullptr on failure.
-			void* loadTexture(const Color* data, uint32_t width, uint32_t height);
+			// ID of the internal texture structure in VRAM that can be passed to drawTexture. 0 on failure.
+			TextureId loadTexture(const Color* data, uint32_t width, uint32_t height);
 
 			// Inititalizes the backend if neccessary and starts a frame within a hook.
 			// Has to be called before any drawing calls.
@@ -138,7 +138,7 @@ namespace hax {
 			// 
 			// [in] height:
 			// Height of the drawn texture in pixels.
-			void drawTexture(void* id, const Vector2* pos, float width, float height) const;
+			void drawTexture(TextureId textureId, const Vector2* pos, float width, float height) const;
 
 			// Draws text to the screen.
 			//

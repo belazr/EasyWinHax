@@ -12,11 +12,13 @@ namespace hax {
 
 	namespace draw {
 
+		typedef uint64_t TextureId;
+
 		class AbstractDrawBuffer {
 		protected:
 			Vertex* _pLocalVertexBuffer;
 			uint32_t* _pLocalIndexBuffer;
-			void** _pTextureBuffer;
+			TextureId* _pTextureBuffer;
 
 			uint32_t _size;
 			uint32_t _capacity;
@@ -44,30 +46,9 @@ namespace hax {
 			// True on success, false on failure.
 			virtual bool map() = 0;
 
-			// Loads a texture into VRAM.
-			//
-			// Parameters:
-			// 
-			// [in] data:
-			// Texture colors in argb format.
-			// 
-			// [in] width:
-			// Width of the texture.
-			// 
-			// [in] height:
-			// Height of the texture.
-			//
-			// Return:
-			// Pointer to the internal texture structure in VRAM that can be passed to append. nullptr on failure.
-			virtual void* load(const Color*, uint32_t, uint32_t) {
-
-				return nullptr;
-			}
-
 			// Draws the content of the buffer to the screen.
 			// Needs to be called between a successful of IBackend::beginFrame and a call to IBackend::endFrame.
 			virtual void draw() = 0;
-
 
 			// Appends vertices to the buffer.
 			//
@@ -84,7 +65,7 @@ namespace hax {
 			//
 			// [in] offset:
 			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
-			void append(const Vector2* data, uint32_t count, Color color, Vector2 offset = { 0.f, 0.f }, void* texture = nullptr) {
+			void append(const Vector2* data, uint32_t count, Color color, Vector2 offset = { 0.f, 0.f }, TextureId textureId = 0ull) {
 				const uint32_t newSize = this->_size + count;
 
 				if (newSize > this->_capacity) {
@@ -122,7 +103,7 @@ namespace hax {
 
 					this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color, uv };
 					this->_pLocalIndexBuffer[this->_size] = this->_size;
-					this->_pTextureBuffer[this->_size] = texture;
+					this->_pTextureBuffer[this->_size] = textureId;
 					this->_size++;
 				}
 
@@ -169,7 +150,7 @@ namespace hax {
 					memset(pTmpIndexBuffer, 0, this->_size * sizeof(uint32_t));
 				}
 
-				int32_t* const pTmpTextureBuffer = reinterpret_cast<int32_t*>(calloc(this->_size, sizeof(void*)));
+				int32_t* const pTmpTextureBuffer = reinterpret_cast<int32_t*>(calloc(this->_size, sizeof(TextureId)));
 
 				if (!pTmpTextureBuffer) {
 					free(pTmpVertexBuffer);
@@ -179,10 +160,10 @@ namespace hax {
 				}
 
 				if (this->_pTextureBuffer) {
-					memcpy(pTmpTextureBuffer, this->_pTextureBuffer, this->_size * sizeof(void*));
+					memcpy(pTmpTextureBuffer, this->_pTextureBuffer, this->_size * sizeof(TextureId));
 				}
 				else {
-					memset(pTmpTextureBuffer, 0, this->_size * sizeof(void*));
+					memset(pTmpTextureBuffer, 0, this->_size * sizeof(TextureId));
 				}
 
 				const uint32_t oldSize = this->_size;
@@ -207,7 +188,7 @@ namespace hax {
 				if (this->_pLocalVertexBuffer && this->_pLocalIndexBuffer && this->_pTextureBuffer) {
 					memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldSize * sizeof(Vertex));
 					memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldSize * sizeof(uint32_t));
-					memcpy(this->_pTextureBuffer, pTmpTextureBuffer, oldSize * sizeof(void*));
+					memcpy(this->_pTextureBuffer, pTmpTextureBuffer, oldSize * sizeof(TextureId));
 
 					this->_size = oldSize;
 				}

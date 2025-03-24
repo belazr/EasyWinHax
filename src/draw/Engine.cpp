@@ -9,9 +9,9 @@ namespace hax {
 			_pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
 
 
-		void* Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
 
-			if (!this->_init) return nullptr;
+			if (!this->_init) return 0ull;
 			
 			return this->_pBackend->loadTexture(data, width, height);
 		}
@@ -162,7 +162,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawTexture(void* id, const Vector2* pos, float width, float height) const {
+		void Engine::drawTexture(TextureId textureId, const Vector2* pos, float width, float height) const {
 
 			if (!this->_frame) return;
 
@@ -175,7 +175,7 @@ namespace hax {
 				{ pos->x + width, pos->y }
 			};
 
-			this->_pTriangleListBuffer->append(corners, _countof(corners), argb::WHITE, {}, id);
+			this->_pTriangleListBuffer->append(corners, _countof(corners), abgr::WHITE, {}, textureId);
 
 			return;
 		}

@@ -48,7 +48,7 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
 
-				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(capacity * sizeof(void*)));
+				this->_pTextureBuffer = reinterpret_cast<TextureId*>(malloc(capacity * sizeof(TextureId)));
 
 				if (!this->_pTextureBuffer) return false;
 
@@ -117,10 +117,10 @@ namespace hax {
 				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
 					drawCount = 1u;
 
-					ID3D10ShaderResourceView* const pCurTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(this->_pTextureBuffer[i]);
+					ID3D10ShaderResourceView* const pCurTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(static_cast<uintptr_t>(this->_pTextureBuffer[i]));
 
 					for (uint32_t j = i + 1u; j < this->_size; j++) {
-						ID3D10ShaderResourceView* const pNextTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(this->_pTextureBuffer[j]);
+						ID3D10ShaderResourceView* const pNextTextureView = reinterpret_cast<ID3D10ShaderResourceView*>(static_cast<uintptr_t>(this->_pTextureBuffer[j]));
 
 						if (pNextTextureView != pCurTextureView) break;
 
