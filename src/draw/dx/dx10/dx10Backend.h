@@ -91,8 +91,8 @@ namespace hax {
 				// Height of the texture.
 				//
 				// Return:
-				// Pointer to the internal texture structure in VRAM that can be passed to DrawBuffer::append. nullptr on failure.
-				virtual void* loadTexture(const Color* texture, uint32_t width, uint32_t height);
+				// ID of the internal texture structure in VRAM that can be passed to DrawBuffer::append. 0 on failure.
+				virtual TextureId loadTexture(const Color* texture, uint32_t width, uint32_t height);
 				
 				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
 				// 

@@ -42,7 +42,7 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
 
-				this->_pTextureBuffer = reinterpret_cast<void**>(malloc(capacity * sizeof(void*)));
+				this->_pTextureBuffer = reinterpret_cast<TextureId*>(malloc(capacity * sizeof(TextureId)));
 
 				if (!this->_pTextureBuffer) return false;
 
@@ -114,10 +114,10 @@ namespace hax {
 				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
 					drawCount = 1u;
 
-					IDirect3DTexture9* const pCurTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[i]);
+					IDirect3DTexture9* const pCurTexture = reinterpret_cast<IDirect3DTexture9*>(static_cast<uintptr_t>(this->_pTextureBuffer[i]));
 
 					for (uint32_t j = i + 1u; j < this->_size; j++) {
-						IDirect3DTexture9* const pNextTexture = reinterpret_cast<IDirect3DTexture9*>(this->_pTextureBuffer[j]);
+						IDirect3DTexture9* const pNextTexture = reinterpret_cast<IDirect3DTexture9*>(static_cast<uintptr_t>(this->_pTextureBuffer[j]));
 
 						if (pNextTexture != pCurTexture) break;
 						

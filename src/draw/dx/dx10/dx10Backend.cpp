@@ -144,7 +144,7 @@ namespace hax {
 			}
 
 
-			void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+			TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
 				D3D10_TEXTURE2D_DESC textureDesc{};
 				textureDesc.Width = width;
 				textureDesc.Height = height;
@@ -160,7 +160,7 @@ namespace hax {
 
 				ID3D10Texture2D* pTexture = nullptr;
 
-				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, &subResData, &pTexture))) return nullptr;
+				if (FAILED(this->_pDevice->CreateTexture2D(&textureDesc, &subResData, &pTexture))) return 0ull;
 
 				D3D10_SHADER_RESOURCE_VIEW_DESC viewDesc{};
 				viewDesc.Format = textureDesc.Format;
@@ -172,12 +172,12 @@ namespace hax {
 				if (FAILED(this->_pDevice->CreateShaderResourceView(pTexture, &viewDesc, &pTextureView))) {
 					pTexture->Release();
 
-					return nullptr;
+					return 0ull;
 				}
 
 				this->_textures.append(TextureData{ pTexture, pTextureView });
 
-				return pTextureView;
+				return static_cast<TextureId>(reinterpret_cast<uintptr_t>(pTextureView));
 			}
 
 

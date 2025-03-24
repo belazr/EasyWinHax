@@ -123,17 +123,17 @@ namespace hax {
 			}
 
 
-			void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+			TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
 				IDirect3DTexture9* pTexture = nullptr;
 
-				if (FAILED(this->_pDevice->CreateTexture(width, height, 1u, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture, nullptr))) return nullptr;
+				if (FAILED(this->_pDevice->CreateTexture(width, height, 1u, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture, nullptr))) return 0ull;
 
 				D3DLOCKED_RECT rect{};
 
 				if (FAILED(pTexture->LockRect(0u, &rect, nullptr, 0u)) || !rect.pBits) {
 					pTexture->Release();
 
-					return nullptr;
+					return 0ull;
 				}
 
 				uint8_t* dst = reinterpret_cast<uint8_t*>(rect.pBits);
@@ -146,12 +146,12 @@ namespace hax {
 				if (FAILED(pTexture->UnlockRect(0u))) {
 					pTexture->Release();
 
-					return nullptr;
+					return 0ull;
 				}
 
 				this->_textures.append(pTexture);
 
-				return pTexture;
+				return static_cast<TextureId>(reinterpret_cast<uintptr_t>(pTexture));
 			}
 
 

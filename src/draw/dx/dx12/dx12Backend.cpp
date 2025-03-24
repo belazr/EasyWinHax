@@ -245,7 +245,7 @@ namespace hax {
             }
 
 
-            void* Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+            TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
                 D3D12_HEAP_PROPERTIES heapProps{};
                 heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
@@ -262,7 +262,7 @@ namespace hax {
 
                 ID3D12Resource* pTexture = nullptr;
                 
-                if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture)))) return nullptr;
+                if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture)))) return 0ull;
 
                 const UINT uploadPitch = (width * sizeof(Color) + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
                 const UINT uploadSize = height * uploadPitch;
@@ -280,7 +280,7 @@ namespace hax {
                 if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&pBuffer)))) {
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 BYTE* pLocalBuffer = nullptr;
@@ -290,7 +290,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
                     
-                    return nullptr;
+                    return 0ull;
                 }
 
                 for (uint32_t i = 0u; i < height; i++) {
@@ -308,7 +308,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 ID3D12CommandAllocator* pCmdAlloc = nullptr;
@@ -318,7 +318,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 ID3D12GraphicsCommandList* pCmdList = nullptr;
@@ -329,7 +329,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 D3D12_TEXTURE_COPY_LOCATION srcLocation{};
@@ -362,7 +362,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&pCmdList));
@@ -376,7 +376,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
@@ -387,7 +387,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 HANDLE hEvent = CreateEventA(nullptr, FALSE, FALSE, nullptr);
@@ -400,7 +400,7 @@ namespace hax {
                     pBuffer->Release();
                     pTexture->Release();
 
-                    return nullptr;
+                    return 0ull;
                 }
 
                 pFence->SetEventOnCompletion(1u, hEvent);
@@ -429,7 +429,7 @@ namespace hax {
                 
                 this->_textures.append(pTexture);
 
-                return reinterpret_cast<void*>(hSrvHeapGpuDescriptor.ptr);
+                return hSrvHeapGpuDescriptor.ptr;
             }
 
 
