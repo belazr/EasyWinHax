@@ -217,15 +217,13 @@ namespace hax {
 		// [in] n:
 		// Number of elements the vector should be shrunk by.
 		void shrink(size_t n) {
+			const size_t size = n > this->_size ? 0u : this->_size - n;
 
-			for (size_t i = this->_size - 1u; i >= this->_size - n; i--) {
+			for (size_t i = this->_size - 1u; i >= size; i--) {
 				this->_data[i].~T();
-
-				if (i == 0u) break;
-
 			}
 
-			this->_size -= n;
+			this->_size = size;
 
 			return;
 		}
