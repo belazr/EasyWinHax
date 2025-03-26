@@ -58,8 +58,10 @@ namespace hax {
 				D3D12_GPU_DESCRIPTOR_HANDLE _hSrvHeapStartGpuDescriptor;
 				UINT _srvHeapDescriptorIncrementSize;
 				ID3D12RootSignature* _pRootSignature;
-				ID3D12PipelineState* _pTriangleListPipelineState;
-				ID3D12PipelineState* _pPointListPipelineState;
+				ID3D12PipelineState* _pTriangleListPassthroughPipelineState;
+				ID3D12PipelineState* _pTriangleListTexturePipelineState;
+				ID3D12PipelineState* _pPointListPassthroughPipelineState;
+				ID3D12PipelineState* _pPointListTexturePipelineState;
 				ID3D12Fence* _pFence;
 				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12Resource* _pRtvResource;
@@ -146,7 +148,7 @@ namespace hax {
 			private:
 				bool createDescriptorHeaps();
 				bool createRootSignature();
-				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
+				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, D3D12_SHADER_BYTECODE pixelShader) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
