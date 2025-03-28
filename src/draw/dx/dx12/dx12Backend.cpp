@@ -635,6 +635,7 @@ namespace hax {
                 pFence->SetEventOnCompletion(1u, hEvent);
                 WaitForSingleObject(hEvent, INFINITE);
 
+                CloseHandle(hEvent);
                 pFence->Release();
                 pCmdList->Release();
                 pCmdAlloc->Release();
@@ -645,7 +646,7 @@ namespace hax {
                     this->_hSrvHeapStartCpuDescriptor.ptr + this->_srvHeapDescriptorIncrementSize * this->_textures.size()
                 };
 
-                D3D12_SHADER_RESOURCE_VIEW_DESC shaderResDesc;
+                D3D12_SHADER_RESOURCE_VIEW_DESC shaderResDesc{};
                 shaderResDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                 shaderResDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                 shaderResDesc.Texture2D.MipLevels = resDesc.MipLevels;
