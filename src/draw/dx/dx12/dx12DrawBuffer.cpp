@@ -39,6 +39,10 @@ namespace hax {
 
 				if (!this->createBuffer(&this->_pIndexBufferResource, indexBufferSize)) return false;
 
+				this->_pTextureBuffer = reinterpret_cast<TextureId*>(malloc(capacity * sizeof(TextureId)));
+
+				if (!this->_pTextureBuffer) return false;
+
 				this->_capacity = capacity;
 
 				return true;
@@ -122,8 +126,12 @@ namespace hax {
 				resourceDesc.MipLevels = 1u;
 				resourceDesc.SampleDesc.Count = 1u;
 				resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	
-				return SUCCEEDED(this->_pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(ppBufferResource)));
+				
+				auto const hr = this->_pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(ppBufferResource));
+
+				auto const hr1 = this->_pDevice->GetDeviceRemovedReason();
+
+				return SUCCEEDED(hr);
 			}
 
 		}
