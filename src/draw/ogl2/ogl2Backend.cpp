@@ -1,7 +1,7 @@
 #include "ogl2Backend.h"
 #include "..\font\Font.h"
 #include <Windows.h>
-
+#include <vector>
 namespace hax {
 
 	namespace draw {
@@ -14,6 +14,7 @@ namespace hax {
 			Backend::~Backend() {
 				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
+				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
 			}
 
 
@@ -31,6 +32,26 @@ namespace hax {
 
 				return true;
 			}
+
+
+            TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+				GLint curTexture{};
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &curTexture);
+
+				GLuint textureId{};
+				glGenTextures(1, &textureId);
+				glBindTexture(GL_TEXTURE_2D, textureId);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+				
+				glBindTexture(GL_TEXTURE_2D, curTexture);
+
+				this->_textures.append(textureId);
+
+				return static_cast<TextureId>(textureId);
+            }
 
 
 			bool Backend::beginFrame() {
