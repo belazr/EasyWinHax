@@ -1,8 +1,9 @@
 #pragma once
 #include "ogl2Defs.h"
 #include "ogl2DrawBuffer.h"
-#include "..\Vertex.h"
 #include "..\IBackend.h"
+#include "..\Vertex.h"
+#include "..\..\Vector.h"
 
 // Class for drawing with OpenGL 2.
 // All methods are intended to be called by an Engine object and not for direct calls.
@@ -28,6 +29,8 @@ namespace hax {
 				DrawBuffer _triangleListBuffer;
 				DrawBuffer _pointListBuffer;
 
+				Vector<GLuint> _textures;
+
 			public:
 				Backend();
 				~Backend();
@@ -48,6 +51,23 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+				
+				// Loads a texture into VRAM.
+				//
+				// Parameters:
+				// 
+				// [in] data:
+				// Texture colors in argb format.
+				// 
+				// [in] width:
+				// Width of the texture.
+				// 
+				// [in] height:
+				// Height of the texture.
+				//
+				// Return:
+				// ID of the internal texture structure in VRAM that can be passed to DrawBuffer::append. 0 on failure.
+				virtual TextureId loadTexture(const Color* data, uint32_t width, uint32_t height) override;
 
 				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
 				// 
