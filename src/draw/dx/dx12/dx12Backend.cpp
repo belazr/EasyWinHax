@@ -138,7 +138,7 @@ namespace hax {
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
                 _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{}, _srvHeapDescriptorIncrementSize{},
-                _pRootSignature{}, _pTriangleListPassthroughPipelineState {}, _pTriangleListTexturePipelineState{}, _pPointListPassthroughPipelineState{}, _pPointListTexturePipelineState{},
+                _pRootSignature{}, _pTriangleListPipelineStatePassthrough {}, _pTriangleListPipelineStateTexture{}, _pPointListPipelineStatePassthrough{}, _pPointListPipelineStateTexture{},
 				_pFence{}, _pCommandList{}, _viewport{}, _pRtvResource{}, _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData{}, _textures{} {}
 
 
@@ -158,20 +158,20 @@ namespace hax {
                     this->_pFence->Release();
                 }
 
-				if (this->_pPointListTexturePipelineState) {
-					this->_pPointListTexturePipelineState->Release();
+				if (this->_pPointListPipelineStateTexture) {
+					this->_pPointListPipelineStateTexture->Release();
 				}
 
-                if (this->_pPointListPassthroughPipelineState) {
-                    this->_pPointListPassthroughPipelineState->Release();
+                if (this->_pPointListPipelineStatePassthrough) {
+                    this->_pPointListPipelineStatePassthrough->Release();
                 }
 
-                if (this->_pTriangleListTexturePipelineState) {
-                    this->_pTriangleListTexturePipelineState->Release();
+                if (this->_pTriangleListPipelineStateTexture) {
+                    this->_pTriangleListPipelineStateTexture->Release();
                 }
 
-				if (this->_pTriangleListPassthroughPipelineState) {
-					this->_pTriangleListPassthroughPipelineState->Release();
+				if (this->_pTriangleListPipelineStatePassthrough) {
+					this->_pTriangleListPipelineStatePassthrough->Release();
 				}
 
                 if (this->_pRootSignature) {
@@ -432,37 +432,37 @@ namespace hax {
 
                 }
 
-                if (!this->_pTriangleListPassthroughPipelineState) {
+                if (!this->_pTriangleListPipelineStatePassthrough) {
                     
-					this->_pTriangleListPassthroughPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
+					this->_pTriangleListPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
                     
                 }
 
-                if (!this->_pTriangleListPassthroughPipelineState) return false;
+                if (!this->_pTriangleListPipelineStatePassthrough) return false;
 
-				if (!this->_pTriangleListTexturePipelineState) {
+				if (!this->_pTriangleListPipelineStateTexture) {
 
-					this->_pTriangleListTexturePipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
+					this->_pTriangleListPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
 
 				}
 
-				if (!this->_pTriangleListTexturePipelineState) return false;
+				if (!this->_pTriangleListPipelineStateTexture) return false;
 
-                if (!this->_pPointListPassthroughPipelineState) {
+                if (!this->_pPointListPipelineStatePassthrough) {
 
-                    this->_pPointListPassthroughPipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
+                    this->_pPointListPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
 
                 }
 
-                if (!this->_pPointListPassthroughPipelineState) return false;
+                if (!this->_pPointListPipelineStatePassthrough) return false;
 
-				if (!this->_pPointListTexturePipelineState) {
+				if (!this->_pPointListPipelineStateTexture) {
 
-					this->_pPointListTexturePipelineState = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
+					this->_pPointListPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
 
 				}
 
-				if (!this->_pPointListTexturePipelineState) return false;
+				if (!this->_pPointListPipelineStateTexture) return false;
 
                 if (!this->_pFence) {
                     
@@ -943,13 +943,13 @@ namespace hax {
 
                     }
 
-                    this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPassthroughPipelineState, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                    this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStatePassthrough, this->_pTriangleListPipelineStateTexture, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                     static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
                     if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-                    this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPassthroughPipelineState, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+                    this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPipelineStatePassthrough, this->_pPointListPipelineStateTexture, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
                     static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
