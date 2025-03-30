@@ -83,7 +83,7 @@ namespace hax {
 		}
 
 
-		void* data() const {
+		T* data() const {
 
 			return this->_data;
 		}
