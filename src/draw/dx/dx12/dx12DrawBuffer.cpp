@@ -108,8 +108,27 @@ namespace hax {
 				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
 				
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
-				this->_pCommandList->SetPipelineState(this->_pPipelineStatePassthrough);
-				this->_pCommandList->DrawIndexedInstanced(this->_size, 1u, 0u, 0, 0u);
+
+				uint32_t drawCount = 1u;
+
+				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
+					drawCount = 1u;
+
+					const D3D12_GPU_DESCRIPTOR_HANDLE hCurTextureDesc{ this->_pTextureBuffer[i] };
+
+					for (uint32_t j = i + 1u; j < this->_size; j++) {
+						const D3D12_GPU_DESCRIPTOR_HANDLE hNextTextureDesc{ this->_pTextureBuffer[j] };
+
+						if (hNextTextureDesc.ptr != hCurTextureDesc.ptr) break;
+
+						drawCount++;
+					}
+
+					ID3D12PipelineState* const pPipleState = hCurTextureDesc.ptr ? this->_pPipelineStateTexture : this->_pPipelineStatePassthrough;
+					this->_pCommandList->SetPipelineState(pPipleState);
+					this->_pCommandList->SetGraphicsRootDescriptorTable(1u, hCurTextureDesc);
+					this->_pCommandList->DrawIndexedInstanced(drawCount, 1u, i, 0, 0u);
+				}
 
 				this->_size = 0u;
 
