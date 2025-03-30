@@ -6,7 +6,9 @@ namespace hax {
 
 		namespace dx12 {
 
-			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(), _pDevice{}, _pCommandList{}, _pPipelineState{}, _topology {}, _pVertexBufferResource{}, _pIndexBufferResource{} {}
+			DrawBuffer::DrawBuffer() : AbstractDrawBuffer(),
+				_pDevice{}, _pCommandList{}, _pPipelineStatePassthrough{}, _pPipelineStateTexture{},
+				_topology {}, _pVertexBufferResource{}, _pIndexBufferResource{} {}
 
 
 			DrawBuffer::~DrawBuffer() {
@@ -15,10 +17,11 @@ namespace hax {
 				return;
 			}
 
-			void DrawBuffer::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology) {
+			void DrawBuffer::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineStatePassthrough, ID3D12PipelineState* pPipelineStateTexture, D3D_PRIMITIVE_TOPOLOGY topology) {
 				this->_pDevice = pDevice;
 				this->_pCommandList = pCommandList;
-				this->_pPipelineState = pPipelineState;
+				this->_pPipelineStatePassthrough = pPipelineStatePassthrough;
+				this->_pPipelineStateTexture = pPipelineStateTexture;
 				this->_topology = topology;
 
 				return;
@@ -105,7 +108,7 @@ namespace hax {
 				this->_pCommandList->IASetIndexBuffer(&indexBufferView);
 				
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
-				this->_pCommandList->SetPipelineState(this->_pPipelineState);
+				this->_pCommandList->SetPipelineState(this->_pPipelineStatePassthrough);
 				this->_pCommandList->DrawIndexedInstanced(this->_size, 1u, 0u, 0, 0u);
 
 				this->_size = 0u;
@@ -126,12 +129,8 @@ namespace hax {
 				resourceDesc.MipLevels = 1u;
 				resourceDesc.SampleDesc.Count = 1u;
 				resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-				
-				auto const hr = this->_pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(ppBufferResource));
 
-				auto const hr1 = this->_pDevice->GetDeviceRemovedReason();
-
-				return SUCCEEDED(hr);
+				return SUCCEEDED(this->_pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(ppBufferResource)));
 			}
 
 		}

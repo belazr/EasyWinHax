@@ -58,10 +58,10 @@ namespace hax {
 				D3D12_GPU_DESCRIPTOR_HANDLE _hSrvHeapStartGpuDescriptor;
 				UINT _srvHeapDescriptorIncrementSize;
 				ID3D12RootSignature* _pRootSignature;
-				ID3D12PipelineState* _pTriangleListPassthroughPipelineState;
-				ID3D12PipelineState* _pTriangleListTexturePipelineState;
-				ID3D12PipelineState* _pPointListPassthroughPipelineState;
-				ID3D12PipelineState* _pPointListTexturePipelineState;
+				ID3D12PipelineState* _pTriangleListPipelineStatePassthrough;
+				ID3D12PipelineState* _pTriangleListPipelineStateTexture;
+				ID3D12PipelineState* _pPointListPipelineStatePassthrough;
+				ID3D12PipelineState* _pPointListPipelineStateTexture;
 				ID3D12Fence* _pFence;
 				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12Resource* _pRtvResource;
