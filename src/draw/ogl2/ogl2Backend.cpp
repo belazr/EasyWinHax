@@ -129,6 +129,14 @@ namespace hax {
 			#define ASSIGN_PROC_ADDRESS(f) this->_f.pGl##f = reinterpret_cast<tGl##f>(wglGetProcAddress("gl"#f))
 
 			bool Backend::getProcAddresses() {
+				ASSIGN_PROC_ADDRESS(CreateShader);
+				ASSIGN_PROC_ADDRESS(ShaderSource);
+				ASSIGN_PROC_ADDRESS(CompileShader);
+				ASSIGN_PROC_ADDRESS(CreateProgram);
+				ASSIGN_PROC_ADDRESS(AttachShader);
+				ASSIGN_PROC_ADDRESS(LinkProgram);
+				ASSIGN_PROC_ADDRESS(DetachShader);
+				ASSIGN_PROC_ADDRESS(DeleteShader);
 				ASSIGN_PROC_ADDRESS(GenBuffers);
 				ASSIGN_PROC_ADDRESS(BindBuffer);
 				ASSIGN_PROC_ADDRESS(BufferData);
