@@ -14,6 +14,8 @@ namespace hax {
 			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
 			constexpr GLenum GL_WRITE_ONLY = 0x88B9;
 			constexpr GLenum GL_DYNAMIC_DRAW = 0x88E8;
+			constexpr GLenum GL_FRAGMENT_SHADER = 0x8B30;
+			constexpr GLenum GL_VERTEX_SHADER = 0x8B31;
 
 			typedef char GLchar;
 
@@ -31,6 +33,7 @@ namespace hax {
 			typedef void* (APIENTRY* tGlMapBuffer)(GLenum target, GLenum access);
 			typedef GLboolean (APIENTRY* tGlUnmapBuffer)(GLenum target);
 			typedef void (APIENTRY* tGlDeleteBuffers)(GLsizei n, const GLuint* buffers);
+			typedef void (APIENTRY* tGlDeleteProgram) (GLuint program);
 
 			typedef struct Functions {
 				tGlCreateShader pGlCreateShader;
@@ -47,6 +50,7 @@ namespace hax {
 				tGlMapBuffer pGlMapBuffer;
 				tGlUnmapBuffer pGlUnmapBuffer;
 				tGlDeleteBuffers pGlDeleteBuffers;
+				tGlDeleteProgram pGlDeleteProgram;
 			}Functions;
 
 		}

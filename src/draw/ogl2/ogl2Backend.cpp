@@ -8,12 +8,18 @@ namespace hax {
 
 		namespace ogl2 {
 
-			Backend::Backend() : _f{}, _viewport{}, _depthFunc{}, _triangleListBuffer {}, _pointListBuffer{} {}
+			Backend::Backend() : _f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _viewport {}, _depthFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
 				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
+				
+				if (this->_f.pGlDeleteProgram) {
+					this->_f.pGlDeleteProgram(this->_shaderProgramTexture);
+					this->_f.pGlDeleteProgram(this->_shaderProgramPassthrough);
+				}
+
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
 			}
 
@@ -29,6 +35,8 @@ namespace hax {
 			bool Backend::initialize() {
 
 				if (!this->getProcAddresses()) return false;
+
+				this->createShaders();
 
 				return true;
 			}
@@ -143,6 +151,7 @@ namespace hax {
 				ASSIGN_PROC_ADDRESS(MapBuffer);
 				ASSIGN_PROC_ADDRESS(UnmapBuffer);
 				ASSIGN_PROC_ADDRESS(DeleteBuffers);
+				ASSIGN_PROC_ADDRESS(DeleteProgram);
 
 				for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 
@@ -154,6 +163,84 @@ namespace hax {
 			}
 
 			#undef ASSIGN_PROC_ADDRESS
+
+
+			const GLchar* VERTEX_SHADER =
+				"#version 120\n"
+
+				"uniform mat4 projectionMatrix;\n"
+
+				"attribute vec2 pos;\n"
+				"attribute vec4 col;\n"
+				"attribute vec2 uv;\n"
+
+				"varying vec2 uvOut;\n"
+				"varying vec4 colOut;\n"
+
+				"void main() {\n"
+				"    uvOut = uv;\n"
+				"    colOut = col;\n"
+				"    gl_Position = projectionMatrix * vec4(pos.xy,0,1);\n"
+				"}\n";
+
+			const GLchar* FRAGMENT_SHADER_PASSTHROUGH =
+				"#version 120\n"
+
+				"varying vec4 colOut;\n"
+
+				"void main() {\n"
+				"    gl_FragColor = colOut;\n"
+				"}\n";
+
+			const GLchar* FRAGMENT_SHADER_TEXTURE =
+				"#version 120\n"
+				
+				"uniform sampler2D texSampler;\n"
+				
+				"varying vec4 colOut;\n"
+				"varying vec2 uvOut;\n"
+				
+				"void main() {\n"
+				"    gl_FragColor = colOut * texture2D(texSampler, uvOut);\n"
+				"}\n";
+
+			void Backend::createShaders() {
+				const GLuint vertexShader = this->_f.pGlCreateShader(GL_VERTEX_SHADER);
+				this->_f.pGlShaderSource(vertexShader, 1, &VERTEX_SHADER, nullptr);
+				this->_f.pGlCompileShader(vertexShader);
+
+				const GLuint fragmentShaderPassthrough = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
+				this->_f.pGlShaderSource(fragmentShaderPassthrough, 1, &FRAGMENT_SHADER_PASSTHROUGH, nullptr);
+				this->_f.pGlCompileShader(fragmentShaderPassthrough);
+
+				this->_shaderProgramPassthrough = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(this->_shaderProgramPassthrough, vertexShader);
+				this->_f.pGlAttachShader(this->_shaderProgramPassthrough, fragmentShaderPassthrough);
+				this->_f.pGlLinkProgram(this->_shaderProgramPassthrough);
+
+				this->_f.pGlDetachShader(this->_shaderProgramPassthrough, vertexShader);
+				this->_f.pGlDetachShader(this->_shaderProgramPassthrough, fragmentShaderPassthrough);
+
+				this->_f.pGlDeleteShader(fragmentShaderPassthrough);
+
+				const GLuint fragmentShaderTexture = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
+				this->_f.pGlShaderSource(fragmentShaderTexture, 1, &FRAGMENT_SHADER_TEXTURE, nullptr);
+				this->_f.pGlCompileShader(fragmentShaderTexture);
+
+				this->_shaderProgramTexture = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(this->_shaderProgramTexture, vertexShader);
+				this->_f.pGlAttachShader(this->_shaderProgramTexture, fragmentShaderTexture);
+				this->_f.pGlLinkProgram(this->_shaderProgramTexture);
+
+				this->_f.pGlDetachShader(this->_shaderProgramTexture, vertexShader);
+				this->_f.pGlDetachShader(this->_shaderProgramTexture, fragmentShaderTexture);
+
+				this->_f.pGlDeleteShader(fragmentShaderTexture);
+				this->_f.pGlDeleteShader(vertexShader);
+
+				return;
+			}
+
 		}
 
 	}

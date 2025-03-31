@@ -23,6 +23,8 @@ namespace hax {
 					void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 				};
 
+				GLint _shaderProgramPassthrough;
+				GLint _shaderProgramTexture;
 				GLint _viewport[4];
 				GLenum _depthFunc;
 
@@ -103,6 +105,7 @@ namespace hax {
 
 			private:
 				bool getProcAddresses();
+				void createShaders();
 			};
 
 		}
