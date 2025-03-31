@@ -126,6 +126,7 @@ namespace hax {
 				// third argument describes the offset in the Vertext struct, not the actuall address of the buffer
 				glVertexPointer(2, GL_FLOAT, sizeof(Vertex), nullptr);
 				glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
+				glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)+ sizeof(Color)));
 
 				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pLocalVertexBuffer = nullptr;
