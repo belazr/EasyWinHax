@@ -25,6 +25,7 @@ namespace hax {
 
 				GLint _shaderProgramPassthrough;
 				GLint _shaderProgramTexture;
+				GLint _projMatrixAttribLocation;
 				GLint _viewport[4];
 				GLenum _depthFunc;
 

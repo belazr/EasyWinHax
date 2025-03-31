@@ -27,12 +27,15 @@ namespace hax {
 			typedef void (APIENTRY* tGlLinkProgram) (GLuint program);
 			typedef void (APIENTRY* tGlDetachShader) (GLuint program, GLuint shader);
 			typedef void (APIENTRY* tGlDeleteShader) (GLuint shader);
+			typedef GLint (APIENTRY* tGlGetUniformLocation) (GLuint program, const GLchar* name);
 			typedef void (APIENTRY* tGlGenBuffers)(GLsizei n, GLuint* buffers);
 			typedef void (APIENTRY* tGlBindBuffer)(GLenum target, GLuint buffer);
 			typedef void (APIENTRY* tGlBufferData)(GLenum target, size_t size, const GLvoid* data, GLenum usage);
 			typedef void* (APIENTRY* tGlMapBuffer)(GLenum target, GLenum access);
 			typedef GLboolean (APIENTRY* tGlUnmapBuffer)(GLenum target);
 			typedef void (APIENTRY* tGlDeleteBuffers)(GLsizei n, const GLuint* buffers);
+			typedef void (APIENTRY* tGlUseProgram) (GLuint program);
+			typedef void (APIENTRY* tGlUniformMatrix4fv) (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 			typedef void (APIENTRY* tGlDeleteProgram) (GLuint program);
 
 			typedef struct Functions {
@@ -44,12 +47,15 @@ namespace hax {
 				tGlLinkProgram pGlLinkProgram;
 				tGlDetachShader pGlDetachShader;
 				tGlDeleteShader pGlDeleteShader;
+				tGlGetUniformLocation pGlGetUniformLocation;
 				tGlGenBuffers pGlGenBuffers;
 				tGlBindBuffer pGlBindBuffer;
 				tGlBufferData pGlBufferData;
 				tGlMapBuffer pGlMapBuffer;
 				tGlUnmapBuffer pGlUnmapBuffer;
 				tGlDeleteBuffers pGlDeleteBuffers;
+				tGlUseProgram pGlUseProgram;
+				tGlUniformMatrix4fv pGlUniformMatrix4fv;
 				tGlDeleteProgram pGlDeleteProgram;
 			}Functions;
 

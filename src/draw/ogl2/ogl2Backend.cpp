@@ -8,7 +8,9 @@ namespace hax {
 
 		namespace ogl2 {
 
-			Backend::Backend() : _f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _viewport {}, _depthFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
+			Backend::Backend() :
+				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _projMatrixAttribLocation{},
+				_viewport {}, _depthFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -85,29 +87,29 @@ namespace hax {
 				}
 
 				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
-
 				glDepthFunc(GL_ALWAYS);
 
-				glMatrixMode(GL_PROJECTION);
-				glPushMatrix();
-				glLoadIdentity();
-				glOrtho(0, static_cast<double>(this->_viewport[2]), static_cast<double>(this->_viewport[3]), 0, -1.f, 1.f);
+				const GLfloat viewLeft = static_cast<GLfloat>(viewport[0]);
+				const GLfloat viewRight = static_cast<GLfloat>(viewport[0] + viewport[2]);
+				const GLfloat viewTop = static_cast<GLfloat>(viewport[1]);
+				const GLfloat viewBottom = static_cast<GLfloat>(viewport[1] + viewport[3]);
 
-				glMatrixMode(GL_MODELVIEW);
-				glPushMatrix();
-				glLoadIdentity();
+				const GLfloat ortho[][4]{
+					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
+					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
+					{ 0.f, 0.f, .5f, 0.f },
+					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+				};
+
+				this->_f.pGlUseProgram(this->_shaderProgramPassthrough);
+				this->_f.pGlUniformMatrix4fv(this->_projMatrixAttribLocation, 1, GL_FALSE, &ortho[0][0]);
 
 				return true;
 			}
 
 
 			void Backend::endFrame() {
-				glMatrixMode(GL_MODELVIEW);
-				glPopMatrix();
-
-				glMatrixMode(GL_PROJECTION);
-				glPopMatrix();
-
+				this->_f.pGlUseProgram(0);
 				glDepthFunc(this->_depthFunc);
 
 				return;
@@ -145,12 +147,15 @@ namespace hax {
 				ASSIGN_PROC_ADDRESS(LinkProgram);
 				ASSIGN_PROC_ADDRESS(DetachShader);
 				ASSIGN_PROC_ADDRESS(DeleteShader);
+				ASSIGN_PROC_ADDRESS(GetUniformLocation);
 				ASSIGN_PROC_ADDRESS(GenBuffers);
 				ASSIGN_PROC_ADDRESS(BindBuffer);
 				ASSIGN_PROC_ADDRESS(BufferData);
 				ASSIGN_PROC_ADDRESS(MapBuffer);
 				ASSIGN_PROC_ADDRESS(UnmapBuffer);
 				ASSIGN_PROC_ADDRESS(DeleteBuffers);
+				ASSIGN_PROC_ADDRESS(UseProgram);
+				ASSIGN_PROC_ADDRESS(UniformMatrix4fv);
 				ASSIGN_PROC_ADDRESS(DeleteProgram);
 
 				for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
@@ -237,6 +242,8 @@ namespace hax {
 
 				this->_f.pGlDeleteShader(fragmentShaderTexture);
 				this->_f.pGlDeleteShader(vertexShader);
+
+				this->_projMatrixAttribLocation = this->_f.pGlGetUniformLocation(this->_shaderProgramPassthrough, "projectionMatrix");
 
 				return;
 			}
