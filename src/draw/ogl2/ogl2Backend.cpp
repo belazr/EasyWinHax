@@ -39,7 +39,6 @@ namespace hax {
 				if (!this->getProcAddresses()) return false;
 
 				this->createShaders();
-				this->_projMatrixLocation = this->_f.pGlGetUniformLocation(this->_shaderProgramPassthrough, "projectionMatrix");
 
 				return true;
 			}
@@ -70,14 +69,14 @@ namespace hax {
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
-					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES);
+					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthrough, this->_shaderProgramTexture);
 					this->_triangleListBuffer.destroy();
 
 					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
 
 					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
-					this->_pointListBuffer.initialize(this->_f, GL_POINTS);
+					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthrough, this->_shaderProgramTexture);
 					this->_pointListBuffer.destroy();
 
 					constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
@@ -90,27 +89,11 @@ namespace hax {
 				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
 				glDepthFunc(GL_ALWAYS);
 
-				const GLfloat viewLeft = static_cast<GLfloat>(viewport[0]);
-				const GLfloat viewRight = static_cast<GLfloat>(viewport[0] + viewport[2]);
-				const GLfloat viewTop = static_cast<GLfloat>(viewport[1]);
-				const GLfloat viewBottom = static_cast<GLfloat>(viewport[1] + viewport[3]);
-
-				const GLfloat ortho[][4]{
-					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
-					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
-					{ 0.f, 0.f, .5f, 0.f },
-					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
-				};
-
-				this->_f.pGlUseProgram(this->_shaderProgramPassthrough);
-				this->_f.pGlUniformMatrix4fv(this->_projMatrixLocation, 1, GL_FALSE, &ortho[0][0]);
-				
 				return true;
 			}
 
 
 			void Backend::endFrame() {
-				this->_f.pGlUseProgram(0);
 				glDepthFunc(this->_depthFunc);
 
 				return;
