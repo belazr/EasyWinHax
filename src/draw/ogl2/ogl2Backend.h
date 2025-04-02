@@ -23,9 +23,9 @@ namespace hax {
 					void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 				};
 
-				GLint _shaderProgramPassthrough;
-				GLint _shaderProgramTexture;
-				GLint _projMatrixAttribLocation;
+				GLuint _shaderProgramPassthrough;
+				GLuint _shaderProgramTexture;
+				GLint _projMatrixLocation;
 				GLint _viewport[4];
 				GLenum _depthFunc;
 

@@ -9,7 +9,7 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _projMatrixAttribLocation{},
+				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _projMatrixLocation{},
 				_viewport {}, _depthFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
@@ -39,6 +39,7 @@ namespace hax {
 				if (!this->getProcAddresses()) return false;
 
 				this->createShaders();
+				this->_projMatrixLocation = this->_f.pGlGetUniformLocation(this->_shaderProgramPassthrough, "projectionMatrix");
 
 				return true;
 			}
@@ -102,8 +103,8 @@ namespace hax {
 				};
 
 				this->_f.pGlUseProgram(this->_shaderProgramPassthrough);
-				this->_f.pGlUniformMatrix4fv(this->_projMatrixAttribLocation, 1, GL_FALSE, &ortho[0][0]);
-
+				this->_f.pGlUniformMatrix4fv(this->_projMatrixLocation, 1, GL_FALSE, &ortho[0][0]);
+				
 				return true;
 			}
 
@@ -148,11 +149,15 @@ namespace hax {
 				ASSIGN_PROC_ADDRESS(DetachShader);
 				ASSIGN_PROC_ADDRESS(DeleteShader);
 				ASSIGN_PROC_ADDRESS(GetUniformLocation);
+				ASSIGN_PROC_ADDRESS(GetAttribLocation);
 				ASSIGN_PROC_ADDRESS(GenBuffers);
 				ASSIGN_PROC_ADDRESS(BindBuffer);
 				ASSIGN_PROC_ADDRESS(BufferData);
 				ASSIGN_PROC_ADDRESS(MapBuffer);
 				ASSIGN_PROC_ADDRESS(UnmapBuffer);
+				ASSIGN_PROC_ADDRESS(EnableVertexAttribArray);
+				ASSIGN_PROC_ADDRESS(VertexAttribPointer);
+				ASSIGN_PROC_ADDRESS(DisableVertexAttribArray);
 				ASSIGN_PROC_ADDRESS(DeleteBuffers);
 				ASSIGN_PROC_ADDRESS(UseProgram);
 				ASSIGN_PROC_ADDRESS(UniformMatrix4fv);
@@ -179,12 +184,12 @@ namespace hax {
 				"attribute vec4 col;\n"
 				"attribute vec2 uv;\n"
 
-				"varying vec2 uvOut;\n"
 				"varying vec4 colOut;\n"
+				"varying vec2 uvOut;\n"
 
 				"void main() {\n"
-				"    uvOut = uv;\n"
 				"    colOut = col;\n"
+				"    uvOut = uv;\n"
 				"    gl_Position = projectionMatrix * vec4(pos.xy,0,1);\n"
 				"}\n";
 
@@ -242,8 +247,6 @@ namespace hax {
 
 				this->_f.pGlDeleteShader(fragmentShaderTexture);
 				this->_f.pGlDeleteShader(vertexShader);
-
-				this->_projMatrixAttribLocation = this->_f.pGlGetUniformLocation(this->_shaderProgramPassthrough, "projectionMatrix");
 
 				return;
 			}
