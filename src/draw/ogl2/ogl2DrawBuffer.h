@@ -12,6 +12,13 @@ namespace hax {
 			private:
 				Functions _f;
 				GLenum _mode;
+				GLuint _shaderProgramPassthrough;
+				GLuint _shaderProgramTexture;
+				GLfloat _projectionMatrix[4][4];
+				GLuint _projectionMatrixIndex;
+				GLuint _posIndex;
+				GLuint _colIndex;
+				GLuint _uvIndex;
 				GLuint _vertexBufferId;
 				GLuint _indexBufferId;
 
@@ -29,7 +36,16 @@ namespace hax {
 				// 
 				// [in] mode:
 				// Mode the vertices in the buffer should be drawn in.
-				void initialize(Functions f, GLenum mode);
+				// 
+				// [in] viewport:
+				// Current viewport. Has to be an array of four GLint.
+				// 
+				// [in] shaderProgramPassthrough:
+				// Shader program for drawing without textures.
+				// 
+				// [in] shaderProgramTexture:
+				// Shader program for drawing with textures.
+				void initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgramPassthrough, GLuint shaderProgramTexture);
 
 				// Creates a new buffer with all internal resources.
 				//

@@ -16,6 +16,7 @@ namespace hax {
 			constexpr GLenum GL_DYNAMIC_DRAW = 0x88E8;
 			constexpr GLenum GL_FRAGMENT_SHADER = 0x8B30;
 			constexpr GLenum GL_VERTEX_SHADER = 0x8B31;
+			constexpr GLenum GL_CURRENT_PROGRAM = 0x8B8D;
 
 			typedef char GLchar;
 
