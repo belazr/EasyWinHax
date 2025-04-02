@@ -51,25 +51,11 @@ namespace hax {
 			void DrawBuffer::destroy() {
 
 				if (this->_indexBufferId != UINT_MAX) {
-					GLuint curBufferId = 0u;
-					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curBufferId));
-
-					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
-					this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curBufferId);
-
 					this->_f.pGlDeleteBuffers(1, &this->_indexBufferId);
 					this->_indexBufferId = UINT_MAX;
 				}
 
 				if (this->_vertexBufferId != UINT_MAX) {
-					GLuint curArrayBufferId = 0;
-					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curArrayBufferId));
-
-					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
-					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curArrayBufferId);
-
 					this->_f.pGlDeleteBuffers(1, &this->_vertexBufferId);
 					this->_vertexBufferId = UINT_MAX;
 				}
