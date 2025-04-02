@@ -25,9 +25,11 @@ namespace hax {
 
 				GLuint _shaderProgramPassthrough;
 				GLuint _shaderProgramTexture;
-				GLint _projMatrixLocation;
 				GLint _viewport[4];
 				GLenum _depthFunc;
+				GLboolean _blendEnabled;
+				GLenum _srcAlphaBlendFunc;
+				GLenum _dstAlphaBlendFunc;
 
 				DrawBuffer _triangleListBuffer;
 				DrawBuffer _pointListBuffer;
