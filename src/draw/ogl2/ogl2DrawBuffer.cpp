@@ -74,6 +74,10 @@ namespace hax {
 					this->_vertexBufferId = UINT_MAX;
 				}
 
+				if (this->_pTextureBuffer) {
+					free(this->_pTextureBuffer);
+				}
+
 				this->reset();
 
 				return;
