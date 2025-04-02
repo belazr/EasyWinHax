@@ -9,8 +9,8 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _projMatrixLocation{},
-				_viewport {}, _depthFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _viewport{}, _depthFunc{},
+				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -89,11 +89,28 @@ namespace hax {
 				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
 				glDepthFunc(GL_ALWAYS);
 
+				this->_blendEnabled = glIsEnabled(GL_BLEND);
+
+				if (!this->_blendEnabled) {
+					glEnable(GL_BLEND);
+				}
+
+				glGetIntegerv(GL_BLEND_SRC_ALPHA, reinterpret_cast<GLint*>(&this->_srcAlphaBlendFunc));
+				glGetIntegerv(GL_BLEND_DST_ALPHA, reinterpret_cast<GLint*>(&this->_dstAlphaBlendFunc));
+				
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 				return true;
 			}
 
 
 			void Backend::endFrame() {
+				glBlendFunc(this->_srcAlphaBlendFunc, this->_dstAlphaBlendFunc);
+
+				if (!this->_blendEnabled) {
+					glDisable(GL_BLEND);
+				}
+
 				glDepthFunc(this->_depthFunc);
 
 				return;

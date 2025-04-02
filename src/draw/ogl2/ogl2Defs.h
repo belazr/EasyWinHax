@@ -8,15 +8,17 @@ namespace hax {
 
 		namespace ogl2 {
 
-			constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
-			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
-			constexpr GLenum GL_ARRAY_BUFFER_BINDING = 0x8894;
-			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
-			constexpr GLenum GL_WRITE_ONLY = 0x88B9;
-			constexpr GLenum GL_DYNAMIC_DRAW = 0x88E8;
-			constexpr GLenum GL_FRAGMENT_SHADER = 0x8B30;
-			constexpr GLenum GL_VERTEX_SHADER = 0x8B31;
-			constexpr GLenum GL_CURRENT_PROGRAM = 0x8B8D;
+			constexpr GLenum GL_BLEND_DST_ALPHA = 0x80CAu;
+			constexpr GLenum GL_BLEND_SRC_ALPHA = 0x80CBu;
+			constexpr GLenum GL_ARRAY_BUFFER = 0x8892u;
+			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893u;
+			constexpr GLenum GL_ARRAY_BUFFER_BINDING = 0x8894u;
+			constexpr GLenum GL_ELEMENT_ARRAY_BUFFER_BINDING = 0x8895u;
+			constexpr GLenum GL_WRITE_ONLY = 0x88B9u;
+			constexpr GLenum GL_DYNAMIC_DRAW = 0x88E8u;
+			constexpr GLenum GL_FRAGMENT_SHADER = 0x8B30u;
+			constexpr GLenum GL_VERTEX_SHADER = 0x8B31u;
+			constexpr GLenum GL_CURRENT_PROGRAM = 0x8B8Du;
 
 			typedef char GLchar;
 
