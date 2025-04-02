@@ -38,6 +38,10 @@ namespace hax {
 
 				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, indexBufferSize, &this->_indexBufferId)) return false;
 
+				this->_pTextureBuffer = reinterpret_cast<TextureId*>(malloc(capacity * sizeof(TextureId)));
+
+				if (!this->_pTextureBuffer) return false;
+
 				this->_capacity = capacity;
 
 				return true;
