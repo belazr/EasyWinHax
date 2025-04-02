@@ -118,15 +118,22 @@ namespace hax {
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curIndexBufferId));
 
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+
+				// these should always be the same, no need to get them dynamically
+				constexpr GLuint POS_INDEX = 2u;
+				constexpr GLuint COL_INDEX = 0u;
+				constexpr GLuint UV_INDEX = 1u;
+				
+				this->_f.pGlEnableVertexAttribArray(POS_INDEX);
+				this->_f.pGlVertexAttribPointer(POS_INDEX, sizeof(Vector2) / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<GLvoid*>(0));
+
+				this->_f.pGlEnableVertexAttribArray(COL_INDEX);
+				this->_f.pGlVertexAttribPointer(COL_INDEX, sizeof(Color), GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
+
+				this->_f.pGlEnableVertexAttribArray(UV_INDEX);
+				this->_f.pGlVertexAttribPointer(UV_INDEX, sizeof(Vector2) / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2) + sizeof(Color)));
+
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
-
-				glEnableClientState(GL_VERTEX_ARRAY);
-				glEnableClientState(GL_COLOR_ARRAY);
-
-				// third argument describes the offset in the Vertext struct, not the actuall address of the buffer
-				glVertexPointer(2, GL_FLOAT, sizeof(Vertex), nullptr);
-				glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)));
-				glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2)+ sizeof(Color)));
 
 				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
 				this->_pLocalVertexBuffer = nullptr;
@@ -136,8 +143,9 @@ namespace hax {
 
 				glDrawElements(this->_mode, static_cast<GLsizei>(this->_size), GL_UNSIGNED_INT, nullptr);
 
-				glDisableClientState(GL_COLOR_ARRAY);
-				glDisableClientState(GL_VERTEX_ARRAY);
+				this->_f.pGlDisableVertexAttribArray(POS_INDEX);
+				this->_f.pGlDisableVertexAttribArray(COL_INDEX);
+				this->_f.pGlDisableVertexAttribArray(UV_INDEX);
 
 				this->_size = 0u;
 
