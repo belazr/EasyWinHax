@@ -64,6 +64,11 @@ namespace hax {
 					this->_pIndexBufferResource = nullptr;
 				}
 
+				if (this->_pTextureBuffer) {
+					free(this->_pTextureBuffer);
+					this->_pTextureBuffer = nullptr;
+				}
+
 				this->reset();
 
 				return;
