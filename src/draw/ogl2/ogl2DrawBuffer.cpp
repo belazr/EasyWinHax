@@ -136,6 +136,9 @@ namespace hax {
 				this->_f.pGlUseProgram(this->_shaderProgramPassthrough);
 				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
 
+				this->_f.pGlUseProgram(this->_shaderProgramTexture);
+				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
+
 				GLuint curVertexBufferId = 0u;
 				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curVertexBufferId));
 
@@ -161,7 +164,26 @@ namespace hax {
 				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				this->_pLocalIndexBuffer = nullptr;
 
-				glDrawElements(this->_mode, static_cast<GLsizei>(this->_size), GL_UNSIGNED_INT, nullptr);
+				uint32_t drawCount = 1u;
+
+				for (uint32_t i = 0u; i < this->_size; i += drawCount) {
+					drawCount = 1u;
+
+					GLuint const curTextureId = static_cast<GLuint>(this->_pTextureBuffer[i]);
+
+					for (uint32_t j = i + 1u; j < this->_size; j++) {
+						GLuint const nextTextureId = static_cast<GLuint>(this->_pTextureBuffer[j]);
+
+						if (nextTextureId != curTextureId) break;
+
+						drawCount++;
+					}
+
+					GLuint const shaderProgram = curTextureId ? this->_shaderProgramTexture : this->_shaderProgramPassthrough;
+					this->_f.pGlUseProgram(shaderProgram);
+					glBindTexture(GL_TEXTURE_2D, curTextureId);
+					glDrawElements(this->_mode, drawCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(i * sizeof(uint32_t)));
+				}
 
 				this->_f.pGlDisableVertexAttribArray(this->_posIndex);
 				this->_f.pGlDisableVertexAttribArray(this->_colIndex);
