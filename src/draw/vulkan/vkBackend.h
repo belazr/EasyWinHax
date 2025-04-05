@@ -1,7 +1,8 @@
 #pragma once
 #include "vkDrawBuffer.h"
-#include "..\Vertex.h"
 #include "..\IBackend.h"
+#include "..\Vertex.h"
+#include "..\..\Vector.h"
 #include <Windows.h>
 
 namespace hax {
@@ -28,6 +29,13 @@ namespace hax {
 					VkFence hFence;
 				}ImageData;
 
+				typedef struct TextureData {
+					VkImage hImage;
+					VkDeviceMemory hMemory;
+					VkImageView hImageView;
+					VkDescriptorSet hDescriptorSet;
+				}TextureData;
+
 				const VkPresentInfoKHR* _phPresentInfo;
 				VkDevice _hDevice;
 
@@ -42,6 +50,7 @@ namespace hax {
 				uint32_t _graphicsQueueFamilyIndex;
 				VkRenderPass _hRenderPass;
 				VkCommandPool _hCommandPool;
+				VkCommandBuffer _hTextureCommandBuffer;
 				VkPipelineLayout _hPipelineLayout;
 				VkPipeline _hTriangleListPipeline;
 				VkPipeline _hPointListPipeline;
@@ -53,6 +62,7 @@ namespace hax {
 				uint32_t _imageCount;
 				ImageData* _pCurImageData;
 
+				Vector<TextureData> _textures;
 
 			public:
 				Backend();
@@ -78,6 +88,23 @@ namespace hax {
 				// Return:
 				// True on success, false on failure.
 				virtual bool initialize() override;
+
+				// Loads a texture into VRAM.
+				//
+				// Parameters:
+				// 
+				// [in] data:
+				// Texture colors in argb format.
+				// 
+				// [in] width:
+				// Width of the texture.
+				// 
+				// [in] height:
+				// Height of the texture.
+				//
+				// Return:
+				// ID of the internal texture structure in VRAM that can be passed to DrawBuffer::append. 0 on failure.
+				virtual TextureId loadTexture(const Color* data, uint32_t width, uint32_t height) override;
 
 				// Starts a frame within a hook. Should be called by an Engine object every frame at the begin of the hook.
 				// 
@@ -116,10 +143,13 @@ namespace hax {
 				bool getPhysicalDeviceProperties();
 				bool createRenderPass();
 				bool createCommandPool();
+				VkCommandBuffer allocCommandBuffer() const;
+				VkImageView createImageView(VkImage hImage) const;
 				bool createPipelineLayout();
 				VkDescriptorSetLayout createDescriptorSetLayout() const;
 				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
 				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
+				void destroyTextureData(TextureData* pTextureData) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
