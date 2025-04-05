@@ -648,30 +648,6 @@ namespace hax {
 			}
 
 
-			VkImageView Backend::createImageView(VkImage hImage) const {
-				VkImageSubresourceRange imageSubresourceRange{};
-				imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				imageSubresourceRange.levelCount = 1u;
-				imageSubresourceRange.layerCount = 1u;
-
-				VkImageViewCreateInfo imageViewCreateInfo{};
-				imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-				imageViewCreateInfo.image = hImage;
-				imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-				imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-				imageViewCreateInfo.subresourceRange = imageSubresourceRange;
-
-				VkImageView hImageView = VK_NULL_HANDLE;
-
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) {
-
-					return VK_NULL_HANDLE;
-				}
-				
-				return hImageView;
-			}
-
-
 			bool Backend::createRenderPass() {
 				VkAttachmentDescription attachmentDesc{};
 				attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1032,6 +1008,30 @@ namespace hax {
 				}
 
 				return;
+			}
+
+
+			VkImageView Backend::createImageView(VkImage hImage) const {
+				VkImageSubresourceRange imageSubresourceRange{};
+				imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				imageSubresourceRange.levelCount = 1u;
+				imageSubresourceRange.layerCount = 1u;
+
+				VkImageViewCreateInfo imageViewCreateInfo{};
+				imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				imageViewCreateInfo.image = hImage;
+				imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+				imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+				imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+
+				VkImageView hImageView = VK_NULL_HANDLE;
+
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) {
+
+					return VK_NULL_HANDLE;
+				}
+
+				return hImageView;
 			}
 
 
