@@ -217,8 +217,8 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hRenderPass{},
-				_hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
+				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hTextureCommandBuffer{},
+				_hRenderPass {}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -252,6 +252,10 @@ namespace hax {
 
 				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
+				}
+
+				if (this->_f.pVkFreeCommandBuffers && this->_hTextureCommandBuffer != VK_NULL_HANDLE) {
+					this->_f.pVkFreeCommandBuffers(this->_hDevice, this->_hCommandPool, 1u, &this->_hTextureCommandBuffer);
 				}
 
 				if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
@@ -290,6 +294,12 @@ namespace hax {
 
 				}
 
+				if (this->_hTextureCommandBuffer == VK_NULL_HANDLE) {
+					this->_hTextureCommandBuffer = allocCommandBuffer();
+				}
+
+				if (this->_hTextureCommandBuffer == VK_NULL_HANDLE) return false;
+
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
 					if (!this->createRenderPass()) return false;
@@ -319,6 +329,72 @@ namespace hax {
 				if (this->_hFirstGraphicsQueue == VK_NULL_HANDLE) return false;
 
 				return true;
+			}
+
+
+			TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+				TextureData textureData{};
+
+				VkImageCreateInfo imageCreateInfo{};
+				imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+				imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+				imageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+				imageCreateInfo.extent.width = width;
+				imageCreateInfo.extent.height = height;
+				imageCreateInfo.extent.depth = 1u;
+				imageCreateInfo.mipLevels = 1u;
+				imageCreateInfo.arrayLayers = 1u;
+				imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+				imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+				
+				if (this->_f.pVkCreateImage(this->_hDevice, &imageCreateInfo, nullptr, &textureData.hImage) != VkResult::VK_SUCCESS) {
+					
+					return 0ull;
+				}
+
+				VkMemoryRequirements memRequirements{};
+				this->_f.pVkGetImageMemoryRequirements(this->_hDevice, textureData.hImage, &memRequirements);
+
+				VkMemoryAllocateInfo memAllocInfo{};
+				memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+				memAllocInfo.allocationSize = memRequirements.size;
+				memAllocInfo.memoryTypeIndex = UINT32_MAX;
+
+				for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
+
+					if ((this->_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT && memRequirements.memoryTypeBits & (1 << i)) {
+						memAllocInfo.memoryTypeIndex = i;;
+					}
+
+				}
+
+				if (memAllocInfo.memoryTypeIndex == UINT32_MAX) {
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+				
+				if (this->_f.pVkAllocateMemory(this->_hDevice, &memAllocInfo, nullptr, &textureData.hMemory) != VkResult::VK_SUCCESS) {
+					this->destroyTextureData(&textureData);
+					
+					return 0ull;
+				}
+
+				if (this->_f.pVkBindImageMemory(this->_hDevice, textureData.hImage, textureData.hMemory, 0ull) != VkResult::VK_SUCCESS) {
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				textureData.hImageView = this->createImageView(textureData.hImage);
+
+				if (textureData.hImageView == VK_NULL_HANDLE) {
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				return 0ull;
 			}
 
 
@@ -467,6 +543,10 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(ResetCommandBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(BeginCommandBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(EndCommandBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateImage);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImage);
+				ASSIGN_DEVICE_PROC_ADDRESS(GetImageMemoryRequirements);
+				ASSIGN_DEVICE_PROC_ADDRESS(BindImageMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBeginRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdEndRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(MapMemory);
@@ -548,6 +628,47 @@ namespace hax {
 				commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
 
 				return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
+			}
+
+
+			VkCommandBuffer Backend::allocCommandBuffer() const {
+				VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+				commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+				commandBufferAllocInfo.commandPool = this->_hCommandPool;
+				commandBufferAllocInfo.commandBufferCount = 1u;
+
+				VkCommandBuffer hCommandBuffer = VK_NULL_HANDLE;
+
+				if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &hCommandBuffer) != VkResult::VK_SUCCESS) {
+					
+					return VK_NULL_HANDLE;
+				}
+
+				return hCommandBuffer;
+			}
+
+
+			VkImageView Backend::createImageView(VkImage hImage) const {
+				VkImageSubresourceRange imageSubresourceRange{};
+				imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				imageSubresourceRange.levelCount = 1u;
+				imageSubresourceRange.layerCount = 1u;
+
+				VkImageViewCreateInfo imageViewCreateInfo{};
+				imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				imageViewCreateInfo.image = hImage;
+				imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+				imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+				imageViewCreateInfo.subresourceRange = imageSubresourceRange;
+
+				VkImageView hImageView = VK_NULL_HANDLE;
+
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) {
+
+					return VK_NULL_HANDLE;
+				}
+				
+				return hImageView;
 			}
 
 
@@ -893,18 +1014,35 @@ namespace hax {
 			}
 
 
+			void Backend::destroyTextureData(TextureData* pTextureData) const {
+
+				if (pTextureData->hImageView != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyImageView(this->_hDevice, pTextureData->hImageView, nullptr);
+					pTextureData->hImageView = VK_NULL_HANDLE;
+				}
+
+				if (pTextureData->hMemory != VK_NULL_HANDLE) {
+					this->_f.pVkFreeMemory(this->_hDevice, pTextureData->hMemory, nullptr);
+					pTextureData->hMemory = VK_NULL_HANDLE;
+				}
+
+				if (pTextureData->hImage != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyImage(this->_hDevice, pTextureData->hImage, nullptr);
+					pTextureData->hImage = VK_NULL_HANDLE;
+				}
+
+				return;
+			}
+
+
 			bool Backend::createImageDataArray(uint32_t imageCount) {
 				this->_pImageDataArray = new ImageData[imageCount]{};
 				this->_imageCount = imageCount;
 			
 				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-					VkCommandBufferAllocateInfo commandBufferAllocInfo{};
-					commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-					commandBufferAllocInfo.commandPool = this->_hCommandPool;
-					commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-					commandBufferAllocInfo.commandBufferCount = 1u;
-						
-					if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &this->_pImageDataArray[i].hCommandBuffer) != VkResult::VK_SUCCESS) return false;
+					this->_pImageDataArray[i].hCommandBuffer = this->allocCommandBuffer();
+
+					if (this->_pImageDataArray[i].hCommandBuffer == VK_NULL_HANDLE) return false;
 
 					this->_pImageDataArray[i].triangleListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hTriangleListPipeline, this->_memoryProperties);
 
@@ -988,23 +1126,11 @@ namespace hax {
 				}
 
 				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-					VkImageSubresourceRange imageSubresourceRange{};
-					imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					imageSubresourceRange.baseMipLevel = 0u;
-					imageSubresourceRange.levelCount = 1u;
-					imageSubresourceRange.baseArrayLayer = 0u;
-					imageSubresourceRange.layerCount = 1u;
+					this->_pImageDataArray[i].hImageView = this->createImageView(pImages[i]);
 
-					VkImageViewCreateInfo imageViewCreateInfo{};
-					imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-					imageViewCreateInfo.image = pImages[i];
-					imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-					imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-					imageViewCreateInfo.subresourceRange = imageSubresourceRange;
-					
-					if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &this->_pImageDataArray[i].hImageView) != VkResult::VK_SUCCESS) {
+					if (this->_pImageDataArray[i].hImageView == VK_NULL_HANDLE) {
 						delete[] pImages;
-					
+
 						return false;
 					}
 

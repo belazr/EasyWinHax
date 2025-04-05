@@ -42,6 +42,10 @@ namespace hax {
 				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
 				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
 				PFN_vkEndCommandBuffer pVkEndCommandBuffer;
+				PFN_vkCreateImage pVkCreateImage;
+				PFN_vkDestroyImage pVkDestroyImage;
+				PFN_vkBindImageMemory pVkBindImageMemory;
+				PFN_vkGetImageMemoryRequirements pVkGetImageMemoryRequirements;
 				PFN_vkCmdBeginRenderPass pVkCmdBeginRenderPass;
 				PFN_vkCmdEndRenderPass pVkCmdEndRenderPass;
 				PFN_vkMapMemory pVkMapMemory;
