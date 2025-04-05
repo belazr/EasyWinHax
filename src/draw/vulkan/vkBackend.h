@@ -51,6 +51,7 @@ namespace hax {
 				VkRenderPass _hRenderPass;
 				VkCommandPool _hCommandPool;
 				VkCommandBuffer _hTextureCommandBuffer;
+				VkSampler _hTextureSampler;
 				VkPipelineLayout _hPipelineLayout;
 				VkPipeline _hTriangleListPipeline;
 				VkPipeline _hPointListPipeline;
@@ -143,6 +144,7 @@ namespace hax {
 				bool getPhysicalDeviceProperties();
 				bool createCommandPool();
 				VkCommandBuffer allocCommandBuffer() const;
+				bool createTextureSampler();
 				bool createRenderPass();
 				bool createPipelineLayout();
 				VkDescriptorSetLayout createDescriptorSetLayout() const;

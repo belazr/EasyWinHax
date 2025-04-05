@@ -12,6 +12,10 @@ namespace hax {
 				PFN_vkGetSwapchainImagesKHR pVkGetSwapchainImagesKHR;
 				PFN_vkCreateCommandPool pVkCreateCommandPool;
 				PFN_vkDestroyCommandPool pVkDestroyCommandPool;
+				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
+				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
+				PFN_vkCreateSampler pVkCreateSampler;
+				PFN_vkDestroySampler pVkDestroySampler;
 				PFN_vkCreateRenderPass pVkCreateRenderPass;
 				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
 				PFN_vkCreatePipelineLayout pVkCreatePipelineLayout;
@@ -23,8 +27,6 @@ namespace hax {
 				PFN_vkCreateGraphicsPipelines pVkCreateGraphicsPipelines;
 				PFN_vkDestroyPipeline pVkDestroyPipeline;
 				PFN_vkGetDeviceQueue pVkGetDeviceQueue;
-				PFN_vkAllocateCommandBuffers pVkAllocateCommandBuffers;
-				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
 				PFN_vkCreateBuffer pVkCreateBuffer;
 				PFN_vkDestroyBuffer pVkDestroyBuffer;
 				PFN_vkGetBufferMemoryRequirements pVkGetBufferMemoryRequirements;
