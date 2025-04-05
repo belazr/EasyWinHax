@@ -141,15 +141,15 @@ namespace hax {
 			private:
 				bool getProcAddresses();
 				bool getPhysicalDeviceProperties();
-				bool createRenderPass();
 				bool createCommandPool();
 				VkCommandBuffer allocCommandBuffer() const;
-				VkImageView createImageView(VkImage hImage) const;
+				bool createRenderPass();
 				bool createPipelineLayout();
 				VkDescriptorSetLayout createDescriptorSetLayout() const;
 				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
 				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
 				void destroyTextureData(TextureData* pTextureData) const;
+				VkImageView createImageView(VkImage hImage) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
