@@ -217,7 +217,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hTextureCommandBuffer{},
+				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{},
 				_hRenderPass {}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
@@ -252,6 +252,10 @@ namespace hax {
 
 				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
+				}
+
+				if (this->_f.pVkDestroySampler && this->_hTextureSampler != VK_NULL_HANDLE) {
+					this->_f.pVkDestroySampler(this->_hDevice, this->_hTextureSampler, nullptr);
 				}
 
 				if (this->_f.pVkFreeCommandBuffers && this->_hTextureCommandBuffer != VK_NULL_HANDLE) {
@@ -299,6 +303,12 @@ namespace hax {
 				}
 
 				if (this->_hTextureCommandBuffer == VK_NULL_HANDLE) return false;
+
+				if (this->_hTextureSampler == VK_NULL_HANDLE) {
+
+					if (this->createTextureSampler()) return false;
+
+				}
 
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
@@ -513,19 +523,21 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(GetSwapchainImagesKHR);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateCommandPool);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyCommandPool);
+				ASSIGN_DEVICE_PROC_ADDRESS(AllocateCommandBuffers);
+				ASSIGN_DEVICE_PROC_ADDRESS(FreeCommandBuffers);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateSampler);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroySampler);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateRenderPass);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreatePipelineLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyPipelineLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateDescriptorSetLayout);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyDescriptorSetLayout);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateRenderPass);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateShaderModule);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyShaderModule);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateGraphicsPipelines);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyPipeline);
 				ASSIGN_DEVICE_PROC_ADDRESS(GetDeviceQueue);
-				ASSIGN_DEVICE_PROC_ADDRESS(AllocateCommandBuffers);
-				ASSIGN_DEVICE_PROC_ADDRESS(FreeCommandBuffers);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(GetBufferMemoryRequirements);
@@ -645,6 +657,23 @@ namespace hax {
 				}
 
 				return hCommandBuffer;
+			}
+
+
+			bool Backend::createTextureSampler() {
+				VkSamplerCreateInfo samplerInfo{};
+				samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+				samplerInfo.magFilter = VK_FILTER_NEAREST;
+				samplerInfo.minFilter = VK_FILTER_NEAREST;
+				samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+				samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				samplerInfo.minLod = -1000.f;
+				samplerInfo.maxLod = 1000.f;
+				samplerInfo.maxAnisotropy = 1.f;
+
+				return this->_f.pVkCreateSampler(this->_hDevice, &samplerInfo, nullptr, &this->_hTextureSampler) == VkResult::VK_SUCCESS;
 			}
 
 
