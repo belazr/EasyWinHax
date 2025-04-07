@@ -355,19 +355,9 @@ namespace hax {
 			TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
 				TextureData textureData{};
 
-				VkImageCreateInfo imageCreateInfo{};
-				imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-				imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-				imageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-				imageCreateInfo.extent.width = width;
-				imageCreateInfo.extent.height = height;
-				imageCreateInfo.extent.depth = 1u;
-				imageCreateInfo.mipLevels = 1u;
-				imageCreateInfo.arrayLayers = 1u;
-				imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-				imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+				textureData.hImage = this->createImage(width, height);
 				
-				if (this->_f.pVkCreateImage(this->_hDevice, &imageCreateInfo, nullptr, &textureData.hImage) != VkResult::VK_SUCCESS) {
+				if (textureData.hImage == VK_NULL_HANDLE) {
 					
 					return 0ull;
 				}
@@ -1009,6 +999,27 @@ namespace hax {
 				if (this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &hShaderModule) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hShaderModule;
+			}
+
+
+			VkImage Backend::createImage(uint32_t width, uint32_t height) const {
+				VkImageCreateInfo imageCreateInfo{};
+				imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+				imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+				imageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+				imageCreateInfo.extent.width = width;
+				imageCreateInfo.extent.height = height;
+				imageCreateInfo.extent.depth = 1u;
+				imageCreateInfo.mipLevels = 1u;
+				imageCreateInfo.arrayLayers = 1u;
+				imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+				imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+				VkImage hImage = VK_NULL_HANDLE;
+
+				if (this->_f.pVkCreateImage(this->_hDevice, &imageCreateInfo, nullptr, &hImage) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+				return hImage;
 			}
 
 
