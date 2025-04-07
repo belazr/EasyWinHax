@@ -151,6 +151,7 @@ namespace hax {
 				bool createPipelineLayout();
 				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
 				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
+				VkImage createImage(uint32_t width, uint32_t height) const;
 				void destroyTextureData(TextureData* pTextureData) const;
 				VkImageView createImageView(VkImage hImage) const;
 				bool createImageDataArray(uint32_t imageCount);
