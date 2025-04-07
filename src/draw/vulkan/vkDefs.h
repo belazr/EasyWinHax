@@ -16,6 +16,8 @@ namespace hax {
 				PFN_vkFreeCommandBuffers pVkFreeCommandBuffers;
 				PFN_vkCreateSampler pVkCreateSampler;
 				PFN_vkDestroySampler pVkDestroySampler;
+				PFN_vkCreateDescriptorPool pVkCreateDescriptorPool;
+				PFN_vkDestroyDescriptorPool pVkDestroyDescriptorPool;
 				PFN_vkCreateRenderPass pVkCreateRenderPass;
 				PFN_vkDestroyRenderPass pVkDestroyRenderPass;
 				PFN_vkCreatePipelineLayout pVkCreatePipelineLayout;

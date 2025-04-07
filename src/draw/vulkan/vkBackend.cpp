@@ -217,8 +217,9 @@ namespace hax {
 
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{},
-				_hRenderPass{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
+				_hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{},
+				_hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{},
+				_hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -254,8 +255,8 @@ namespace hax {
 					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
 				}
 
-				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
+				if (this->_f.pVkDestroyDescriptorPool && this->_hDescriptorPool != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyDescriptorPool(this->_hDevice, this->_hDescriptorPool, nullptr);
 				}
 
 				if (this->_f.pVkDestroySampler && this->_hTextureSampler != VK_NULL_HANDLE) {
@@ -268,6 +269,10 @@ namespace hax {
 
 				if (this->_f.pVkDestroyCommandPool && this->_hCommandPool != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyCommandPool(this->_hDevice, this->_hCommandPool, nullptr);
+				}
+
+				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyRenderPass(this->_hDevice, this->_hRenderPass, nullptr);
 				}
 
 			}
@@ -296,6 +301,12 @@ namespace hax {
 
 				if (!this->getPhysicalDeviceProperties()) return false;
 
+				if (this->_hRenderPass == VK_NULL_HANDLE) {
+
+					if (!this->createRenderPass()) return false;
+
+				}
+
 				if (this->_hCommandPool == VK_NULL_HANDLE) {
 
 					if (!this->createCommandPool()) return false;
@@ -313,10 +324,11 @@ namespace hax {
 					if (!this->createTextureSampler()) return false;
 
 				}
+				
+				if (this->_hDescriptorPool == VK_NULL_HANDLE) {
 
-				if (this->_hRenderPass == VK_NULL_HANDLE) {
-
-					if (!this->createRenderPass()) return false;
+					// 1000 textures should be enough, otherwise bad luck
+					if (!this->createDescriptorPool(1000u)) return false;
 
 				}
 
@@ -510,6 +522,8 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeCommandBuffers);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateSampler);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroySampler);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateDescriptorPool);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyDescriptorPool);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreatePipelineLayout);
@@ -566,6 +580,37 @@ namespace hax {
 			}
 
 			#undef ASSIGN_PROC_ADDRESS
+
+
+			bool Backend::createRenderPass() {
+				VkAttachmentDescription attachmentDesc{};
+				attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
+				attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+				attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+				attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+				VkAttachmentReference colorAttachment{};
+				colorAttachment.attachment = 0u;
+				colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+				VkSubpassDescription subpassDesc{};
+				subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+				subpassDesc.colorAttachmentCount = 1u;
+				subpassDesc.pColorAttachments = &colorAttachment;
+
+				VkRenderPassCreateInfo renderPassCreateInfo{};
+				renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+				renderPassCreateInfo.attachmentCount = 1u;
+				renderPassCreateInfo.pAttachments = &attachmentDesc;
+				renderPassCreateInfo.subpassCount = 1u;
+				renderPassCreateInfo.pSubpasses = &subpassDesc;
+
+				return this->_f.pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VK_SUCCESS;
+			}
 
 			
 			bool Backend::getPhysicalDeviceProperties() {
@@ -660,34 +705,17 @@ namespace hax {
 			}
 
 
-			bool Backend::createRenderPass() {
-				VkAttachmentDescription attachmentDesc{};
-				attachmentDesc.format = VK_FORMAT_B8G8R8A8_UNORM;
-				attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-				attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-				attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-				attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-				attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-				attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			bool Backend::createDescriptorPool(uint32_t size) {
+				VkDescriptorPoolSize poolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, size };
+				
+				VkDescriptorPoolCreateInfo poolCreateInfo{};
+				poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+				poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+				poolCreateInfo.maxSets = size;
+				poolCreateInfo.poolSizeCount = 1u;
+				poolCreateInfo.pPoolSizes = &poolSize;
 
-				VkAttachmentReference colorAttachment{};
-				colorAttachment.attachment = 0u;
-				colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-				VkSubpassDescription subpassDesc{};
-				subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-				subpassDesc.colorAttachmentCount = 1u;
-				subpassDesc.pColorAttachments = &colorAttachment;
-
-				VkRenderPassCreateInfo renderPassCreateInfo{};
-				renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-				renderPassCreateInfo.attachmentCount = 1u;
-				renderPassCreateInfo.pAttachments = &attachmentDesc;
-				renderPassCreateInfo.subpassCount = 1u;
-				renderPassCreateInfo.pSubpasses = &subpassDesc;
-
-				return this->_f.pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VK_SUCCESS;
+				return this->_f.pVkCreateDescriptorPool(this->_hDevice, &poolCreateInfo, nullptr, &this->_hDescriptorPool) == VK_SUCCESS;
 			}
 
 

@@ -47,16 +47,17 @@ namespace hax {
 					void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 				};
 
+				VkRenderPass _hRenderPass;
 				uint32_t _graphicsQueueFamilyIndex;
+				VkPhysicalDeviceMemoryProperties _memoryProperties;
 				VkCommandPool _hCommandPool;
 				VkCommandBuffer _hTextureCommandBuffer;
 				VkSampler _hTextureSampler;
-				VkRenderPass _hRenderPass;
+				VkDescriptorPool _hDescriptorPool;
 				VkDescriptorSetLayout _hDescriptorSetLayout;
 				VkPipelineLayout _hPipelineLayout;
 				VkPipeline _hTriangleListPipeline;
 				VkPipeline _hPointListPipeline;
-				VkPhysicalDeviceMemoryProperties _memoryProperties;
 				VkQueue _hFirstGraphicsQueue;
 				VkViewport _viewport;
 
@@ -142,11 +143,12 @@ namespace hax {
 
 			private:
 				bool getProcAddresses();
+				bool createRenderPass();
 				bool getPhysicalDeviceProperties();
 				bool createCommandPool();
 				VkCommandBuffer allocCommandBuffer() const;
 				bool createTextureSampler();
-				bool createRenderPass();
+				bool createDescriptorPool(uint32_t size);
 				bool createDescriptorSetLayout();
 				bool createPipelineLayout();
 				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
