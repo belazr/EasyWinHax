@@ -153,6 +153,7 @@ namespace hax {
 				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
 				VkImage createImage(uint32_t width, uint32_t height) const;
 				void destroyTextureData(TextureData* pTextureData) const;
+				VkDeviceMemory allocateMemory(const VkMemoryRequirements* pRequirements, VkMemoryPropertyFlagBits properties) const;
 				VkImageView createImageView(VkImage hImage) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
