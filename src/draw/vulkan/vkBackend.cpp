@@ -365,26 +365,9 @@ namespace hax {
 				VkMemoryRequirements memRequirements{};
 				this->_f.pVkGetImageMemoryRequirements(this->_hDevice, textureData.hImage, &memRequirements);
 
-				VkMemoryAllocateInfo memAllocInfo{};
-				memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-				memAllocInfo.allocationSize = memRequirements.size;
-				memAllocInfo.memoryTypeIndex = UINT32_MAX;
-
-				for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
-
-					if ((this->_memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT && memRequirements.memoryTypeBits & (1 << i)) {
-						memAllocInfo.memoryTypeIndex = i;;
-					}
-
-				}
-
-				if (memAllocInfo.memoryTypeIndex == UINT32_MAX) {
-					this->destroyTextureData(&textureData);
-
-					return 0ull;
-				}
+				textureData.hMemory = this->allocateMemory(&memRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 				
-				if (this->_f.pVkAllocateMemory(this->_hDevice, &memAllocInfo, nullptr, &textureData.hMemory) != VkResult::VK_SUCCESS) {
+				if (textureData.hMemory == VK_NULL_HANDLE) {
 					this->destroyTextureData(&textureData);
 					
 					return 0ull;
@@ -1041,6 +1024,31 @@ namespace hax {
 				}
 
 				return;
+			}
+
+
+			VkDeviceMemory Backend::allocateMemory(const VkMemoryRequirements* pRequirements, VkMemoryPropertyFlagBits properties) const {
+				VkMemoryAllocateInfo memAllocInfo{};
+				memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+				memAllocInfo.allocationSize = pRequirements->size;
+				memAllocInfo.memoryTypeIndex = UINT32_MAX;
+
+				for (uint32_t i = 0u; i < this->_memoryProperties.memoryTypeCount; i++) {
+					const bool hasProperties = (this->_memoryProperties.memoryTypes[i].propertyFlags & properties) == static_cast<VkMemoryPropertyFlags>(properties);
+
+					if (hasProperties && pRequirements->memoryTypeBits & (1 << i)) {
+						memAllocInfo.memoryTypeIndex = i;
+					}
+
+				}
+
+				if (memAllocInfo.memoryTypeIndex == UINT32_MAX) return VK_NULL_HANDLE;
+
+				VkDeviceMemory hMemory = VK_NULL_HANDLE;
+				
+				if (this->_f.pVkAllocateMemory(this->_hDevice, &memAllocInfo, nullptr, &hMemory) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+
+				return hMemory;
 			}
 
 
