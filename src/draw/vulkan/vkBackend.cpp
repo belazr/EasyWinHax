@@ -987,7 +987,7 @@ namespace hax {
 				pipelineCreateInfo.renderPass = this->_hRenderPass;
 				pipelineCreateInfo.subpass = 0u;
 
-				VkPipeline hPipeline{};
+				VkPipeline hPipeline = VK_NULL_HANDLE;
 
 				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
@@ -1004,7 +1004,7 @@ namespace hax {
 				fragCreateInfo.codeSize = size;
 				fragCreateInfo.pCode = reinterpret_cast<const uint32_t*>(shader);
 
-				VkShaderModule hShaderModule{};
+				VkShaderModule hShaderModule = VK_NULL_HANDLE;
 
 				if (this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &hShaderModule) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
@@ -1048,10 +1048,7 @@ namespace hax {
 
 				VkImageView hImageView = VK_NULL_HANDLE;
 
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) {
-
-					return VK_NULL_HANDLE;
-				}
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hImageView;
 			}
