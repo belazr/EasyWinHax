@@ -218,7 +218,7 @@ namespace hax {
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
 				_graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{},
-				_hRenderPass {}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
+				_hRenderPass{}, _hDescriptorSetLayout{}, _hPipelineLayout{}, _hTriangleListPipeline{}, _hPointListPipeline{}, _hFirstGraphicsQueue{},
 				_viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -248,6 +248,10 @@ namespace hax {
 
 				if (this->_f.pVkDestroyPipelineLayout && this->_hPipelineLayout != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyPipelineLayout(this->_hDevice, this->_hPipelineLayout, nullptr);
+				}
+
+				if (this->_f.pVkDestroyDescriptorSetLayout && this->_hDescriptorSetLayout != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, this->_hDescriptorSetLayout, nullptr);
 				}
 
 				if (this->_f.pVkDestroyRenderPass && this->_hRenderPass != VK_NULL_HANDLE) {
@@ -299,20 +303,26 @@ namespace hax {
 				}
 
 				if (this->_hTextureCommandBuffer == VK_NULL_HANDLE) {
-					this->_hTextureCommandBuffer = allocCommandBuffer();
+					this->_hTextureCommandBuffer = this->allocCommandBuffer();
 				}
 
 				if (this->_hTextureCommandBuffer == VK_NULL_HANDLE) return false;
 
 				if (this->_hTextureSampler == VK_NULL_HANDLE) {
 
-					if (this->createTextureSampler()) return false;
+					if (!this->createTextureSampler()) return false;
 
 				}
 
 				if (this->_hRenderPass == VK_NULL_HANDLE) {
 
 					if (!this->createRenderPass()) return false;
+
+				}
+
+				if (this->_hDescriptorSetLayout == VK_NULL_HANDLE) {
+
+					if (!this->createDescriptorSetLayout()) return false;
 
 				}
 
@@ -708,36 +718,7 @@ namespace hax {
 			}
 
 
-			bool Backend::createPipelineLayout() {
-				const VkDescriptorSetLayout hDescriptorSetLayout = this->createDescriptorSetLayout();
-
-				if (hDescriptorSetLayout == VK_NULL_HANDLE) return false;
-
-				VkPushConstantRange pushConstants{};
-				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-				pushConstants.offset = 0u;
-				pushConstants.size = sizeof(float) * 4u;
-
-				VkPipelineLayoutCreateInfo layoutCreateInfo{};
-				layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-				layoutCreateInfo.setLayoutCount = 1u;
-				layoutCreateInfo.pSetLayouts = &hDescriptorSetLayout;
-				layoutCreateInfo.pushConstantRangeCount = 1u;
-				layoutCreateInfo.pPushConstantRanges = &pushConstants;
-
-				if (this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) != VkResult::VK_SUCCESS) {
-					this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
-
-					return false;
-				}
-
-				this->_f.pVkDestroyDescriptorSetLayout(this->_hDevice, hDescriptorSetLayout, nullptr);
-
-				return true;
-			}
-
-
-			VkDescriptorSetLayout Backend::createDescriptorSetLayout() const {
+			bool Backend::createDescriptorSetLayout() {
 				VkDescriptorSetLayoutBinding binding{};
 				binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				binding.descriptorCount = 1u;
@@ -748,11 +729,23 @@ namespace hax {
 				descCreateinfo.bindingCount = 1u;
 				descCreateinfo.pBindings = &binding;
 
-				VkDescriptorSetLayout hDescriptorSetLayout{};
+				return this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) == VkResult::VK_SUCCESS;
+			}
 
-				if (this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &hDescriptorSetLayout) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
 
-				return hDescriptorSetLayout;
+			bool Backend::createPipelineLayout() {
+				VkPushConstantRange pushConstants{};
+				pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				pushConstants.size = sizeof(float) * 4u;
+
+				VkPipelineLayoutCreateInfo layoutCreateInfo{};
+				layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+				layoutCreateInfo.setLayoutCount = 1u;
+				layoutCreateInfo.pSetLayouts = &this->_hDescriptorSetLayout;
+				layoutCreateInfo.pushConstantRangeCount = 1u;
+				layoutCreateInfo.pPushConstantRanges = &pushConstants;
+
+				return this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) == VkResult::VK_SUCCESS;
 			}
 
 
