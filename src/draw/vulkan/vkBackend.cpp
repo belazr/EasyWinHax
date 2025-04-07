@@ -104,7 +104,7 @@ namespace hax {
 
 				VkInstance hInstance = VK_NULL_HANDLE;
 
-				if (pVkCreateInstance(&createInfo, nullptr, &hInstance) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkCreateInstance(&createInfo, nullptr, &hInstance) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hInstance;
 			}
@@ -118,14 +118,14 @@ namespace hax {
 			
 				uint32_t tmpGpuCount = 0u;
 
-				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, nullptr) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, nullptr) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				if (!tmpGpuCount) return VK_NULL_HANDLE;
 
 				const uint32_t gpuCount = tmpGpuCount;
 				VkPhysicalDevice* const pPhysicalDeviceArray = new VkPhysicalDevice[gpuCount]{};
 
-				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, pPhysicalDeviceArray) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, pPhysicalDeviceArray) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				if (tmpGpuCount != gpuCount) return VK_NULL_HANDLE;
 
@@ -177,7 +177,7 @@ namespace hax {
 
 				VkDevice hDummyDevice = VK_NULL_HANDLE;
 
-				if (pVkCreateDevice(hPhysicalDevice, &deviceCreateInfo, nullptr, &hDummyDevice) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkCreateDevice(hPhysicalDevice, &deviceCreateInfo, nullptr, &hDummyDevice) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hDummyDevice;
 			}
@@ -373,7 +373,7 @@ namespace hax {
 					return 0ull;
 				}
 
-				if (this->_f.pVkBindImageMemory(this->_hDevice, textureData.hImage, textureData.hMemory, 0ull) != VkResult::VK_SUCCESS) {
+				if (this->_f.pVkBindImageMemory(this->_hDevice, textureData.hImage, textureData.hMemory, 0ull) != VK_SUCCESS) {
 					this->destroyTextureData(&textureData);
 
 					return 0ull;
@@ -394,7 +394,7 @@ namespace hax {
 			bool Backend::beginFrame() {
 				uint32_t imageCount = 0u;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, nullptr) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, nullptr) != VK_SUCCESS) return false;
 
 				if (!imageCount) return false;
 
@@ -622,7 +622,7 @@ namespace hax {
 				commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 				commandPoolCreateInfo.queueFamilyIndex = this->_graphicsQueueFamilyIndex;
 
-				return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VkResult::VK_SUCCESS;
+				return this->_f.pVkCreateCommandPool(this->_hDevice, &commandPoolCreateInfo, nullptr, &this->_hCommandPool) == VK_SUCCESS;
 			}
 
 
@@ -634,7 +634,7 @@ namespace hax {
 
 				VkCommandBuffer hCommandBuffer = VK_NULL_HANDLE;
 
-				if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &hCommandBuffer) != VkResult::VK_SUCCESS) {
+				if (this->_f.pVkAllocateCommandBuffers(this->_hDevice, &commandBufferAllocInfo, &hCommandBuffer) != VK_SUCCESS) {
 					
 					return VK_NULL_HANDLE;
 				}
@@ -656,7 +656,7 @@ namespace hax {
 				samplerInfo.maxLod = 1000.f;
 				samplerInfo.maxAnisotropy = 1.f;
 
-				return this->_f.pVkCreateSampler(this->_hDevice, &samplerInfo, nullptr, &this->_hTextureSampler) == VkResult::VK_SUCCESS;
+				return this->_f.pVkCreateSampler(this->_hDevice, &samplerInfo, nullptr, &this->_hTextureSampler) == VK_SUCCESS;
 			}
 
 
@@ -687,7 +687,7 @@ namespace hax {
 				renderPassCreateInfo.subpassCount = 1u;
 				renderPassCreateInfo.pSubpasses = &subpassDesc;
 
-				return this->_f.pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VkResult::VK_SUCCESS;
+				return this->_f.pVkCreateRenderPass(this->_hDevice, &renderPassCreateInfo, nullptr, &this->_hRenderPass) == VK_SUCCESS;
 			}
 
 
@@ -702,7 +702,7 @@ namespace hax {
 				descCreateinfo.bindingCount = 1u;
 				descCreateinfo.pBindings = &binding;
 
-				return this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) == VkResult::VK_SUCCESS;
+				return this->_f.pVkCreateDescriptorSetLayout(this->_hDevice, &descCreateinfo, nullptr, &this->_hDescriptorSetLayout) == VK_SUCCESS;
 			}
 
 
@@ -718,7 +718,7 @@ namespace hax {
 				layoutCreateInfo.pushConstantRangeCount = 1u;
 				layoutCreateInfo.pPushConstantRanges = &pushConstants;
 
-				return this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) == VkResult::VK_SUCCESS;
+				return this->_f.pVkCreatePipelineLayout(this->_hDevice, &layoutCreateInfo, nullptr, &this->_hPipelineLayout) == VK_SUCCESS;
 			}
 
 
@@ -962,7 +962,7 @@ namespace hax {
 
 				VkPipeline hPipeline = VK_NULL_HANDLE;
 
-				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleFrag, nullptr);
 				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
@@ -979,7 +979,7 @@ namespace hax {
 
 				VkShaderModule hShaderModule = VK_NULL_HANDLE;
 
-				if (this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &hShaderModule) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (this->_f.pVkCreateShaderModule(this->_hDevice, &fragCreateInfo, nullptr, &hShaderModule) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hShaderModule;
 			}
@@ -1000,7 +1000,7 @@ namespace hax {
 
 				VkImage hImage = VK_NULL_HANDLE;
 
-				if (this->_f.pVkCreateImage(this->_hDevice, &imageCreateInfo, nullptr, &hImage) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (this->_f.pVkCreateImage(this->_hDevice, &imageCreateInfo, nullptr, &hImage) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hImage;
 			}
@@ -1046,7 +1046,7 @@ namespace hax {
 
 				VkDeviceMemory hMemory = VK_NULL_HANDLE;
 				
-				if (this->_f.pVkAllocateMemory(this->_hDevice, &memAllocInfo, nullptr, &hMemory) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (this->_f.pVkAllocateMemory(this->_hDevice, &memAllocInfo, nullptr, &hMemory) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hMemory;
 			}
@@ -1067,7 +1067,7 @@ namespace hax {
 
 				VkImageView hImageView = VK_NULL_HANDLE;
 
-				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VkResult::VK_SUCCESS) return VK_NULL_HANDLE;
+				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hImageView;
 			}
@@ -1098,7 +1098,7 @@ namespace hax {
 					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 					fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VkResult::VK_SUCCESS) return false;
+					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VK_SUCCESS) return false;
 
 				}
 
@@ -1157,7 +1157,7 @@ namespace hax {
 
 				uint32_t imageCount = this->_imageCount;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, pImages) != VkResult::VK_SUCCESS || imageCount != this->_imageCount) {
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, pImages) != VK_SUCCESS || imageCount != this->_imageCount) {
 					delete[] pImages;
 
 					return false;
@@ -1181,7 +1181,7 @@ namespace hax {
 					framebufferCreateInfo.width = static_cast<uint32_t>(viewport.width);
 					framebufferCreateInfo.height = static_cast<uint32_t>(viewport.height);
 
-					if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VkResult::VK_SUCCESS) {
+					if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VK_SUCCESS) {
 						delete[] pImages;
 
 						return false;
@@ -1239,13 +1239,13 @@ namespace hax {
 			
 			bool Backend::beginCommandBuffer(VkCommandBuffer hCommandBuffer) const {
 			
-				if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkResetCommandBuffer(hCommandBuffer, 0u) != VK_SUCCESS) return false;
 
 				VkCommandBufferBeginInfo cmdBufferBeginInfo{};
 				cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 				cmdBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-				return this->_f.pVkBeginCommandBuffer(hCommandBuffer, &cmdBufferBeginInfo) == VkResult::VK_SUCCESS;
+				return this->_f.pVkBeginCommandBuffer(hCommandBuffer, &cmdBufferBeginInfo) == VK_SUCCESS;
 			}
 
 
