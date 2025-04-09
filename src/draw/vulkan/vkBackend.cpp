@@ -435,6 +435,33 @@ namespace hax {
 					return 0ull;
 				}
 
+				Color* pLocalBuffer = nullptr;
+				
+				if (this->_f.pVkMapMemory(this->_hDevice, hUploadMemory, 0ull, size, 0u, reinterpret_cast<void**>(&pLocalBuffer)) != VK_SUCCESS) {
+					this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
+					this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				memcpy(pLocalBuffer, data, size);
+				
+				VkMappedMemoryRange range{};
+				range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+				range.memory = hUploadMemory;
+				range.size = size;
+
+				if (this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, 1u, &range) != VK_SUCCESS) {
+					this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
+					this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				this->_f.pVkUnmapMemory(this->_hDevice, hUploadMemory);
+
 				this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
 				this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
 
