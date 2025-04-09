@@ -374,10 +374,10 @@ namespace hax {
 					return 0ull;
 				}
 
-				VkMemoryRequirements memRequirements{};
-				this->_f.pVkGetImageMemoryRequirements(this->_hDevice, textureData.hImage, &memRequirements);
+				VkMemoryRequirements memRequirementsImage{};
+				this->_f.pVkGetImageMemoryRequirements(this->_hDevice, textureData.hImage, &memRequirementsImage);
 
-				textureData.hMemory = this->allocateMemory(&memRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+				textureData.hMemory = this->allocateMemory(&memRequirementsImage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 				
 				if (textureData.hMemory == VK_NULL_HANDLE) {
 					this->destroyTextureData(&textureData);
@@ -407,7 +407,36 @@ namespace hax {
 					return 0ull;
 				}
 
-				VkBufferCreateInfo
+				const VkDeviceSize size = width * height * sizeof(Color);
+				const VkBuffer hUploadBuffer = this->createBuffer(size);
+
+				if (hUploadBuffer == VK_NULL_HANDLE) {
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				VkMemoryRequirements memRequirementsBuffer{};
+				this->_f.pVkGetBufferMemoryRequirements(this->_hDevice, hUploadBuffer, &memRequirementsBuffer);
+				const VkDeviceMemory hUploadMemory = this->allocateMemory(&memRequirementsBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+				if (hUploadMemory == VK_NULL_HANDLE) {
+					this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				if (this->_f.pVkBindBufferMemory(this->_hDevice, hUploadBuffer, hUploadMemory, 0ull) != VK_SUCCESS) {
+					this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
+					this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
+				this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
 
 				return reinterpret_cast<TextureId>(textureData.hDescriptorSet);
 			}
