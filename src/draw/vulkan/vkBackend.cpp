@@ -407,6 +407,8 @@ namespace hax {
 					return 0ull;
 				}
 
+				VkBufferCreateInfo
+
 				return reinterpret_cast<TextureId>(textureData.hDescriptorSet);
 			}
 
@@ -1142,6 +1144,20 @@ namespace hax {
 				this->_f.pVkUpdateDescriptorSets(this->_hDevice, 1u, &writeDescSet, 0u, nullptr);
 
 				return hDescriptorSet;
+			}
+
+
+			VkBuffer Backend::createBuffer(VkDeviceSize size) const {
+				VkBufferCreateInfo bufferCreateInfo{};
+				bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+				bufferCreateInfo.size = size;
+				bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+				VkBuffer hBuffer = VK_NULL_HANDLE;
+
+				if (this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateInfo, nullptr, &hBuffer) != VK_SUCCESS) return VK_NULL_HANDLE;
+
+				return hBuffer;
 			}
 
 
