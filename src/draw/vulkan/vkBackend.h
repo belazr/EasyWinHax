@@ -157,6 +157,7 @@ namespace hax {
 				void destroyTextureData(TextureData* pTextureData) const;
 				VkDeviceMemory allocateMemory(const VkMemoryRequirements* pRequirements, VkMemoryPropertyFlagBits properties) const;
 				VkImageView createImageView(VkImage hImage) const;
+				VkDescriptorSet createDescriptorSet(VkImageView hImageView) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;

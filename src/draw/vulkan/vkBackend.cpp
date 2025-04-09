@@ -399,7 +399,15 @@ namespace hax {
 					return 0ull;
 				}
 
-				return 0ull;
+				textureData.hDescriptorSet = this->createDescriptorSet(textureData.hImageView);
+
+				if (textureData.hDescriptorSet == VK_NULL_HANDLE) {
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
+				return reinterpret_cast<TextureId>(textureData.hDescriptorSet);
 			}
 
 
@@ -543,6 +551,9 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateImageView);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImageView);
+				ASSIGN_DEVICE_PROC_ADDRESS(AllocateDescriptorSets);
+				ASSIGN_DEVICE_PROC_ADDRESS(UpdateDescriptorSets);
+				ASSIGN_DEVICE_PROC_ADDRESS(FreeDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateFramebuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFramebuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateFence);
@@ -1036,6 +1047,11 @@ namespace hax {
 
 			void Backend::destroyTextureData(TextureData* pTextureData) const {
 
+				if (pTextureData->hDescriptorSet != VK_NULL_HANDLE) {
+					this->_f.pVkFreeDescriptorSets(this->_hDevice, this->_hDescriptorPool, 1u, &pTextureData->hDescriptorSet);
+					pTextureData->hDescriptorSet = VK_NULL_HANDLE;
+				}
+				
 				if (pTextureData->hImageView != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyImageView(this->_hDevice, pTextureData->hImageView, nullptr);
 					pTextureData->hImageView = VK_NULL_HANDLE;
@@ -1098,6 +1114,34 @@ namespace hax {
 				if (this->_f.pVkCreateImageView(this->_hDevice, &imageViewCreateInfo, nullptr, &hImageView) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hImageView;
+			}
+
+
+			VkDescriptorSet Backend::createDescriptorSet(VkImageView hImageView) const {
+				VkDescriptorSetAllocateInfo allocInfo{};
+				allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+				allocInfo.descriptorPool = this->_hDescriptorPool;
+				allocInfo.descriptorSetCount = 1u;
+				allocInfo.pSetLayouts = &this->_hDescriptorSetLayout;
+
+				VkDescriptorSet hDescriptorSet = VK_NULL_HANDLE;
+
+				if (this->_f.pVkAllocateDescriptorSets(this->_hDevice, &allocInfo, &hDescriptorSet) != VK_SUCCESS) return VK_NULL_HANDLE;
+
+				VkDescriptorImageInfo descImageInfo{};
+				descImageInfo.sampler = this->_hTextureSampler;
+				descImageInfo.imageView = hImageView;
+				descImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+				VkWriteDescriptorSet writeDescSet{};
+				writeDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescSet.dstSet = hDescriptorSet;
+				writeDescSet.descriptorCount = 1u;
+				writeDescSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeDescSet.pImageInfo = &descImageInfo;
+				this->_f.pVkUpdateDescriptorSets(this->_hDevice, 1u, &writeDescSet, 0u, nullptr);
+
+				return hDescriptorSet;
 			}
 
 
