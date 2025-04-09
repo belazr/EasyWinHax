@@ -37,6 +37,9 @@ namespace hax {
 				PFN_vkFreeMemory pVkFreeMemory;
 				PFN_vkCreateImageView pVkCreateImageView;
 				PFN_vkDestroyImageView pVkDestroyImageView;
+				PFN_vkAllocateDescriptorSets  pVkAllocateDescriptorSets;
+				PFN_vkUpdateDescriptorSets pVkUpdateDescriptorSets;
+				PFN_vkFreeDescriptorSets pVkFreeDescriptorSets;
 				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
 				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
 				PFN_vkCreateFence pVkCreateFence;
