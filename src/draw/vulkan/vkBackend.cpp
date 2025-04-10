@@ -612,15 +612,19 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(AllocateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(UpdateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeDescriptorSets);
+				ASSIGN_DEVICE_PROC_ADDRESS(ResetCommandBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(BeginCommandBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(EndCommandBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdPipelineBarrier);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdCopyBufferToImage);
+				ASSIGN_DEVICE_PROC_ADDRESS(QueueSubmit);
+				ASSIGN_DEVICE_PROC_ADDRESS(QueueWaitIdle);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateFramebuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFramebuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateFence);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFence);
 				ASSIGN_DEVICE_PROC_ADDRESS(WaitForFences);
 				ASSIGN_DEVICE_PROC_ADDRESS(ResetFences);
-				ASSIGN_DEVICE_PROC_ADDRESS(ResetCommandBuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(BeginCommandBuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(EndCommandBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateImage);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImage);
 				ASSIGN_DEVICE_PROC_ADDRESS(GetImageMemoryRequirements);
@@ -637,7 +641,6 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdPushConstants);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetScissor);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdDrawIndexed);
-				ASSIGN_DEVICE_PROC_ADDRESS(QueueSubmit);
 
 				for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
 				
@@ -1214,6 +1217,62 @@ namespace hax {
 				if (this->_f.pVkCreateBuffer(this->_hDevice, &bufferCreateInfo, nullptr, &hBuffer) != VK_SUCCESS) return VK_NULL_HANDLE;
 
 				return hBuffer;
+			}
+
+
+			bool Backend::uploadImage(VkImage hImage, VkBuffer hBuffer, uint32_t width, uint32_t height) const {
+				
+				if (!this->beginCommandBuffer(this->_hTextureCommandBuffer)) return false;
+				
+				VkImageMemoryBarrier copyBarrier{};
+				copyBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				copyBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				copyBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				copyBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				copyBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				copyBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				copyBarrier.image = hImage;
+				copyBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				copyBarrier.subresourceRange.levelCount = 1;
+				copyBarrier.subresourceRange.layerCount = 1;
+				
+				this->_f.pVkCmdPipelineBarrier(this->_hTextureCommandBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &copyBarrier);
+
+				VkBufferImageCopy region{};
+				region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				region.imageSubresource.layerCount = 1u;
+				region.imageExtent.width = width;
+				region.imageExtent.height = height;
+				region.imageExtent.depth = 1u;
+				this->_f.pVkCmdCopyBufferToImage(this->_hTextureCommandBuffer, hBuffer, hImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region);
+
+				VkImageMemoryBarrier useBarrier{};
+				useBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				useBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				useBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+				useBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				useBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				useBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				useBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				useBarrier.image = hImage;
+				useBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				useBarrier.subresourceRange.levelCount = 1u;
+				useBarrier.subresourceRange.layerCount = 1u;
+				
+				this->_f.pVkCmdPipelineBarrier(this->_hTextureCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &useBarrier);
+
+				if (this->_f.pVkEndCommandBuffer(this->_hTextureCommandBuffer) != VK_SUCCESS) return false;
+
+				VkSubmitInfo submitInfo{};
+				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+				submitInfo.commandBufferCount = 1u;
+				submitInfo.pCommandBuffers = &this->_hTextureCommandBuffer;
+
+				if (this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) return false;
+
+				if (this->_f.pVkQueueWaitIdle(this->_hFirstGraphicsQueue) != VK_SUCCESS) return false;
+
+				return true;
 			}
 
 

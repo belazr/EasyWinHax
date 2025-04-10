@@ -40,15 +40,19 @@ namespace hax {
 				PFN_vkAllocateDescriptorSets  pVkAllocateDescriptorSets;
 				PFN_vkUpdateDescriptorSets pVkUpdateDescriptorSets;
 				PFN_vkFreeDescriptorSets pVkFreeDescriptorSets;
+				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
+				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
+				PFN_vkEndCommandBuffer pVkEndCommandBuffer;
+				PFN_vkCmdPipelineBarrier pVkCmdPipelineBarrier;
+				PFN_vkCmdCopyBufferToImage pVkCmdCopyBufferToImage;
+				PFN_vkQueueSubmit pVkQueueSubmit;
+				PFN_vkQueueWaitIdle pVkQueueWaitIdle;
 				PFN_vkCreateFramebuffer pVkCreateFramebuffer;
 				PFN_vkDestroyFramebuffer pVkDestroyFramebuffer;
 				PFN_vkCreateFence pVkCreateFence;
 				PFN_vkDestroyFence pVkDestroyFence;
 				PFN_vkWaitForFences pVkWaitForFences;
 				PFN_vkResetFences pVkResetFences;
-				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
-				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
-				PFN_vkEndCommandBuffer pVkEndCommandBuffer;
 				PFN_vkCreateImage pVkCreateImage;
 				PFN_vkDestroyImage pVkDestroyImage;
 				PFN_vkBindImageMemory pVkBindImageMemory;
@@ -65,7 +69,6 @@ namespace hax {
 				PFN_vkCmdSetViewport pVkCmdSetViewport;
 				PFN_vkCmdDrawIndexed pVkCmdDrawIndexed;
 				PFN_vkCmdSetScissor pVkCmdSetScissor;
-				PFN_vkQueueSubmit pVkQueueSubmit;
 			}Functions;
 
 		}
