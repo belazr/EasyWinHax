@@ -462,6 +462,14 @@ namespace hax {
 
 				this->_f.pVkUnmapMemory(this->_hDevice, hUploadMemory);
 
+				if (!this->uploadImage(textureData.hImage, hUploadBuffer, width, height)) {
+					this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
+					this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
+					this->destroyTextureData(&textureData);
+
+					return 0ull;
+				}
+
 				this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
 				this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
 
@@ -1244,6 +1252,7 @@ namespace hax {
 				region.imageExtent.width = width;
 				region.imageExtent.height = height;
 				region.imageExtent.depth = 1u;
+
 				this->_f.pVkCmdCopyBufferToImage(this->_hTextureCommandBuffer, hBuffer, hImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region);
 
 				VkImageMemoryBarrier useBarrier{};
