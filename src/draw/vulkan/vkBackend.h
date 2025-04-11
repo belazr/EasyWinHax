@@ -56,8 +56,10 @@ namespace hax {
 				VkDescriptorPool _hDescriptorPool;
 				VkDescriptorSetLayout _hDescriptorSetLayout;
 				VkPipelineLayout _hPipelineLayout;
-				VkPipeline _hTriangleListPipeline;
-				VkPipeline _hPointListPipeline;
+				VkPipeline _hTriangleListPipelinePassthrough;
+				VkPipeline _hTriangleListPipelineTexture;
+				VkPipeline _hPointListPipelinePassthrough;
+				VkPipeline _hPointListPipelineTexture;
 				VkQueue _hFirstGraphicsQueue;
 				VkViewport _viewport;
 
@@ -151,7 +153,7 @@ namespace hax {
 				bool createDescriptorPool(uint32_t size);
 				bool createDescriptorSetLayout();
 				bool createPipelineLayout();
-				VkPipeline createPipeline(VkPrimitiveTopology topology) const;
+				VkPipeline createPipeline(VkPrimitiveTopology topology, const BYTE* pFragmentShader, size_t fragmentShaderSize) const;
 				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
 				VkImage createImage(uint32_t width, uint32_t height) const;
 				void destroyTextureData(TextureData* pTextureData) const;
