@@ -844,7 +844,6 @@ namespace hax {
 			
 				if (!pVkGetDeviceProcAddr) return false;
 				
-				ASSIGN_DEVICE_PROC_ADDRESS(GetSwapchainImagesKHR);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateCommandPool);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyCommandPool);
 				ASSIGN_DEVICE_PROC_ADDRESS(AllocateCommandBuffers);
@@ -864,17 +863,21 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateGraphicsPipelines);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyPipeline);
 				ASSIGN_DEVICE_PROC_ADDRESS(GetDeviceQueue);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateBuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyBuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(GetBufferMemoryRequirements);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateImage);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImage);
+				ASSIGN_DEVICE_PROC_ADDRESS(GetImageMemoryRequirements);
 				ASSIGN_DEVICE_PROC_ADDRESS(AllocateMemory);
-				ASSIGN_DEVICE_PROC_ADDRESS(BindBufferMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeMemory);
+				ASSIGN_DEVICE_PROC_ADDRESS(BindImageMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateImageView);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImageView);
 				ASSIGN_DEVICE_PROC_ADDRESS(AllocateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(UpdateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeDescriptorSets);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyBuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(GetBufferMemoryRequirements);
+				ASSIGN_DEVICE_PROC_ADDRESS(BindBufferMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(MapMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(UnmapMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(FlushMappedMemoryRanges);
@@ -885,24 +888,22 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdCopyBufferToImage);
 				ASSIGN_DEVICE_PROC_ADDRESS(QueueSubmit);
 				ASSIGN_DEVICE_PROC_ADDRESS(QueueWaitIdle);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateFramebuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFramebuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(GetSwapchainImagesKHR);
 				ASSIGN_DEVICE_PROC_ADDRESS(CreateFence);
 				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFence);
 				ASSIGN_DEVICE_PROC_ADDRESS(WaitForFences);
 				ASSIGN_DEVICE_PROC_ADDRESS(ResetFences);
-				ASSIGN_DEVICE_PROC_ADDRESS(CreateImage);
-				ASSIGN_DEVICE_PROC_ADDRESS(DestroyImage);
-				ASSIGN_DEVICE_PROC_ADDRESS(GetImageMemoryRequirements);
-				ASSIGN_DEVICE_PROC_ADDRESS(BindImageMemory);
+				ASSIGN_DEVICE_PROC_ADDRESS(CreateFramebuffer);
+				ASSIGN_DEVICE_PROC_ADDRESS(DestroyFramebuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBeginRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdEndRenderPass);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetScissor);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetViewport);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdPushConstants);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindPipeline);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindVertexBuffers);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindIndexBuffer);
-				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetViewport);
-				ASSIGN_DEVICE_PROC_ADDRESS(CmdPushConstants);
-				ASSIGN_DEVICE_PROC_ADDRESS(CmdSetScissor);
+				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdDrawIndexed);
 
 				for (size_t i = 0u; i < _countof(this->_fPtrs); i++) {
