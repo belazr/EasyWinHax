@@ -1026,16 +1026,6 @@ namespace hax {
 
 			bool Backend::createTextureSampler() {
 				VkSamplerCreateInfo samplerInfo{};
-				samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-				samplerInfo.magFilter = VK_FILTER_NEAREST;
-				samplerInfo.minFilter = VK_FILTER_NEAREST;
-				samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-				samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				samplerInfo.minLod = -1000.f;
-				samplerInfo.maxLod = 1000.f;
-				samplerInfo.maxAnisotropy = 1.f;
 
 				return this->_f.pVkCreateSampler(this->_hDevice, &samplerInfo, nullptr, &this->_hTextureSampler) == VK_SUCCESS;
 			}
@@ -1145,9 +1135,6 @@ namespace hax {
 
 				VkPipelineRasterizationStateCreateInfo rasterInfo{};
 				rasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-				rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
-				rasterInfo.cullMode = VK_CULL_MODE_NONE;
-				rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 				rasterInfo.lineWidth = 1.f;
 
 				VkPipelineMultisampleStateCreateInfo multisampleInfo{};
@@ -1423,8 +1410,8 @@ namespace hax {
 					if (this->_pImageDataArray[i].hCommandBuffer == VK_NULL_HANDLE) return false;
 
 					this->_pImageDataArray[i].triangleListBuffer.initialize(
-						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer,
-						this->_hTriangleListPipelinePassthrough, this->_hTriangleListPipelineTexture, this->_memoryProperties
+						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
+						this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough, this->_hTriangleListPipelineTexture
 					);
 
 					static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
@@ -1432,8 +1419,8 @@ namespace hax {
 					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 					this->_pImageDataArray[i].pointListBuffer.initialize(
-						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer,
-						this->_hPointListPipelinePassthrough, this->_hPointListPipelineTexture, this->_memoryProperties
+						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
+						this->_hPipelineLayout, this->_hPointListPipelinePassthrough, this->_hPointListPipelineTexture
 					);
 
 					static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
