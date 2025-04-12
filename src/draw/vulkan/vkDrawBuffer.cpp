@@ -46,6 +46,10 @@ namespace hax{
 
 				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) return false;
 
+				this->_pTextureBuffer = reinterpret_cast<TextureId*>(malloc(capacity * sizeof(TextureId)));
+
+				if (!this->_pTextureBuffer) return false;
+
 				this->_capacity = capacity;
 
 				return true;
@@ -74,6 +78,11 @@ namespace hax{
 				if (this->_hVertexBuffer != VK_NULL_HANDLE) {
 					this->_f.pVkDestroyBuffer(this->_hDevice, this->_hVertexBuffer, nullptr);
 					this->_hVertexBuffer = VK_NULL_HANDLE;
+				}
+
+				if (this->_pTextureBuffer) {
+					free(this->_pTextureBuffer);
+					this->_pTextureBuffer = nullptr;
 				}
 
 				this->reset();
