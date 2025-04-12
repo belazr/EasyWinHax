@@ -1417,13 +1417,19 @@ namespace hax {
 
 					if (this->_pImageDataArray[i].hCommandBuffer == VK_NULL_HANDLE) return false;
 
-					this->_pImageDataArray[i].triangleListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hTriangleListPipelinePassthrough, this->_memoryProperties);
+					this->_pImageDataArray[i].triangleListBuffer.initialize(
+						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer,
+						this->_hTriangleListPipelinePassthrough, this->_hTriangleListPipelineTexture, this->_memoryProperties
+					);
 
 					static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
 
 					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-					this->_pImageDataArray[i].pointListBuffer.initialize(this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_hPointListPipelinePassthrough, this->_memoryProperties);
+					this->_pImageDataArray[i].pointListBuffer.initialize(
+						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer,
+						this->_hPointListPipelinePassthrough, this->_hPointListPipelineTexture, this->_memoryProperties
+					);
 
 					static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 

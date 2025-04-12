@@ -7,7 +7,7 @@ namespace hax{
 		namespace vk {
 
 			DrawBuffer::DrawBuffer() :
-				_f{}, _hDevice{}, _hCommandBuffer{}, _hPipeline{}, _memoryProperties{},
+				_f{}, _hDevice{}, _hCommandBuffer{}, _hPipelinePassthrough{}, _hPipelineTexture{}, _memoryProperties{},
 				_hVertexBuffer{}, _hIndexBuffer{}, _hVertexMemory{}, _hIndexMemory{}, _bufferAlignment{ 0x10u } {}
 			
 			
@@ -18,11 +18,12 @@ namespace hax{
 			}
 
 
-			void DrawBuffer::initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties) {
+			void DrawBuffer::initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipelinePassthrough, VkPipeline hPipelineTexture, VkPhysicalDeviceMemoryProperties memoryProperties) {
 				this->_f = f;
 				this->_hDevice = hDevice;
 				this->_hCommandBuffer = hCommandBuffer;
-				this->_hPipeline = hPipeline;
+				this->_hPipelinePassthrough = hPipelinePassthrough;
+				this->_hPipelineTexture = hPipelineTexture;
 				this->_memoryProperties = memoryProperties;
 
 				return;
@@ -117,7 +118,7 @@ namespace hax{
 				this->_pLocalIndexBuffer = nullptr;
 
 				constexpr VkDeviceSize offset = 0ull;
-				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
+				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipelinePassthrough);
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &offset);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
 				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, this->_size, 1u, 0u, 0u, 0u);

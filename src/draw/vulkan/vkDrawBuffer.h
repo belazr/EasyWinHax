@@ -13,7 +13,8 @@ namespace hax {
 				Functions _f;
 				VkDevice _hDevice;
 				VkCommandBuffer _hCommandBuffer;
-				VkPipeline _hPipeline;
+				VkPipeline _hPipelinePassthrough;
+				VkPipeline _hPipelineTexture;
 				VkPhysicalDeviceMemoryProperties _memoryProperties;
 				VkBuffer _hVertexBuffer;
 				VkBuffer _hIndexBuffer;
@@ -39,12 +40,15 @@ namespace hax {
 				// [in] hCommandBuffer:
 				// Command buffer of the image the buffer belongs to.
 				// 
-				// [in] hPipeline:
-				// Pipeline with the appropriate primitive topology of the backend.
+				// [in] hPipelinePassthrough:
+				// Pipeline with the appropriate primitive topology for drawing without textures.
+				// 
+				// [in] hPipelineTexture:
+				// Pipeline with the appropriate primitive topology for drawing with textures.
 				// 
 				// [in] memoryProperties:
 				// Memory properties of the physical device of the backend.
-				void initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipeline, VkPhysicalDeviceMemoryProperties memoryProperties);
+				void initialize(Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer, VkPipeline hPipelinePassthrough, VkPipeline hPipelineTexture, VkPhysicalDeviceMemoryProperties memoryProperties);
 
 				// Creates a new buffer with all internal resources.
 				//
