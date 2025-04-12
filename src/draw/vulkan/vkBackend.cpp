@@ -875,6 +875,9 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(AllocateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(UpdateDescriptorSets);
 				ASSIGN_DEVICE_PROC_ADDRESS(FreeDescriptorSets);
+				ASSIGN_DEVICE_PROC_ADDRESS(MapMemory);
+				ASSIGN_DEVICE_PROC_ADDRESS(UnmapMemory);
+				ASSIGN_DEVICE_PROC_ADDRESS(FlushMappedMemoryRanges);
 				ASSIGN_DEVICE_PROC_ADDRESS(ResetCommandBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(BeginCommandBuffer);
 				ASSIGN_DEVICE_PROC_ADDRESS(EndCommandBuffer);
@@ -894,9 +897,6 @@ namespace hax {
 				ASSIGN_DEVICE_PROC_ADDRESS(BindImageMemory);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBeginRenderPass);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdEndRenderPass);
-				ASSIGN_DEVICE_PROC_ADDRESS(MapMemory);
-				ASSIGN_DEVICE_PROC_ADDRESS(UnmapMemory);
-				ASSIGN_DEVICE_PROC_ADDRESS(FlushMappedMemoryRanges);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindPipeline);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindVertexBuffers);
 				ASSIGN_DEVICE_PROC_ADDRESS(CmdBindIndexBuffer);

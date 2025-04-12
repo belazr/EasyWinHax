@@ -40,6 +40,9 @@ namespace hax {
 				PFN_vkAllocateDescriptorSets  pVkAllocateDescriptorSets;
 				PFN_vkUpdateDescriptorSets pVkUpdateDescriptorSets;
 				PFN_vkFreeDescriptorSets pVkFreeDescriptorSets;
+				PFN_vkMapMemory pVkMapMemory;
+				PFN_vkUnmapMemory pVkUnmapMemory;
+				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
 				PFN_vkResetCommandBuffer pVkResetCommandBuffer;
 				PFN_vkBeginCommandBuffer pVkBeginCommandBuffer;
 				PFN_vkEndCommandBuffer pVkEndCommandBuffer;
@@ -59,9 +62,6 @@ namespace hax {
 				PFN_vkGetImageMemoryRequirements pVkGetImageMemoryRequirements;
 				PFN_vkCmdBeginRenderPass pVkCmdBeginRenderPass;
 				PFN_vkCmdEndRenderPass pVkCmdEndRenderPass;
-				PFN_vkMapMemory pVkMapMemory;
-				PFN_vkUnmapMemory pVkUnmapMemory;
-				PFN_vkFlushMappedMemoryRanges pVkFlushMappedMemoryRanges;
 				PFN_vkCmdBindPipeline pVkCmdBindPipeline;
 				PFN_vkCmdBindVertexBuffers pVkCmdBindVertexBuffers;
 				PFN_vkCmdBindIndexBuffer pVkCmdBindIndexBuffer;
