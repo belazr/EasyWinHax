@@ -594,7 +594,7 @@ namespace hax {
 				if (this->_hTriangleListPipelinePassthrough == VK_NULL_HANDLE) return false;
 
 				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) {
-					this->_hTriangleListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
+					this->_hTriangleListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
 				}
 
 				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) return false;
@@ -606,7 +606,7 @@ namespace hax {
 				if (this->_hPointListPipelinePassthrough == VK_NULL_HANDLE) return false;
 
 				if (this->_hPointListPipelineTexture == VK_NULL_HANDLE) {
-					this->_hPointListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
+					this->_hPointListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
 				}
 
 				if (this->_hPointListPipelineTexture == VK_NULL_HANDLE) return false;
@@ -1131,7 +1131,7 @@ namespace hax {
 				vertexInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 				vertexInfo.vertexBindingDescriptionCount = 1u;
 				vertexInfo.pVertexBindingDescriptions = &bindingDesc;
-				vertexInfo.vertexAttributeDescriptionCount = 2u;
+				vertexInfo.vertexAttributeDescriptionCount = _countof(attributeDesc);
 				vertexInfo.pVertexAttributeDescriptions = attributeDesc;
 
 				VkPipelineInputAssemblyStateCreateInfo iaInfo{};
@@ -1405,7 +1405,7 @@ namespace hax {
 				submitInfo.commandBufferCount = 1u;
 				submitInfo.pCommandBuffers = &this->_hTextureCommandBuffer;
 
-				if (this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) return false;
+				if (this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1u, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) return false;
 
 				if (this->_f.pVkQueueWaitIdle(this->_hFirstGraphicsQueue) != VK_SUCCESS) return false;
 
