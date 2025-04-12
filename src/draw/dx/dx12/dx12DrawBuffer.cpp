@@ -129,8 +129,8 @@ namespace hax {
 						drawCount++;
 					}
 
-					ID3D12PipelineState* const pPipleState = hCurTextureDesc.ptr ? this->_pPipelineStateTexture : this->_pPipelineStatePassthrough;
-					this->_pCommandList->SetPipelineState(pPipleState);
+					ID3D12PipelineState* const pPipelineState = hCurTextureDesc.ptr ? this->_pPipelineStateTexture : this->_pPipelineStatePassthrough;
+					this->_pCommandList->SetPipelineState(pPipelineState);
 					this->_pCommandList->SetGraphicsRootDescriptorTable(1u, hCurTextureDesc);
 					this->_pCommandList->DrawIndexedInstanced(drawCount, 1u, i, 0, 0u);
 				}
