@@ -1113,7 +1113,7 @@ namespace hax {
 				bindingDesc.stride = sizeof(Vertex);
 				bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-				VkVertexInputAttributeDescription attributeDesc[2]{};
+				VkVertexInputAttributeDescription attributeDesc[3]{};
 				attributeDesc[0].location = 0u;
 				attributeDesc[0].binding = bindingDesc.binding;
 				attributeDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -1122,6 +1122,10 @@ namespace hax {
 				attributeDesc[1].binding = bindingDesc.binding;
 				attributeDesc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
 				attributeDesc[1].offset = sizeof(Vector2);
+				attributeDesc[2].location = 2u;
+				attributeDesc[2].binding = bindingDesc.binding;
+				attributeDesc[2].format = VK_FORMAT_R32G32_SFLOAT;
+				attributeDesc[2].offset = sizeof(Vector2) + sizeof(Color);
 
 				VkPipelineVertexInputStateCreateInfo vertexInfo{};
 				vertexInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
