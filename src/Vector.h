@@ -219,8 +219,8 @@ namespace hax {
 		void shrink(size_t n) {
 			const size_t size = n > this->_size ? 0u : this->_size - n;
 
-			for (size_t i = this->_size - 1u; i >= size; i--) {
-				this->_data[i].~T();
+			for (size_t i = this->_size; i > size; i--) {
+				this->_data[i - 1u].~T();
 			}
 
 			this->_size = size;
