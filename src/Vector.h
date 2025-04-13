@@ -31,38 +31,53 @@ namespace hax {
 		}
 
 
-		Vector(const Vector& v) {
-		
-			operator=(v);
+		Vector(Vector&& v) : _data{ v._data }, _size{ v._size }, _capacity{ v._capacity } {
+			v._data = nullptr;
+			v._size = 0u;
+			v._capacity = 0u;
 		}
 
 
-		Vector& operator=(const Vector& v) {
-			this->shrink(this->_size);
+		Vector(const Vector& v) : _data{}, _size{}, _capacity{} {
 			
 			if (v._data) {
 				this->reserve(2 * v._size);
 
 				for (size_t i = 0; i < v._size; i++) {
-					this->_data[i] = T(v._data[i]);
+					this->append(T(v._data[i]));
 				}
 
 			}
 
-			this->_size = v._size;
+		}
+
+
+		Vector& operator=(const Vector& v) {
+			
+			if (&v == this) return *this;
+			
+			this->resize(0u);
+			
+			if (v._data) {
+				this->reserve(v.size() * 2u);
+
+				for (size_t i = 0; i < v._size; i++) {
+					this->append(T(v._data[i]));
+				}
+
+			}
 
 			return *this;
 		}
 
-		Vector(Vector&& v) {
-
-			operator=(static_cast<Vector<T>&&>(v));
-		}
-
 
 		Vector& operator=(Vector&& v) {
-			this->~Vector();
 
+			if (&v == this) return *this;
+
+			this->shrink(this->_size);
+			free(this->_data);
+			
 			this->_data = v._data;
 			this->_size = v._size;
 			this->_capacity = v._capacity;
@@ -219,8 +234,8 @@ namespace hax {
 		void shrink(size_t n) {
 			const size_t size = n > this->_size ? 0u : this->_size - n;
 
-			for (size_t i = this->_size - 1u; i >= size; i--) {
-				this->_data[i].~T();
+			for (size_t i = this->_size; i > size; i--) {
+				this->_data[i - 1u].~T();
 			}
 
 			this->_size = size;
