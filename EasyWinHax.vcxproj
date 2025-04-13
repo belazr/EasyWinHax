@@ -25,6 +25,7 @@
     <ClInclude Include="src\draw\dx\dx12\dx12Backend.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11DrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9DrawBuffer.h" />
+    <ClInclude Include="src\draw\IBufferBackend.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Defs.h" />
     <ClInclude Include="src\draw\ogl2\ogl2DrawBuffer.h" />
     <ClInclude Include="src\draw\AbstractDrawBuffer.h" />
