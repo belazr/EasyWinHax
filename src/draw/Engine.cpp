@@ -99,16 +99,16 @@ namespace hax {
 				pos2 = tmp;
 			}
 
-			const Vector2 corners[]{
-				{ pos1->x - cosAtan, pos1->y - sinAtan },
-				{ pos2->x - cosAtan, pos2->y - sinAtan },
-				{ pos1->x + cosAtan, pos1->y + sinAtan },
-				{ pos2->x + cosAtan, pos2->y + sinAtan },
-				{ pos1->x + cosAtan, pos1->y + sinAtan },
-				{ pos2->x - cosAtan, pos2->y - sinAtan }
+			const Vertex corners[]{
+				{ { pos1->x - cosAtan, pos1->y - sinAtan }, color },
+				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color },
+				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color },
+				{ { pos2->x + cosAtan, pos2->y + sinAtan }, color },
+				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color },
+				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, 6u, color);
+			this->_pTriangleListBuffer->append(corners, _countof(corners));
 		}
 
 
@@ -132,16 +132,16 @@ namespace hax {
 				pos2 = tmp;
 			}
 
-			const Vector2 corners[]{
-				{ pos1->x - cosAtan - omega * sinAtan, pos1->y },
-				{ pos2->x - cosAtan - omega * sinAtan, pos2->y },
-				{ pos1->x + cosAtan + omega * sinAtan, pos1->y },
-				{ pos2->x + cosAtan + omega * sinAtan, pos2->y },
-				{ pos1->x + cosAtan + omega * sinAtan, pos1->y },
-				{ pos2->x - cosAtan - omega * sinAtan, pos2->y }
+			const Vertex corners[]{
+				{ { pos1->x - cosAtan - omega * sinAtan, pos1->y }, color },
+				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color },
+				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color },
+				{ { pos2->x + cosAtan + omega * sinAtan, pos2->y }, color },
+				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color },
+				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, 6, color);
+			this->_pTriangleListBuffer->append(corners, _countof(corners));
 		}
 
 
@@ -149,16 +149,16 @@ namespace hax {
 
 			if (!this->_frame) return;
 
-			const Vector2 corners[]{
-				{ pos->x, pos->y },
-				{ pos->x + width, pos->y },
-				{ pos->x, pos->y + height },
-				{ pos->x + width, pos->y + height },
-				{ pos->x, pos->y + height },
-				{ pos->x + width, pos->y }
+			const Vertex corners[]{
+				{ { pos->x, pos->y }, color },
+				{ { pos->x + width, pos->y }, color },
+				{ { pos->x, pos->y + height }, color },
+				{ { pos->x + width, pos->y + height }, color },
+				{ { pos->x, pos->y + height }, color },
+				{ { pos->x + width, pos->y }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, 6u, color);
+			this->_pTriangleListBuffer->append(corners, _countof(corners));
 		}
 
 
@@ -174,8 +174,6 @@ namespace hax {
 				{ pos->x, pos->y + height },
 				{ pos->x + width, pos->y }
 			};
-
-			this->_pTriangleListBuffer->append(corners, _countof(corners), abgr::WHITE, {}, textureId);
 
 			return;
 		}
@@ -195,13 +193,12 @@ namespace hax {
 				const font::CharIndex index = font::charToCharIndex(c);
 				const font::Char* pCurChar = &pFont->chars[index];
 
-				if (pCurChar) {
-					// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-					const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-					this->_pPointListBuffer->append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-					this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
-				}
+				if (!pCurChar) continue;
 
+				// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
+				const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
+				this->_pPointListBuffer->append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+				this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
 			}
 
 			return;
