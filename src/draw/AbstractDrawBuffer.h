@@ -53,13 +53,41 @@ namespace hax {
 			// Parameters:
 			// 
 			// [in] data:
+			// Pointer to an array of vertices to be appended to the buffer.
+			//
+			// [in] count:
+			// Amount of vertices in the data array.
+			void append(const Vertex* data, uint32_t count) {
+				const uint32_t newSize = this->_size + count;
+
+				if (newSize > this->_capacity) {
+
+					if (!this->reserve(newSize * 2u)) return;
+
+				}
+
+				for (uint32_t i = 0u; i < count; i++) {
+					this->_pLocalVertexBuffer[this->_size] = data[i];
+					this->_pLocalIndexBuffer[this->_size] = this->_size;
+					this->_size++;
+				}
+
+				return;
+			}
+
+
+			// Appends vertices to the buffer.
+			//
+			// Parameters:
+			// 
+			// [in] data:
 			// Pointer to an array of screen coordinates of vertices to be appended to the buffer.
 			//
 			// [in] count:
 			// Amount of vertices in the data array.
 			//
 			// [in] color:
-			// Color that the vertices will be drawn in. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
+			// Color that the vertices will be drawn in. Color format: DirectX 9 -> argb, DirectX 10 -> abgr, DirectX 11 -> abgr, DirectX 12 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			//
 			// [in] offset:
 			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
@@ -73,9 +101,7 @@ namespace hax {
 				}
 
 				for (uint32_t i = 0u; i < count; i++) {
-					const Vertex curVertex{ { data[i].x + offset.x, data[i].y + offset.y }, color };
-					memcpy(&(this->_pLocalVertexBuffer[this->_size]), &curVertex, sizeof(Vertex));
-
+					this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color };
 					this->_pLocalIndexBuffer[this->_size] = this->_size;
 					this->_size++;
 				}
