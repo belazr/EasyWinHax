@@ -120,6 +120,9 @@
     <ClInclude Include="src\draw\IBufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\draw\dx\dx9\dx9BufferBackend.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
