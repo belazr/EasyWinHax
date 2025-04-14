@@ -40,7 +40,7 @@ namespace hax {
 			//
 			// Return:
 			// True on success, false on failure.
-			virtual bool map(Vertex** pLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) = 0;
+			virtual bool map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) = 0;
 
 			// Prepares the buffer backend for drawing a batch.
 			//
