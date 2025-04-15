@@ -129,6 +129,9 @@
     <ClInclude Include="src\draw\dx\dx11\dx11BufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\draw\dx\dx12\dx12BufferBackend.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
@@ -210,6 +213,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\draw\dx\dx11\dx11BufferBackend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\draw\dx\dx12\dx12BufferBackend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
