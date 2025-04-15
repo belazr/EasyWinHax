@@ -200,5 +200,11 @@
     <ClCompile Include="src\draw\dx\dx10\dx10DrawBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\draw\dx\dx9\dx9BufferBackend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\draw\dx\dx10\dx10BufferBackend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
