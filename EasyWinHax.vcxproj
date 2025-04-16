@@ -59,6 +59,7 @@
     <ClInclude Include="src\draw\vulkan\vkBackend.h" />
     <ClInclude Include="src\draw\vulkan\vkDrawBuffer.h" />
     <ClInclude Include="src\Vector.h" />
+    <ClInclude Include="src\draw\vulkan\vkBufferBackend.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\draw\ogl2\ogl2BufferBackend.cpp" />
@@ -90,6 +91,7 @@
     <ClCompile Include="src\vecmath.cpp" />
     <ClCompile Include="src\draw\vulkan\vkBackend.cpp" />
     <ClCompile Include="src\draw\vulkan\vkDrawBuffer.cpp" />
+    <ClCompile Include="src\draw\vulkan\vkBufferBackend.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
