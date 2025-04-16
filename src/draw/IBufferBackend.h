@@ -42,11 +42,14 @@ namespace hax {
 			// True on success, false on failure.
 			virtual bool map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) = 0;
 
-			// Prepares the buffer backend for drawing a batch.
+			// Unmaps the allocated VRAM from the address space of the current process.
+			virtual void unmap() = 0;
+
+			// Begins drawing of the content of the buffer. Has to be called before any draw calls.
 			//
 			// Return:
 			// True on success, false on failure.
-			virtual bool prepare() = 0;
+			virtual bool begin() = 0;
 
 			// Draws a batch.
 			// 
@@ -62,6 +65,12 @@ namespace hax {
 			// [in] count:
 			// Vertex count in the batch.
 			virtual void draw(TextureId textureId, uint32_t index, uint32_t count) = 0;
+
+			// Ends drawing of the content of the buffer. Has to be called after any draw calls.
+			//
+			// Return:
+			// True on success, false on failure.
+			virtual void end() = 0;
 		};
 
 	}
