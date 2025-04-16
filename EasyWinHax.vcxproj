@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\draw\ogl2\ogl2BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx10\dx10BufferBackend.h" />
@@ -60,6 +61,7 @@
     <ClInclude Include="src\Vector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\draw\ogl2\ogl2BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx11\dx11BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx10\dx10BufferBackend.cpp" />
