@@ -35,7 +35,11 @@ namespace hax {
 
 				const UINT indexBufferSize = capacity * sizeof(uint32_t);
 
-				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) return false;
+				if (FAILED(this->_pDevice->CreateIndexBuffer(indexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &this->_pIndexBuffer, nullptr))) {
+					this->destroy();
+
+					return false;
+				}
 
 				this->_capacity = capacity;
 
@@ -45,16 +49,16 @@ namespace hax {
 
 			void BufferBackend::destroy() {
 
-				if (this->_pVertexBuffer) {
-					this->_pVertexBuffer->Unlock();
-					this->_pVertexBuffer->Release();
-					this->_pVertexBuffer = nullptr;
-				}
-
 				if (this->_pIndexBuffer) {
 					this->_pIndexBuffer->Unlock();
 					this->_pIndexBuffer->Release();
 					this->_pIndexBuffer = nullptr;
+				}
+
+				if (this->_pVertexBuffer) {
+					this->_pVertexBuffer->Unlock();
+					this->_pVertexBuffer->Release();
+					this->_pVertexBuffer = nullptr;
 				}
 
 				return;
@@ -74,13 +78,16 @@ namespace hax {
 				return true;
 			}
 
-
-			bool BufferBackend::prepare() {
+			void BufferBackend::unmap() {
+				this->_pIndexBuffer->Unlock();
+				this->_pVertexBuffer->Unlock();
 				
-				if (FAILED(this->_pVertexBuffer->Unlock())) return false;
+				return;
+			}
 
-				if (FAILED(this->_pIndexBuffer->Unlock())) return false;
 
+			bool BufferBackend::begin() {
+				
 				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) return false;
 
 				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return false;
@@ -124,6 +131,11 @@ namespace hax {
 				return;
 			}
 
+
+			void BufferBackend::end() {
+
+				return;
+			}
 
 		}
 
