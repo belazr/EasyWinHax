@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx10 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -43,7 +43,11 @@ namespace hax {
 				indexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
 				indexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
-				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
+				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) {
+					this->destroy();
+					
+					return false;
+				}
 
 				return true;
 			}
@@ -51,16 +55,16 @@ namespace hax {
 
 			void BufferBackend::destroy() {
 
-				if (this->_pVertexBuffer) {
-					this->_pVertexBuffer->Unmap();
-					this->_pVertexBuffer->Release();
-					this->_pVertexBuffer = nullptr;
-				}
-
 				if (this->_pIndexBuffer) {
 					this->_pIndexBuffer->Unmap();
 					this->_pIndexBuffer->Release();
 					this->_pIndexBuffer = nullptr;
+				}
+
+				if (this->_pVertexBuffer) {
+					this->_pVertexBuffer->Unmap();
+					this->_pVertexBuffer->Release();
+					this->_pVertexBuffer = nullptr;
 				}
 
 				return;
@@ -81,10 +85,16 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::prepare() {
-				this->_pVertexBuffer->Unmap();
+			void BufferBackend::unmap() {
 				this->_pIndexBuffer->Unmap();
+				this->_pVertexBuffer->Unmap();
 
+				return;
+			}
+
+
+			bool BufferBackend::begin() {
+				this->_pDevice->IAGetPrimitiveTopology(&this->_curTopology);
 				this->_pDevice->IASetPrimitiveTopology(this->_topology);
 				this->_pDevice->PSSetShader(this->_pPixelShader);
 				
@@ -104,6 +114,13 @@ namespace hax {
 				}
 
 				this->_pDevice->DrawIndexed(count, index, 0u);
+
+				return;
+			}
+
+
+			void BufferBackend::end() {
+				this->_pDevice->IASetPrimitiveTopology(this->_curTopology);
 
 				return;
 			}
