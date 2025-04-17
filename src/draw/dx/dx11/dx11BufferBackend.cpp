@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx11 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pContext{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pContext{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -44,7 +44,11 @@ namespace hax {
 				indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 				indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) return false;
+				if (FAILED(this->_pDevice->CreateBuffer(&indexBufferDesc, nullptr, &this->_pIndexBuffer))) {
+					this->destroy();
+					
+					return false;
+				}
 
 				return true;
 			}
@@ -52,16 +56,16 @@ namespace hax {
 
 			void BufferBackend::destroy() {
 
-				if (this->_pVertexBuffer) {
-					this->_pContext->Unmap(this->_pVertexBuffer, 0u);
-					this->_pVertexBuffer->Release();
-					this->_pVertexBuffer = nullptr;
-				}
-
 				if (this->_pIndexBuffer) {
 					this->_pContext->Unmap(this->_pIndexBuffer, 0u);
 					this->_pIndexBuffer->Release();
 					this->_pIndexBuffer = nullptr;
+				}
+
+				if (this->_pVertexBuffer) {
+					this->_pContext->Unmap(this->_pVertexBuffer, 0u);
+					this->_pVertexBuffer->Release();
+					this->_pVertexBuffer = nullptr;
 				}
 
 				return;
@@ -90,10 +94,16 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::prepare() {
-				this->_pContext->Unmap(this->_pVertexBuffer, 0u);
+			void BufferBackend::unmap() {
 				this->_pContext->Unmap(this->_pIndexBuffer, 0u);
+				this->_pContext->Unmap(this->_pVertexBuffer, 0u);
+				
+				return;
+			}
 
+
+			bool BufferBackend::begin() {
+				this->_pContext->IAGetPrimitiveTopology(&this->_curTopology);
 				this->_pContext->IASetPrimitiveTopology(this->_topology);
 				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 
@@ -114,6 +124,13 @@ namespace hax {
 
 				this->_pContext->DrawIndexed(count, index, 0u);
 
+				return;
+			}
+
+
+			void BufferBackend::end() {
+				this->_pContext->IASetPrimitiveTopology(this->_curTopology);
+				
 				return;
 			}
 

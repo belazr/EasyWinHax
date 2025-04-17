@@ -16,6 +16,7 @@ namespace hax {
 				ID3D11Buffer* _pVertexBuffer;
 				ID3D11Buffer* _pIndexBuffer;
 				D3D11_PRIMITIVE_TOPOLOGY _topology;
+				D3D11_PRIMITIVE_TOPOLOGY _curTopology;
 
 			public:
 				BufferBackend();
@@ -68,11 +69,14 @@ namespace hax {
 				// True on success, false on failure.
 				bool map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) override;
 
-				// Prepares the buffer backend for drawing a batch.
+				// Unmaps the allocated VRAM from the address space of the current process.
+				virtual void unmap() override;
+
+				// Begins drawing of the content of the buffer. Has to be called before any draw calls.
 				//
 				// Return:
 				// True on success, false on failure.
-				bool prepare() override;
+				virtual bool begin() override;
 
 				// Draws a batch.
 				// 
@@ -87,7 +91,13 @@ namespace hax {
 				// 
 				// [in] count:
 				// Vertex count in the batch.
-				void draw(TextureId textureId, uint32_t index, uint32_t count) override;
+				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) override;
+
+				// Ends drawing of the content of the buffer. Has to be called after any draw calls.
+				//
+				// Return:
+				// True on success, false on failure.
+				virtual void end() override;
 			};
 
 		}
