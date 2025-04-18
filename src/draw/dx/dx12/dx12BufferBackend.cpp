@@ -107,7 +107,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
+			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
 				
 				if (textureId) {
 					const D3D12_GPU_DESCRIPTOR_HANDLE hTextureDesc{ textureId };
@@ -120,7 +120,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::end() {
+			void BufferBackend::end() const {
 
 				return;
 			}

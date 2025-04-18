@@ -106,13 +106,13 @@ namespace hax {
 				// 
 				// [in] count:
 				// Vertex count in the batch.
-				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) override;
+				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) const override;
 
 				// Ends drawing of the content of the buffer. Has to be called after any draw calls.
 				//
 				// Return:
 				// True on success, false on failure.
-				virtual void end() override;
+				virtual void end() const override;
 
 			private:
 				bool createBuffer(VkBuffer* phBuffer, VkDeviceMemory* phMemory, uint32_t* pSize, VkBufferUsageFlags usage);

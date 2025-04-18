@@ -123,7 +123,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
+			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
 
 				if (textureId) {
 					this->_f.pVkCmdBindDescriptorSets(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipelineLayout, 0u, 1u, reinterpret_cast<VkDescriptorSet*>(&textureId), 0u, nullptr);
@@ -135,7 +135,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::end() {
+			void BufferBackend::end() const {
 
 				return;
 			}
