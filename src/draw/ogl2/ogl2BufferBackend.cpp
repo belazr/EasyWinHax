@@ -7,8 +7,8 @@ namespace hax {
 		namespace ogl2 {
 
 			BufferBackend::BufferBackend() :
-				_f{}, _mode{}, _shaderProgram{}, _projectionMatrix{}, _projectionMatrixIndex{},
-				_posIndex{}, _colIndex{}, _uvIndex{}, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX } {}
+				_f{}, _mode{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
+				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _curShaderProgramId{ UINT_MAX }, _curVertexBufferId { UINT_MAX }, _curIndexBufferId{ UINT_MAX } {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -18,10 +18,10 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgram) {
+			void BufferBackend::initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgramId) {
 				this->_f = f;
 				this->_mode = mode;
-				this->_shaderProgram = shaderProgram;
+				this->_shaderProgramId = shaderProgramId;
 
 				const GLfloat viewLeft = static_cast<GLfloat>(viewport[0]);
 				const GLfloat viewRight = static_cast<GLfloat>(viewport[0] + viewport[2]);
@@ -37,10 +37,10 @@ namespace hax {
 
 				memcpy(this->_projectionMatrix, ortho, sizeof(this->_projectionMatrix));
 
-				this->_projectionMatrixIndex = this->_f.pGlGetUniformLocation(this->_shaderProgram, "projectionMatrix");
-				this->_posIndex = this->_f.pGlGetAttribLocation(this->_shaderProgram, "pos");
-				this->_colIndex = this->_f.pGlGetAttribLocation(this->_shaderProgram, "col");
-				this->_uvIndex = this->_f.pGlGetAttribLocation(this->_shaderProgram, "uv");
+				this->_projectionMatrixIndex = this->_f.pGlGetUniformLocation(this->_shaderProgramId, "projectionMatrix");
+				this->_posIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "pos");
+				this->_colIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "col");
+				this->_uvIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "uv");
 
 				return;
 			}
@@ -56,50 +56,8 @@ namespace hax {
 
 				const uint32_t indexBufferSize = capacity * sizeof(GLuint);
 
-				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, indexBufferSize, &this->_indexBufferId)) return false;
-
-				return true;
-			}
-
-
-			void BufferBackend::destroy() {
-
-				if (this->_indexBufferId != UINT_MAX) {
-					this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-					this->_f.pGlDeleteBuffers(1, &this->_indexBufferId);
-					this->_indexBufferId = UINT_MAX;
-				}
-
-				if (this->_vertexBufferId != UINT_MAX) {
-					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-					this->_f.pGlDeleteBuffers(1, &this->_vertexBufferId);
-					this->_vertexBufferId = UINT_MAX;
-				}
-
-				return;
-			}
-
-
-			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
-
-				GLuint curArrayBufferId = UINT_MAX;
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curArrayBufferId));
-
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
-				*ppLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curArrayBufferId);
-
-				if (!(*ppLocalVertexBuffer)) return false;
-
-				GLuint curElementArrayBufferId = UINT_MAX;
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curElementArrayBufferId));
-
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
-				*ppLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curElementArrayBufferId);
-
-				if (!(*ppLocalIndexBuffer)) {
-					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
+				if (!this->createBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, indexBufferSize, &this->_indexBufferId)) {
+					this->destroy();
 					
 					return false;
 				}
@@ -108,15 +66,81 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::prepare() {
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
-				
-				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			void BufferBackend::destroy() {
 
-				this->_f.pGlUseProgram(this->_shaderProgram);
+				if (this->_indexBufferId != UINT_MAX) {
+					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
+					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
+					this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+					this->_f.pGlDeleteBuffers(1, &this->_indexBufferId);
+					this->_indexBufferId = UINT_MAX;
+					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
+				}
+
+				if (this->_vertexBufferId != UINT_MAX) {
+					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
+					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
+					this->_f.pGlDeleteBuffers(1, &this->_vertexBufferId);
+					this->_vertexBufferId = UINT_MAX;
+					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+				}
+
+				return;
+			}
+
+
+			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
+
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+				*ppLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+
+				if (!(*ppLocalVertexBuffer)) return false;
+
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
+
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
+				*ppLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
+
+				if (!(*ppLocalIndexBuffer)) {
+					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
+					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+					
+					return false;
+				}
+
+				return true;
+			}
+
+
+			void BufferBackend::unmap() {
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
+				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
+
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+
+				return;
+			}
+
+
+			bool BufferBackend::begin() {
+				glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&this->_curShaderProgramId));
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
+				
+				this->_f.pGlUseProgram(this->_shaderProgramId);
 				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
+
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
 
 				this->_f.pGlEnableVertexAttribArray(this->_posIndex);
 				this->_f.pGlVertexAttribPointer(this->_posIndex, sizeof(Vector2) / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<GLvoid*>(0));
@@ -126,6 +150,8 @@ namespace hax {
 
 				this->_f.pGlEnableVertexAttribArray(this->_uvIndex);
 				this->_f.pGlVertexAttribPointer(this->_uvIndex, sizeof(Vector2) / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<GLvoid*>(sizeof(Vector2) + sizeof(Color)));
+
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
 
 				return true;
 			}
@@ -138,6 +164,19 @@ namespace hax {
 				}
 					
 				glDrawElements(this->_mode, count, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(index * sizeof(uint32_t)));
+
+				return;
+			}
+
+
+			void BufferBackend::end() {
+				this->_f.pGlDisableVertexAttribArray(this->_uvIndex);
+				this->_f.pGlDisableVertexAttribArray(this->_colIndex);
+				this->_f.pGlDisableVertexAttribArray(this->_posIndex);
+				
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+				this->_f.pGlUseProgram(this->_curShaderProgramId);
 
 				return;
 			}
