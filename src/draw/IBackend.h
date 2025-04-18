@@ -1,11 +1,10 @@
 #pragma once
-#include "AbstractDrawBuffer.h"
 #include "Color.h"
-#include "..\vecmath.h"
+#include "IBufferBackend.h"
 #include <stdint.h>
 
-// Interface the engine class uses for drawing with graphics APIs within a hook.
-// The appropriate implementation should be instantiated and passed to an engine object.
+// Interface the Engine class uses for drawing within a hook.
+// The appropriate implementation should be instantiated and passed to an Engine object.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
 namespace hax {
@@ -67,17 +66,23 @@ namespace hax {
 			// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 			virtual void endFrame() = 0;
 
-			// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+			// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 			// 
 			// Return:
-			// Pointer to the triangle list buffer.
-			virtual AbstractDrawBuffer* getTriangleListBuffer() = 0;
+			// Pointer to the texture triangle list buffer backend.
+			virtual IBufferBackend* getTextureTriangleListBufferBackend() = 0;
 
-			// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+			// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 			// 
 			// Return:
-			// Pointer to the point list buffer.
-			virtual AbstractDrawBuffer* getPointListBuffer() = 0;
+			// Pointer to the triangle list buffer backend.
+			virtual IBufferBackend* getTriangleListBufferBackend() = 0;
+
+			// Gets a reference to the point list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+			// 
+			// Return:
+			// Pointer to the point list buffer backend.
+			virtual IBufferBackend* getPointListBufferBackend() = 0;
 
 			// Gets the resolution of the current frame. Should be called by an Engine object.
 			//
@@ -88,7 +93,7 @@ namespace hax {
 			//
 			// [out] frameHeight:
 			// Pointer that receives the current frame height in pixel.
-			virtual void getFrameResolution(float* frameWidth, float* frameHeight) = 0;
+			virtual void getFrameResolution(float* frameWidth, float* frameHeight) const = 0;
 		};
 
 	}
