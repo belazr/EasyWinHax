@@ -12,7 +12,7 @@ namespace hax {
 			private:
 				Functions _f;
 				GLenum _mode;
-				GLuint _shaderProgram;
+				GLuint _shaderProgramId;
 				GLfloat _projectionMatrix[4][4];
 				GLuint _projectionMatrixIndex;
 				GLuint _posIndex;
@@ -20,6 +20,9 @@ namespace hax {
 				GLuint _uvIndex;
 				GLuint _vertexBufferId;
 				GLuint _indexBufferId;
+				GLuint _curShaderProgramId;
+				GLuint _curVertexBufferId;
+				GLuint _curIndexBufferId;
 
 			public:
 				BufferBackend();
@@ -39,9 +42,9 @@ namespace hax {
 				// [in] viewport:
 				// Current viewport. Has to be an array of four GLint.
 				// 
-				// [in] shaderProgram:
-				// Shader program for drawing vertices.
-				void initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgram);
+				// [in] shaderProgramId:
+				// ID of the shader program for drawing vertices.
+				void initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgramId);
 
 				// Creates internal resources.
 				//
@@ -72,11 +75,14 @@ namespace hax {
 				// True on success, false on failure.
 				bool map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) override;
 
-				// Prepares the buffer backend for drawing a batch.
+				// Unmaps the allocated VRAM from the address space of the current process.
+				virtual void unmap() override;
+
+				// Begins drawing of the content of the buffer. Has to be called before any draw calls.
 				//
 				// Return:
 				// True on success, false on failure.
-				bool prepare() override;
+				virtual bool begin() override;
 
 				// Draws a batch.
 				// 
@@ -91,7 +97,13 @@ namespace hax {
 				// 
 				// [in] count:
 				// Vertex count in the batch.
-				void draw(TextureId textureId, uint32_t index, uint32_t count) override;
+				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) override;
+
+				// Ends drawing of the content of the buffer. Has to be called after any draw calls.
+				//
+				// Return:
+				// True on success, false on failure.
+				virtual void end() override;
 
 			private:
 				bool createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const;
