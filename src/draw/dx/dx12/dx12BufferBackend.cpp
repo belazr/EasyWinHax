@@ -35,7 +35,11 @@ namespace hax {
 
 				const uint32_t indexBufferSize = capacity * sizeof(uint32_t);
 
-				if (!this->createBuffer(&this->_pIndexBufferResource, indexBufferSize)) return false;
+				if (!this->createBuffer(&this->_pIndexBufferResource, indexBufferSize)) {
+					this->destroy();
+					
+					return false;
+				}
 
 				this->_capacity = capacity;
 
@@ -45,16 +49,16 @@ namespace hax {
 
 			void BufferBackend::destroy() {
 
-				if (this->_pVertexBufferResource) {
-					this->_pVertexBufferResource->Unmap(0u, nullptr);
-					this->_pVertexBufferResource->Release();
-					this->_pVertexBufferResource = nullptr;
-				}
-
 				if (this->_pIndexBufferResource) {
 					this->_pIndexBufferResource->Unmap(0u, nullptr);
 					this->_pIndexBufferResource->Release();
 					this->_pIndexBufferResource = nullptr;
+				}
+
+				if (this->_pVertexBufferResource) {
+					this->_pVertexBufferResource->Unmap(0u, nullptr);
+					this->_pVertexBufferResource->Release();
+					this->_pVertexBufferResource = nullptr;
 				}
 
 				return;
@@ -75,10 +79,15 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::prepare() {
-				this->_pVertexBufferResource->Unmap(0u, nullptr);
+			void BufferBackend::unmap() {
 				this->_pIndexBufferResource->Unmap(0u, nullptr);
+				this->_pVertexBufferResource->Unmap(0u, nullptr);
 
+				return;
+			}
+
+
+			bool BufferBackend::begin() {
 				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
 				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 
@@ -106,6 +115,12 @@ namespace hax {
 				}
 				
 				this->_pCommandList->DrawIndexedInstanced(count, 1u, index, 0, 0u);
+
+				return;
+			}
+
+
+			void BufferBackend::end() {
 
 				return;
 			}
