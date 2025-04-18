@@ -96,26 +96,32 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::prepare() {
+			void BufferBackend::unmap() {
 				VkMappedMemoryRange ranges[2]{};
 				ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				ranges[0].memory = this->_hVertexMemory;
+				ranges[0].memory = this->_hIndexMemory;
 				ranges[0].size = VK_WHOLE_SIZE;
 				ranges[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				ranges[1].memory = this->_hIndexMemory;
+				ranges[1].memory = this->_hVertexMemory;
 				ranges[1].size = VK_WHOLE_SIZE;
 
-				if (this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges) != VkResult::VK_SUCCESS) return false;
+				this->_f.pVkFlushMappedMemoryRanges(this->_hDevice, _countof(ranges), ranges);
 
-				this->_f.pVkUnmapMemory(this->_hDevice, this->_hVertexMemory);
 				this->_f.pVkUnmapMemory(this->_hDevice, this->_hIndexMemory);
+				this->_f.pVkUnmapMemory(this->_hDevice, this->_hVertexMemory);
 
+				return;
+			}
+
+
+			bool BufferBackend::begin() {
 				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 
 				constexpr VkDeviceSize OFFSET = 0ull;
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &OFFSET);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
 			}
+
 
 			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
 
@@ -124,6 +130,12 @@ namespace hax {
 				}
 				
 				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, count, 1u, index, 0u, 0u);
+
+				return;
+			}
+
+
+			void BufferBackend::end() {
 
 				return;
 			}
