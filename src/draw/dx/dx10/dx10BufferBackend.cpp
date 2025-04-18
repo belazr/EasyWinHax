@@ -107,7 +107,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
+			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
 
 				if (textureId) {
 					this->_pDevice->PSSetShaderResources(0u, 1u, reinterpret_cast<ID3D10ShaderResourceView**>(&textureId));
@@ -119,7 +119,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::end() {
+			void BufferBackend::end() const {
 				this->_pDevice->IASetPrimitiveTopology(this->_curTopology);
 
 				return;

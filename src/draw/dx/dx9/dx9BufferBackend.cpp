@@ -98,7 +98,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
+			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
 				UINT primitiveCount = 0u;
 
 				switch (this->_primitiveType) {
@@ -132,7 +132,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::end() {
+			void BufferBackend::end() const {
 
 				return;
 			}

@@ -157,7 +157,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) {
+			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
 				
 				if (textureId) {
 					glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(textureId));
@@ -169,7 +169,7 @@ namespace hax {
 			}
 
 
-			void BufferBackend::end() {
+			void BufferBackend::end() const {
 				this->_f.pGlDisableVertexAttribArray(this->_uvIndex);
 				this->_f.pGlDisableVertexAttribArray(this->_colIndex);
 				this->_f.pGlDisableVertexAttribArray(this->_posIndex);
