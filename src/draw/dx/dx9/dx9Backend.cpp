@@ -41,7 +41,7 @@ namespace hax {
 
 
 			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{}, _viewport{},
-				_pStateBlock{}, _pOriginalVertexDeclaration{}, _triangleListBuffer{}, _pointListBuffer {} {}
+				_pStateBlock{}, _pOriginalVertexDeclaration{}, _triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -54,6 +54,7 @@ namespace hax {
 					this->_pStateBlock->Release();
 				}
 
+				this->_textureTriangleListBuffer.destroy();
 				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
 
@@ -91,8 +92,6 @@ namespace hax {
 			
 			bool Backend::initialize() {
 
-				if (!this->createShaders()) return false;
-
 				if (!this->_pVertexDeclaration) {
 					constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
 						{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0u },
@@ -105,19 +104,26 @@ namespace hax {
 
 				}
 
-				this->_triangleListBuffer.initialize(this->_pDevice, D3DPT_TRIANGLELIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
+				if (!this->createShaders()) return false;
+
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_TRIANGLELIST);
 				this->_triangleListBuffer.destroy();
 
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 100u;
 
 				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
-				this->_pointListBuffer.initialize(this->_pDevice, D3DPT_POINTLIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
+				this->_pointListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_POINTLIST);
 				this->_pointListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
 
 				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture, D3DPT_TRIANGLELIST);
+				this->_textureTriangleListBuffer.destroy();
+
+				if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
 				return true;
 			}
@@ -223,19 +229,25 @@ namespace hax {
 			}
 
 
-			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+			IBufferBackend* Backend::getTriangleListBufferBackend()  {
 
 				return &this->_triangleListBuffer;
 			}
 
 
-			AbstractDrawBuffer* Backend::getPointListBuffer() {
+			IBufferBackend* Backend::getPointListBufferBackend()  {
 
 				return &this->_pointListBuffer;
 			}
 
 
-			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			IBufferBackend* Backend::getTextureTriangleListBufferBackend()  {
+
+				return &this->_textureTriangleListBuffer;
+			}
+
+
+			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) const {
 				*frameWidth = static_cast<float>(this->_viewport.Width);
 				*frameHeight = static_cast<float>(this->_viewport.Height);
 
