@@ -219,7 +219,7 @@ namespace hax {
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
 				_hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{},
 				_hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
-				_hTriangleListPipelinePassthrough{}, _hTriangleListPipelineTexture{}, _hPointListPipelinePassthrough{}, _hPointListPipelineTexture{},
+				_hTriangleListPipelinePassthrough{}, _hPointListPipelinePassthrough{}, _hTriangleListPipelineTexture{},
 				_hFirstGraphicsQueue{}, _viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
 
 
@@ -237,16 +237,12 @@ namespace hax {
 
 				if (this->_f.pVkDestroyPipeline) {
 
-					if (this->_hPointListPipelineTexture != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPointListPipelineTexture, nullptr);
+					if (this->_hTriangleListPipelineTexture != VK_NULL_HANDLE) {
+						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hTriangleListPipelineTexture, nullptr);
 					}
 
 					if (this->_hPointListPipelinePassthrough != VK_NULL_HANDLE) {
 						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPointListPipelinePassthrough, nullptr);
-					}
-
-					if (this->_hTriangleListPipelineTexture != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hTriangleListPipelineTexture, nullptr);
 					}
 
 					if (this->_hTriangleListPipelinePassthrough != VK_NULL_HANDLE) {
@@ -593,23 +589,17 @@ namespace hax {
 
 				if (this->_hTriangleListPipelinePassthrough == VK_NULL_HANDLE) return false;
 
-				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) {
-					this->_hTriangleListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
-				}
-
-				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) return false;
-
 				if (this->_hPointListPipelinePassthrough == VK_NULL_HANDLE) {
 					this->_hPointListPipelinePassthrough = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
 				}
 
 				if (this->_hPointListPipelinePassthrough == VK_NULL_HANDLE) return false;
 
-				if (this->_hPointListPipelineTexture == VK_NULL_HANDLE) {
-					this->_hPointListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
+				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) {
+					this->_hTriangleListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
 				}
 
-				if (this->_hPointListPipelineTexture == VK_NULL_HANDLE) return false;
+				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) return false;
 
 				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
 
@@ -700,7 +690,7 @@ namespace hax {
 					return 0ull;
 				}
 
-				memcpy(pLocalBuffer, data, size);
+				memcpy(pLocalBuffer, data, static_cast<size_t>(size));
 				
 				VkMappedMemoryRange range{};
 				range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -728,7 +718,15 @@ namespace hax {
 				this->_f.pVkFreeMemory(this->_hDevice, hUploadMemory, nullptr);
 				this->_f.pVkDestroyBuffer(this->_hDevice, hUploadBuffer, nullptr);
 
+				#ifdef _WIN64
+
 				return reinterpret_cast<TextureId>(textureData.hDescriptorSet);
+
+				#else
+
+				return textureData.hDescriptorSet;
+
+				#endif
 			}
 
 
@@ -817,19 +815,25 @@ namespace hax {
 			}
 
 
-			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+			IBufferBackend* Backend::getTriangleListBufferBackend() {
 
 				return &this->_pCurImageData->triangleListBuffer;
 			}
 
 
-			AbstractDrawBuffer* Backend::getPointListBuffer() {
+			IBufferBackend* Backend::getPointListBufferBackend() {
 
 				return &this->_pCurImageData->pointListBuffer;
 			}
 
 
-			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
+
+				return &this->_pCurImageData->textureTriangleListBuffer;
+			}
+
+
+			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) const {
 				*frameWidth = this->_viewport.width;
 				*frameHeight = this->_viewport.height;
 
@@ -1411,21 +1415,28 @@ namespace hax {
 
 					this->_pImageDataArray[i].triangleListBuffer.initialize(
 						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
-						this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough, this->_hTriangleListPipelineTexture
+						this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough
 					);
 
-					static constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+					constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
 
 					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 					this->_pImageDataArray[i].pointListBuffer.initialize(
 						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
-						this->_hPipelineLayout, this->_hPointListPipelinePassthrough, this->_hPointListPipelineTexture
+						this->_hPipelineLayout, this->_hPointListPipelinePassthrough
 					);
 
-					static constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+					constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
 					if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+					this->_pImageDataArray[i].textureTriangleListBuffer.initialize(
+						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
+						this->_hPipelineLayout, this->_hTriangleListPipelineTexture
+					);
+
+					if (!this->_pImageDataArray[i].textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 					VkFenceCreateInfo fenceCreateInfo{};
 					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -1473,6 +1484,7 @@ namespace hax {
 					pImageData->hImageView = VK_NULL_HANDLE;
 				}
 
+				pImageData->textureTriangleListBuffer.destroy();
 				pImageData->pointListBuffer.destroy();
 				pImageData->triangleListBuffer.destroy();
 
