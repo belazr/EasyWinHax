@@ -1,9 +1,7 @@
 #pragma once
-#include "dx11DrawBuffer.h"
+#include "dx11BufferBackend.h"
 #include "..\..\IBackend.h"
-#include "..\..\Vertex.h"
 #include "..\..\..\Vector.h"
-#include <d3d11.h>
 
 // Class for drawing within a DirectX 11 Present hook.
 // All methods are intended to be called by an Engine object and not for direct calls.
@@ -52,8 +50,9 @@ namespace hax {
 				ID3D11BlendState* _pBlendState;
 				D3D11_VIEWPORT _viewport;
 				
-				DrawBuffer _triangleListBuffer;
-				DrawBuffer _pointListBuffer;
+				BufferBackend _triangleListBuffer;
+				BufferBackend _pointListBuffer;
+				BufferBackend _textureTriangleListBuffer;
 
 				Vector<TextureData> _textures;
 
@@ -105,17 +104,23 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the triangle list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
-				// Pointer to the triangle list buffer.
-				virtual AbstractDrawBuffer* getTriangleListBuffer() override;
+				// Pointer to the triangle list buffer backend.
+				virtual IBufferBackend* getTriangleListBufferBackend()  override;
 
-				// Gets a reference to the point list buffer of the backend. It is the responsibility of the backend to dispose of the buffer properly.
+				// Gets a reference to the point list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
-				// Pointer to the point list buffer.
-				virtual AbstractDrawBuffer* getPointListBuffer() override;
+				// Pointer to the point list buffer backend.
+				virtual IBufferBackend* getPointListBufferBackend()  override;
+
+				// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// 
+				// Return:
+				// Pointer to the texture triangle list buffer backend.
+				virtual IBufferBackend* getTextureTriangleListBufferBackend()  override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
@@ -126,7 +131,7 @@ namespace hax {
 				//
 				// [out] frameHeight:
 				// Pointer that receives the current frame height in pixel.
-				virtual void getFrameResolution(float* frameWidth, float* frameHeight) override;
+				virtual void getFrameResolution(float* frameWidth, float* frameHeight) const override;
 
 			private:
 				bool createShaders();
