@@ -1,7 +1,5 @@
 #include "ogl2Backend.h"
-#include "..\font\Font.h"
-#include <Windows.h>
-#include <vector>
+
 namespace hax {
 
 	namespace draw {
@@ -9,17 +7,18 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramPassthrough{}, _shaderProgramTexture{}, _viewport{}, _depthFunc{},
-				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_f{}, _shaderProgramPassthroughId{}, _shaderProgramTextureId{}, _viewport{}, _depthFunc{},
+				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{} {}
 
 
 			Backend::~Backend() {
+				this->_textureTriangleListBuffer.destroy();
 				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
 				
 				if (this->_f.pGlDeleteProgram) {
-					this->_f.pGlDeleteProgram(this->_shaderProgramTexture);
-					this->_f.pGlDeleteProgram(this->_shaderProgramPassthrough);
+					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
+					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
 				}
 
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
@@ -45,10 +44,10 @@ namespace hax {
 
 
             TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
-				GLint curTexture{};
+				GLint curTexture = 0;
 				glGetIntegerv(GL_TEXTURE_BINDING_2D, &curTexture);
 
-				GLuint textureId{};
+				GLuint textureId = 0u;
 				glGenTextures(1, &textureId);
 				glBindTexture(GL_TEXTURE_2D, textureId);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -69,19 +68,24 @@ namespace hax {
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
-					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthrough, this->_shaderProgramTexture);
+					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthroughId);
 					this->_triangleListBuffer.destroy();
 
-					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 99u;
+					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 100u;
 
 					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
-					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthrough, this->_shaderProgramTexture);
+					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthroughId);
 					this->_pointListBuffer.destroy();
 
 					constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
 
 					if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+					this->_textureTriangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramTextureId);
+					this->_textureTriangleListBuffer.destroy();
+
+					if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
 
 					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
 				}
@@ -117,23 +121,29 @@ namespace hax {
 			}
 
 
-			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
-				*frameWidth = static_cast<float>(this->_viewport[2]);
-				*frameHeight = static_cast<float>(this->_viewport[3]);
+			IBufferBackend* Backend::getTriangleListBufferBackend()  {
 
-				return;
-			}
-
-			
-			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
-				
 				return &this->_triangleListBuffer;
 			}
 
 
-			AbstractDrawBuffer* Backend::getPointListBuffer() {
+			IBufferBackend* Backend::getPointListBufferBackend()  {
 
 				return &this->_pointListBuffer;
+			}
+
+
+			IBufferBackend* Backend::getTextureTriangleListBufferBackend()  {
+
+				return &this->_textureTriangleListBuffer;
+			}
+
+
+			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) const {
+				*frameWidth = static_cast<float>(this->_viewport[2]);
+				*frameHeight = static_cast<float>(this->_viewport[3]);
+
+				return;
 			}
 
 
@@ -223,13 +233,13 @@ namespace hax {
 				this->_f.pGlShaderSource(fragmentShaderPassthrough, 1, &FRAGMENT_SHADER_PASSTHROUGH, nullptr);
 				this->_f.pGlCompileShader(fragmentShaderPassthrough);
 
-				this->_shaderProgramPassthrough = this->_f.pGlCreateProgram();
-				this->_f.pGlAttachShader(this->_shaderProgramPassthrough, vertexShader);
-				this->_f.pGlAttachShader(this->_shaderProgramPassthrough, fragmentShaderPassthrough);
-				this->_f.pGlLinkProgram(this->_shaderProgramPassthrough);
+				this->_shaderProgramPassthroughId = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, vertexShader);
+				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
+				this->_f.pGlLinkProgram(this->_shaderProgramPassthroughId);
 
-				this->_f.pGlDetachShader(this->_shaderProgramPassthrough, vertexShader);
-				this->_f.pGlDetachShader(this->_shaderProgramPassthrough, fragmentShaderPassthrough);
+				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, vertexShader);
+				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
 
 				this->_f.pGlDeleteShader(fragmentShaderPassthrough);
 
@@ -237,13 +247,13 @@ namespace hax {
 				this->_f.pGlShaderSource(fragmentShaderTexture, 1, &FRAGMENT_SHADER_TEXTURE, nullptr);
 				this->_f.pGlCompileShader(fragmentShaderTexture);
 
-				this->_shaderProgramTexture = this->_f.pGlCreateProgram();
-				this->_f.pGlAttachShader(this->_shaderProgramTexture, vertexShader);
-				this->_f.pGlAttachShader(this->_shaderProgramTexture, fragmentShaderTexture);
-				this->_f.pGlLinkProgram(this->_shaderProgramTexture);
+				this->_shaderProgramTextureId = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(this->_shaderProgramTextureId, vertexShader);
+				this->_f.pGlAttachShader(this->_shaderProgramTextureId, fragmentShaderTexture);
+				this->_f.pGlLinkProgram(this->_shaderProgramTextureId);
 
-				this->_f.pGlDetachShader(this->_shaderProgramTexture, vertexShader);
-				this->_f.pGlDetachShader(this->_shaderProgramTexture, fragmentShaderTexture);
+				this->_f.pGlDetachShader(this->_shaderProgramTextureId, vertexShader);
+				this->_f.pGlDetachShader(this->_shaderProgramTextureId, fragmentShaderTexture);
 
 				this->_f.pGlDeleteShader(fragmentShaderTexture);
 				this->_f.pGlDeleteShader(vertexShader);
