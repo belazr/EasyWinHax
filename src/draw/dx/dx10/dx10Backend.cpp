@@ -39,7 +39,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -56,10 +56,9 @@ namespace hax {
 					this->_pConstantBuffer->Release();
 				}
 
-				if (this->_pDevice) {
-					this->_pointListBuffer.destroy();
-					this->_triangleListBuffer.destroy();
-				}
+				this->_textureTriangleListBuffer.destroy();
+				this->_pointListBuffer.destroy();
+				this->_triangleListBuffer.destroy();
 
 				if (this->_pPixelShaderTexture) {
 					this->_pPixelShaderTexture->Release();
@@ -108,19 +107,24 @@ namespace hax {
 				
 				if (!this->createShaders()) return false;
 
-				this->_triangleListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_triangleListBuffer.destroy();
 
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 99u;
+				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
 
 				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
-				this->_pointListBuffer.initialize(this->_pDevice, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST, this->_pPixelShaderPassthrough, this->_pPixelShaderTexture);
+				this->_pointListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
 				this->_pointListBuffer.destroy();
 
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
 				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
+
+				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_textureTriangleListBuffer.destroy();
+
+				if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
 				if (!this->_pConstantBuffer) {
 
@@ -211,15 +215,21 @@ namespace hax {
 			}
 
 
-			AbstractDrawBuffer* Backend::getTriangleListBuffer() {
+			IBufferBackend* Backend::getTriangleListBufferBackend() {
 
 				return &this->_triangleListBuffer;
 			}
 
 
-			AbstractDrawBuffer* Backend::getPointListBuffer() {
+			IBufferBackend* Backend::getPointListBufferBackend() {
 
 				return &this->_pointListBuffer;
+			}
+
+
+			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
+
+				return &this->_textureTriangleListBuffer;
 			}
 
 
