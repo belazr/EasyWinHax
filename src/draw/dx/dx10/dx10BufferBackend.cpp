@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx10 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -49,6 +49,8 @@ namespace hax {
 					return false;
 				}
 
+				this->_capacity = capacity;
+
 				return true;
 			}
 
@@ -67,7 +69,15 @@ namespace hax {
 					this->_pVertexBuffer = nullptr;
 				}
 
+				this->_capacity = 0u;
+
 				return;
+			}
+
+
+			uint32_t BufferBackend::capacity() {
+
+				return this->_capacity;
 			}
 
 
