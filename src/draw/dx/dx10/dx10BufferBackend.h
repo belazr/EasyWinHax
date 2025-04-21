@@ -17,6 +17,8 @@ namespace hax {
 				D3D10_PRIMITIVE_TOPOLOGY _topology;
 				D3D10_PRIMITIVE_TOPOLOGY _curTopology;
 
+				uint32_t _capacity;
+
 			public:
 				BufferBackend();
 
@@ -49,6 +51,12 @@ namespace hax {
 
 				// Destroys all internal resources.
 				void destroy() override;
+
+				// Gets the current capacity of the buffer in vertices.
+				//
+				// Return:
+				// The current capacity of the buffer in vertices.
+				virtual uint32_t capacity() override;
 
 				// Maps the allocated VRAM into the address space of the current process.
 				// 
