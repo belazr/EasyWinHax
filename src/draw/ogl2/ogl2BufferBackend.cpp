@@ -8,7 +8,8 @@ namespace hax {
 
 			BufferBackend::BufferBackend() :
 				_f{}, _mode{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
-				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _curShaderProgramId{ UINT_MAX }, _curVertexBufferId { UINT_MAX }, _curIndexBufferId{ UINT_MAX } {}
+				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _curShaderProgramId{ UINT_MAX }, _curVertexBufferId{ UINT_MAX }, _curIndexBufferId{ UINT_MAX }, _capacity{} {
+			}
 
 
 			BufferBackend::~BufferBackend() {
@@ -62,6 +63,8 @@ namespace hax {
 					return false;
 				}
 
+				this->_capacity = capacity;
+
 				return true;
 			}
 
@@ -86,7 +89,15 @@ namespace hax {
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
 				}
 
+				this->_capacity = 0u;
+
 				return;
+			}
+
+
+			uint32_t BufferBackend::capacity() {
+
+				return this->_capacity;
 			}
 
 
