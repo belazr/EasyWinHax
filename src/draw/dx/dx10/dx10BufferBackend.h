@@ -1,6 +1,6 @@
 #pragma once
 #include "..\..\IBufferBackend.h"
-#include <d3d10.h>
+#include <d3d10_1.h>
 
 namespace hax {
 
