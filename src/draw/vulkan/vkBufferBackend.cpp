@@ -128,6 +128,8 @@ namespace hax {
 				constexpr VkDeviceSize OFFSET = 0ull;
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &OFFSET);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);
+
+				return true;
 			}
 
 
