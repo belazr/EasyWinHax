@@ -1,3 +1,4 @@
+#pragma once
 #include "Vertex.h"
 #include <stdint.h>
 
