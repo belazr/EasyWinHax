@@ -24,16 +24,11 @@
     <ClInclude Include="src\draw\dx\dx11\dx11BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx10\dx10BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9BufferBackend.h" />
-    <ClInclude Include="src\draw\dx\dx10\dx10DrawBuffer.h" />
+    <ClInclude Include="src\draw\AbstractDrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx10\dx10Backend.h" />
-    <ClInclude Include="src\draw\dx\dx12\dx12DrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12Backend.h" />
-    <ClInclude Include="src\draw\dx\dx11\dx11DrawBuffer.h" />
-    <ClInclude Include="src\draw\dx\dx9\dx9DrawBuffer.h" />
     <ClInclude Include="src\draw\IBufferBackend.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Defs.h" />
-    <ClInclude Include="src\draw\ogl2\ogl2DrawBuffer.h" />
-    <ClInclude Include="src\draw\AbstractDrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11Backend.h" />
     <ClInclude Include="src\draw\font\Font.h" />
     <ClInclude Include="src\draw\Engine.h" />
@@ -57,7 +52,6 @@
     <ClInclude Include="src\undocWinTypes.h" />
     <ClInclude Include="src\vecmath.h" />
     <ClInclude Include="src\draw\vulkan\vkBackend.h" />
-    <ClInclude Include="src\draw\vulkan\vkDrawBuffer.h" />
     <ClInclude Include="src\Vector.h" />
     <ClInclude Include="src\draw\vulkan\vkBufferBackend.h" />
   </ItemGroup>
@@ -67,13 +61,8 @@
     <ClCompile Include="src\draw\dx\dx11\dx11BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx10\dx10BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx9\dx9BufferBackend.cpp" />
-    <ClCompile Include="src\draw\dx\dx10\dx10DrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx10\dx10Backend.cpp" />
-    <ClCompile Include="src\draw\dx\dx12\dx12DrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12Backend.cpp" />
-    <ClCompile Include="src\draw\dx\dx11\dx11DrawBuffer.cpp" />
-    <ClCompile Include="src\draw\dx\dx9\dx9DrawBuffer.cpp" />
-    <ClCompile Include="src\draw\ogl2\ogl2DrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx11\dx11Backend.cpp" />
     <ClCompile Include="src\draw\font\LargeFont.cpp" />
     <ClCompile Include="src\draw\font\MediumFont.cpp" />
@@ -90,7 +79,6 @@
     <ClCompile Include="src\proc.cpp" />
     <ClCompile Include="src\vecmath.cpp" />
     <ClCompile Include="src\draw\vulkan\vkBackend.cpp" />
-    <ClCompile Include="src\draw\vulkan\vkDrawBuffer.cpp" />
     <ClCompile Include="src\draw\vulkan\vkBufferBackend.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
