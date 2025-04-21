@@ -233,7 +233,7 @@ namespace hax {
 			}
 
 
-			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) {
+			void Backend::getFrameResolution(float* frameWidth, float* frameHeight) const {
 				*frameWidth = static_cast<float>(this->_viewport.Width);
 				*frameHeight = static_cast<float>(this->_viewport.Height);
 
