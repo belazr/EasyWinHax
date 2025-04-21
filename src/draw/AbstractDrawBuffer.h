@@ -1,11 +1,11 @@
 #pragma once
+#include "IBufferBackend.h"
 #include "Vertex.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
-// Abstract class the engine class uses as a buffer for vertices and indices to draw primitives.
-// The appropriate implementation should be instantiated by a backend and the engine uses a pointer to fill the buffer during a frame.
+// Abstract base class for draw buffers. It uses a BufferBackend object that is initialized by the Backend object to draw vertices to the screen.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
 namespace hax {
@@ -14,102 +14,48 @@ namespace hax {
 
 		class AbstractDrawBuffer {
 		protected:
+			IBufferBackend* _pBufferBackend;
 			Vertex* _pLocalVertexBuffer;
 			uint32_t* _pLocalIndexBuffer;
 
 			uint32_t _size;
 			uint32_t _capacity;
 
+			bool _frame;
+
 		public:
-			AbstractDrawBuffer() : _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _size{}, _capacity{} {}
+			AbstractDrawBuffer() : _pBufferBackend{}, _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _size{}, _capacity{}, _frame{} {}
 
-			// Creates a new buffer with all internal resources.
+			// Begins the frame for the buffer. Has to be called before any append calls.
 			//
 			// Parameters:
 			// 
-			// [in] capacity:
-			// Capacity of the buffer.
+			// [in] pBufferBackend:
+			// Backend for the buffer retrieved from the engine backend.
 			//
 			// Return:
 			// True on success, false on failure.
-			virtual bool create(uint32_t capacity) = 0;
+			bool beginFrame(IBufferBackend* pBufferBackend) {
 
-			// Destroys the buffer and all internal resources.
-			virtual void destroy() = 0;
+				if (!pBufferBackend) return false;
 
-			// Maps the allocated VRAM into the address space of the current process. Needs to be called before the buffer can be filled.
-			//
-			// Return:
-			// True on success, false on failure.
-			virtual bool map() = 0;
+				this->_pBufferBackend = pBufferBackend;
+				this->_capacity = pBufferBackend->capacity();
 
-			// Draws the content of the buffer to the screen.
-			// Needs to be called between a successful of IBackend::beginFrame and a call to IBackend::endFrame.
-			virtual void draw() = 0;
+				this->_frame = this->_pBufferBackend->map(&this->_pLocalVertexBuffer, &this->_pLocalIndexBuffer);
 
-
-			// Appends vertices to the buffer.
-			//
-			// Parameters:
-			// 
-			// [in] data:
-			// Pointer to an array of vertices to be appended to the buffer.
-			//
-			// [in] count:
-			// Amount of vertices in the data array.
-			void append(const Vertex* data, uint32_t count) {
-				const uint32_t newSize = this->_size + count;
-
-				if (newSize > this->_capacity) {
-
-					if (!this->reserve(newSize * 2u)) return;
-
+				if (!this->_frame) {
+					this->_capacity = 0u;
+					this->_pBufferBackend = nullptr;
 				}
 
-				for (uint32_t i = 0u; i < count; i++) {
-					this->_pLocalVertexBuffer[this->_size] = data[i];
-					this->_pLocalIndexBuffer[this->_size] = this->_size;
-					this->_size++;
-				}
-
-				return;
+				return this->_frame;
 			}
 
+			// Ends the frame for the buffer and draws the contents. Has to be called after any append calls.
+			virtual void endFrame() = 0;
 
-			// Appends vertices to the buffer.
-			//
-			// Parameters:
-			// 
-			// [in] data:
-			// Pointer to an array of screen coordinates of vertices to be appended to the buffer.
-			//
-			// [in] count:
-			// Amount of vertices in the data array.
-			//
-			// [in] color:
-			// Color that the vertices will be drawn in. Color format: DirectX 9 -> argb, DirectX 10 -> abgr, DirectX 11 -> abgr, DirectX 12 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			//
-			// [in] offset:
-			// Offset that gets added to all coordinates in the data array before the vertices get appended to the buffer.
-			void append(const Vector2* data, uint32_t count, Color color, Vector2 offset = { 0.f, 0.f }) {
-				const uint32_t newSize = this->_size + count;
-
-				if (newSize > this->_capacity) {
-
-					if (!this->reserve(newSize * 2u)) return;
-
-				}
-
-				for (uint32_t i = 0u; i < count; i++) {
-					this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color };
-					this->_pLocalIndexBuffer[this->_size] = this->_size;
-					this->_size++;
-				}
-
-				return;
-			}
-
-
+		protected:
 			// Increases the capacity of the buffer if the desired capacity is greater than the current one.
 			//
 			// Parameters:
@@ -121,20 +67,19 @@ namespace hax {
 			// True on success, false on failure.
 			bool reserve(uint32_t capacity) {
 
+				if (!this->_frame) return false;
+
 				if (capacity <= this->_capacity) return true;
 
-				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(calloc(this->_size, sizeof(Vertex)));
+				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(malloc(this->_size * sizeof(Vertex)));
 
 				if (!pTmpVertexBuffer) return false;
 
 				if (this->_pLocalVertexBuffer) {
 					memcpy(pTmpVertexBuffer, this->_pLocalVertexBuffer, this->_size * sizeof(Vertex));
 				}
-				else {
-					memset(pTmpVertexBuffer, 0, this->_size);
-				}
 
-				int32_t* const pTmpIndexBuffer = reinterpret_cast<int32_t*>(calloc(this->_size, sizeof(int32_t)));
+				int32_t* const pTmpIndexBuffer = reinterpret_cast<int32_t*>(malloc(this->_size * sizeof(int32_t)));
 
 				if (!pTmpIndexBuffer) {
 					free(pTmpVertexBuffer);
@@ -145,24 +90,32 @@ namespace hax {
 				if (this->_pLocalIndexBuffer) {
 					memcpy(pTmpIndexBuffer, this->_pLocalIndexBuffer, this->_size * sizeof(uint32_t));
 				}
-				else {
-					memset(pTmpIndexBuffer, 0, this->_size * sizeof(uint32_t));
-				}
 
 				const uint32_t oldSize = this->_size;
 
-				this->destroy();
+				this->_pBufferBackend->destroy();
+				this->_pLocalIndexBuffer = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_capacity = this->_pBufferBackend->capacity();
 
-				if (!this->create(capacity)) {
+				if (!this->_pBufferBackend->create(capacity)) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
+					this->_capacity = 0u;
+					this->_pBufferBackend = nullptr;
+					this->_frame = false;
 
 					return false;
 				}
 
-				if (!this->map()) {
+				this->_capacity = this->_pBufferBackend->capacity();
+
+				if (!this->_pBufferBackend->map(&this->_pLocalVertexBuffer, &this->_pLocalIndexBuffer)) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
+					this->_capacity = 0u;
+					this->_pBufferBackend = nullptr;
+					this->_frame = false;
 
 					return false;
 				}
@@ -170,24 +123,12 @@ namespace hax {
 				if (this->_pLocalVertexBuffer && this->_pLocalIndexBuffer) {
 					memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldSize * sizeof(Vertex));
 					memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldSize * sizeof(uint32_t));
-
-					this->_size = oldSize;
 				}
-				
+
 				free(pTmpVertexBuffer);
 				free(pTmpIndexBuffer);
 
 				return true;
-			}
-
-			protected:
-			void reset() {
-				this->_pLocalVertexBuffer = nullptr;
-				this->_pLocalIndexBuffer = nullptr;
-				this->_size = 0u;
-				this->_capacity = 0u;
-				
-				return;
 			}
 
 		};
