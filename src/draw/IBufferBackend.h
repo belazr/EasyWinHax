@@ -27,6 +27,12 @@ namespace hax {
 			// Destroys all internal resources.
 			virtual void destroy() = 0;
 
+			// Gets the current capacity of the buffer in vertices.
+			//
+			// Return:
+			// The current capacity of the buffer in vertices.
+			virtual uint32_t capacity() = 0;
+
 			// Maps the allocated VRAM into the address space of the current process.
 			// 
 			// Parameters:
