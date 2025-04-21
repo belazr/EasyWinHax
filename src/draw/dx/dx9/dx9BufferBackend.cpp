@@ -61,7 +61,15 @@ namespace hax {
 					this->_pVertexBuffer = nullptr;
 				}
 
+				this->_capacity = 0u;
+
 				return;
+			}
+
+
+			uint32_t BufferBackend::capacity() {
+				
+				return this->_capacity;
 			}
 
 
