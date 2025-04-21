@@ -15,6 +15,7 @@ namespace hax {
 				return;
 			}
 
+
 			void BufferBackend::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology) {
 				this->_pDevice = pDevice;
 				this->_pCommandList = pCommandList;
@@ -61,7 +62,15 @@ namespace hax {
 					this->_pVertexBufferResource = nullptr;
 				}
 
+				this->_capacity = 0u;
+
 				return;
+			}
+
+
+			uint32_t BufferBackend::capacity() {
+
+				return this->_capacity;
 			}
 
 
