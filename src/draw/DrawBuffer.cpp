@@ -1,0 +1,73 @@
+#include "DrawBuffer.h"
+
+namespace hax {
+
+	namespace draw {
+
+		void DrawBuffer::append(const Vertex* data, uint32_t count) {
+
+			if (!this->_frame) return;
+
+			const uint32_t newSize = this->_size + count;
+
+			if (newSize > this->_capacity) {
+
+				if (!this->reserve(newSize * 2u)) return;
+
+			}
+
+			for (uint32_t i = 0u; i < count; i++) {
+				this->_pLocalVertexBuffer[this->_size] = data[i];
+				this->_pLocalIndexBuffer[this->_size] = this->_size;
+				this->_size++;
+			}
+
+			return;
+		}
+
+
+		void DrawBuffer::append(const Vector2* data, uint32_t count, Color color, Vector2 offset) {
+
+			if (!this->_frame) return;
+
+			const uint32_t newSize = this->_size + count;
+
+			if (newSize > this->_capacity) {
+
+				if (!this->reserve(newSize * 2u)) return;
+
+			}
+
+			for (uint32_t i = 0u; i < count; i++) {
+				this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color };
+				this->_pLocalIndexBuffer[this->_size] = this->_size;
+				this->_size++;
+			}
+
+			return;
+		}
+
+
+		void DrawBuffer::endFrame() {
+			
+			if (!this->_frame) return;
+
+			this->_pBufferBackend->unmap();
+
+			this->_pLocalIndexBuffer = nullptr;
+			this->_pLocalVertexBuffer = nullptr;
+
+			if (!this->_pBufferBackend->begin()) return;
+		
+			this->_pBufferBackend->draw(0ull, 0u, this->_size);
+			this->_pBufferBackend->end();
+			this->_size = 0u;
+			this->_capacity = 0u;
+			this->_pBufferBackend = nullptr;
+
+			return;
+		}
+
+	}
+
+}
