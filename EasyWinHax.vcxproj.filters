@@ -120,6 +120,9 @@
     <ClInclude Include="src\draw\vulkan\vkBufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\draw\DrawBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
@@ -192,6 +195,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\draw\vulkan\vkBufferBackend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\draw\DrawBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
