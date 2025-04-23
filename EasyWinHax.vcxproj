@@ -37,6 +37,7 @@
     <ClInclude Include="src\draw\IBackend.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Backend.h" />
     <ClInclude Include="src\draw\Color.h" />
+    <ClInclude Include="src\draw\TextureDrawBuffer.h" />
     <ClInclude Include="src\draw\Vertex.h" />
     <ClInclude Include="src\draw\vulkan\include\vk_platform.h" />
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />
@@ -72,6 +73,7 @@
     <ClCompile Include="src\draw\Engine.cpp" />
     <ClCompile Include="src\draw\dx\dx9\dx9Backend.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp" />
+    <ClCompile Include="src\draw\TextureDrawBuffer.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />
