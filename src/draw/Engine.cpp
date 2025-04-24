@@ -5,8 +5,9 @@ namespace hax {
 
 	namespace draw {
 
-		Engine::Engine(IBackend* pBackend) : _pBackend{ pBackend }, _init{}, _frame{},
-			_pTriangleListBuffer{}, _pPointListBuffer{}, frameWidth {}, frameHeight{} {}
+		Engine::Engine(IBackend* pBackend) :
+			_triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{},
+			_pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
 		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
@@ -27,23 +28,26 @@ namespace hax {
 			if (!this->_init) return;
 			
 			if (!this->_pBackend->beginFrame()) return;
-			
-			this->_pTriangleListBuffer = this->_pBackend->getTriangleListBuffer();
-			this->_pPointListBuffer = this->_pBackend->getPointListBuffer();
-
-			if (!this->_pTriangleListBuffer->map()) {
-				this->_pBackend->endFrame();
-
-				return;
-			}
-
-			if (!this->_pPointListBuffer->map()) {
-				this->_pBackend->endFrame();
-
-				return;
-			}
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
+
+			if (!this->_triangleListBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
+
+			if (!this->_pointListBuffer.beginFrame(this->_pBackend->getPointListBufferBackend())) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
+
+			if (!this->_textureTriangleListBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
 
 			this->_frame = true;
 			
@@ -55,11 +59,9 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
-			this->_pTriangleListBuffer->draw();
-			this->_pTriangleListBuffer = nullptr;
-			
-			this->_pPointListBuffer->draw();
-			this->_pPointListBuffer = nullptr;
+			this->_triangleListBuffer.endFrame();
+			this->_pointListBuffer.endFrame();
+			this->_textureTriangleListBuffer.endFrame();
 
 			this->_pBackend->endFrame();
 
@@ -69,7 +71,7 @@ namespace hax {
 		}
 
 
-		void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const {
+		void Engine::drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) {
 
 			if (!this->_frame) return;
 
@@ -108,11 +110,11 @@ namespace hax {
 				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, _countof(corners));
+			this->_triangleListBuffer.append(corners, _countof(corners));
 		}
 
 
-		void Engine::drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const {
+		void Engine::drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) {
 			
 			if (!this->_frame) return;
 			
@@ -141,11 +143,11 @@ namespace hax {
 				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, _countof(corners));
+			this->_triangleListBuffer.append(corners, _countof(corners));
 		}
 
 
-		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, Color color) const {
+		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, Color color) {
 
 			if (!this->_frame) return;
 
@@ -158,28 +160,30 @@ namespace hax {
 				{ { pos->x + width, pos->y }, color }
 			};
 
-			this->_pTriangleListBuffer->append(corners, _countof(corners));
+			this->_triangleListBuffer.append(corners, _countof(corners));
 		}
 
 
-		void Engine::drawTexture(TextureId textureId, const Vector2* pos, float width, float height) const {
+		void Engine::drawTexture(TextureId textureId, const Vector2* pos, float width, float height) {
 
 			if (!this->_frame) return;
 
-			const Vector2 corners[]{
-				{ pos->x, pos->y },
-				{ pos->x + width, pos->y },
-				{ pos->x, pos->y + height },
-				{ pos->x + width, pos->y + height },
-				{ pos->x, pos->y + height },
-				{ pos->x + width, pos->y }
+			const Vertex corners[]{
+				{ { pos->x, pos->y }, abgr::WHITE, { 0.f, 0.f } },
+				{ { pos->x + width, pos->y }, abgr::WHITE, { 1.f, 0.f }  },
+				{ { pos->x, pos->y + height }, abgr::WHITE, { 0.f, 1.f }  },
+				{ { pos->x + width, pos->y + height }, abgr::WHITE, { 1.f, 1.f }  },
+				{ { pos->x, pos->y + height }, abgr::WHITE, { 0.f, 1.f }  },
+				{ { pos->x + width, pos->y }, abgr::WHITE, { 1.f, 0.f }  }
 			};
+
+			this->_textureTriangleListBuffer.append(corners, _countof(corners), textureId);
 
 			return;
 		}
 
 
-		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) const {
+		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) {
 
 			if (!this->_frame) return;
 
@@ -197,15 +201,15 @@ namespace hax {
 
 				// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
 				const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-				this->_pPointListBuffer->append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-				this->_pPointListBuffer->append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
+				this->_pointListBuffer.append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
+				this->_pointListBuffer.append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
 			}
 
 			return;
 		}
 
 
-		void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color) const {
+		void Engine::drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color) {
 			
 			if (!this->_frame) return;
 			
@@ -236,7 +240,7 @@ namespace hax {
 		}
 
 
-		void Engine::draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color) const {
+		void Engine::draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color) {
 
 			if (!this->_frame) return;
 
@@ -257,7 +261,7 @@ namespace hax {
 		}
 
 
-		void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const {
+		void Engine::draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) {
 
 			if (!this->_frame) return;
 
