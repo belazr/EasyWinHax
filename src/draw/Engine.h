@@ -1,5 +1,7 @@
 #pragma once
+#include "DrawBuffer.h"
 #include "IBackend.h"
+#include "TextureDrawBuffer.h"
 #include "font\Font.h"
 
 // Class for drawing within a graphics API hook.
@@ -10,13 +12,14 @@ namespace hax {
 
 		class Engine {
 		private:
+			DrawBuffer _triangleListBuffer;
+			DrawBuffer _pointListBuffer;
+			TextureDrawBuffer _textureTriangleListBuffer;
+
 			IBackend* const _pBackend;
 
 			bool _init;
 			bool _frame;
-
-			AbstractDrawBuffer* _pTriangleListBuffer;
-			AbstractDrawBuffer* _pPointListBuffer;
 
 		public:
 			float frameWidth;
@@ -87,7 +90,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Color of the line. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const;
+			void drawLine(const Vector2* pos1, const Vector2* pos2, float width, Color color);
 
 			// Draws a line. The line is a parallelogram with horizontal ends.
 			//
@@ -104,7 +107,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Color of the line. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color) const;
+			void drawPLine(const Vector2* pos1, const Vector2* pos2, float width, Color color);
 
 			// Draws a filled rectangle with the sides parallel to the screen edges.
 			//
@@ -121,7 +124,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Color of the rectangle. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawFilledRectangle(const Vector2* pos, float width, float height, Color color) const;
+			void drawFilledRectangle(const Vector2* pos, float width, float height, Color color);
 
 			// Draws a loaded texture.
 			//
@@ -138,7 +141,7 @@ namespace hax {
 			// 
 			// [in] height:
 			// Height of the drawn texture in pixels.
-			void drawTexture(TextureId textureId, const Vector2* pos, float width, float height) const;
+			void drawTexture(TextureId textureId, const Vector2* pos, float width, float height);
 
 			// Draws text to the screen.
 			//
@@ -155,7 +158,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) const;
+			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color);
 
 			// Draws a parallelogram grid with horizontal bottom and top sides.
 			//
@@ -175,7 +178,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color) const;
+			void drawParallelogramOutline(const Vector2* bot, const Vector2* top, float ratio, float width, Color color);
 
 			// Draws a 2D box grid.
 			//
@@ -192,7 +195,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color) const;
+			void draw2DBox(const Vector2 bot[2], const Vector2 top[2], float width, Color color);
 
 			// Draws a 3D box grid.
 			//
@@ -209,7 +212,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color) const;
+			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color);
 		};
 
 	}
