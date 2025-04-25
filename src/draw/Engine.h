@@ -12,8 +12,8 @@ namespace hax {
 
 		class Engine {
 		private:
-			DrawBuffer _triangleListBuffer;
 			DrawBuffer _pointListBuffer;
+			DrawBuffer _triangleListBuffer;
 			TextureDrawBuffer _textureTriangleListBuffer;
 
 			IBackend* const _pBackend;

@@ -6,7 +6,7 @@ namespace hax {
 	namespace draw {
 
 		Engine::Engine(IBackend* pBackend) :
-			_triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{},
+			_pointListBuffer{}, _textureTriangleListBuffer{}, _triangleListBuffer{},
 			_pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
@@ -31,12 +31,6 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_triangleListBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
-				this->_pBackend->endFrame();
-
-				return;
-			}
-
 			if (!this->_pointListBuffer.beginFrame(this->_pBackend->getPointListBufferBackend())) {
 				this->_pBackend->endFrame();
 
@@ -44,6 +38,12 @@ namespace hax {
 			}
 
 			if (!this->_textureTriangleListBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
+				this->_pBackend->endFrame();
+
+				return;
+			}
+
+			if (!this->_triangleListBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
@@ -60,8 +60,8 @@ namespace hax {
 			if (!this->_frame) return;
 			
 			this->_triangleListBuffer.endFrame();
-			this->_pointListBuffer.endFrame();
 			this->_textureTriangleListBuffer.endFrame();
+			this->_pointListBuffer.endFrame();
 
 			this->_pBackend->endFrame();
 
