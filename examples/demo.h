@@ -1,17 +1,17 @@
 #pragma once
-#include "demoTexture.h"
+#include "..\src\hax.h"
 
-inline void drawDemo(hax::draw::Engine* pEngine, bool argb = false) {
-	static hax::draw::TextureId textureId = pEngine->loadTexture(DEMO_TEXTURE, DEMO_TEXTURE_WIDTH, DEMO_TEXTURE_HEIGHT);
-	
+inline void drawDemo(hax::draw::Engine* pEngine, const hax::draw::Color* pTextureData, uint32_t textureWidth, uint32_t textureHeight, bool argb = false) {
 	const hax::Vector2 middleOfScreen{ pEngine->frameWidth / 2.f, pEngine->frameHeight / 2.f };
 
-	if (textureId) {
-		const float widthTexture = pEngine->frameWidth / 2.f;
-		const float heightTexture = widthTexture * static_cast<float>(DEMO_TEXTURE_HEIGHT) / static_cast<float>(DEMO_TEXTURE_WIDTH);
-		const hax::Vector2 topLeftTexture{ middleOfScreen.x - widthTexture / 2.f, middleOfScreen.y - heightTexture / 2.f };
+	static hax::draw::TextureId textureId = pEngine->loadTexture(pTextureData, textureWidth, textureHeight);
 
-		pEngine->drawTexture(textureId, &topLeftTexture, widthTexture, heightTexture);
+	if (textureId) {
+		const float widthTextureRect = pEngine->frameWidth / 4.f;
+		const float heightTextureRect = widthTextureRect * static_cast<float>(textureHeight) / static_cast<float>(textureWidth);
+		const hax::Vector2 topLeftTexture{ middleOfScreen.x - widthTextureRect / 2.f, middleOfScreen.y - heightTextureRect / 2.f };
+
+		pEngine->drawTexture(textureId, &topLeftTexture, widthTextureRect, heightTextureRect);
 	}
 
 	constexpr char TEXT[] = "EasyWinHax";
