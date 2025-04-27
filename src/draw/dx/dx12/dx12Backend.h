@@ -156,6 +156,7 @@ namespace hax {
 				bool createDescriptorHeaps();
 				bool createRootSignature();
 				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, D3D12_SHADER_BYTECODE pixelShader) const;
+				bool uploadTexture(ID3D12Resource* pTexture, ID3D12Resource* pBuffer, uint32_t width, uint32_t height, uint32_t pitch) const;
 				bool createImageDataArray(uint32_t imageCount);
 				void destroyImageDataArray();
 				void destroyImageData(ImageData* pImageData) const;
