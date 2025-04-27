@@ -1,10 +1,12 @@
-#include "..\..\..\src\hax.h"
+#include "resource.h"
+#include "..\..\demo.h"
 #include <iostream>
 
 // This is a example DLL for hooking and drawing within a DirectX 12 application.
 // Compile the project and inject it into a process rendering with DirectX 12.
 // A dll-injector built with EasyWinHax can be found here:
 // https://github.com/belazr/JackieBlue
+static HMODULE hModule;
 
 static hax::Bench bench("200 x hkPresent", 200u);
 
@@ -12,29 +14,45 @@ static hax::draw::dx12::InitData initData{};
 static hax::draw::dx12::Backend backend;
 static hax::draw::Engine engine{ &backend };
 
+static const hax::draw::Color* pTextureData;
+static uint32_t textureWidth;
+static uint32_t textureHeight;
+
 static HANDLE hHookSemaphore;
 static hax::in::TrampHook* pPresentHook;
 
+static void loadTextureData() {
+	const HRSRC hTextureRes = FindResourceA(hModule, MAKEINTRESOURCE(IDR_DEMO_TEXTURE), RT_RCDATA);
+
+	if (!hTextureRes) return;
+
+	const HGLOBAL hLoadedTextureRes = LoadResource(hModule, hTextureRes);
+
+	if (!hLoadedTextureRes) return;
+
+	const uint32_t* pTextureResData = static_cast<const uint32_t*>(LockResource(hLoadedTextureRes));
+
+	if (!pTextureResData) return;
+
+	textureWidth = pTextureResData[0];
+	textureHeight = pTextureResData[1];
+	pTextureData = reinterpret_cast<const hax::draw::Color*>(pTextureResData + 2);
+
+	return;
+}
+
+
 static HRESULT __stdcall hkPresent(IDXGISwapChain3* pSwapChain, UINT syncInterval, UINT flags) {
+
+	if (!pTextureData) {
+		loadTextureData();
+	}
+
 	bench.start();
 
 	engine.beginFrame(pSwapChain, initData.pCommandQueue);
 
-	const hax::Vector2 middleOfScreen{ engine.frameWidth / 2.f, engine.frameHeight / 2.f };
-
-	const float widthRect = engine.frameWidth / 4.f;
-	const float heightRect = engine.frameHeight / 4.f;
-	const hax::Vector2 topLeftRect{ middleOfScreen.x - widthRect / 2.f, middleOfScreen.y - heightRect / 2.f };
-
-	engine.drawFilledRectangle(&topLeftRect, widthRect, heightRect, hax::draw::abgr::GRAY);
-
-	constexpr char TEXT[] = "EasyWinHax";
-	const float widthText = _countof(TEXT) * hax::draw::font::medium.width;
-	const float heightText = hax::draw::font::medium.height;
-
-	const hax::Vector2 bottomLeftText{ middleOfScreen.x - widthText / 2.f, middleOfScreen.y + heightText / 2.f };
-
-	engine.drawString(&hax::draw::font::medium, &bottomLeftText, TEXT, hax::draw::abgr::ORANGE);
+	drawDemo(&engine, pTextureData, textureWidth, textureHeight);
 
 	engine.endFrame();
 
@@ -79,7 +97,7 @@ static void cleanup(HANDLE hSemaphore, hax::in::TrampHook* pHook, FILE* file, BO
 }
 
 
-static DWORD WINAPI haxThread(HMODULE hModule) {
+static DWORD WINAPI haxThread() {
 	const BOOL wasConsoleAllocated = AllocConsole();
 
 	FILE* file = nullptr;
@@ -129,15 +147,16 @@ static DWORD WINAPI haxThread(HMODULE hModule) {
 }
 
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID) {
+BOOL APIENTRY DllMain(HMODULE hMod, DWORD reasonForCall, LPVOID) {
 
 	if (reasonForCall != DLL_PROCESS_ATTACH) {
 
 		return TRUE;
 	}
 
-	DisableThreadLibraryCalls(hModule);
-	const HANDLE hThread = CreateThread(nullptr, 0u, reinterpret_cast<LPTHREAD_START_ROUTINE>(haxThread), hModule, 0ul, nullptr);
+	DisableThreadLibraryCalls(hMod);
+	hModule = hMod;
+	const HANDLE hThread = CreateThread(nullptr, 0u, reinterpret_cast<LPTHREAD_START_ROUTINE>(haxThread), nullptr, 0ul, nullptr);
 
 	if (!hThread) {
 
