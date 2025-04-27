@@ -490,11 +490,6 @@ namespace hax {
 
 
             TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
-
-                if (FAILED(this->_pTextureCommandAllocator->Reset())) return 0ull;
-
-                if (FAILED(this->_pTextureCommandList->Reset(this->_pTextureCommandAllocator, nullptr))) return 0ull;
-
                 D3D12_HEAP_PROPERTIES heapProps{};
                 heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
@@ -513,8 +508,8 @@ namespace hax {
                 
                 if (FAILED(this->_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture)))) return 0ull;
 
-                const UINT uploadPitch = (width * sizeof(Color) + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
-                const UINT uploadSize = height * uploadPitch;
+                const uint32_t pitch = (width * sizeof(Color) + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+                const UINT uploadSize = height * pitch;
                 
                 heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
 
@@ -543,75 +538,18 @@ namespace hax {
                 }
 
                 for (uint32_t i = 0u; i < height; i++) {
-                    memcpy(pLocalBuffer + i * uploadPitch, reinterpret_cast<const BYTE*>(data) + i * width * sizeof(Color), width * sizeof(Color));
+                    memcpy(pLocalBuffer + i * pitch, reinterpret_cast<const BYTE*>(data) + i * width * sizeof(Color), width * sizeof(Color));
                 }
 
                 pBuffer->Unmap(0u, &range);
 
-                D3D12_TEXTURE_COPY_LOCATION srcLocation{};
-                srcLocation.pResource = pBuffer;
-                srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-                srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                srcLocation.PlacedFootprint.Footprint.Width = width;
-                srcLocation.PlacedFootprint.Footprint.Height = height;
-                srcLocation.PlacedFootprint.Footprint.Depth = 1u;
-                srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
-
-                D3D12_TEXTURE_COPY_LOCATION dstLocation{};
-                dstLocation.pResource = pTexture;
-                dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-
-                this->_pTextureCommandList->CopyTextureRegion(&dstLocation, 0u, 0u, 0u, &srcLocation, nullptr);
-
-                D3D12_RESOURCE_BARRIER barrier{};
-                barrier.Transition.pResource = pTexture;
-                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-                barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-
-                this->_pTextureCommandList->ResourceBarrier(1u, &barrier);
-
-                if (FAILED(this->_pTextureCommandList->Close())) {
+                if (!this->uploadTexture(pTexture, pBuffer, width, height, pitch)) {
                     pBuffer->Release();
                     pTexture->Release();
 
                     return 0ull;
                 }
 
-                ID3D12Fence* pFence = nullptr;
-
-                if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) {
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                HANDLE hEvent = CreateEventA(nullptr, FALSE, FALSE, nullptr);
-
-                if (hEvent == nullptr) {
-                    pFence->Release();
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                pFence->SetEventOnCompletion(1u, hEvent);
-                this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
-
-                if (FAILED(this->_pCommandQueue->Signal(pFence, 1u))) {
-                    pFence->Release();
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                WaitForSingleObject(hEvent, INFINITE);
-
-                CloseHandle(hEvent);
-                pFence->Release();
                 pBuffer->Release();
 
                 const D3D12_CPU_DESCRIPTOR_HANDLE hSrvHeapCpuDescriptor{
@@ -917,6 +855,69 @@ namespace hax {
                 if (FAILED(this->_pDevice->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pPipelineState)))) return nullptr;
                 
                 return pPipelineState;
+            }
+
+
+            bool Backend::uploadTexture(ID3D12Resource* pTexture, ID3D12Resource* pBuffer, uint32_t width, uint32_t height, uint32_t pitch) const {
+                
+                if (FAILED(this->_pTextureCommandAllocator->Reset())) return 0ull;
+
+                if (FAILED(this->_pTextureCommandList->Reset(this->_pTextureCommandAllocator, nullptr))) return 0ull;
+
+                D3D12_TEXTURE_COPY_LOCATION srcLocation{};
+                srcLocation.pResource = pBuffer;
+                srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+                srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                srcLocation.PlacedFootprint.Footprint.Width = width;
+                srcLocation.PlacedFootprint.Footprint.Height = height;
+                srcLocation.PlacedFootprint.Footprint.Depth = 1u;
+                srcLocation.PlacedFootprint.Footprint.RowPitch = pitch;
+
+                D3D12_TEXTURE_COPY_LOCATION dstLocation{};
+                dstLocation.pResource = pTexture;
+                dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+                this->_pTextureCommandList->CopyTextureRegion(&dstLocation, 0u, 0u, 0u, &srcLocation, nullptr);
+
+                D3D12_RESOURCE_BARRIER barrier{};
+                barrier.Transition.pResource = pTexture;
+                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+                barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+                this->_pTextureCommandList->ResourceBarrier(1u, &barrier);
+
+                if (FAILED(this->_pTextureCommandList->Close())) return false;
+
+                ID3D12Fence* pFence = nullptr;
+
+                if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) return false;
+
+                const HANDLE hEvent = CreateEventA(nullptr, FALSE, FALSE, nullptr);
+
+                if (hEvent == nullptr) return false;
+
+                if (FAILED(pFence->SetEventOnCompletion(1u, hEvent))) {
+                    CloseHandle(hEvent);
+                    pFence->Release();
+
+                    return false;
+                }
+
+                this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList* const *>(&this->_pTextureCommandList));
+
+                if (FAILED(this->_pCommandQueue->Signal(pFence, 1u))) {
+                    CloseHandle(hEvent);
+                    pFence->Release();
+
+                    return false;
+                }
+
+                WaitForSingleObject(hEvent, INFINITE);
+                CloseHandle(hEvent);
+                pFence->Release();
+                
+                return true;
             }
 
 
