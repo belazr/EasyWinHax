@@ -578,22 +578,9 @@ namespace hax {
                     return 0ull;
                 }
 
-                D3D12_COMMAND_QUEUE_DESC queueDesc{};
-                queueDesc.NodeMask = 1u;
-
-                ID3D12CommandQueue* pCmdQueue = nullptr;
-
-                if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCmdQueue)))) {
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
                 ID3D12Fence* pFence = nullptr;
 
                 if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) {
-                    pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
 
@@ -604,7 +591,6 @@ namespace hax {
 
                 if (hEvent == nullptr) {
                     pFence->Release();
-                    pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
 
@@ -612,11 +598,10 @@ namespace hax {
                 }
 
                 pFence->SetEventOnCompletion(1u, hEvent);
-                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
+                this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
 
-                if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
+                if (FAILED(this->_pCommandQueue->Signal(pFence, 1u))) {
                     pFence->Release();
-                    pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
 
@@ -627,7 +612,6 @@ namespace hax {
 
                 CloseHandle(hEvent);
                 pFence->Release();
-                pCmdQueue->Release();
                 pBuffer->Release();
 
                 const D3D12_CPU_DESCRIPTOR_HANDLE hSrvHeapCpuDescriptor{
