@@ -1,0 +1,1 @@
+#define IDR_DEMO_TEXTURE 101
