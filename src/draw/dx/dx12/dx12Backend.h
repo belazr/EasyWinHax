@@ -50,6 +50,9 @@ namespace hax {
 
 				HWND _hMainWindow;
 				ID3D12Device* _pDevice;
+				ID3D12CommandAllocator* _pTextureCommandAllocator;
+				ID3D12GraphicsCommandList* _pTextureCommandList;
+				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12DescriptorHeap* _pRtvDescriptorHeap;
 				ID3D12DescriptorHeap* _pSrvDescriptorHeap;
 				D3D12_CPU_DESCRIPTOR_HANDLE _hRtvHeapStartDescriptor;
@@ -61,7 +64,6 @@ namespace hax {
 				ID3D12PipelineState* _pPointListPipelineStatePassthrough;
 				ID3D12PipelineState* _pTriangleListPipelineStateTexture;
 				ID3D12Fence* _pFence;
-				ID3D12GraphicsCommandList* _pCommandList;
 				ID3D12Resource* _pRtvResource;
 				D3D12_VIEWPORT _viewport;
 
@@ -150,6 +152,7 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) const override;
 
 			private:
+				ID3D12GraphicsCommandList* createCommandList() const;
 				bool createDescriptorHeaps();
 				bool createRootSignature();
 				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, D3D12_SHADER_BYTECODE pixelShader) const;
