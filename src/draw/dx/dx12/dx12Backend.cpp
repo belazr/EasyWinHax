@@ -590,20 +590,9 @@ namespace hax {
                     return 0ull;
                 }
 
-                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
-
                 ID3D12Fence* pFence = nullptr;
 
                 if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) {
-                    pCmdQueue->Release();
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
-                    pFence->Release();
                     pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
@@ -623,6 +612,17 @@ namespace hax {
                 }
 
                 pFence->SetEventOnCompletion(1u, hEvent);
+                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
+
+                if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
+                    pFence->Release();
+                    pCmdQueue->Release();
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return 0ull;
+                }
+
                 WaitForSingleObject(hEvent, INFINITE);
 
                 CloseHandle(hEvent);
