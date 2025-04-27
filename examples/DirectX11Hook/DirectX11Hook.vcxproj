@@ -169,6 +169,13 @@
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\demo.h" />
+    <ClInclude Include="src\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\resource.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
