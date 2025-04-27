@@ -136,10 +136,10 @@ namespace hax {
 
 
             Backend::Backend() :
-                _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{},
+                _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pTextureCommandAllocator{}, _pTextureCommandList{}, _pCommandList{},
                 _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{}, _srvHeapDescriptorIncrementSize{},
                 _pRootSignature{}, _pTriangleListPipelineStatePassthrough {}, _pPointListPipelineStatePassthrough{}, _pTriangleListPipelineStateTexture{},
-				_pFence{}, _pCommandList{}, _viewport{}, _pRtvResource{}, _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData{}, _textures{} {}
+				_pFence{}, _viewport{}, _pRtvResource{}, _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData{}, _textures{} {}
 
 
             Backend::~Backend() {
@@ -149,10 +149,6 @@ namespace hax {
                 }
                 
                 this->destroyImageDataArray();
-
-                if (this->_pCommandList) {
-                    this->_pCommandList->Release();
-                }
 
                 if (this->_pFence) {
                     this->_pFence->Release();
@@ -175,11 +171,23 @@ namespace hax {
                 }
 
                 if (this->_pSrvDescriptorHeap) {
-                    this->_pRtvDescriptorHeap->Release();
+                    this->_pSrvDescriptorHeap->Release();
                 }
 
                 if (this->_pRtvDescriptorHeap) {
                     this->_pRtvDescriptorHeap->Release();
+                }
+
+                if (this->_pCommandList) {
+                    this->_pCommandList->Release();
+                }
+
+                if (this->_pTextureCommandList) {
+                    this->_pTextureCommandList->Release();
+                }
+
+                if (this->_pTextureCommandAllocator) {
+                    this->_pTextureCommandAllocator->Release();
                 }
 
                 for (size_t i = 0u; i < this->_textures.size(); i++) {
@@ -420,6 +428,24 @@ namespace hax {
 
                 }
 
+                if (!this->_pTextureCommandAllocator) {
+                    
+                    if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pTextureCommandAllocator)))) return false;
+                
+                }
+
+                if (!this->_pTextureCommandList) {
+                    this->_pTextureCommandList = this->createCommandList();
+                }
+
+                if (!this->_pTextureCommandList) return false;
+
+                if (!this->_pCommandList) {
+                    this->_pCommandList = this->createCommandList();
+                }
+
+                if (!this->_pCommandList) return false;
+
                 if (!this->createDescriptorHeaps()) return false;
 
                 if (!this->_pRootSignature) {
@@ -464,6 +490,11 @@ namespace hax {
 
 
             TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
+
+                if (FAILED(this->_pTextureCommandAllocator->Reset())) return 0ull;
+
+                if (FAILED(this->_pTextureCommandList->Reset(this->_pTextureCommandAllocator, nullptr))) return 0ull;
+
                 D3D12_HEAP_PROPERTIES heapProps{};
                 heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
@@ -517,39 +548,6 @@ namespace hax {
 
                 pBuffer->Unmap(0u, &range);
 
-                D3D12_COMMAND_QUEUE_DESC queueDesc{};
-                queueDesc.NodeMask = 1u;
-
-                ID3D12CommandQueue* pCmdQueue = nullptr;
-
-                if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCmdQueue)))) {
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                ID3D12CommandAllocator* pCmdAlloc = nullptr;
-
-                if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pCmdAlloc)))) {
-                    pCmdQueue->Release();
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
-                ID3D12GraphicsCommandList* pCmdList = nullptr;
-
-                if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, pCmdAlloc, nullptr, IID_PPV_ARGS(&pCmdList)))) {
-                    pCmdAlloc->Release();
-                    pCmdQueue->Release();
-                    pBuffer->Release();
-                    pTexture->Release();
-
-                    return 0ull;
-                }
-
                 D3D12_TEXTURE_COPY_LOCATION srcLocation{};
                 srcLocation.pResource = pBuffer;
                 srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -563,7 +561,7 @@ namespace hax {
                 dstLocation.pResource = pTexture;
                 dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 
-                pCmdList->CopyTextureRegion(&dstLocation, 0u, 0u, 0u, &srcLocation, nullptr);
+                this->_pTextureCommandList->CopyTextureRegion(&dstLocation, 0u, 0u, 0u, &srcLocation, nullptr);
 
                 D3D12_RESOURCE_BARRIER barrier{};
                 barrier.Transition.pResource = pTexture;
@@ -571,25 +569,32 @@ namespace hax {
                 barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
                 barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-                pCmdList->ResourceBarrier(1u, &barrier);
+                this->_pTextureCommandList->ResourceBarrier(1u, &barrier);
 
-                if (FAILED(pCmdList->Close())) {
-                    pCmdList->Release();
-                    pCmdAlloc->Release();
-                    pCmdQueue->Release();
+                if (FAILED(this->_pTextureCommandList->Close())) {
                     pBuffer->Release();
                     pTexture->Release();
 
                     return 0ull;
                 }
 
-                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&pCmdList));
+                D3D12_COMMAND_QUEUE_DESC queueDesc{};
+                queueDesc.NodeMask = 1u;
+
+                ID3D12CommandQueue* pCmdQueue = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pCmdQueue)))) {
+                    pBuffer->Release();
+                    pTexture->Release();
+
+                    return 0ull;
+                }
+
+                pCmdQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pTextureCommandList));
 
                 ID3D12Fence* pFence = nullptr;
 
                 if (FAILED(this->_pDevice->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence)))) {
-                    pCmdList->Release();
-                    pCmdAlloc->Release();
                     pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
@@ -599,8 +604,6 @@ namespace hax {
 
                 if (FAILED(pCmdQueue->Signal(pFence, 1u))) {
                     pFence->Release();
-                    pCmdList->Release();
-                    pCmdAlloc->Release();
                     pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
@@ -612,8 +615,6 @@ namespace hax {
 
                 if (hEvent == nullptr) {
                     pFence->Release();
-                    pCmdList->Release();
-                    pCmdAlloc->Release();
                     pCmdQueue->Release();
                     pBuffer->Release();
                     pTexture->Release();
@@ -626,8 +627,6 @@ namespace hax {
 
                 CloseHandle(hEvent);
                 pFence->Release();
-                pCmdList->Release();
-                pCmdAlloc->Release();
                 pCmdQueue->Release();
                 pBuffer->Release();
 
@@ -765,6 +764,21 @@ namespace hax {
                 *frameHeight = this->_viewport.Height;
 
                 return;
+            }
+
+
+            ID3D12GraphicsCommandList* Backend::createCommandList() const {
+                ID3D12GraphicsCommandList* pCommandList = nullptr;
+
+                if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pTextureCommandAllocator, nullptr, IID_PPV_ARGS(&pCommandList)))) return nullptr;
+
+                if (FAILED(pCommandList->Close())) {
+                    pCommandList->Release();
+
+                    return nullptr;
+                }
+
+                return pCommandList;
             }
 
 
@@ -929,14 +943,6 @@ namespace hax {
                 for (uint32_t i = 0; i < this->_imageCount; i++) {
 
                     if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
-
-                    if (!this->_pCommandList) {
-
-                        if (FAILED(this->_pDevice->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, this->_pImageDataArray[i].pCommandAllocator, nullptr, IID_PPV_ARGS(&this->_pCommandList)))) return false;
-
-                        if (FAILED(this->_pCommandList->Close())) return false;
-
-                    }
 
                     this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStatePassthrough, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
