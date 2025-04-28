@@ -71,7 +71,7 @@ namespace hax {
 			}
 
 
-			uint32_t BufferBackend::capacity() {
+			uint32_t BufferBackend::capacity() const {
 				
 				return this->_capacity;
 			}

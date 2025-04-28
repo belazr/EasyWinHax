@@ -32,7 +32,7 @@ namespace hax {
 			//
 			// Return:
 			// The current capacity of the buffer in vertices.
-			virtual uint32_t capacity() = 0;
+			virtual uint32_t capacity() const = 0;
 
 			// Maps the allocated VRAM into the address space of the current process.
 			// 
