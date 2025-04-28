@@ -26,12 +26,16 @@ namespace hax {
 
 
 			bool BufferBackend::create(uint32_t capacity) {
-				this->_pVertexBuffer = nullptr;
-				this->_pIndexBuffer = nullptr;
-
+				
+				if (this->_capacity) return false;
+				
 				const UINT vertexBufferSize = capacity * sizeof(Vertex);
 
-				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, 0u, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) return false;
+				if (FAILED(this->_pDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, 0u, D3DPOOL_DEFAULT, &this->_pVertexBuffer, nullptr))) {
+					this->destroy();
+					
+					return false;
+				}
 
 				const UINT indexBufferSize = capacity * sizeof(uint32_t);
 

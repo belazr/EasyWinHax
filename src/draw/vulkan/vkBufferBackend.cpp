@@ -35,18 +35,24 @@ namespace hax {
 
 
 			bool BufferBackend::create(uint32_t capacity) {
-				this->_hVertexBuffer = VK_NULL_HANDLE;
-				this->_hIndexBuffer = VK_NULL_HANDLE;
-				this->_hVertexMemory = VK_NULL_HANDLE;
-				this->_hIndexMemory = VK_NULL_HANDLE;
-
+				
+				if (this->_capacity) return false;
+				
 				uint32_t vertexBufferSize = capacity * sizeof(Vertex);
 
-				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) return false;
+				if (!this->createBuffer(&this->_hVertexBuffer, &this->_hVertexMemory, &vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) {
+					this->destroy();
+
+					return false;
+				}
 
 				uint32_t indexBufferSize = capacity * sizeof(uint32_t);
 
-				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) return false;
+				if (!this->createBuffer(&this->_hIndexBuffer, &this->_hIndexMemory, &indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) {
+					this->destroy();
+
+					return false;
+				}
 
 				this->_capacity = capacity;
 

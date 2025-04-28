@@ -27,8 +27,8 @@ namespace hax {
 
 
 			bool BufferBackend::create(uint32_t capacity) {
-				this->_pVertexBuffer = nullptr;
-				this->_pIndexBuffer = nullptr;
+				
+				if (this->_capacity) return false;
 
 				D3D11_BUFFER_DESC vertexBufferDesc{};
 				vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -36,7 +36,11 @@ namespace hax {
 				vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 				vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-				if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &this->_pVertexBuffer))) return false;
+				if (FAILED(this->_pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &this->_pVertexBuffer))) {
+					this->destroy();
+
+					return false;
+				}
 
 				D3D11_BUFFER_DESC indexBufferDesc{};
 				indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
