@@ -27,12 +27,16 @@ namespace hax {
 
 
 			bool BufferBackend::create(uint32_t capacity) {
-				this->_pVertexBufferResource = nullptr;
-				this->_pIndexBufferResource = nullptr;
+				
+				if (this->_capacity) return false;
 
 				const uint32_t vertexBufferSize = capacity * sizeof(Vertex);
 
-				if (!this->createBuffer(&this->_pVertexBufferResource, vertexBufferSize)) return false;
+				if (!this->createBuffer(&this->_pVertexBufferResource, vertexBufferSize)) {
+					this->destroy();
+
+					return false;
+				}
 
 				const uint32_t indexBufferSize = capacity * sizeof(uint32_t);
 

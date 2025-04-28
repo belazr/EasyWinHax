@@ -48,12 +48,16 @@ namespace hax {
 
 
 			bool BufferBackend::create(uint32_t capacity) {
-				this->_vertexBufferId = UINT_MAX;
-				this->_indexBufferId = UINT_MAX;
+				
+				if (this->_capacity) return false;
 
 				const uint32_t vertexBufferSize = capacity * sizeof(Vertex);
 
-				if (!this->createBuffer(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER_BINDING, vertexBufferSize, &this->_vertexBufferId)) return false;
+				if (!this->createBuffer(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER_BINDING, vertexBufferSize, &this->_vertexBufferId)) {
+					this->destroy();
+
+					return false;
+				}
 
 				const uint32_t indexBufferSize = capacity * sizeof(GLuint);
 
