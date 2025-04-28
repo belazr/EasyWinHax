@@ -1413,12 +1413,13 @@ namespace hax {
 
 					if (this->_pImageDataArray[i].hCommandBuffer == VK_NULL_HANDLE) return false;
 
+					constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
+					constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+
 					this->_pImageDataArray[i].triangleListBuffer.initialize(
 						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
 						this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough
 					);
-
-					constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
 
 					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
 
@@ -1426,8 +1427,6 @@ namespace hax {
 						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
 						this->_hPipelineLayout, this->_hPointListPipelinePassthrough
 					);
-
-					constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
 
 					if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
 

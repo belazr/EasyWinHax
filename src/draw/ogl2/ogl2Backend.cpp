@@ -68,24 +68,32 @@ namespace hax {
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
-					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthroughId);
-					this->_triangleListBuffer.destroy();
-
 					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 100u;
-
-					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
-
-					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthroughId);
-					this->_pointListBuffer.destroy();
-
 					constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
 
-					if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthroughId);
+
+					if (!this->_triangleListBuffer.capacity()) {
+
+						if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+					}
+
+					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthroughId);
+
+					if (!this->_pointListBuffer.capacity()) {
+
+						if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+					}
 
 					this->_textureTriangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramTextureId);
-					this->_textureTriangleListBuffer.destroy();
 
-					if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+					if (!this->_textureTriangleListBuffer.capacity()) {
+
+						if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+					}
 
 					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
 				}

@@ -106,24 +106,32 @@ namespace hax {
 
 				if (!this->createShaders()) return false;
 
-				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_TRIANGLELIST);
-				this->_triangleListBuffer.destroy();
-
 				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 100u;
-
-				if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
-
-				this->_pointListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_POINTLIST);
-				this->_pointListBuffer.destroy();
-
 				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
 
-				if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_TRIANGLELIST);
+
+				if (!this->_triangleListBuffer.capacity()) {
+
+					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+				}
+				
+				this->_pointListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3DPT_POINTLIST);
+
+				if (!this->_pointListBuffer.capacity()) {
+
+					if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
+
+				}
 
 				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture, D3DPT_TRIANGLELIST);
-				this->_textureTriangleListBuffer.destroy();
 
-				if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+				if (!this->_textureTriangleListBuffer.capacity()) {
+
+					if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+
+				}
 
 				return true;
 			}
