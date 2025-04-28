@@ -55,7 +55,7 @@ namespace hax {
 				//
 				// Return:
 				// The current capacity of the buffer in vertices.
-				uint32_t capacity() override;
+				uint32_t capacity() const override;
 
 				// Maps the allocated VRAM into the address space of the current process.
 				// 
