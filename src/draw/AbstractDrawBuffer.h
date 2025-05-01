@@ -21,10 +21,8 @@ namespace hax {
 			uint32_t _size;
 			uint32_t _capacity;
 
-			bool _frame;
-
 		public:
-			AbstractDrawBuffer() : _pBufferBackend{}, _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _size{}, _capacity{}, _frame{} {}
+			AbstractDrawBuffer() : _pBufferBackend{}, _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _size{}, _capacity{} {}
 
 			// Begins the frame for the buffer. Has to be called before any append calls.
 			//
@@ -42,38 +40,41 @@ namespace hax {
 				this->_pBufferBackend = pBufferBackend;
 				this->_capacity = pBufferBackend->capacity();
 
-				this->_frame = this->_pBufferBackend->map(&this->_pLocalVertexBuffer, &this->_pLocalIndexBuffer);
+				if (!this->_pBufferBackend->map(&this->_pLocalVertexBuffer, &this->_pLocalIndexBuffer)) {
+					this->reset();
 
-				if (!this->_frame) {
-					this->_capacity = 0u;
-					this->_pBufferBackend = nullptr;
+					return false;
 				}
 
-				return this->_frame;
+				return true;
 			}
 
 			// Ends the frame for the buffer and draws the contents. Has to be called after any append calls.
 			virtual void endFrame() = 0;
 
 		protected:
-			// Increases the capacity of the buffer if the desired capacity is greater than the current one.
-			//
-			// Parameters:
-			// 
-			// [in] capacity:
-			// New capacity of the buffer in vertices after the resize.
-			//
-			// Return:
-			// True on success, false on failure.
+			void reset() {
+				this->_pBufferBackend = nullptr;
+				this->_pLocalVertexBuffer = nullptr;
+				this->_pLocalIndexBuffer = nullptr;
+				this->_size = 0u;
+				this->_capacity = 0u;
+			}
+
+
 			bool reserve(uint32_t capacity) {
 
-				if (!this->_frame) return false;
+				if (!this->_pBufferBackend) return false;
 
 				if (capacity <= this->_capacity) return true;
 
 				Vertex* const pTmpVertexBuffer = reinterpret_cast<Vertex*>(malloc(this->_size * sizeof(Vertex)));
 
-				if (!pTmpVertexBuffer) return false;
+				if (!pTmpVertexBuffer) {
+					this->reset();
+					
+					return false;
+				}
 
 				if (this->_pLocalVertexBuffer) {
 					memcpy(pTmpVertexBuffer, this->_pLocalVertexBuffer, this->_size * sizeof(Vertex));
@@ -83,6 +84,7 @@ namespace hax {
 
 				if (!pTmpIndexBuffer) {
 					free(pTmpVertexBuffer);
+					this->reset();
 
 					return false;
 				}
@@ -101,9 +103,7 @@ namespace hax {
 				if (!this->_pBufferBackend->create(capacity)) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
-					this->_capacity = 0u;
-					this->_pBufferBackend = nullptr;
-					this->_frame = false;
+					this->reset();
 
 					return false;
 				}
@@ -113,9 +113,7 @@ namespace hax {
 				if (!this->_pBufferBackend->map(&this->_pLocalVertexBuffer, &this->_pLocalIndexBuffer)) {
 					free(pTmpVertexBuffer);
 					free(pTmpIndexBuffer);
-					this->_capacity = 0u;
-					this->_pBufferBackend = nullptr;
-					this->_frame = false;
+					this->reset();
 
 					return false;
 				}
