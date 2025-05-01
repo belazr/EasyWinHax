@@ -87,17 +87,20 @@ namespace hax {
 
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
-
 				D3D11_MAPPED_SUBRESOURCE subresourceVertex{};
 
-				if (FAILED(this->_pContext->Map(this->_pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourceVertex))) return false;
+				if (FAILED(this->_pContext->Map(this->_pVertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourceVertex))) {
+					this->unmap();
+
+					return false;
+				}
 
 				*ppLocalVertexBuffer = reinterpret_cast<Vertex*>(subresourceVertex.pData);
 
 				D3D11_MAPPED_SUBRESOURCE subresourceIndex{};
 
 				if (FAILED(this->_pContext->Map(this->_pIndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresourceIndex))) {
-					this->_pContext->Unmap(this->_pVertexBuffer, 0u);
+					this->unmap();
 
 					return false;
 				}

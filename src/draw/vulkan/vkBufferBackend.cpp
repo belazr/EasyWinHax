@@ -98,10 +98,14 @@ namespace hax {
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
 
-				if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->_capacity * sizeof(Vertex), 0ull, reinterpret_cast<void**>(ppLocalVertexBuffer)) != VkResult::VK_SUCCESS) return false;
+				if (this->_f.pVkMapMemory(this->_hDevice, this->_hVertexMemory, 0ull, this->_capacity * sizeof(Vertex), 0ull, reinterpret_cast<void**>(ppLocalVertexBuffer)) != VK_SUCCESS) {
+					this->unmap();
 
-				if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->_capacity * sizeof(uint32_t), 0ull, reinterpret_cast<void**>(ppLocalIndexBuffer)) != VkResult::VK_SUCCESS) {
-					this->_f.pVkUnmapMemory(this->_hDevice, this->_hVertexMemory);
+					return false;
+				}
+
+				if (this->_f.pVkMapMemory(this->_hDevice, this->_hIndexMemory, 0ull, this->_capacity * sizeof(uint32_t), 0ull, reinterpret_cast<void**>(ppLocalIndexBuffer)) != VK_SUCCESS) {
+					this->unmap();
 
 					return false;
 				}
