@@ -86,7 +86,7 @@ Press "END" to unhook and eject the DLL.
 ![Screenshot](https://github.com/belazr/EasyWinHax/assets/72708147/e304f46d-61ea-4291-8c1b-4c0a9095599e)
 
 ## TODO
-- Support texture drawing with IBackend interface
+- Draw text with font atlas texture
 - Make IBackend interface compatible with ImGui frontend
 
 ## References
