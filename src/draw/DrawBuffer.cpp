@@ -6,7 +6,7 @@ namespace hax {
 
 		void DrawBuffer::append(const Vertex* data, uint32_t count) {
 
-			if (!this->_frame) return;
+			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
 
 			const uint32_t newSize = this->_size + count;
 
@@ -28,7 +28,7 @@ namespace hax {
 
 		void DrawBuffer::append(const Vector2* data, uint32_t count, Color color, Vector2 offset) {
 
-			if (!this->_frame) return;
+			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
 
 			const uint32_t newSize = this->_size + count;
 
@@ -50,20 +50,22 @@ namespace hax {
 
 		void DrawBuffer::endFrame() {
 			
-			if (!this->_frame) return;
+			if (!this->_pBufferBackend) return;
 
 			this->_pBufferBackend->unmap();
 
 			this->_pLocalIndexBuffer = nullptr;
 			this->_pLocalVertexBuffer = nullptr;
 
-			if (!this->_pBufferBackend->begin()) return;
+			if (!this->_pBufferBackend->begin()) {
+				this->reset();
+				
+				return;
+			}
 		
 			this->_pBufferBackend->draw(0ull, 0u, this->_size);
 			this->_pBufferBackend->end();
-			this->_size = 0u;
-			this->_capacity = 0u;
-			this->_pBufferBackend = nullptr;
+			this->reset();
 
 			return;
 		}

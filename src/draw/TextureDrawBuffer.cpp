@@ -6,7 +6,7 @@ namespace hax {
 
 		void TextureDrawBuffer::append(const Vertex* data, uint32_t count, TextureId textureId) {
 			
-			if (!this->_frame) return;
+			if (!this->_pLocalVertexBuffer) return;
 			
 			const uint32_t newSize = this->_size + count;
 
@@ -49,7 +49,7 @@ namespace hax {
 
 		void TextureDrawBuffer::endFrame() {
 			
-			if (!this->_frame) return;
+			if (!this->_pBufferBackend || !this->_pLocalIndexBuffer) return;
 			
 			uint32_t offset = 0u;
 
@@ -63,7 +63,11 @@ namespace hax {
 			this->_pLocalIndexBuffer = nullptr;
 			this->_pLocalVertexBuffer = nullptr;
 
-			if (!this->_pBufferBackend->begin()) return;
+			if (!this->_pBufferBackend->begin()) {
+				this->reset();
+				
+				return;
+			}
 
 			uint32_t index = 0u;
 
@@ -75,9 +79,7 @@ namespace hax {
 			}
 
 			this->_pBufferBackend->end();
-			this->_size = 0u;
-			this->_capacity = 0u;
-			this->_pBufferBackend = nullptr;
+			this->reset();
 			
 			return;
 		}
