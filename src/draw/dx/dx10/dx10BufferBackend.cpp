@@ -87,10 +87,14 @@ namespace hax {
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
 
-				if (FAILED(this->_pVertexBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, reinterpret_cast<void**>(ppLocalVertexBuffer)))) return false;
+				if (FAILED(this->_pVertexBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, reinterpret_cast<void**>(ppLocalVertexBuffer)))) {
+					this->unmap();
+
+					return false;
+				}
 
 				if (FAILED(this->_pIndexBuffer->Map(D3D10_MAP_WRITE_DISCARD, 0u, reinterpret_cast<void**>(ppLocalIndexBuffer)))) {
-					this->_pVertexBuffer->Unmap();
+					this->unmap();
 					
 					return false;
 				}

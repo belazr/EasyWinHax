@@ -80,10 +80,14 @@ namespace hax {
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
 
-				if (FAILED(this->_pVertexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(ppLocalVertexBuffer)))) return false;
+				if (FAILED(this->_pVertexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(ppLocalVertexBuffer)))) {
+					this->unmap();
+
+					return false;
+				}
 
 				if (FAILED(this->_pIndexBufferResource->Map(0u, nullptr, reinterpret_cast<void**>(ppLocalIndexBuffer)))) {
-					this->_pVertexBufferResource->Unmap(0u, nullptr);
+					this->unmap();
 
 					return false;
 				}

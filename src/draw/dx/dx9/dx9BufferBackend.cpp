@@ -79,10 +79,14 @@ namespace hax {
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
 
-				if (FAILED(this->_pVertexBuffer->Lock(0u, this->_capacity * sizeof(Vertex), reinterpret_cast<void**>(ppLocalVertexBuffer), D3DLOCK_DISCARD))) return false;
+				if (FAILED(this->_pVertexBuffer->Lock(0u, this->_capacity * sizeof(Vertex), reinterpret_cast<void**>(ppLocalVertexBuffer), D3DLOCK_DISCARD))) {
+					this->unmap();
+
+					return false;
+				}
 				
 				if (FAILED(this->_pIndexBuffer->Lock(0u, this->_capacity * sizeof(uint32_t), reinterpret_cast<void**>(ppLocalIndexBuffer), D3DLOCK_DISCARD))) {
-					this->_pVertexBuffer->Unlock();
+					this->unmap();
 
 					return false;
 				}

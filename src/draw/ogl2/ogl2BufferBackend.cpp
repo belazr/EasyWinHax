@@ -112,7 +112,11 @@ namespace hax {
 				*ppLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
 
-				if (!(*ppLocalVertexBuffer)) return false;
+				if (!(*ppLocalVertexBuffer)) {
+					this->unmap();
+				
+					return false;
+				}
 
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
 
@@ -121,10 +125,8 @@ namespace hax {
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
 
 				if (!(*ppLocalIndexBuffer)) {
-					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
-					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
-					
+					this->unmap();
+
 					return false;
 				}
 
