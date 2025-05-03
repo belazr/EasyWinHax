@@ -26,7 +26,7 @@
 
 #include "draw\dx\dx9\dx9Backend.h"
 
-// Headers for DirectX 9
+// Headers for DirectX 10
 #pragma comment(lib, "d3d10.lib")
 
 #include "draw\dx\dx10\dx10Backend.h"
