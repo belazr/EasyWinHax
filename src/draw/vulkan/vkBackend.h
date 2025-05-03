@@ -77,14 +77,11 @@ namespace hax {
 				//
 				// Parameters:
 				// 
-				// [in] pArg1:
-				// Pass the VkQueue.
-				//
 				// [in] pArg2:
 				// Pass the VkPresentInfoKHR*.
 				//
-				// [in] pArg3:
-				// Pass the device handle that was retrieved by vk::getInitData().
+				// [in] pArg2:
+				// Pass the VkDevice that was retrieved by vk::getInitData().
 				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.

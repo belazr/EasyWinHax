@@ -21,17 +21,19 @@ namespace hax {
 			// The argument of the the hooked function.
 			// For OpenGL 2 wglSwapBuffers hooks pass nothing.
 			// For DirectX 9 EndScene hooks pass the LPDIRECT3DDEVICE9.
+			// For DirectX 10 Present hooks pass the IDXGISwapChain*.
 			// For DirectX 11 Present hooks pass the IDXGISwapChain*.
 			// For DirectX 12 Present hooks pass the IDXGISwapChain3*.
-			// For Vulkan QueuePresentKHR hooks pass the VkPresentInfoKHR.
+			// For Vulkan QueuePresentKHR hooks pass the VkPresentInfoKHR*.
 			//
 			// [in] pArg2:
 			// The argument of the the hooked function.
 			// For OpenGL 2 wglSwapBuffers hooks pass nothing.
 			// For DirectX 9 EndScene hooks pass nothing.
+			// For DirectX 10 EndScene hooks pass nothing.
 			// For DirectX 11 Present hooks pass nothing.
 			// For DirectX 12 Present hooks pass the ID3D12CommandQueue* that was retrieved by dx12::getInitData().
-			// For Vulkan QueuePresentKHR hooks pass the device handle that was retrieved by vk::getInitData().
+			// For Vulkan QueuePresentKHR hooks pass the VkDevice that was retrieved by vk::getInitData().
 			virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) = 0;
 
 			// Initializes the backend. Should be called by an Engine object until success.
