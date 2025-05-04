@@ -34,7 +34,27 @@ namespace hax {
 				}
 
 
-
+				// Creates internal resources.
+				//
+				// Parameters:
+				//
+				// [in] pDevice:
+				// Logical device of the backend.
+				//
+				// [in] pCommandList:
+				// Command list of the backend.
+				//
+				// [in] pTriangleListPipelineStatePassthrough:
+				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
+				// 
+				// [in] pPointListPipelineStatePassthrough:
+				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
+				// 
+				// [in] pTriangleListPipelineStateTexture:
+				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
+				//
+				// Return:
+				// True on success, false on failure.
 				bool create(
 					ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pTriangleListPipelineStatePassthrough,
 					ID3D12PipelineState* pPointListPipelineStatePassthrough, ID3D12PipelineState* pTriangleListPipelineStateTexture
@@ -83,6 +103,8 @@ namespace hax {
 					return true;
 				}
 
+
+				// Destroys all internal resources.
 				void destroy() {
 
 					if (this->hEvent) {
