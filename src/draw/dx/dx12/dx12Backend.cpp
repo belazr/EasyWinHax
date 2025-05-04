@@ -139,7 +139,7 @@ namespace hax {
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pTextureCommandAllocator{}, _pTextureCommandList{}, _pCommandList{},
                 _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{}, _srvHeapDescriptorIncrementSize{},
                 _pRootSignature{}, _pTriangleListPipelineStatePassthrough {}, _pPointListPipelineStatePassthrough{}, _pTriangleListPipelineStateTexture{},
-				_pFence{}, _viewport{}, _pRtvResource{}, _pImageDataArray{}, _imageCount{}, _curBackBufferIndex{}, _pCurImageData{}, _textures{} {}
+				_pFence{}, _viewport{}, _pRtvResource{}, _frameDataVector{}, _curBackBufferIndex{}, _pCurFrameData{}, _textures{} {}
 
 
             Backend::~Backend() {
@@ -147,8 +147,6 @@ namespace hax {
                 if (this->_pRtvResource) {
                     this->_pRtvResource->Release();
                 }
-                
-                this->destroyImageDataArray();
 
                 if (this->_pFence) {
                     this->_pFence->Release();
@@ -578,27 +576,22 @@ namespace hax {
 
                 if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
 
-                if (this->_imageCount != swapchainDesc.BufferCount) {
-                    this->destroyImageDataArray();
+                if (this->_frameDataVector.size() != swapchainDesc.BufferCount) {
 
-                    if (!this->createImageDataArray(swapchainDesc.BufferCount)) {
-                        this->destroyImageDataArray();
-
-                        return false;
-                    }
-
+                    if (!this->resizeFrameDataVector(swapchainDesc.BufferCount)) return false;
+                
                 }
 
                 this->_curBackBufferIndex = this->_pSwapChain->GetCurrentBackBufferIndex();
-                this->_pCurImageData = &this->_pImageDataArray[this->_curBackBufferIndex];
+                this->_pCurFrameData = this->_frameDataVector + this->_curBackBufferIndex;
 
-                if (WaitForSingleObject(this->_pCurImageData->hEvent, INFINITE) != WAIT_OBJECT_0) return false;
+                if (WaitForSingleObject(this->_pCurFrameData->hEvent, INFINITE) != WAIT_OBJECT_0) return false;
 
                 if (!this->getCurrentViewport(&this->_viewport)) return false;
                                 
-                if (FAILED(this->_pCurImageData->pCommandAllocator->Reset())) return false;
+                if (FAILED(this->_pCurFrameData->pCommandAllocator->Reset())) return false;
 
-                if (FAILED(this->_pCommandList->Reset(this->_pCurImageData->pCommandAllocator, nullptr))) return false;
+                if (FAILED(this->_pCommandList->Reset(this->_pCurFrameData->pCommandAllocator, nullptr))) return false;
 
                 if (!this->createRenderTargetView(swapchainDesc.BufferDesc.Format)) return false;
 
@@ -651,7 +644,7 @@ namespace hax {
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 
                 if (SUCCEEDED(this->_pCommandList->Close())) {
-                    this->_pFence->SetEventOnCompletion(static_cast<UINT64>(this->_curBackBufferIndex), this->_pCurImageData->hEvent);
+                    this->_pFence->SetEventOnCompletion(static_cast<UINT64>(this->_curBackBufferIndex), this->_pCurFrameData->hEvent);
                     this->_pCommandQueue->ExecuteCommandLists(1u, reinterpret_cast<ID3D12CommandList**>(&this->_pCommandList));
                     this->_pCommandQueue->Signal(this->_pFence, static_cast<UINT64>(this->_curBackBufferIndex));
                 }
@@ -665,19 +658,19 @@ namespace hax {
 
             IBufferBackend* Backend::getTriangleListBufferBackend() {
 
-                return &this->_pCurImageData->triangleListBuffer;
+                return &this->_pCurFrameData->triangleListBuffer;
             }
 
 
             IBufferBackend* Backend::getPointListBufferBackend() {
 
-                return &this->_pCurImageData->pointListBuffer;
+                return &this->_pCurFrameData->pointListBuffer;
             }
 
 
             IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
-                return &this->_pCurImageData->textureTriangleListBuffer;
+                return &this->_pCurFrameData->textureTriangleListBuffer;
             }
 
 
@@ -921,72 +914,25 @@ namespace hax {
             }
 
 
-            bool Backend::createImageDataArray(uint32_t imageCount) {
-                this->_pImageDataArray = new ImageData[imageCount]{};
-                this->_imageCount = imageCount;
+            bool Backend::resizeFrameDataVector(UINT size) {
+                // destroy old frame data to be safe
+                this->_frameDataVector.resize(0u);
+                this->_frameDataVector.resize(size);
 
-                for (uint32_t i = 0; i < this->_imageCount; i++) {
+                for (UINT i = 0u; i < size; i++) {
+                    
+                    if (!this->_frameDataVector[i].create(
+                        this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStatePassthrough,
+                        this->_pPointListPipelineStatePassthrough, this->_pTriangleListPipelineStateTexture
+                    )) {
+                        this->_frameDataVector.resize(0u);
 
-                    if (FAILED(this->_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->_pImageDataArray[i].pCommandAllocator)))) return false;
-
-                    constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
-                    constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-
-                    this->_pImageDataArray[i].triangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStatePassthrough, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                    if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-                    this->_pImageDataArray[i].pointListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pPointListPipelineStatePassthrough, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-                    if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-                    this->_pImageDataArray[i].textureTriangleListBuffer.initialize(this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStateTexture, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                    if (!this->_pImageDataArray[i].textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-                    this->_pImageDataArray[i].hEvent = CreateEventA(nullptr, FALSE, TRUE, nullptr);
-
-                    if (!this->_pImageDataArray[i].hEvent) return false;
+                        return false;
+                    }
 
                 }
 
                 return true;
-            }
-
-
-            void Backend::destroyImageDataArray() {
-
-                if (!this->_pImageDataArray) return;
-
-                for (uint32_t i = 0u; i < this->_imageCount; i++) {
-                    this->destroyImageData(&this->_pImageDataArray[i]);
-                }
-
-                delete[] this->_pImageDataArray;
-                this->_pImageDataArray = nullptr;
-                this->_imageCount = 0u;
-
-                return;
-            }
-
-
-            void Backend::destroyImageData(ImageData* pImageData) const {
-                
-                if (pImageData->hEvent) {
-                    WaitForSingleObject(pImageData->hEvent, INFINITE);
-                    CloseHandle(pImageData->hEvent);
-                    pImageData->hEvent = nullptr;
-                }
-
-                pImageData->textureTriangleListBuffer.destroy();
-                pImageData->pointListBuffer.destroy();
-                pImageData->triangleListBuffer.destroy();
-
-                if (pImageData->pCommandAllocator) {
-                    pImageData->pCommandAllocator->Release();
-                    pImageData->pCommandAllocator = nullptr;
-                }
-
             }
 
 

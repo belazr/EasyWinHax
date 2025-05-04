@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\draw\dx\dx12\dx12FrameData.h" />
     <ClInclude Include="src\draw\DrawBuffer.h" />
     <ClInclude Include="src\draw\ogl2\ogl2BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12BufferBackend.h" />
