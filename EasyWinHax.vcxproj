@@ -57,6 +57,7 @@
     <ClInclude Include="src\draw\vulkan\vkBackend.h" />
     <ClInclude Include="src\Vector.h" />
     <ClInclude Include="src\draw\vulkan\vkBufferBackend.h" />
+    <ClInclude Include="src\draw\vulkan\vkFrameData.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\draw\DrawBuffer.cpp" />
@@ -75,6 +76,7 @@
     <ClCompile Include="src\draw\dx\dx9\dx9Backend.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp" />
     <ClCompile Include="src\draw\TextureDrawBuffer.cpp" />
+    <ClCompile Include="src\draw\vulkan\vkFrameData.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
     <ClCompile Include="src\FileLoader.cpp" />
