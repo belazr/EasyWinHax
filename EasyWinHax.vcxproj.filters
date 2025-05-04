@@ -215,5 +215,8 @@
     <ClCompile Include="src\draw\vulkan\vkFrameData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\draw\dx\dx12\dx12FrameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
