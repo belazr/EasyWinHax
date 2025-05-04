@@ -1,5 +1,5 @@
 #pragma once
-#include "dx12BufferBackend.h"
+#include "dx12FrameData.h"
 #include "..\..\IBackend.h"
 #include "..\..\..\Vector.h"
 #include <dxgi1_4.h>
@@ -37,14 +37,6 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct ImageData {
-					ID3D12CommandAllocator* pCommandAllocator;
-					BufferBackend triangleListBuffer;
-					BufferBackend pointListBuffer;
-					BufferBackend textureTriangleListBuffer;
-					HANDLE hEvent;
-				}ImageData;
-
 				IDXGISwapChain3* _pSwapChain;
 				ID3D12CommandQueue* _pCommandQueue;
 
@@ -67,10 +59,9 @@ namespace hax {
 				ID3D12Resource* _pRtvResource;
 				D3D12_VIEWPORT _viewport;
 
-				ImageData* _pImageDataArray;
-				uint32_t _imageCount;
+				Vector<FrameData> _frameDataVector;
 				UINT _curBackBufferIndex;
-				ImageData* _pCurImageData;
+				FrameData* _pCurFrameData;
 
 				Vector<ID3D12Resource*> _textures;
 
@@ -157,9 +148,7 @@ namespace hax {
 				bool createRootSignature();
 				ID3D12PipelineState* createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, D3D12_SHADER_BYTECODE pixelShader) const;
 				bool uploadTexture(ID3D12Resource* pTexture, ID3D12Resource* pBuffer, uint32_t width, uint32_t height, uint32_t pitch) const;
-				bool createImageDataArray(uint32_t imageCount);
-				void destroyImageDataArray();
-				void destroyImageData(ImageData* pImageData) const;
+				bool resizeFrameDataVector(UINT size);
 				bool createRenderTargetView(DXGI_FORMAT format);
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
 			};
