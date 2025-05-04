@@ -12,6 +12,19 @@ namespace hax {
 				_hVertexBuffer{}, _hIndexBuffer{}, _hVertexMemory{}, _hIndexMemory{}, _bufferAlignment{ 0x10u }, _capacity{} {}
 
 
+			BufferBackend::BufferBackend(BufferBackend&& bb) noexcept :
+				_f{ bb._f }, _hDevice { bb._hDevice }, _hCommandBuffer{ bb._hCommandBuffer }, _memoryProperties{ bb._memoryProperties },
+				_hPipelineLayout{ bb._hPipelineLayout }, _hPipeline{ bb._hPipeline }, _hVertexBuffer{ bb._hVertexBuffer }, _hIndexBuffer{ bb._hIndexBuffer },
+				_hVertexMemory{ bb._hVertexMemory }, _hIndexMemory{ bb._hIndexMemory }, _bufferAlignment{ bb._bufferAlignment }, _capacity{ bb._capacity } {
+				bb._hVertexBuffer = VK_NULL_HANDLE;
+				bb._hIndexBuffer = VK_NULL_HANDLE;
+				bb._hVertexMemory = VK_NULL_HANDLE;
+				bb._hIndexMemory = VK_NULL_HANDLE;
+
+				return;
+			}
+
+
 			BufferBackend::~BufferBackend() {
 				this->destroy();
 

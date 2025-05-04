@@ -220,20 +220,14 @@ namespace hax {
 				_hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{},
 				_hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
 				_hTriangleListPipelinePassthrough{}, _hPointListPipelinePassthrough{}, _hTriangleListPipelineTexture{},
-				_hFirstGraphicsQueue{}, _viewport{}, _pImageDataArray{}, _imageCount{}, _pCurImageData{} {}
+				_hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
 
 
 			Backend::~Backend() {
 
 				if (this->_hDevice == VK_NULL_HANDLE) return;
 
-				if (
-					this->_f.pVkFreeCommandBuffers && this->_f.pVkDestroyFramebuffer && this->_f.pVkDestroyImageView &&
-					this->_f.pVkWaitForFences && this->_f.pVkDestroyFence &&
-					this->_f.pVkUnmapMemory && this->_f.pVkFreeMemory && this->_f.pVkDestroyBuffer
-				) {
-					this->destroyImageDataArray();
-				}
+				this->_frameDataVector.resize(0u);
 
 				if (this->_f.pVkDestroyPipeline) {
 
@@ -737,59 +731,44 @@ namespace hax {
 
 				if (!imageCount) return false;
 
-				if (this->_imageCount != imageCount) {
-					this->destroyImageDataArray();
-
-					if (!this->createImageDataArray(imageCount)) {
-						this->destroyImageDataArray();
-
-						return false;
-					}
-
-				}
-
 				VkViewport viewport{};
 
 				if (!this->getCurrentViewport(&viewport)) return false;
 
-				if (this->_viewport.width != viewport.width || this->_viewport.height != viewport.height) {
-					this->destroyFramebuffers();
+				if (this->_frameDataVector.size() != imageCount || this->_viewport.width != viewport.width || this->_viewport.height != viewport.height) {
 
-					if (!this->createFramebuffers(viewport)) {
-						this->destroyFramebuffers();
+					if (!this->resizeFrameDataVector(imageCount, viewport)) return false;
 
-						return false;
-					}
-
+					this->_viewport = viewport;
 				}
 
-				this->_pCurImageData = &this->_pImageDataArray[this->_phPresentInfo->pImageIndices[0]];
+				this->_pCurFrameData = this->_frameDataVector + this->_phPresentInfo->pImageIndices[0];
 
-				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurImageData->hFence, VK_TRUE, UINT64_MAX);
-				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurImageData->hFence);
+				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurFrameData->hFence, VK_TRUE, UINT64_MAX);
+				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurFrameData->hFence);
 
-				if (!this->beginCommandBuffer(this->_pCurImageData->hCommandBuffer)) return false;
+				if (!this->beginCommandBuffer(this->_pCurFrameData->hCommandBuffer)) return false;
 
-				this->beginRenderPass(this->_pCurImageData->hCommandBuffer, this->_pCurImageData->hFrameBuffer);
+				this->beginRenderPass(this->_pCurFrameData->hCommandBuffer, this->_pCurFrameData->hFrameBuffer);
 
-				this->_f.pVkCmdSetViewport(this->_pCurImageData->hCommandBuffer, 0u, 1u, &this->_viewport);
+				this->_f.pVkCmdSetViewport(this->_pCurFrameData->hCommandBuffer, 0u, 1u, &this->_viewport);
 
 				const VkRect2D scissor{ { static_cast<int32_t>(this->_viewport.x), static_cast<int32_t>(this->_viewport.y) }, { static_cast<uint32_t>(this->_viewport.width), static_cast<uint32_t>(this->_viewport.height) } };
-				this->_f.pVkCmdSetScissor(this->_pCurImageData->hCommandBuffer, 0u, 1u, &scissor);
+				this->_f.pVkCmdSetScissor(this->_pCurFrameData->hCommandBuffer, 0u, 1u, &scissor);
 
 				const float scale[]{ 2.f / this->_viewport.width, 2.f / this->_viewport.height };
-				this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
+				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
 
 				const float translate[]{ -1.f, -1.f };
-				this->_f.pVkCmdPushConstants(this->_pCurImageData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
+				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
 				return true;
 			}
 
 
 			void Backend::endFrame() {
-				this->_f.pVkCmdEndRenderPass(this->_pCurImageData->hCommandBuffer);
-				this->_f.pVkEndCommandBuffer(this->_pCurImageData->hCommandBuffer);
+				this->_f.pVkCmdEndRenderPass(this->_pCurFrameData->hCommandBuffer);
+				this->_f.pVkEndCommandBuffer(this->_pCurFrameData->hCommandBuffer);
 
 				VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_phPresentInfo->waitSemaphoreCount];
 				
@@ -801,13 +780,13 @@ namespace hax {
 				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 				submitInfo.pWaitDstStageMask = pStageMask;
 				submitInfo.commandBufferCount = 1u;
-				submitInfo.pCommandBuffers = &this->_pCurImageData->hCommandBuffer;
+				submitInfo.pCommandBuffers = &this->_pCurFrameData->hCommandBuffer;
 				submitInfo.pWaitSemaphores = this->_phPresentInfo->pWaitSemaphores;
 				submitInfo.waitSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
 				submitInfo.pSignalSemaphores = this->_phPresentInfo->pWaitSemaphores;
 				submitInfo.signalSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
 
-				this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1u, &submitInfo, this->_pCurImageData->hFence);
+				this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1u, &submitInfo, this->_pCurFrameData->hFence);
 
 				delete[] pStageMask;
 
@@ -817,19 +796,19 @@ namespace hax {
 
 			IBufferBackend* Backend::getTriangleListBufferBackend() {
 
-				return &this->_pCurImageData->triangleListBuffer;
+				return &this->_pCurFrameData->triangleListBuffer;
 			}
 
 
 			IBufferBackend* Backend::getPointListBufferBackend() {
 
-				return &this->_pCurImageData->pointListBuffer;
+				return &this->_pCurFrameData->pointListBuffer;
 			}
 
 
 			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
-				return &this->_pCurImageData->textureTriangleListBuffer;
+				return &this->_pCurFrameData->textureTriangleListBuffer;
 			}
 
 
@@ -1404,129 +1383,29 @@ namespace hax {
 			}
 
 
-			bool Backend::createImageDataArray(uint32_t imageCount) {
-				this->_pImageDataArray = new ImageData[imageCount]{};
-				this->_imageCount = imageCount;
-			
-				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-					this->_pImageDataArray[i].hCommandBuffer = this->allocCommandBuffer();
+			bool Backend::resizeFrameDataVector(uint32_t size, VkViewport viewport) {
+				// destroy old frame data to be safe
+				this->_frameDataVector.resize(0u);
+				this->_frameDataVector.resize(size);
+				
+				VkImage* const pImages = new VkImage[size]{};
+				uint32_t tmpSize = size;
 
-					if (this->_pImageDataArray[i].hCommandBuffer == VK_NULL_HANDLE) return false;
-
-					constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
-					constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
-
-					this->_pImageDataArray[i].triangleListBuffer.initialize(
-						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
-						this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough
-					);
-
-					if (!this->_pImageDataArray[i].triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-					this->_pImageDataArray[i].pointListBuffer.initialize(
-						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
-						this->_hPipelineLayout, this->_hPointListPipelinePassthrough
-					);
-
-					if (!this->_pImageDataArray[i].pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-					this->_pImageDataArray[i].textureTriangleListBuffer.initialize(
-						this->_f, this->_hDevice, this->_pImageDataArray[i].hCommandBuffer, this->_memoryProperties,
-						this->_hPipelineLayout, this->_hTriangleListPipelineTexture
-					);
-
-					if (!this->_pImageDataArray[i].textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-					VkFenceCreateInfo fenceCreateInfo{};
-					fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-					fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-					if (this->_f.pVkCreateFence(this->_hDevice, &fenceCreateInfo, nullptr, &this->_pImageDataArray[i].hFence) != VK_SUCCESS) return false;
-
-				}
-
-				return true;
-			}
-
-
-			void Backend::destroyImageDataArray() {
-
-				if (!this->_pImageDataArray) return;
-
-				for (uint32_t i = 0u; i < this->_imageCount && this->_hDevice != VK_NULL_HANDLE; i++) {
-					this->destroyImageData(&this->_pImageDataArray[i]);
-				}
-
-				delete[] this->_pImageDataArray;
-				this->_pImageDataArray = nullptr;
-				this->_imageCount = 0u;
-
-				return;
-			}
-
-
-			void Backend::destroyImageData(ImageData* pImageData) const {
-
-				if (pImageData->hFence != VK_NULL_HANDLE) {
-					this->_f.pVkWaitForFences(this->_hDevice, 1u, &pImageData->hFence, VK_TRUE, UINT64_MAX);
-					this->_f.pVkDestroyFence(this->_hDevice, pImageData->hFence, nullptr);
-					pImageData->hFence = VK_NULL_HANDLE;
-				}
-
-				if (pImageData->hFrameBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyFramebuffer(this->_hDevice, pImageData->hFrameBuffer, nullptr);
-					pImageData->hFrameBuffer = VK_NULL_HANDLE;
-				}
-
-				if (pImageData->hImageView != VK_NULL_HANDLE) {
-					this->_f.pVkDestroyImageView(this->_hDevice, pImageData->hImageView, nullptr);
-					pImageData->hImageView = VK_NULL_HANDLE;
-				}
-
-				pImageData->textureTriangleListBuffer.destroy();
-				pImageData->pointListBuffer.destroy();
-				pImageData->triangleListBuffer.destroy();
-
-				if (pImageData->hCommandBuffer != VK_NULL_HANDLE) {
-					this->_f.pVkFreeCommandBuffers(this->_hDevice, this->_hCommandPool, 1u, &pImageData->hCommandBuffer);
-					pImageData->hCommandBuffer = VK_NULL_HANDLE;
-				}
-
-				return;
-			}
-
-
-			bool Backend::createFramebuffers(VkViewport viewport) {
-				VkImage* const pImages = new VkImage[this->_imageCount]{};
-
-				uint32_t imageCount = this->_imageCount;
-
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, pImages) != VK_SUCCESS || imageCount != this->_imageCount) {
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &tmpSize, pImages) != VK_SUCCESS || tmpSize != size) {
 					delete[] pImages;
+					this->_frameDataVector.resize(0u);
 
 					return false;
 				}
 
-				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-					this->_pImageDataArray[i].hImageView = this->createImageView(pImages[i]);
-
-					if (this->_pImageDataArray[i].hImageView == VK_NULL_HANDLE) {
+				for (uint32_t i = 0u; i < size; i++) {
+					
+					if (!this->_frameDataVector[i].create(
+						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass, static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
+						this->_memoryProperties, this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough, this->_hPointListPipelinePassthrough, this->_hTriangleListPipelineTexture
+					)) {
 						delete[] pImages;
-
-						return false;
-					}
-
-					VkFramebufferCreateInfo framebufferCreateInfo{};
-					framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-					framebufferCreateInfo.renderPass = this->_hRenderPass;
-					framebufferCreateInfo.attachmentCount = 1u;
-					framebufferCreateInfo.pAttachments = &this->_pImageDataArray[i].hImageView;
-					framebufferCreateInfo.layers = 1u;
-					framebufferCreateInfo.width = static_cast<uint32_t>(viewport.width);
-					framebufferCreateInfo.height = static_cast<uint32_t>(viewport.height);
-
-					if (this->_f.pVkCreateFramebuffer(this->_hDevice, &framebufferCreateInfo, nullptr, &this->_pImageDataArray[i].hFrameBuffer) != VK_SUCCESS) {
-						delete[] pImages;
+						this->_frameDataVector.resize(0u);
 
 						return false;
 					}
@@ -1534,34 +1413,8 @@ namespace hax {
 				}
 
 				delete[] pImages;
-				
-				this->_viewport = viewport;
 
 				return true;
-			}
-
-
-			void Backend::destroyFramebuffers() {
-			
-				for (uint32_t i = 0u; i < this->_imageCount; i++) {
-
-					if (this->_pImageDataArray[i].hFence != VK_NULL_HANDLE) {
-						this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pImageDataArray[i].hFence, VK_TRUE, UINT64_MAX);
-					}
-				
-					if (this->_pImageDataArray[i].hFrameBuffer != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyFramebuffer(this->_hDevice, this->_pImageDataArray[i].hFrameBuffer, nullptr);
-						this->_pImageDataArray[i].hFrameBuffer = VK_NULL_HANDLE;
-					}
-
-					if (this->_pImageDataArray[i].hImageView != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyImageView(this->_hDevice, this->_pImageDataArray[i].hImageView, nullptr);
-						this->_pImageDataArray[i].hImageView = VK_NULL_HANDLE;
-					}
-
-				}
-			
-				return;
 			}
 
 

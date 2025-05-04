@@ -1,5 +1,5 @@
 #pragma once
-#include "vkBufferBackend.h"
+#include "vkFrameData.h"
 #include "..\IBackend.h"
 #include "..\..\Vector.h"
 #include <Windows.h>
@@ -19,16 +19,6 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-				typedef struct ImageData {
-					VkCommandBuffer hCommandBuffer;
-					VkImageView hImageView;
-					VkFramebuffer hFrameBuffer;
-					BufferBackend triangleListBuffer;
-					BufferBackend pointListBuffer;
-					BufferBackend textureTriangleListBuffer;
-					VkFence hFence;
-				}ImageData;
-
 				typedef struct TextureData {
 					VkImage hImage;
 					VkDeviceMemory hMemory;
@@ -62,9 +52,8 @@ namespace hax {
 				VkQueue _hFirstGraphicsQueue;
 				VkViewport _viewport;
 
-				ImageData* _pImageDataArray;
-				uint32_t _imageCount;
-				ImageData* _pCurImageData;
+				Vector<FrameData> _frameDataVector;
+				FrameData* _pCurFrameData;
 
 				Vector<TextureData> _textures;
 
@@ -164,12 +153,8 @@ namespace hax {
 				VkDescriptorSet createDescriptorSet(VkImageView hImageView) const;
 				VkBuffer createBuffer(VkDeviceSize size) const;
 				bool uploadImage(VkImage hImage, VkBuffer hBuffer, uint32_t width, uint32_t height) const;
-				bool createImageDataArray(uint32_t imageCount);
-				void destroyImageDataArray();
-				void destroyImageData(ImageData* pImageData) const;
+				bool resizeFrameDataVector(uint32_t size, VkViewport viewport);
 				bool getCurrentViewport(VkViewport* pViewport) const;
-				bool createFramebuffers(VkViewport viewport);
-				void destroyFramebuffers();
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 			};
