@@ -17,9 +17,11 @@ namespace hax {
 				FrameData() : pCommandAllocator{}, triangleListBuffer{}, pointListBuffer{}, textureTriangleListBuffer{}, hEvent{} {}
 
 				
-				FrameData(FrameData&& frameData) noexcept : pCommandAllocator{}, triangleListBuffer{}, pointListBuffer{}, textureTriangleListBuffer{}, hEvent{} {
-					frameData.pCommandAllocator = nullptr;
-					frameData.hEvent = nullptr;
+				FrameData(FrameData&& fd) noexcept :
+					pCommandAllocator{ fd.pCommandAllocator }, triangleListBuffer{ static_cast<BufferBackend&&>(fd.triangleListBuffer) }, pointListBuffer{ static_cast<BufferBackend&&>(fd.pointListBuffer) },
+					textureTriangleListBuffer{ static_cast<BufferBackend&&>(fd.textureTriangleListBuffer) }, hEvent{ fd.hEvent } {
+					fd.pCommandAllocator = nullptr;
+					fd.hEvent = nullptr;
 				};
 
 
