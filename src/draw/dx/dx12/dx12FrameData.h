@@ -14,7 +14,7 @@ namespace hax {
 				BufferBackend textureTriangleListBuffer;
 				HANDLE hEvent;
 
-				FrameData() = default;
+				FrameData() : pCommandAllocator{}, triangleListBuffer{}, pointListBuffer{}, textureTriangleListBuffer{}, hEvent{} {}
 
 				
 				FrameData(FrameData&& frameData) noexcept : pCommandAllocator{}, triangleListBuffer{}, pointListBuffer{}, textureTriangleListBuffer{}, hEvent{} {
