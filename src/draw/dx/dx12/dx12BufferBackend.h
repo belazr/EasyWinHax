@@ -32,7 +32,7 @@ namespace hax {
 				// Logical device of the backend.
 				//
 				// [in] pCommandList:
-				// Command list of the image the buffer belongs to.
+				// Command list of the backend.
 				//
 				// [in] pPipelineState:
 				// Pipeline state with the appropriate primitive topology.
