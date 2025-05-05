@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\draw\dx\dx10\dx10Shaders.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12FrameData.h" />
     <ClInclude Include="src\draw\DrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9Shaders.h" />
