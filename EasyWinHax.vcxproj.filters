@@ -135,6 +135,9 @@
     <ClInclude Include="src\draw\dx\dx9\dx9Shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\draw\dx\dx10\dx10Shaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
