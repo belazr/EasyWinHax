@@ -144,6 +144,9 @@
     <ClInclude Include="src\draw\dx\dx12\dx12Shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\draw\ogl2\ogl2Shaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
