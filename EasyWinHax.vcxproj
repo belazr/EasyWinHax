@@ -48,6 +48,7 @@
     <ClInclude Include="src\draw\vulkan\include\vk_platform.h" />
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />
     <ClInclude Include="src\draw\vulkan\vkDefs.h" />
+    <ClInclude Include="src\draw\vulkan\vkShaders.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
     <ClInclude Include="src\FileLoader.h" />

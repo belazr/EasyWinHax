@@ -144,8 +144,8 @@ namespace hax {
 				bool createDescriptorPool(uint32_t size);
 				bool createDescriptorSetLayout();
 				bool createPipelineLayout();
-				VkPipeline createPipeline(VkPrimitiveTopology topology, const BYTE* pFragmentShader, size_t fragmentShaderSize) const;
-				VkShaderModule createShaderModule(const BYTE* shader, size_t size) const;
+				VkPipeline createPipeline(VkPrimitiveTopology topology, const unsigned char* pFragmentShader, size_t fragmentShaderSize) const;
+				VkShaderModule createShaderModule(const unsigned char* pShader, size_t size) const;
 				VkImage createImage(uint32_t width, uint32_t height) const;
 				void destroyTextureData(TextureData* pTextureData) const;
 				VkDeviceMemory allocateMemory(const VkMemoryRequirements* pRequirements, VkMemoryPropertyFlagBits properties) const;
