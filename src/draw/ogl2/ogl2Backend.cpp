@@ -1,4 +1,5 @@
 #include "ogl2Backend.h"
+#include "ogl2Shaders.h"
 
 namespace hax {
 
@@ -192,45 +193,6 @@ namespace hax {
 
 			#undef ASSIGN_PROC_ADDRESS
 
-
-			const GLchar* VERTEX_SHADER =
-				"#version 120\n"
-
-				"uniform mat4 projectionMatrix;\n"
-
-				"attribute vec2 pos;\n"
-				"attribute vec4 col;\n"
-				"attribute vec2 uv;\n"
-
-				"varying vec4 colOut;\n"
-				"varying vec2 uvOut;\n"
-
-				"void main() {\n"
-				"    colOut = col;\n"
-				"    uvOut = uv;\n"
-				"    gl_Position = projectionMatrix * vec4(pos.xy,0,1);\n"
-				"}\n";
-
-			const GLchar* FRAGMENT_SHADER_PASSTHROUGH =
-				"#version 120\n"
-
-				"varying vec4 colOut;\n"
-
-				"void main() {\n"
-				"    gl_FragColor = colOut;\n"
-				"}\n";
-
-			const GLchar* FRAGMENT_SHADER_TEXTURE =
-				"#version 120\n"
-				
-				"uniform sampler2D texSampler;\n"
-				
-				"varying vec4 colOut;\n"
-				"varying vec2 uvOut;\n"
-				
-				"void main() {\n"
-				"    gl_FragColor = colOut * texture2D(texSampler, uvOut);\n"
-				"}\n";
 
 			void Backend::createShaders() {
 				const GLuint vertexShader = this->_f.pGlCreateShader(GL_VERTEX_SHADER);
