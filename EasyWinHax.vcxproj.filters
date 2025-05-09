@@ -48,9 +48,6 @@
     <ClInclude Include="src\launch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\draw\font\Font.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\draw\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -150,7 +147,7 @@
     <ClInclude Include="src\draw\vulkan\vkShaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\draw\font\inconsolata.h">
+    <ClInclude Include="src\draw\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -237,6 +234,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\draw\dx\dx12\dx12FrameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\draw\fonts\inconsolata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

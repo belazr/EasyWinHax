@@ -25,7 +25,7 @@
     <ClInclude Include="src\draw\DrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12Shaders.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9Shaders.h" />
-    <ClInclude Include="src\draw\font\inconsolata.h" />
+    <ClInclude Include="src\draw\Font.h" />
     <ClInclude Include="src\draw\ogl2\ogl2BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11BufferBackend.h" />
@@ -37,7 +37,6 @@
     <ClInclude Include="src\draw\IBufferBackend.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Defs.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11Backend.h" />
-    <ClInclude Include="src\draw\font\Font.h" />
     <ClInclude Include="src\draw\Engine.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9Backend.h" />
     <ClInclude Include="src\draw\IBackend.h" />
@@ -69,6 +68,7 @@
   <ItemGroup>
     <ClCompile Include="src\draw\DrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12FrameData.cpp" />
+    <ClCompile Include="src\draw\fonts\inconsolata.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12BufferBackend.cpp" />
     <ClCompile Include="src\draw\dx\dx11\dx11BufferBackend.cpp" />
