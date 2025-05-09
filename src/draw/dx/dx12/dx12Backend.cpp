@@ -511,7 +511,8 @@ namespace hax {
                 if (!this->_pSrvDescriptorHeap) {
                     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
                     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-                    descriptorHeapDesc.NumDescriptors = 1u;
+                    // 1000 textures should be enough, otherwise bad luck
+                    descriptorHeapDesc.NumDescriptors = 1000u;
                     descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
                     if (FAILED(this->_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&this->_pSrvDescriptorHeap)))) return false;
