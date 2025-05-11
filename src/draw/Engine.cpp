@@ -5,8 +5,8 @@ namespace hax {
 
 	namespace draw {
 
-		Engine::Engine(IBackend* pBackend) :
-			_pointListBuffer{}, _textureTriangleListBuffer{}, _triangleListBuffer{},
+		Engine::Engine(IBackend* pBackend, Font font) :
+			_pointListBuffer{}, _textureTriangleListBuffer{}, _triangleListBuffer{}, _font{ font },
 			_pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
@@ -23,6 +23,12 @@ namespace hax {
 
 			if (!this->_init) {
 				this->_init = this->_pBackend->initialize();
+
+				if (!_font.textureId) {
+					this->_font.textureId = this->_pBackend->loadTexture(this->_font.pTexture, this->_font.width, this->_font.height);
+				}
+
+				this->_init = _font.textureId != 0u;
 			}
 
 			if (!this->_init) return;
@@ -183,29 +189,65 @@ namespace hax {
 		}
 
 
-		void Engine::drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color) {
+		void Engine::drawString(const Vector2* pos, const char* text, uint32_t size, Color color) {
 
 			if (!this->_frame) return;
 
-			const size_t size = strlen(text);
+			const size_t length = strlen(text);
+			// font textures are generated with font size 24
+			const float sizeFactor = size / 24.f;
 
-			for (size_t i = 0; i < size; i++) {
-				const char c = text[i];
+			for (size_t i = 0u; i < length; i++) {
+				// default to blank for unknown chars
+				const uint32_t curCharIndex = (static_cast<uint32_t>(text[i]) - 32u) > 95u ? 0u : static_cast<uint32_t>(text[i]) - 32u;
+				
+				// it is measurably faster to do the calculation multiple times (???) in the initialization
+				// MSVC, why do you have to be like this...
+				const Vertex corners[]{
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y },
+						color,
+						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 0.f}
+					},
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y },
+						color,
+						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
+					},
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						color,
+						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
+					},
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						color,
+						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 1.f }
+					},
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						color,
+						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
+					},
+					{
+						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y },
+						color,
+						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
+					}
+				};
 
-				if (c == ' ') continue;
-
-				const font::CharIndex index = font::charToCharIndex(c);
-				const font::Char* pCurChar = &pFont->chars[index];
-
-				if (!pCurChar) continue;
-
-				// current char x coordinate is offset by width of previously drawn chars plus two pixels spacing per char
-				const Vector2 curPos{ pos->x + (pFont->width + 2.f) * i, pos->y - pFont->height };
-				this->_pointListBuffer.append(pCurChar->body.coordinates, pCurChar->body.count, color, curPos);
-				this->_pointListBuffer.append(pCurChar->outline.coordinates, pCurChar->outline.count, abgr::BLACK, curPos);
+				this->_textureTriangleListBuffer.append(corners, _countof(corners), this->_font.textureId);
 			}
 
 			return;
+		}
+
+		Vector2 Engine::getStringDimensions(const char* text, uint32_t size) const {
+			const size_t length = strlen(text);
+			// font textures are generated with font size 24
+			const float sizeFactor = static_cast<float>(size) / 24.f;
+
+			return { length * this->_font.charWidth * sizeFactor, this->_font.height * sizeFactor };
 		}
 
 
