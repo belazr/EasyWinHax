@@ -218,6 +218,18 @@ namespace hax {
 					return false;
 				}
 
+				if (FAILED(this->_pDevice->SetSamplerState(0u, D3DSAMP_MINFILTER, D3DTEXF_LINEAR))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetSamplerState(0u, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR))) {
+					this->restoreState();
+
+					return false;
+				}
+
 				if (!this->setVertexShaderConstant()) {
 					this->restoreState();
 
@@ -230,8 +242,6 @@ namespace hax {
 
 			void Backend::endFrame() {
 				this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
-				this->_pOriginalVertexDeclaration->Release();
-				this->_pOriginalVertexDeclaration = nullptr;
 				this->restoreState();
 
 				return;
