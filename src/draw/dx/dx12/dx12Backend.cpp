@@ -540,8 +540,6 @@ namespace hax {
 
                 D3D12_ROOT_PARAMETER parameter[2]{};
                 parameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-                parameter[0].Constants.ShaderRegister = 0u;
-                parameter[0].Constants.RegisterSpace = 0u;
                 parameter[0].Constants.Num32BitValues = 16u;
                 parameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
@@ -551,15 +549,11 @@ namespace hax {
                 parameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
                 D3D12_STATIC_SAMPLER_DESC staticSampler{};
-                staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+                staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
                 staticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
                 staticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
                 staticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-                staticSampler.MipLODBias = 0.f;
                 staticSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-                staticSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-                staticSampler.MinLOD = 0.f;
-                staticSampler.MaxLOD = 0.f;
                 staticSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
                 D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
