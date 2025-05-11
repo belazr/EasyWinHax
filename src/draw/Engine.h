@@ -1,8 +1,8 @@
 #pragma once
 #include "DrawBuffer.h"
+#include "Font.h"
 #include "IBackend.h"
 #include "TextureDrawBuffer.h"
-#include "font\Font.h"
 
 // Class for drawing within a graphics API hook.
 
@@ -15,6 +15,8 @@ namespace hax {
 			DrawBuffer _pointListBuffer;
 			DrawBuffer _triangleListBuffer;
 			TextureDrawBuffer _textureTriangleListBuffer;
+
+			Font _font;
 
 			IBackend* const _pBackend;
 
@@ -31,7 +33,7 @@ namespace hax {
 			// 
 			// [in] pBackend:
 			// Pointer to an appropriate IBackend interface to backend within a hook.
-			Engine(IBackend* pBackend);
+			Engine(IBackend* pBackend, Font font);
 
 			// Loads a texture into VRAM. Has to be called after beginFrame.
 			//
@@ -148,19 +150,31 @@ namespace hax {
 			// Draws text to the screen.
 			//
 			// Parameters:
-			// 
-			// [in] pFont:
-			// Pointer to an appropriate Font object. ogl2::Font* for OpenGL 2 hooks and dx::Font* for DirectX hooks.
-			//
 			// [in] pos:
-			// Coordinates of the bottom left corner of the first character of the text.
+			// Coordinates of the top left corner of the first character of the text.
 			// 
 			// [in] text:
 			// Text to be drawn.
+			// 
+			// [in] size
+			// Size of the text. Avoid very small (< 12) and very large (> 48) sizes for better readability.
 			//
 			// [in] color:
-			// Color of the text. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawString(const font::Font* pFont, const Vector2* pos, const char* text, Color color);
+			// Color of the text.
+			void drawString(const Vector2* pos, const char* text, uint32_t size, Color color);
+
+			// Returns the dimensions of a string when drawn to the screen.
+			//
+			// Parameters:
+			// [in] text:
+			// Text to be drawn.
+			// 
+			// [in] size:
+			// Size of the text.
+			// 
+			// Return:
+			// 2D Vector of the string dimensions. X-component is width, y-component is height.
+			Vector2 getStringDimensions(const char* text, uint32_t) const;
 
 			// Draws a parallelogram grid with horizontal bottom and top sides.
 			//
