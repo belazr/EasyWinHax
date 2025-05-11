@@ -299,14 +299,11 @@ namespace hax {
 
 			bool Backend::createSamplerState() {
 				D3D10_SAMPLER_DESC samplerDesc{};
-				samplerDesc.Filter = D3D10_FILTER_MIN_MAG_MIP_POINT;
+				samplerDesc.Filter = D3D10_FILTER_MIN_MAG_MIP_LINEAR;
 				samplerDesc.AddressU = D3D10_TEXTURE_ADDRESS_WRAP;
 				samplerDesc.AddressV = D3D10_TEXTURE_ADDRESS_WRAP;
 				samplerDesc.AddressW = D3D10_TEXTURE_ADDRESS_WRAP;
-				samplerDesc.MipLODBias = 0.f;
 				samplerDesc.ComparisonFunc = D3D10_COMPARISON_ALWAYS;
-				samplerDesc.MinLOD = 0.f;
-				samplerDesc.MaxLOD = 0.f;
 
 				return SUCCEEDED(this->_pDevice->CreateSamplerState(&samplerDesc, &this->_pSamplerState));
 			}
