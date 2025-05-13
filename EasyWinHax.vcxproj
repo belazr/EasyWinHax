@@ -77,9 +77,6 @@
     <ClCompile Include="src\draw\dx\dx10\dx10Backend.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12Backend.cpp" />
     <ClCompile Include="src\draw\dx\dx11\dx11Backend.cpp" />
-    <ClCompile Include="src\draw\font\LargeFont.cpp" />
-    <ClCompile Include="src\draw\font\MediumFont.cpp" />
-    <ClCompile Include="src\draw\font\TinyFont.cpp" />
     <ClCompile Include="src\draw\Engine.cpp" />
     <ClCompile Include="src\draw\dx\dx9\dx9Backend.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp" />

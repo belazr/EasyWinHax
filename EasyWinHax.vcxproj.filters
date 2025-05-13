@@ -176,15 +176,6 @@
     <ClCompile Include="src\launch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\draw\font\LargeFont.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\draw\font\MediumFont.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\draw\font\TinyFont.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\draw\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
