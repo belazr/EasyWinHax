@@ -153,34 +153,38 @@ namespace hax {
 		}
 
 
-		void Engine::drawFilledRectangle(const Vector2* pos, float width, float height, Color color) {
+		void Engine::drawFilledRectangle(const Vector2* pos, Alignment alignment, float width, float height, Color color) {
 
 			if (!this->_frame) return;
 
+			const Vector2 topLeft = this->align(pos, alignment, width, height);
+
 			const Vertex corners[]{
-				{ { pos->x, pos->y }, color },
-				{ { pos->x + width, pos->y }, color },
-				{ { pos->x, pos->y + height }, color },
-				{ { pos->x + width, pos->y + height }, color },
-				{ { pos->x, pos->y + height }, color },
-				{ { pos->x + width, pos->y }, color }
+				{ { topLeft.x, topLeft.y }, color },
+				{ { topLeft.x + width, topLeft.y }, color },
+				{ { topLeft.x, topLeft.y + height }, color },
+				{ { topLeft.x + width, topLeft.y + height }, color },
+				{ { topLeft.x, topLeft.y + height }, color },
+				{ { topLeft.x + width, topLeft.y }, color }
 			};
 
 			this->_triangleListBuffer.append(corners, _countof(corners));
 		}
 
 
-		void Engine::drawTexture(TextureId textureId, const Vector2* pos, float width, float height) {
+		void Engine::drawTexture(TextureId textureId, const Vector2* pos, Alignment alignment, float width, float height) {
 
 			if (!this->_frame) return;
 
+			const Vector2 topLeft = this->align(pos, alignment, width, height);
+
 			const Vertex corners[]{
-				{ { pos->x, pos->y }, abgr::WHITE, { 0.f, 0.f } },
-				{ { pos->x + width, pos->y }, abgr::WHITE, { 1.f, 0.f }  },
-				{ { pos->x, pos->y + height }, abgr::WHITE, { 0.f, 1.f }  },
-				{ { pos->x + width, pos->y + height }, abgr::WHITE, { 1.f, 1.f }  },
-				{ { pos->x, pos->y + height }, abgr::WHITE, { 0.f, 1.f }  },
-				{ { pos->x + width, pos->y }, abgr::WHITE, { 1.f, 0.f }  }
+				{ { topLeft.x, topLeft.y }, abgr::WHITE, { 0.f, 0.f } },
+				{ { topLeft.x + width, topLeft.y }, abgr::WHITE, { 1.f, 0.f }  },
+				{ { topLeft.x, topLeft.y + height }, abgr::WHITE, { 0.f, 1.f }  },
+				{ { topLeft.x + width, topLeft.y + height }, abgr::WHITE, { 1.f, 1.f }  },
+				{ { topLeft.x, topLeft.y + height }, abgr::WHITE, { 0.f, 1.f }  },
+				{ { topLeft.x + width, topLeft.y }, abgr::WHITE, { 1.f, 0.f }  }
 			};
 
 			this->_textureTriangleListBuffer.append(corners, _countof(corners), textureId);
@@ -189,13 +193,14 @@ namespace hax {
 		}
 
 
-		void Engine::drawString(const Vector2* pos, const char* text, uint32_t size, Color color) {
+		void Engine::drawString(const Vector2* pos, Alignment alignment, const char* text, uint32_t size, Color color) {
 
 			if (!this->_frame) return;
 
 			const size_t length = strlen(text);
 			// font textures are generated with font size 24
 			const float sizeFactor = size / 24.f;
+			const Vector2 topLeft = this->align(pos, alignment, length * this->_font.charWidth * sizeFactor, this->_font.height * sizeFactor);
 
 			for (size_t i = 0u; i < length; i++) {
 				// default to blank for unknown chars
@@ -205,32 +210,32 @@ namespace hax {
 				// MSVC, why do you have to be like this...
 				const Vertex corners[]{
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor, topLeft.y },
 						color,
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 0.f}
 					},
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
 					},
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor, topLeft.y + this->_font.height * sizeFactor },
 						color,
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
 					},
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y + this->_font.height * sizeFactor },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 1.f }
 					},
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor, pos->y + this->_font.height * sizeFactor },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor, topLeft.y + this->_font.height * sizeFactor },
 						color,
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
 					},
 					{
-						{ pos->x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, pos->y },
+						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
 					}
@@ -330,6 +335,44 @@ namespace hax {
 			}
 
 			return;
+		}
+
+
+		Vector2 Engine::align(const Vector2* pos, Alignment alignment, float width, float height) {
+			
+			switch (alignment) {
+			case hax::draw::TOP_LEFT:
+
+				return *pos;
+			case hax::draw::TOP_CENTER:
+				
+				return { pos->x - width / 2.f, pos->y };
+			case hax::draw::TOP_RIGHT:
+				
+				return { pos->x - width, pos->y };
+			case hax::draw::CENTER_LEFT:
+				
+				return { pos->x, pos->y - height / 2.f };
+			case hax::draw::CENTER:
+				
+				return { pos->x - width / 2.f, pos->y - height / 2.f };
+			case hax::draw::CENTER_RIGHT:
+				
+				return { pos->x - width, pos->y - height / 2.f };
+			case hax::draw::BOTTOM_LEFT:
+				
+				return { pos->x, pos->y - height };
+			case hax::draw::BOTTOM_CENTER:
+				
+				return { pos->x - width / 2.f, pos->y - height };
+			case hax::draw::BOTTOM_RIGHT:
+				
+				return { pos->x - width, pos->y - height };
+			default:
+
+				return *pos;
+			}
+
 		}
 
 	}
