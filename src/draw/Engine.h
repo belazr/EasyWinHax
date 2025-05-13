@@ -10,6 +10,12 @@ namespace hax {
 
 	namespace draw {
 
+		typedef enum Alignment {
+			TOP_LEFT, TOP_CENTER, TOP_RIGHT,
+			CENTER_LEFT, CENTER, CENTER_RIGHT,
+			BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+		}Alignment;
+
 		class Engine {
 		private:
 			DrawBuffer _pointListBuffer;
@@ -118,7 +124,10 @@ namespace hax {
 			// Parameters:
 			//
 			// [in] pos:
-			// Coordinates of the top left corner of the rectangle.
+			// Position of the rectangle.
+			// 
+			// [in] alignmet:
+			// Aligment of the rectangle relative to the position.
 			// 
 			// [in] width:
 			// Width of the rectangle.
@@ -128,7 +137,7 @@ namespace hax {
 			// 
 			// [in] color:
 			// Color of the rectangle. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
-			void drawFilledRectangle(const Vector2* pos, float width, float height, Color color);
+			void drawFilledRectangle(const Vector2* pos, Alignment alignment, float width, float height, Color color);
 
 			// Draws a loaded texture.
 			//
@@ -138,20 +147,27 @@ namespace hax {
 			// The ID of the texture returned by loadTexture.
 			//
 			// [in] pos:
-			// Coordinates of the top left corner of the texture.
+			// Position of the texture.
+			// 
+			// [in] alignmet:
+			// Aligment of the texture relative to the position.
 			// 
 			// [in] width:
 			// Width of the drawn texture in pixels.
 			// 
 			// [in] height:
 			// Height of the drawn texture in pixels.
-			void drawTexture(TextureId textureId, const Vector2* pos, float width, float height);
+			void drawTexture(TextureId textureId, const Vector2* pos, Alignment alignment, float width, float height);
 
 			// Draws text to the screen.
 			//
 			// Parameters:
+			// 
 			// [in] pos:
-			// Coordinates of the top left corner of the first character of the text.
+			// Position of the string.
+			// 
+			// [in] alignmet:
+			// Aligment of the string relative to the position.
 			// 
 			// [in] text:
 			// Text to be drawn.
@@ -161,7 +177,7 @@ namespace hax {
 			//
 			// [in] color:
 			// Color of the text.
-			void drawString(const Vector2* pos, const char* text, uint32_t size, Color color);
+			void drawString(const Vector2* pos, Alignment alignment, const char* text, uint32_t size, Color color);
 
 			// Returns the dimensions of a string when drawn to the screen.
 			//
@@ -170,11 +186,11 @@ namespace hax {
 			// Text to be drawn.
 			// 
 			// [in] size:
-			// Size of the text.
+			// Size of the string.
 			// 
 			// Return:
 			// 2D Vector of the string dimensions. X-component is width, y-component is height.
-			Vector2 getStringDimensions(const char* text, uint32_t) const;
+			Vector2 getStringDimensions(const char* text, uint32_t size) const;
 
 			// Draws a parallelogram grid with horizontal bottom and top sides.
 			//
@@ -229,6 +245,9 @@ namespace hax {
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color);
+
+			private:
+				Vector2 align(const Vector2* pos, Alignment alignment, float width, float height);
 		};
 
 	}
