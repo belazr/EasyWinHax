@@ -32,10 +32,7 @@ namespace hax {
 				//
 				// [in] pPixelShader:
 				// Pixel shader for drawing without textures.
-				//
-				// [in] primitiveType:
-				// Primitive topology the vertices in the buffer should be drawn in.
-				void initialize(IDirect3DDevice9* pDevice, IDirect3DPixelShader9* pPixelShader, D3DPRIMITIVETYPE primitiveType);
+				void initialize(IDirect3DDevice9* pDevice, IDirect3DPixelShader9* pPixelShader);
 
 				// Creates internal resources.
 				//

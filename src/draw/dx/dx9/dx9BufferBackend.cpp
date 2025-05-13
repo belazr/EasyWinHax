@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx9 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _primitiveType{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -16,10 +16,9 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(IDirect3DDevice9* pDevice, IDirect3DPixelShader9* pPixelShader, D3DPRIMITIVETYPE primitiveType) {
+			void BufferBackend::initialize(IDirect3DDevice9* pDevice, IDirect3DPixelShader9* pPixelShader) {
 				this->_pDevice = pDevice;
 				this->_pPixelShader = pPixelShader;
-				this->_primitiveType = primitiveType;
 
 				return;
 			}
@@ -115,34 +114,13 @@ namespace hax {
 
 
 			void BufferBackend::draw(TextureId textureId, uint32_t index, uint32_t count) const {
-				UINT primitiveCount = 0u;
-
-				switch (this->_primitiveType) {
-				case D3DPRIMITIVETYPE::D3DPT_POINTLIST:
-					primitiveCount = count;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_LINELIST:
-					primitiveCount = count / 2u;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_LINESTRIP:
-					primitiveCount = count - 1u;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST:
-					primitiveCount = count / 3u;
-					break;
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLESTRIP:
-				case D3DPRIMITIVETYPE::D3DPT_TRIANGLEFAN:
-					primitiveCount = count - 2u;
-					break;
-				default:
-					return;
-				}
 
 				if (textureId) {
 					if (FAILED(this->_pDevice->SetTexture(0u, reinterpret_cast<IDirect3DTexture9*>(static_cast<uintptr_t>(textureId))))) return;
 				}
 
-				this->_pDevice->DrawIndexedPrimitive(this->_primitiveType, 0u, 0u, count, index, primitiveCount);
+				const UINT primitiveCount = count / 3u;
+				this->_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0u, 0u, count, index, primitiveCount);
 
 				return;
 			}
