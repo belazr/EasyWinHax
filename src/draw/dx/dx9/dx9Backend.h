@@ -41,7 +41,6 @@ namespace hax {
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 
 				BufferBackend _triangleListBuffer;
-				BufferBackend _pointListBuffer;
 				BufferBackend _textureTriangleListBuffer;
 
 				Vector<IDirect3DTexture9*> _textures;
