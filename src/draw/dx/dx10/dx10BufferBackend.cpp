@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx10 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _curTopology{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -16,10 +16,9 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(ID3D10Device* pDevice, ID3D10PixelShader* pPixelShader, D3D10_PRIMITIVE_TOPOLOGY topology) {
+			void BufferBackend::initialize(ID3D10Device* pDevice, ID3D10PixelShader* pPixelShader) {
 				this->_pDevice = pDevice;
 				this->_pPixelShader = pPixelShader;
-				this->_topology = topology;
 
 				return;
 			}
@@ -113,7 +112,7 @@ namespace hax {
 
 			bool BufferBackend::begin() {
 				this->_pDevice->IAGetPrimitiveTopology(&this->_curTopology);
-				this->_pDevice->IASetPrimitiveTopology(this->_topology);
+				this->_pDevice->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pDevice->PSSetShader(this->_pPixelShader);
 				
 				constexpr UINT STRIDE = sizeof(Vertex);

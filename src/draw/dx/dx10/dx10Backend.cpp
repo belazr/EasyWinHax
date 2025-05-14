@@ -40,7 +40,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _textureTriangleListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -58,7 +58,6 @@ namespace hax {
 				}
 
 				this->_textureTriangleListBuffer.destroy();
-				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
 
 				if (this->_pPixelShaderTexture) {
@@ -108,30 +107,21 @@ namespace hax {
 				
 				if (!this->createShaders()) return false;
 
-				constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
-				constexpr uint32_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough);
 
 				if (!this->_triangleListBuffer.capacity()) {
 
-					if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+					if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
-				this->_pointListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough, D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
-				
-				if (!this->_pointListBuffer.capacity()) {
-
-					if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) return false;
-
-				}
-
-				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture, D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture);
 				
 				if (!this->_textureTriangleListBuffer.capacity()) {
 
-					if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) return false;
+					if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
@@ -227,12 +217,6 @@ namespace hax {
 			IBufferBackend* Backend::getTriangleListBufferBackend() {
 
 				return &this->_triangleListBuffer;
-			}
-
-
-			IBufferBackend* Backend::getPointListBufferBackend() {
-
-				return &this->_pointListBuffer;
 			}
 
 
