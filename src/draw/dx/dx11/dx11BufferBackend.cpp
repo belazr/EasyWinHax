@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx11 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pContext{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _topology{}, _curTopology{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pContext{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _curTopology{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -16,11 +16,10 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, ID3D11PixelShader* pPixelShader, D3D11_PRIMITIVE_TOPOLOGY topology) {
+			void BufferBackend::initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, ID3D11PixelShader* pPixelShader) {
 				this->_pDevice = pDevice;
 				this->_pContext = pContext;
 				this->_pPixelShader = pPixelShader;
-				this->_topology = topology;
 
 				return;
 			}
@@ -121,7 +120,7 @@ namespace hax {
 
 			bool BufferBackend::begin() {
 				this->_pContext->IAGetPrimitiveTopology(&this->_curTopology);
-				this->_pContext->IASetPrimitiveTopology(this->_topology);
+				this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 
 				constexpr UINT STRIDE = sizeof(Vertex);
