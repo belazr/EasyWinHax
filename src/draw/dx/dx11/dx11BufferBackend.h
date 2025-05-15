@@ -15,7 +15,6 @@ namespace hax {
 				ID3D11PixelShader* _pPixelShader;
 				ID3D11Buffer* _pVertexBuffer;
 				ID3D11Buffer* _pIndexBuffer;
-				D3D11_PRIMITIVE_TOPOLOGY _topology;
 				D3D11_PRIMITIVE_TOPOLOGY _curTopology;
 
 				uint32_t _capacity;
@@ -37,10 +36,7 @@ namespace hax {
 				//
 				// [in] pPixelShader:
 				// Pixel shader for drawing the vertices.
-				// 
-				// [in] topology:
-				// Primitive topology the vertices in the buffer should be drawn in.
-				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, ID3D11PixelShader* pPixelShader, D3D11_PRIMITIVE_TOPOLOGY topology);
+				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, ID3D11PixelShader* pPixelShader);
 
 				// Creates internal resources.
 				//
