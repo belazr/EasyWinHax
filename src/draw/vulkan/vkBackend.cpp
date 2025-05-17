@@ -215,11 +215,9 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{},
-				_hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{}, _hCommandPool{},
-				_hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{}, _hPipelineLayout{},
-				_hTriangleListPipelinePassthrough{}, _hPointListPipelinePassthrough{}, _hTriangleListPipelineTexture{},
-				_hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
+				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{}, _hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{},
+				_hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{},
+				_hPipelineLayout{}, _hPipelinePassthrough{}, _hPipelineTexture{}, _hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
 
 
 			Backend::~Backend() {
@@ -230,16 +228,12 @@ namespace hax {
 
 				if (this->_f.pVkDestroyPipeline) {
 
-					if (this->_hTriangleListPipelineTexture != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hTriangleListPipelineTexture, nullptr);
+					if (this->_hPipelineTexture != VK_NULL_HANDLE) {
+						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelineTexture, nullptr);
 					}
 
-					if (this->_hPointListPipelinePassthrough != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPointListPipelinePassthrough, nullptr);
-					}
-
-					if (this->_hTriangleListPipelinePassthrough != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hTriangleListPipelinePassthrough, nullptr);
+					if (this->_hPipelinePassthrough != VK_NULL_HANDLE) {
+						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelinePassthrough, nullptr);
 					}
 
 				}
@@ -324,8 +318,7 @@ namespace hax {
 				
 				if (this->_hDescriptorPool == VK_NULL_HANDLE) {
 
-					// 1000 textures should be enough, otherwise bad luck
-					if (!this->createDescriptorPool(1000u)) return false;
+					if (!this->createDescriptorPool()) return false;
 
 				}
 
@@ -341,23 +334,17 @@ namespace hax {
 
 				}
 
-				if (this->_hTriangleListPipelinePassthrough == VK_NULL_HANDLE) {
-					this->_hTriangleListPipelinePassthrough = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
+				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) {
+					this->_hPipelinePassthrough = this->createPipeline(FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
 				}
 
-				if (this->_hTriangleListPipelinePassthrough == VK_NULL_HANDLE) return false;
+				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) return false;
 
-				if (this->_hPointListPipelinePassthrough == VK_NULL_HANDLE) {
-					this->_hPointListPipelinePassthrough = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
+				if (this->_hPipelineTexture == VK_NULL_HANDLE) {
+					this->_hPipelineTexture = this->createPipeline(FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
 				}
 
-				if (this->_hPointListPipelinePassthrough == VK_NULL_HANDLE) return false;
-
-				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) {
-					this->_hTriangleListPipelineTexture = this->createPipeline(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
-				}
-
-				if (this->_hTriangleListPipelineTexture == VK_NULL_HANDLE) return false;
+				if (this->_hPipelineTexture == VK_NULL_HANDLE) return false;
 
 				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
 
@@ -561,12 +548,6 @@ namespace hax {
 			IBufferBackend* Backend::getTriangleListBufferBackend() {
 
 				return &this->_pCurFrameData->triangleListBuffer;
-			}
-
-
-			IBufferBackend* Backend::getPointListBufferBackend() {
-
-				return &this->_pCurFrameData->pointListBuffer;
 			}
 
 
@@ -781,13 +762,15 @@ namespace hax {
 			}
 
 
-			bool Backend::createDescriptorPool(uint32_t size) {
-				VkDescriptorPoolSize poolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, size };
+			bool Backend::createDescriptorPool() {
+				// 1000 textures should be enough, otherwise bad luck
+				constexpr uint32_t descPoolSize = 1000u;
+				VkDescriptorPoolSize poolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descPoolSize };
 				
 				VkDescriptorPoolCreateInfo poolCreateInfo{};
 				poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 				poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-				poolCreateInfo.maxSets = size;
+				poolCreateInfo.maxSets = descPoolSize;
 				poolCreateInfo.poolSizeCount = 1u;
 				poolCreateInfo.pPoolSizes = &poolSize;
 
@@ -826,7 +809,7 @@ namespace hax {
 			}
 
 
-			VkPipeline Backend::createPipeline(VkPrimitiveTopology topology, const unsigned char* pFragmentShader, size_t fragmentShaderSize) const {
+			VkPipeline Backend::createPipeline(const unsigned char* pFragmentShader, size_t fragmentShaderSize) const {
 				const VkShaderModule hShaderModuleVert = this->createShaderModule(VERTEX_SHADER, sizeof(VERTEX_SHADER));
 
 				if (hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
@@ -876,7 +859,7 @@ namespace hax {
 
 				VkPipelineInputAssemblyStateCreateInfo iaInfo{};
 				iaInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-				iaInfo.topology = topology;
+				iaInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 				VkPipelineViewportStateCreateInfo viewportInfo{};
 				viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1169,7 +1152,7 @@ namespace hax {
 					
 					if (!this->_frameDataVector[i].create(
 						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass, static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
-						this->_memoryProperties, this->_hPipelineLayout, this->_hTriangleListPipelinePassthrough, this->_hPointListPipelinePassthrough, this->_hTriangleListPipelineTexture
+						this->_memoryProperties, this->_hPipelineLayout, this->_hPipelinePassthrough, this->_hPipelineTexture
 					)) {
 						delete[] pImages;
 						this->_frameDataVector.resize(0u);
