@@ -9,12 +9,11 @@ namespace hax {
 
 			Backend::Backend() :
 				_f{}, _shaderProgramPassthroughId{}, _shaderProgramTextureId{}, _viewport{}, _depthFunc{},
-				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _pointListBuffer{}, _textureTriangleListBuffer{} {}
+				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _textureTriangleListBuffer{} {}
 
 
 			Backend::~Backend() {
 				this->_textureTriangleListBuffer.destroy();
-				this->_pointListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
 				
 				if (this->_f.pGlDeleteProgram) {
@@ -69,30 +68,21 @@ namespace hax {
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
-					constexpr uint32_t INITIAL_TRIANGLE_LIST_BUFFER_SIZE = 100u;
-					constexpr uint32_t INITIAL_POINT_LIST_BUFFER_SIZE = 1000u;
+					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-					this->_triangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramPassthroughId);
+					this->_triangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
 
 					if (!this->_triangleListBuffer.capacity()) {
 
-						if (!this->_triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+						if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 					}
 
-					this->_pointListBuffer.initialize(this->_f, GL_POINTS, viewport, this->_shaderProgramPassthroughId);
-
-					if (!this->_pointListBuffer.capacity()) {
-
-						if (!this->_pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_SIZE)) return false;
-
-					}
-
-					this->_textureTriangleListBuffer.initialize(this->_f, GL_TRIANGLES, viewport, this->_shaderProgramTextureId);
+					this->_textureTriangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramTextureId);
 
 					if (!this->_textureTriangleListBuffer.capacity()) {
 
-						if (!this->_textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_SIZE)) return false;
+						if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 					}
 
@@ -133,12 +123,6 @@ namespace hax {
 			IBufferBackend* Backend::getTriangleListBufferBackend()  {
 
 				return &this->_triangleListBuffer;
-			}
-
-
-			IBufferBackend* Backend::getPointListBufferBackend()  {
-
-				return &this->_pointListBuffer;
 			}
 
 

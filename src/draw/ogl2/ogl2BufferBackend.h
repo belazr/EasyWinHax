@@ -11,7 +11,6 @@ namespace hax {
 			class BufferBackend : public IBufferBackend {
 			private:
 				Functions _f;
-				GLenum _mode;
 				GLuint _shaderProgramId;
 				GLfloat _projectionMatrix[4][4];
 				GLuint _projectionMatrixIndex;
@@ -38,15 +37,12 @@ namespace hax {
 				// [in] f:
 				// Function pointers to the OpenGL 2 functions.
 				// 
-				// [in] mode:
-				// Mode the vertices in the buffer should be drawn in.
-				// 
 				// [in] viewport:
 				// Current viewport. Has to be an array of four GLint.
 				// 
 				// [in] shaderProgramId:
 				// ID of the shader program for drawing vertices.
-				void initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgramId);
+				void initialize(Functions f, GLint* viewport, GLuint shaderProgramId);
 
 				// Creates internal resources.
 				//
