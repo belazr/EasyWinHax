@@ -15,7 +15,6 @@ namespace hax {
 				VkImageView hImageView;
 				VkFramebuffer hFrameBuffer;
 				BufferBackend triangleListBuffer;
-				BufferBackend pointListBuffer;
 				BufferBackend textureTriangleListBuffer;
 				VkFence hFence;
 
@@ -39,20 +38,17 @@ namespace hax {
 				// [in] pCommandList:
 				// Command list of the backend.
 				//
-				// [in] pTriangleListPipelineStatePassthrough:
-				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
+				// [in] hPipelinePassthrough:
+				// Pipeline with a passthrough pixel shader.
 				// 
-				// [in] pPointListPipelineStatePassthrough:
-				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
-				// 
-				// [in] pTriangleListPipelineStateTexture:
-				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
+				// [in] hPipelineTexture:
+				// Pipeline with a texture pixel shader.
 				//
 				// Return:
 				// True on success, false on failure.
 				bool create(
-					Functions fn, VkDevice hDev, VkCommandPool hCmdPool, VkImage hImage, VkRenderPass hRenderPass, uint32_t width, uint32_t height, VkPhysicalDeviceMemoryProperties memoryProperties,
-					VkPipelineLayout hPipelineLayout, VkPipeline hTriangleListPipelinePassthrough, VkPipeline hPointListPipelinePassthrough, VkPipeline hTriangleListPipelineTexture
+					Functions fn, VkDevice hDev, VkCommandPool hCmdPool, VkImage hImage, VkRenderPass hRenderPass, uint32_t width, uint32_t height,
+					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipelinePassthrough, VkPipeline hPipelineTexture
 				);
 
 				// Destroys all internal resources.
