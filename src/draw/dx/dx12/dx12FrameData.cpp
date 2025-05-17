@@ -6,11 +6,11 @@ namespace hax {
 
 		namespace dx12 {
 
-			FrameData::FrameData() : pCommandAllocator{}, triangleListBuffer{}, pointListBuffer{}, textureTriangleListBuffer{}, hEvent{} {}
+			FrameData::FrameData() : pCommandAllocator{}, triangleListBuffer{}, textureTriangleListBuffer{}, hEvent{} {}
 
 
 			FrameData::FrameData(FrameData&& fd) noexcept :
-				pCommandAllocator{ fd.pCommandAllocator }, triangleListBuffer{ static_cast<BufferBackend&&>(fd.triangleListBuffer) }, pointListBuffer{ static_cast<BufferBackend&&>(fd.pointListBuffer) },
+				pCommandAllocator{ fd.pCommandAllocator }, triangleListBuffer{ static_cast<BufferBackend&&>(fd.triangleListBuffer) }, 
 				textureTriangleListBuffer{ static_cast<BufferBackend&&>(fd.textureTriangleListBuffer) }, hEvent{ fd.hEvent } {
 				fd.pCommandAllocator = nullptr;
 				fd.hEvent = nullptr;
@@ -24,38 +24,27 @@ namespace hax {
 			}
 
 
-			bool FrameData::create(
-				ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pTriangleListPipelineStatePassthrough,
-				ID3D12PipelineState* pPointListPipelineStatePassthrough, ID3D12PipelineState* pTriangleListPipelineStateTexture
-			) {
+			bool FrameData::create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineStatePassthrough, ID3D12PipelineState* pPipelineStateTexture) {
+				
 				if (FAILED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->pCommandAllocator)))) {
 					this->destroy();
 
 					return false;
 				}
 
-				constexpr size_t INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT = 100u;
-				constexpr size_t INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT = 1000u;
+				constexpr size_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->triangleListBuffer.initialize(pDevice, pCommandList, pTriangleListPipelineStatePassthrough, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				this->triangleListBuffer.initialize(pDevice, pCommandList, pPipelineStatePassthrough);
 
-				if (!this->triangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) {
+				if (!this->triangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
 				}
 
-				this->pointListBuffer.initialize(pDevice, pCommandList, pPointListPipelineStatePassthrough, D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+				this->textureTriangleListBuffer.initialize(pDevice, pCommandList, pPipelineStateTexture);
 
-				if (!this->pointListBuffer.create(INITIAL_POINT_LIST_BUFFER_VERTEX_COUNT)) {
-					this->destroy();
-
-					return false;
-				}
-
-				this->textureTriangleListBuffer.initialize(pDevice, pCommandList, pTriangleListPipelineStateTexture, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-				if (!this->textureTriangleListBuffer.create(INITIAL_TRIANGLE_LIST_BUFFER_VERTEX_COUNT)) {
+				if (!this->textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
@@ -82,7 +71,6 @@ namespace hax {
 				}
 
 				this->textureTriangleListBuffer.destroy();
-				this->pointListBuffer.destroy();
 				this->triangleListBuffer.destroy();
 
 				if (this->pCommandAllocator) {

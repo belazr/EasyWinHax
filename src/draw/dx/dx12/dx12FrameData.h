@@ -10,7 +10,6 @@ namespace hax {
 			struct FrameData {
 				ID3D12CommandAllocator* pCommandAllocator;
 				BufferBackend triangleListBuffer;
-				BufferBackend pointListBuffer;
 				BufferBackend textureTriangleListBuffer;
 				HANDLE hEvent;
 
@@ -34,21 +33,15 @@ namespace hax {
 				// [in] pCommandList:
 				// Command list of the backend.
 				//
-				// [in] pTriangleListPipelineStatePassthrough:
+				// [in] pPipelineStatePassthrough:
 				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
 				// 
-				// [in] pPointListPipelineStatePassthrough:
-				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
-				// 
-				// [in] pTriangleListPipelineStateTexture:
+				// [in] pPipelineStateTexture:
 				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
 				//
 				// Return:
 				// True on success, false on failure.
-				bool create(
-					ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pTriangleListPipelineStatePassthrough,
-					ID3D12PipelineState* pPointListPipelineStatePassthrough, ID3D12PipelineState* pTriangleListPipelineStateTexture
-				);
+				bool create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineStatePassthrough, ID3D12PipelineState* pPipelineStateTexture);
 
 
 				// Destroys all internal resources.
