@@ -43,11 +43,8 @@ namespace hax {
 				// Command list of the backend.
 				//
 				// [in] pPipelineState:
-				// Pipeline state with the appropriate primitive topology.
-				//
-				// [in] topology:
-				// The topology with which the buffer draws its content.
-				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology);
+				// Pipeline state of the backend.
+				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState);
 
 				// Creates internal resources.
 				//

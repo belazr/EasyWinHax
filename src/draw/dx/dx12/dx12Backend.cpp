@@ -138,8 +138,8 @@ namespace hax {
 
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pTextureCommandAllocator{}, _pTextureCommandList{}, _pCommandList{},
-                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{}, _srvHeapDescriptorIncrementSize{},
-                _pRootSignature{}, _pTriangleListPipelineStatePassthrough {}, _pPointListPipelineStatePassthrough{}, _pTriangleListPipelineStateTexture{},
+                _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{},
+                _srvHeapDescriptorIncrementSize{}, _pRootSignature{}, _pPipelineStatePassthrough {}, _pPipelineStateTexture{},
 				_pFence{}, _viewport{}, _pRtvResource{}, _frameDataVector{}, _curBackBufferIndex{}, _pCurFrameData{}, _textures{} {}
 
 
@@ -153,16 +153,12 @@ namespace hax {
                     this->_pFence->Release();
                 }
 
-                if (this->_pTriangleListPipelineStateTexture) {
-                    this->_pTriangleListPipelineStateTexture->Release();
+                if (this->_pPipelineStateTexture) {
+                    this->_pPipelineStateTexture->Release();
                 }
 
-                if (this->_pPointListPipelineStatePassthrough) {
-                    this->_pPointListPipelineStatePassthrough->Release();
-                }
-
-				if (this->_pTriangleListPipelineStatePassthrough) {
-					this->_pTriangleListPipelineStatePassthrough->Release();
+				if (this->_pPipelineStatePassthrough) {
+					this->_pPipelineStatePassthrough->Release();
 				}
 
                 if (this->_pRootSignature) {
@@ -247,30 +243,21 @@ namespace hax {
 
                 }
 
-                if (!this->_pTriangleListPipelineStatePassthrough) {
+                if (!this->_pPipelineStatePassthrough) {
                     
-					this->_pTriangleListPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
+					this->_pPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
                     
                 }
 
-                if (!this->_pTriangleListPipelineStatePassthrough) return false;
+                if (!this->_pPipelineStatePassthrough) return false;
 
+                if (!this->_pPipelineStateTexture) {
 
-                if (!this->_pPointListPipelineStatePassthrough) {
-
-                    this->_pPointListPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
-
-                }
-
-                if (!this->_pPointListPipelineStatePassthrough) return false;
-
-                if (!this->_pTriangleListPipelineStateTexture) {
-
-                    this->_pTriangleListPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
+                    this->_pPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
 
                 }
 
-                if (!this->_pTriangleListPipelineStateTexture) return false;
+                if (!this->_pPipelineStateTexture) return false;
 
                 if (!this->_pFence) {
                     
@@ -454,12 +441,6 @@ namespace hax {
             IBufferBackend* Backend::getTriangleListBufferBackend() {
 
                 return &this->_pCurFrameData->triangleListBuffer;
-            }
-
-
-            IBufferBackend* Backend::getPointListBufferBackend() {
-
-                return &this->_pCurFrameData->pointListBuffer;
             }
 
 
@@ -711,10 +692,7 @@ namespace hax {
 
                 for (UINT i = 0u; i < size; i++) {
                     
-                    if (!this->_frameDataVector[i].create(
-                        this->_pDevice, this->_pCommandList, this->_pTriangleListPipelineStatePassthrough,
-                        this->_pPointListPipelineStatePassthrough, this->_pTriangleListPipelineStateTexture
-                    )) {
+                    if (!this->_frameDataVector[i].create(this->_pDevice, this->_pCommandList, this->_pPipelineStatePassthrough, this->_pPipelineStateTexture)) {
                         this->_frameDataVector.resize(0u);
 
                         return false;

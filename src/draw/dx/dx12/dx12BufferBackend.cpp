@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _pVertexBufferResource{}, _pIndexBufferResource{}, _topology{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _pVertexBufferResource{}, _pIndexBufferResource{}, _capacity{} {}
 
 			
 			BufferBackend::BufferBackend(BufferBackend&& bb) noexcept :
@@ -26,11 +26,10 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState, D3D_PRIMITIVE_TOPOLOGY topology) {
+			void BufferBackend::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState) {
 				this->_pDevice = pDevice;
 				this->_pCommandList = pCommandList;
 				this->_pPipelineState = pPipelineState;
-				this->_topology = topology;
 
 				return;
 			}
@@ -115,7 +114,7 @@ namespace hax {
 
 
 			bool BufferBackend::begin() {
-				this->_pCommandList->IASetPrimitiveTopology(this->_topology);
+				this->_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 
 				D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
