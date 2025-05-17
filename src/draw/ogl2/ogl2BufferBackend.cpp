@@ -7,7 +7,7 @@ namespace hax {
 		namespace ogl2 {
 
 			BufferBackend::BufferBackend() :
-				_f{}, _mode{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
+				_f{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
 				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _curShaderProgramId{ UINT_MAX }, _curVertexBufferId{ UINT_MAX }, _curIndexBufferId{ UINT_MAX }, _capacity{} {
 			}
 
@@ -19,9 +19,8 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(Functions f, GLenum mode, GLint* viewport, GLuint shaderProgramId) {
+			void BufferBackend::initialize(Functions f, GLint* viewport, GLuint shaderProgramId) {
 				this->_f = f;
-				this->_mode = mode;
 				this->_shaderProgramId = shaderProgramId;
 
 				const GLfloat viewLeft = static_cast<GLfloat>(viewport[0]);
@@ -180,7 +179,7 @@ namespace hax {
 					glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(textureId));
 				}
 					
-				glDrawElements(this->_mode, count, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(index * sizeof(uint32_t)));
+				glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(index * sizeof(uint32_t)));
 
 				return;
 			}
