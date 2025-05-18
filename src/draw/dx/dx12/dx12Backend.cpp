@@ -692,7 +692,7 @@ namespace hax {
 
                 for (UINT i = 0u; i < size; i++) {
                     
-                    if (!this->_frameDataVector[i].create(this->_pDevice, this->_pCommandList, this->_pPipelineStatePassthrough, this->_pPipelineStateTexture)) {
+                    if (!this->_frameDataVector[i].create(this->_pDevice, this->_pCommandList, this->_pPipelineStateTexture, this->_pPipelineStatePassthrough)) {
                         this->_frameDataVector.resize(0u);
 
                         return false;
