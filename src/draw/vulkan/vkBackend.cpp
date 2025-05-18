@@ -217,7 +217,7 @@ namespace hax {
 			Backend::Backend() :
 				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{}, _hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{},
 				_hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{},
-				_hPipelineLayout{}, _hPipelinePassthrough{}, _hPipelineTexture{}, _hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
+				_hPipelineLayout{}, _hPipelineTexture{}, _hPipelinePassthrough{}, _hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
 
 
 			Backend::~Backend() {
@@ -228,12 +228,12 @@ namespace hax {
 
 				if (this->_f.pVkDestroyPipeline) {
 
-					if (this->_hPipelineTexture != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelineTexture, nullptr);
-					}
-
 					if (this->_hPipelinePassthrough != VK_NULL_HANDLE) {
 						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelinePassthrough, nullptr);
+					}
+
+					if (this->_hPipelineTexture != VK_NULL_HANDLE) {
+						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelineTexture, nullptr);
 					}
 
 				}
@@ -334,17 +334,17 @@ namespace hax {
 
 				}
 
-				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) {
-					this->_hPipelinePassthrough = this->createPipeline(FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
-				}
-
-				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) return false;
-
 				if (this->_hPipelineTexture == VK_NULL_HANDLE) {
 					this->_hPipelineTexture = this->createPipeline(FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
 				}
 
 				if (this->_hPipelineTexture == VK_NULL_HANDLE) return false;
+
+				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) {
+					this->_hPipelinePassthrough = this->createPipeline(FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
+				}
+
+				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) return false;
 
 				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
 
@@ -545,15 +545,15 @@ namespace hax {
 			}
 
 
-			IBufferBackend* Backend::getTriangleListBufferBackend() {
-
-				return &this->_pCurFrameData->triangleListBuffer;
-			}
-
-
 			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
 				return &this->_pCurFrameData->textureTriangleListBuffer;
+			}
+
+
+			IBufferBackend* Backend::getTriangleListBufferBackend() {
+
+				return &this->_pCurFrameData->triangleListBuffer;
 			}
 
 
@@ -1152,7 +1152,7 @@ namespace hax {
 					
 					if (!this->_frameDataVector[i].create(
 						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass, static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
-						this->_memoryProperties, this->_hPipelineLayout, this->_hPipelinePassthrough, this->_hPipelineTexture
+						this->_memoryProperties, this->_hPipelineLayout, this->_hPipelineTexture, this->_hPipelinePassthrough
 					)) {
 						delete[] pImages;
 						this->_frameDataVector.resize(0u);

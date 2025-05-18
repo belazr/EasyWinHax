@@ -14,8 +14,8 @@ namespace hax {
 				VkCommandBuffer hCommandBuffer;
 				VkImageView hImageView;
 				VkFramebuffer hFrameBuffer;
-				BufferBackend triangleListBuffer;
 				BufferBackend textureTriangleListBuffer;
+				BufferBackend triangleListBuffer;
 				VkFence hFence;
 
 				FrameData();
@@ -38,17 +38,17 @@ namespace hax {
 				// [in] pCommandList:
 				// Command list of the backend.
 				//
-				// [in] hPipelinePassthrough:
-				// Pipeline with a passthrough pixel shader.
-				// 
 				// [in] hPipelineTexture:
 				// Pipeline with a texture pixel shader.
+				//
+				// [in] hPipelinePassthrough:
+				// Pipeline with a passthrough pixel shader.
 				//
 				// Return:
 				// True on success, false on failure.
 				bool create(
 					Functions fn, VkDevice hDev, VkCommandPool hCmdPool, VkImage hImage, VkRenderPass hRenderPass, uint32_t width, uint32_t height,
-					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipelinePassthrough, VkPipeline hPipelineTexture
+					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipelineTexture, VkPipeline hPipelinePassthrough
 				);
 
 				// Destroys all internal resources.
