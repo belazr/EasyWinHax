@@ -40,8 +40,8 @@ namespace hax {
 				IDirect3DStateBlock9* _pStateBlock;
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 
-				BufferBackend _triangleListBuffer;
 				BufferBackend _textureTriangleListBuffer;
+				BufferBackend _triangleListBuffer;
 
 				Vector<IDirect3DTexture9*> _textures;
 
@@ -93,17 +93,17 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
-				// 
-				// Return:
-				// Pointer to the triangle list buffer backend.
-				virtual IBufferBackend* getTriangleListBufferBackend()  override;
-
 				// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
 				// Pointer to the texture triangle list buffer backend.
 				virtual IBufferBackend* getTextureTriangleListBufferBackend()  override;
+
+				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer backend.
+				virtual IBufferBackend* getTriangleListBufferBackend()  override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
