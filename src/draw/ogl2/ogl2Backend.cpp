@@ -8,17 +8,17 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramPassthroughId{}, _shaderProgramTextureId{}, _viewport{}, _depthFunc{},
-				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _triangleListBuffer{}, _textureTriangleListBuffer{} {}
+				_f{}, _shaderProgramTextureId{}, _shaderProgramPassthroughId{}, _viewport{}, _depthFunc{},
+				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _textureTriangleListBuffer{}, _triangleListBuffer{} {}
 
 
 			Backend::~Backend() {
-				this->_textureTriangleListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
+				this->_textureTriangleListBuffer.destroy();
 				
 				if (this->_f.pGlDeleteProgram) {
-					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
 					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
+					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
 				}
 
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
@@ -70,19 +70,19 @@ namespace hax {
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
 					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-					this->_triangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
-
-					if (!this->_triangleListBuffer.capacity()) {
-
-						if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
-
-					}
-
 					this->_textureTriangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramTextureId);
 
 					if (!this->_textureTriangleListBuffer.capacity()) {
 
 						if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+
+					}
+
+					this->_triangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
+
+					if (!this->_triangleListBuffer.capacity()) {
+
+						if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 					}
 
@@ -120,15 +120,15 @@ namespace hax {
 			}
 
 
-			IBufferBackend* Backend::getTriangleListBufferBackend()  {
+			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
-				return &this->_triangleListBuffer;
+				return &this->_textureTriangleListBuffer;
 			}
 
 
-			IBufferBackend* Backend::getTextureTriangleListBufferBackend()  {
+			IBufferBackend* Backend::getTriangleListBufferBackend()  {
 
-				return &this->_textureTriangleListBuffer;
+				return &this->_triangleListBuffer;
 			}
 
 
@@ -183,20 +183,6 @@ namespace hax {
 				this->_f.pGlShaderSource(vertexShader, 1, &VERTEX_SHADER, nullptr);
 				this->_f.pGlCompileShader(vertexShader);
 
-				const GLuint fragmentShaderPassthrough = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
-				this->_f.pGlShaderSource(fragmentShaderPassthrough, 1, &FRAGMENT_SHADER_PASSTHROUGH, nullptr);
-				this->_f.pGlCompileShader(fragmentShaderPassthrough);
-
-				this->_shaderProgramPassthroughId = this->_f.pGlCreateProgram();
-				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, vertexShader);
-				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
-				this->_f.pGlLinkProgram(this->_shaderProgramPassthroughId);
-
-				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, vertexShader);
-				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
-
-				this->_f.pGlDeleteShader(fragmentShaderPassthrough);
-
 				const GLuint fragmentShaderTexture = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
 				this->_f.pGlShaderSource(fragmentShaderTexture, 1, &FRAGMENT_SHADER_TEXTURE, nullptr);
 				this->_f.pGlCompileShader(fragmentShaderTexture);
@@ -210,6 +196,20 @@ namespace hax {
 				this->_f.pGlDetachShader(this->_shaderProgramTextureId, fragmentShaderTexture);
 
 				this->_f.pGlDeleteShader(fragmentShaderTexture);
+
+				const GLuint fragmentShaderPassthrough = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
+				this->_f.pGlShaderSource(fragmentShaderPassthrough, 1, &FRAGMENT_SHADER_PASSTHROUGH, nullptr);
+				this->_f.pGlCompileShader(fragmentShaderPassthrough);
+
+				this->_shaderProgramPassthroughId = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, vertexShader);
+				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
+				this->_f.pGlLinkProgram(this->_shaderProgramPassthroughId);
+
+				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, vertexShader);
+				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
+
+				this->_f.pGlDeleteShader(fragmentShaderPassthrough);
 				this->_f.pGlDeleteShader(vertexShader);
 
 				return;
