@@ -52,8 +52,8 @@ namespace hax {
 				D3D12_GPU_DESCRIPTOR_HANDLE _hSrvHeapStartGpuDescriptor;
 				UINT _srvHeapDescriptorIncrementSize;
 				ID3D12RootSignature* _pRootSignature;
-				ID3D12PipelineState* _pPipelineStatePassthrough;
 				ID3D12PipelineState* _pPipelineStateTexture;
+				ID3D12PipelineState* _pPipelineStatePassthrough;
 				ID3D12Fence* _pFence;
 				ID3D12Resource* _pRtvResource;
 				D3D12_VIEWPORT _viewport;
@@ -112,17 +112,17 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
-				// 
-				// Return:
-				// Pointer to the triangle list buffer backend.
-				virtual IBufferBackend* getTriangleListBufferBackend() override;
-
 				// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
 				// Pointer to the texture triangle list buffer backend.
 				virtual IBufferBackend* getTextureTriangleListBufferBackend() override;
+
+				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer backend.
+				virtual IBufferBackend* getTriangleListBufferBackend() override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
