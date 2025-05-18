@@ -139,7 +139,7 @@ namespace hax {
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pTextureCommandAllocator{}, _pTextureCommandList{}, _pCommandList{},
                 _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{},
-                _srvHeapDescriptorIncrementSize{}, _pRootSignature{}, _pPipelineStatePassthrough {}, _pPipelineStateTexture{},
+                _srvHeapDescriptorIncrementSize{}, _pRootSignature{}, _pPipelineStateTexture{}, _pPipelineStatePassthrough {},
 				_pFence{}, _viewport{}, _pRtvResource{}, _frameDataVector{}, _curBackBufferIndex{}, _pCurFrameData{}, _textures{} {}
 
 
@@ -153,13 +153,13 @@ namespace hax {
                     this->_pFence->Release();
                 }
 
+                if (this->_pPipelineStatePassthrough) {
+                    this->_pPipelineStatePassthrough->Release();
+                }
+
                 if (this->_pPipelineStateTexture) {
                     this->_pPipelineStateTexture->Release();
                 }
-
-				if (this->_pPipelineStatePassthrough) {
-					this->_pPipelineStatePassthrough->Release();
-				}
 
                 if (this->_pRootSignature) {
                     this->_pRootSignature->Release();
@@ -243,14 +243,6 @@ namespace hax {
 
                 }
 
-                if (!this->_pPipelineStatePassthrough) {
-                    
-					this->_pPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
-                    
-                }
-
-                if (!this->_pPipelineStatePassthrough) return false;
-
                 if (!this->_pPipelineStateTexture) {
 
                     this->_pPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
@@ -258,6 +250,14 @@ namespace hax {
                 }
 
                 if (!this->_pPipelineStateTexture) return false;
+
+                if (!this->_pPipelineStatePassthrough) {
+                    
+					this->_pPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
+                    
+                }
+
+                if (!this->_pPipelineStatePassthrough) return false;
 
                 if (!this->_pFence) {
                     
@@ -438,15 +438,15 @@ namespace hax {
             }
 
 
-            IBufferBackend* Backend::getTriangleListBufferBackend() {
-
-                return &this->_pCurFrameData->triangleListBuffer;
-            }
-
-
             IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
                 return &this->_pCurFrameData->textureTriangleListBuffer;
+            }
+
+
+            IBufferBackend* Backend::getTriangleListBufferBackend() {
+
+                return &this->_pCurFrameData->triangleListBuffer;
             }
 
 
