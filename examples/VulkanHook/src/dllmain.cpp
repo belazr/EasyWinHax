@@ -21,7 +21,7 @@ static hax::Bench bench("200 x hkVkQueuePresentKHR", 200u);
 
 static hax::draw::vk::InitData initData;
 static hax::draw::vk::Backend backend;
-static hax::draw::Engine engine{ &backend };
+static hax::draw::Engine engine{ &backend, hax::draw::font::inconsolata };
 
 static const hax::draw::Color* pTextureData;
 static uint32_t textureWidth;

@@ -11,7 +11,7 @@ static HMODULE hModule;
 static hax::Bench bench("200 x hkPresent", 200u);
 
 static hax::draw::dx10::Backend backend;
-static hax::draw::Engine engine{ &backend };
+static hax::draw::Engine engine{ &backend, hax::draw::fonts::inconsolata };
 
 static const hax::draw::Color* pTextureData;
 static uint32_t textureWidth;
