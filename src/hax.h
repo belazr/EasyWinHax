@@ -16,10 +16,8 @@
 
 // Headers for engine
 #include "draw\Color.h"
+#include "draw\Font.h"
 #include "draw\Engine.h"
-#include "draw\Vertex.h"
-
-#include "draw\font\Font.h"
 
 // Headers for DirectX 9
 #pragma comment(lib, "d3d9.lib")
