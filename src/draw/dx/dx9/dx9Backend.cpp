@@ -41,7 +41,7 @@ namespace hax {
 			}
 
 
-			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{}, _viewport{},
+			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{}, _viewport{},
 				_pStateBlock{}, _pOriginalVertexDeclaration{}, _textureTriangleListBuffer{}, _triangleListBuffer{} {}
 
 
