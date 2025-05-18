@@ -6,8 +6,7 @@ namespace hax {
 	namespace draw {
 
 		Engine::Engine(IBackend* pBackend, Font font) :
-			_pointListBuffer{}, _textureTriangleListBuffer{}, _triangleListBuffer{}, _font{ font },
-			_pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
+			_textureTriangleListBuffer{}, _triangleListBuffer{}, _font{ font }, _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
 		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
@@ -37,12 +36,6 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_pointListBuffer.beginFrame(this->_pBackend->getPointListBufferBackend())) {
-				this->_pBackend->endFrame();
-
-				return;
-			}
-
 			if (!this->_textureTriangleListBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
 				this->_pBackend->endFrame();
 
@@ -67,8 +60,6 @@ namespace hax {
 			
 			this->_triangleListBuffer.endFrame();
 			this->_textureTriangleListBuffer.endFrame();
-			this->_pointListBuffer.endFrame();
-
 			this->_pBackend->endFrame();
 
 			this->_frame = false;
