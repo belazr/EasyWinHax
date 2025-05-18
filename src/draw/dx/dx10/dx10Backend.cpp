@@ -39,8 +39,8 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderPassthrough{}, _pPixelShaderTexture{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _triangleListBuffer{}, _textureTriangleListBuffer{} {}
+				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _textureTriangleListBuffer{}, _triangleListBuffer{} {}
 
 
 			Backend::~Backend() {
@@ -57,15 +57,15 @@ namespace hax {
 					this->_pConstantBuffer->Release();
 				}
 
-				this->_textureTriangleListBuffer.destroy();
 				this->_triangleListBuffer.destroy();
-
-				if (this->_pPixelShaderTexture) {
-					this->_pPixelShaderTexture->Release();
-				}
+				this->_textureTriangleListBuffer.destroy();
 
 				if (this->_pPixelShaderPassthrough) {
 					this->_pPixelShaderPassthrough->Release();
+				}
+
+				if (this->_pPixelShaderTexture) {
+					this->_pPixelShaderTexture->Release();
 				}
 
 				if (this->_pVertexLayout) {
@@ -109,19 +109,19 @@ namespace hax {
 
 				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
+				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture);
+
+				if (!this->_textureTriangleListBuffer.capacity()) {
+
+					if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+
+				}
+
 				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough);
 
 				if (!this->_triangleListBuffer.capacity()) {
 
 					if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
-
-				}
-
-				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture);
-				
-				if (!this->_textureTriangleListBuffer.capacity()) {
-
-					if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
@@ -214,15 +214,15 @@ namespace hax {
 			}
 
 
-			IBufferBackend* Backend::getTriangleListBufferBackend() {
-
-				return &this->_triangleListBuffer;
-			}
-
-
 			IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
 
 				return &this->_textureTriangleListBuffer;
+			}
+
+
+			IBufferBackend* Backend::getTriangleListBufferBackend() {
+
+				return &this->_triangleListBuffer;
 			}
 
 
@@ -254,15 +254,15 @@ namespace hax {
 
 				}
 
-				if (!this->_pPixelShaderPassthrough) {
-
-					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH), &this->_pPixelShaderPassthrough))) return false;
-
-				}
-
 				if (!this->_pPixelShaderTexture) {
 
 					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE), &this->_pPixelShaderTexture))) return false;
+
+				}
+
+				if (!this->_pPixelShaderPassthrough) {
+
+					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH), &this->_pPixelShaderPassthrough))) return false;
 
 				}
 

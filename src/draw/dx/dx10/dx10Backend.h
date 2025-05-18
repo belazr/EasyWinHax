@@ -41,15 +41,15 @@ namespace hax {
 				ID3D10Device* _pDevice;
 				ID3D10VertexShader* _pVertexShader;
 				ID3D10InputLayout* _pVertexLayout;
-				ID3D10PixelShader* _pPixelShaderPassthrough;
 				ID3D10PixelShader* _pPixelShaderTexture;
+				ID3D10PixelShader* _pPixelShaderPassthrough;
 				ID3D10Buffer* _pConstantBuffer;
 				ID3D10SamplerState* _pSamplerState;
 				ID3D10BlendState* _pBlendState;
 				D3D10_VIEWPORT _viewport;
 
-				BufferBackend _triangleListBuffer;
 				BufferBackend _textureTriangleListBuffer;
+				BufferBackend _triangleListBuffer;
 
 				Vector<TextureData> _textures;
 
@@ -101,17 +101,17 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
-				// 
-				// Return:
-				// Pointer to the triangle list buffer backend.
-				virtual IBufferBackend* getTriangleListBufferBackend()  override;
-
 				// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
 				// Pointer to the texture triangle list buffer backend.
 				virtual IBufferBackend* getTextureTriangleListBufferBackend()  override;
+
+				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer backend.
+				virtual IBufferBackend* getTriangleListBufferBackend()  override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
