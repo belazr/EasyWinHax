@@ -42,16 +42,16 @@ namespace hax {
 				ID3D11DeviceContext* _pContext;
 				ID3D11VertexShader* _pVertexShader;
 				ID3D11InputLayout* _pVertexLayout;
-				ID3D11PixelShader* _pPixelShaderPassthrough;
 				ID3D11PixelShader* _pPixelShaderTexture;
+				ID3D11PixelShader* _pPixelShaderPassthrough;
 				ID3D11RenderTargetView* _pRenderTargetView;
 				ID3D11Buffer* _pConstantBuffer;
 				ID3D11SamplerState* _pSamplerState;
 				ID3D11BlendState* _pBlendState;
 				D3D11_VIEWPORT _viewport;
 				
-				BufferBackend _triangleListBuffer;
 				BufferBackend _textureTriangleListBuffer;
+				BufferBackend _triangleListBuffer;
 
 				Vector<TextureData> _textures;
 
@@ -103,17 +103,17 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
-				// 
-				// Return:
-				// Pointer to the triangle list buffer backend.
-				virtual IBufferBackend* getTriangleListBufferBackend()  override;
-
 				// Gets a reference to the texture triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
 				// Pointer to the texture triangle list buffer backend.
 				virtual IBufferBackend* getTextureTriangleListBufferBackend()  override;
+
+				// Gets a reference to the triangle list buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// 
+				// Return:
+				// Pointer to the triangle list buffer backend.
+				virtual IBufferBackend* getTriangleListBufferBackend()  override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
