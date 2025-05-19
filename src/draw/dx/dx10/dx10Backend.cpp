@@ -40,7 +40,7 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _textureTriangleListBuffer{}, _triangleListBuffer{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _textureBufferBackend{}, _solidBufferBackend{} {}
 
 
 			Backend::~Backend() {
@@ -57,8 +57,8 @@ namespace hax {
 					this->_pConstantBuffer->Release();
 				}
 
-				this->_triangleListBuffer.destroy();
-				this->_textureTriangleListBuffer.destroy();
+				this->_solidBufferBackend.destroy();
+				this->_textureBufferBackend.destroy();
 
 				if (this->_pPixelShaderPassthrough) {
 					this->_pPixelShaderPassthrough->Release();
@@ -109,19 +109,19 @@ namespace hax {
 
 				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->_textureTriangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderTexture);
+				this->_textureBufferBackend.initialize(this->_pDevice, this->_pPixelShaderTexture);
 
-				if (!this->_textureTriangleListBuffer.capacity()) {
+				if (!this->_textureBufferBackend.capacity()) {
 
-					if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+					if (!this->_textureBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
-				this->_triangleListBuffer.initialize(this->_pDevice, this->_pPixelShaderPassthrough);
+				this->_solidBufferBackend.initialize(this->_pDevice, this->_pPixelShaderPassthrough);
 
-				if (!this->_triangleListBuffer.capacity()) {
+				if (!this->_solidBufferBackend.capacity()) {
 
-					if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+					if (!this->_solidBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
@@ -216,13 +216,13 @@ namespace hax {
 
 			IBufferBackend* Backend::getTextureBufferBackend() {
 
-				return &this->_textureTriangleListBuffer;
+				return &this->_textureBufferBackend;
 			}
 
 
 			IBufferBackend* Backend::getSolidBufferBackend() {
 
-				return &this->_triangleListBuffer;
+				return &this->_solidBufferBackend;
 			}
 
 
