@@ -50,8 +50,8 @@ namespace hax {
 				ID3D11BlendState* _pBlendState;
 				D3D11_VIEWPORT _viewport;
 				
-				BufferBackend _textureTriangleListBuffer;
-				BufferBackend _triangleListBuffer;
+				BufferBackend _textureBufferBackend;
+				BufferBackend _solidBufferBackend;
 
 				Vector<TextureData> _textures;
 
