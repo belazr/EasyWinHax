@@ -16,7 +16,7 @@ inline void drawDemo(hax::draw::Engine* pEngine, const hax::draw::Color* pTextur
 	constexpr char TEXT[] = "EasyWinHax";
 	constexpr uint32_t sizeText = 24u;
 	const hax::draw::Color colorText = argb ? hax::draw::argb::ORANGE : hax::draw::abgr::ORANGE;
-	pEngine->drawString(&middleOfScreen, hax::draw::Alignment::CENTER_LEFT, TEXT, sizeText, colorText);
+	pEngine->drawString(&middleOfScreen, hax::draw::Alignment::CENTER, TEXT, sizeText, colorText);
 
 	return;
 }
