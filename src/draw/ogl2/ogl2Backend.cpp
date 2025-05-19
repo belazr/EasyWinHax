@@ -9,12 +9,12 @@ namespace hax {
 
 			Backend::Backend() :
 				_f{}, _shaderProgramTextureId{}, _shaderProgramPassthroughId{}, _viewport{}, _depthFunc{},
-				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _textureTriangleListBuffer{}, _triangleListBuffer{} {}
+				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _textureBufferBackend{}, _solidBufferBackend{} {}
 
 
 			Backend::~Backend() {
-				this->_triangleListBuffer.destroy();
-				this->_textureTriangleListBuffer.destroy();
+				this->_solidBufferBackend.destroy();
+				this->_textureBufferBackend.destroy();
 				
 				if (this->_f.pGlDeleteProgram) {
 					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
@@ -70,19 +70,19 @@ namespace hax {
 				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
 					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-					this->_textureTriangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramTextureId);
+					this->_textureBufferBackend.initialize(this->_f, viewport, this->_shaderProgramTextureId);
 
-					if (!this->_textureTriangleListBuffer.capacity()) {
+					if (!this->_textureBufferBackend.capacity()) {
 
-						if (!this->_textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+						if (!this->_textureBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 					}
 
-					this->_triangleListBuffer.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
+					this->_solidBufferBackend.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
 
-					if (!this->_triangleListBuffer.capacity()) {
+					if (!this->_solidBufferBackend.capacity()) {
 
-						if (!this->_triangleListBuffer.create(INITIAL_BUFFER_SIZE)) return false;
+						if (!this->_solidBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 					}
 
@@ -122,13 +122,13 @@ namespace hax {
 
 			IBufferBackend* Backend::getTextureBufferBackend() {
 
-				return &this->_textureTriangleListBuffer;
+				return &this->_textureBufferBackend;
 			}
 
 
 			IBufferBackend* Backend::getSolidBufferBackend()  {
 
-				return &this->_triangleListBuffer;
+				return &this->_solidBufferBackend;
 			}
 
 

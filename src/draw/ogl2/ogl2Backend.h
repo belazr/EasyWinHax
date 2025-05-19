@@ -29,8 +29,8 @@ namespace hax {
 				GLenum _srcAlphaBlendFunc;
 				GLenum _dstAlphaBlendFunc;
 
-				BufferBackend _textureTriangleListBuffer;
-				BufferBackend _triangleListBuffer;
+				BufferBackend _textureBufferBackend;
+				BufferBackend _solidBufferBackend;
 
 				Vector<GLuint> _textures;
 
