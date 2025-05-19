@@ -14,8 +14,8 @@ namespace hax {
 				VkCommandBuffer hCommandBuffer;
 				VkImageView hImageView;
 				VkFramebuffer hFrameBuffer;
-				BufferBackend textureTriangleListBuffer;
-				BufferBackend triangleListBuffer;
+				BufferBackend textureBufferBackend;
+				BufferBackend solidBufferBackend;
 				VkFence hFence;
 
 				FrameData();
