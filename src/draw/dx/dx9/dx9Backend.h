@@ -40,8 +40,8 @@ namespace hax {
 				IDirect3DStateBlock9* _pStateBlock;
 				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
 
-				BufferBackend _textureTriangleListBuffer;
-				BufferBackend _triangleListBuffer;
+				BufferBackend _textureBufferBackend;
+				BufferBackend _solidBufferBackend;
 
 				Vector<IDirect3DTexture9*> _textures;
 
