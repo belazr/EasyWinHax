@@ -6,7 +6,7 @@ namespace hax {
 	namespace draw {
 
 		Engine::Engine(IBackend* pBackend, Font font) :
-			_textureTriangleListBuffer{}, _triangleListBuffer{}, _font{ font }, _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
+			_textureDrawBuffer{}, _solidDrawBuffer{}, _font{ font }, _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
 		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
@@ -36,13 +36,13 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_textureTriangleListBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
+			if (!this->_textureDrawBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
 			}
 
-			if (!this->_triangleListBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
+			if (!this->_solidDrawBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
@@ -58,8 +58,8 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
-			this->_triangleListBuffer.endFrame();
-			this->_textureTriangleListBuffer.endFrame();
+			this->_solidDrawBuffer.endFrame();
+			this->_textureDrawBuffer.endFrame();
 			this->_pBackend->endFrame();
 
 			this->_frame = false;
@@ -107,7 +107,7 @@ namespace hax {
 				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color }
 			};
 
-			this->_triangleListBuffer.append(corners, _countof(corners));
+			this->_solidDrawBuffer.append(corners, _countof(corners));
 		}
 
 
@@ -140,7 +140,7 @@ namespace hax {
 				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color }
 			};
 
-			this->_triangleListBuffer.append(corners, _countof(corners));
+			this->_solidDrawBuffer.append(corners, _countof(corners));
 		}
 
 
@@ -159,7 +159,7 @@ namespace hax {
 				{ { topLeft.x + width, topLeft.y }, color }
 			};
 
-			this->_triangleListBuffer.append(corners, _countof(corners));
+			this->_solidDrawBuffer.append(corners, _countof(corners));
 		}
 
 
@@ -178,7 +178,7 @@ namespace hax {
 				{ { topLeft.x + width, topLeft.y }, abgr::WHITE, { 1.f, 0.f }  }
 			};
 
-			this->_textureTriangleListBuffer.append(corners, _countof(corners), textureId);
+			this->_textureDrawBuffer.append(corners, _countof(corners), textureId);
 
 			return;
 		}
@@ -232,7 +232,7 @@ namespace hax {
 					}
 				};
 
-				this->_textureTriangleListBuffer.append(corners, _countof(corners), this->_font.textureId);
+				this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
 			}
 
 			return;
