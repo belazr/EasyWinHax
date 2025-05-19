@@ -1,10 +1,10 @@
-#include "DrawBuffer.h"
+#include "SolidDrawBuffer.h"
 
 namespace hax {
 
 	namespace draw {
 
-		void DrawBuffer::append(const Vertex* data, uint32_t count) {
+		void SolidDrawBuffer::append(const Vertex* data, uint32_t count) {
 
 			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
 
@@ -26,7 +26,7 @@ namespace hax {
 		}
 
 
-		void DrawBuffer::append(const Vector2* data, uint32_t count, Color color, Vector2 offset) {
+		void SolidDrawBuffer::append(const Vector2* data, uint32_t count, Color color, Vector2 offset) {
 
 			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
 
@@ -48,7 +48,7 @@ namespace hax {
 		}
 
 
-		void DrawBuffer::endFrame() {
+		void SolidDrawBuffer::endFrame() {
 			
 			if (!this->_pBufferBackend) return;
 
