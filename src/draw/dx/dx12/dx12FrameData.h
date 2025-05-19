@@ -9,8 +9,8 @@ namespace hax {
 
 			struct FrameData {
 				ID3D12CommandAllocator* pCommandAllocator;
-				BufferBackend textureTriangleListBuffer;
-				BufferBackend triangleListBuffer;
+				BufferBackend textureBufferBackend;
+				BufferBackend solidBufferBackend;
 				HANDLE hEvent;
 
 				FrameData();

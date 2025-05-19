@@ -6,12 +6,12 @@ namespace hax {
 
 		namespace dx12 {
 
-			FrameData::FrameData() : pCommandAllocator{}, textureTriangleListBuffer{}, triangleListBuffer{}, hEvent{} {}
+			FrameData::FrameData() : pCommandAllocator{}, textureBufferBackend{}, solidBufferBackend{}, hEvent{} {}
 
 
 			FrameData::FrameData(FrameData&& fd) noexcept :
-				pCommandAllocator{ fd.pCommandAllocator }, textureTriangleListBuffer{ static_cast<BufferBackend&&>(fd.textureTriangleListBuffer) },
-				triangleListBuffer{ static_cast<BufferBackend&&>(fd.triangleListBuffer) }, hEvent{ fd.hEvent } {
+				pCommandAllocator{ fd.pCommandAllocator }, textureBufferBackend{ static_cast<BufferBackend&&>(fd.textureBufferBackend) },
+				solidBufferBackend{ static_cast<BufferBackend&&>(fd.solidBufferBackend) }, hEvent{ fd.hEvent } {
 				fd.pCommandAllocator = nullptr;
 				fd.hEvent = nullptr;
 			};
@@ -34,17 +34,17 @@ namespace hax {
 
 				constexpr size_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->textureTriangleListBuffer.initialize(pDevice, pCommandList, pPipelineStateTexture);
+				this->textureBufferBackend.initialize(pDevice, pCommandList, pPipelineStateTexture);
 
-				if (!this->textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->textureBufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
 				}
 
-				this->triangleListBuffer.initialize(pDevice, pCommandList, pPipelineStatePassthrough);
+				this->solidBufferBackend.initialize(pDevice, pCommandList, pPipelineStatePassthrough);
 
-				if (!this->triangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->solidBufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
@@ -70,8 +70,8 @@ namespace hax {
 					this->hEvent = nullptr;
 				}
 
-				this->triangleListBuffer.destroy();
-				this->textureTriangleListBuffer.destroy();
+				this->solidBufferBackend.destroy();
+				this->textureBufferBackend.destroy();
 
 				if (this->pCommandAllocator) {
 					this->pCommandAllocator->Release();
