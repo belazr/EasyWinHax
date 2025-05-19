@@ -18,8 +18,8 @@ namespace hax {
 
 		class Engine {
 		private:
-			TextureDrawBuffer _textureTriangleListBuffer;
-			SolidDrawBuffer _triangleListBuffer;
+			TextureDrawBuffer _textureDrawBuffer;
+			SolidDrawBuffer _solidDrawBuffer;
 
 			Font _font;
 
