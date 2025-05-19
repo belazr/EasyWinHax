@@ -1,7 +1,7 @@
 #pragma once
-#include "DrawBuffer.h"
 #include "Font.h"
 #include "IBackend.h"
+#include "SolidDrawBuffer.h"
 #include "TextureDrawBuffer.h"
 
 // Class for drawing within a graphics API hook.
@@ -19,7 +19,7 @@ namespace hax {
 		class Engine {
 		private:
 			TextureDrawBuffer _textureTriangleListBuffer;
-			DrawBuffer _triangleListBuffer;
+			SolidDrawBuffer _triangleListBuffer;
 
 			Font _font;
 

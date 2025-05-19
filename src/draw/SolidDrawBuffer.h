@@ -8,9 +8,9 @@ namespace hax {
 
 	namespace draw {
 
-		class DrawBuffer : public AbstractDrawBuffer {
+		class SolidDrawBuffer : public AbstractDrawBuffer {
 		public:
-			DrawBuffer() : AbstractDrawBuffer() {}
+			SolidDrawBuffer() : AbstractDrawBuffer() {}
 
 			// Appends vertices to the buffer. Has to be called between beginFrame and endFrame calls.
 			//
