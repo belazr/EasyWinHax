@@ -438,13 +438,13 @@ namespace hax {
             }
 
 
-            IBufferBackend* Backend::getTextureTriangleListBufferBackend() {
+            IBufferBackend* Backend::getTextureBufferBackend() {
 
                 return &this->_pCurFrameData->textureTriangleListBuffer;
             }
 
 
-            IBufferBackend* Backend::getTriangleListBufferBackend() {
+            IBufferBackend* Backend::getSolidBufferBackend() {
 
                 return &this->_pCurFrameData->triangleListBuffer;
             }
