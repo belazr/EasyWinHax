@@ -36,13 +36,13 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_textureDrawBuffer.beginFrame(this->_pBackend->getTextureTriangleListBufferBackend())) {
+			if (!this->_textureDrawBuffer.beginFrame(this->_pBackend->getTextureBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
 			}
 
-			if (!this->_solidDrawBuffer.beginFrame(this->_pBackend->getTriangleListBufferBackend())) {
+			if (!this->_solidDrawBuffer.beginFrame(this->_pBackend->getSolidBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
