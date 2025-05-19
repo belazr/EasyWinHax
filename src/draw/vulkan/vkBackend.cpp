@@ -547,13 +547,13 @@ namespace hax {
 
 			IBufferBackend* Backend::getTextureBufferBackend() {
 
-				return &this->_pCurFrameData->textureTriangleListBuffer;
+				return &this->_pCurFrameData->textureBufferBackend;
 			}
 
 
 			IBufferBackend* Backend::getSolidBufferBackend() {
 
-				return &this->_pCurFrameData->triangleListBuffer;
+				return &this->_pCurFrameData->solidBufferBackend;
 			}
 
 

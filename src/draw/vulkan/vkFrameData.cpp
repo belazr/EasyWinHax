@@ -8,12 +8,12 @@ namespace hax {
 
 			FrameData::FrameData() :
 				f{}, hDevice {}, hCommandPool{}, hCommandBuffer{}, hImageView{}, hFrameBuffer{},
-				textureTriangleListBuffer{}, triangleListBuffer{}, hFence{} {}
+				textureBufferBackend{}, solidBufferBackend{}, hFence{} {}
 
 
 			FrameData::FrameData(FrameData&& fd) noexcept :
 				f{ fd.f }, hDevice{ fd.hDevice }, hCommandPool{ fd.hCommandPool }, hCommandBuffer{ fd.hCommandBuffer }, hImageView{ fd.hImageView }, hFrameBuffer{ fd.hFrameBuffer },
-				textureTriangleListBuffer{ static_cast<BufferBackend&&>(fd.textureTriangleListBuffer) }, triangleListBuffer{ static_cast<BufferBackend&&>(fd.triangleListBuffer) }, hFence{ fd.hFence } {
+				textureBufferBackend{ static_cast<BufferBackend&&>(fd.textureBufferBackend) }, solidBufferBackend{ static_cast<BufferBackend&&>(fd.solidBufferBackend) }, hFence{ fd.hFence } {
 				fd.hCommandBuffer = VK_NULL_HANDLE;
 				fd.hImageView = VK_NULL_HANDLE;
 				fd.hFrameBuffer = VK_NULL_HANDLE;
@@ -92,17 +92,17 @@ namespace hax {
 
 				constexpr size_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->textureTriangleListBuffer.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelineTexture);
+				this->textureBufferBackend.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelineTexture);
 
-				if (!this->textureTriangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->textureBufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
 				}
 
-				this->triangleListBuffer.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelinePassthrough);
+				this->solidBufferBackend.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelinePassthrough);
 
-				if (!this->triangleListBuffer.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->solidBufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
@@ -140,8 +140,8 @@ namespace hax {
 					this->hImageView = VK_NULL_HANDLE;
 				}
 
-				this->triangleListBuffer.destroy();
-				this->textureTriangleListBuffer.destroy();
+				this->solidBufferBackend.destroy();
+				this->textureBufferBackend.destroy();
 
 				if (this->hDevice != VK_NULL_HANDLE && this->hCommandPool != VK_NULL_HANDLE && this->hCommandBuffer != VK_NULL_HANDLE) {
 					this->f.pVkFreeCommandBuffers(this->hDevice, this->hCommandPool, 1u, &this->hCommandBuffer);
