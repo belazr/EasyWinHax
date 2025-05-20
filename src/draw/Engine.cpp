@@ -238,6 +238,15 @@ namespace hax {
 			return;
 		}
 
+
+		float Engine::getStringHeight(uint32_t size) {
+			// font textures are generated with font size 24
+			const float sizeFactor = static_cast<float>(size) / 24.f;
+
+			return this->_font.height * sizeFactor;
+		}
+
+
 		Vector2 Engine::getStringDimensions(const char* text, uint32_t size) const {
 			const size_t length = strlen(text);
 			// font textures are generated with font size 24
