@@ -178,6 +178,16 @@ namespace hax {
 			// Color of the text.
 			void drawString(const Vector2* pos, Alignment alignment, const char* text, uint32_t size, Color color);
 
+			// Returns the height of a string when drawn to the screen.
+			//
+			// Parameters:
+			// [in] size:
+			// Size of the string.
+			// 
+			// Return:
+			// Height of a string.
+			float getStringHeight(uint32_t size);
+
 			// Returns the dimensions of a string when drawn to the screen.
 			//
 			// Parameters:
