@@ -41,7 +41,7 @@
 #include "draw\dx\dx12\dx12Backend.h"
 
 // Headers for OpenGL 2
-#pragma comment( lib, "OpenGL32.lib" )
+#pragma comment(lib, "OpenGL32.lib")
 
 #include "draw\ogl2\ogl2Backend.h"
 
