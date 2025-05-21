@@ -66,8 +66,7 @@ The library provides a collection of structures and function types used by the w
 ### Drawing from hooks
 The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IBackend interfaces.
 Currently there are implementations of the IBackend interface for DirectX 10, DirectX 11 and DirectX 12 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
-Text rendering is done via a point list buffer with hardcoded point lists for supported characters.
-It is not nice but it works and it is reasonably fast. There will be support for drawing text via a font atlas texture in the near future.
+Text rendering is done via a font atlas texture.
 See the headers in the "draw" folder for further documentation.
 ### Examples
 There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
@@ -87,7 +86,6 @@ Press "END" to unhook and eject the DLL.
 
 ## TODO
 
-- Draw text with font atlas texture
 - Make IBackend interface compatible with ImGui frontend
 
 ## References
