@@ -82,10 +82,9 @@ Build the following projects:
 and inject the built DLLs into a process that uses the respective graphics API.
 On process attach they start a thread that hooks the API and the hook then draws a demo to the screen.
 Press "END" to unhook and eject the DLL.
-![ewh_demo](https://github.com/user-attachments/assets/ebc881aa-eb07-4b80-9ada-5bfaaa6d7c9f)
+![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
 
 ## TODO
-
 - Make IBackend interface compatible with ImGui frontend
 
 ## References
