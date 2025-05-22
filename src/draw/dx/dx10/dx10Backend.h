@@ -39,8 +39,8 @@ namespace hax {
 				IDXGISwapChain* _pSwapChain;
 
 				ID3D10Device* _pDevice;
+				ID3D10InputLayout* _pInputLayout;
 				ID3D10VertexShader* _pVertexShader;
-				ID3D10InputLayout* _pVertexLayout;
 				ID3D10PixelShader* _pPixelShaderTexture;
 				ID3D10PixelShader* _pPixelShaderPassthrough;
 				ID3D10Buffer* _pConstantBuffer;
@@ -125,6 +125,7 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) const override;
 
 			private:
+				bool createInputLayout();
 				bool createShaders();
 				bool createConstantBuffer();
 				bool createSamplerState();
