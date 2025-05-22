@@ -40,8 +40,8 @@ namespace hax {
 
 				ID3D11Device* _pDevice;
 				ID3D11DeviceContext* _pContext;
+				ID3D11InputLayout* _pInputLayout;
 				ID3D11VertexShader* _pVertexShader;
-				ID3D11InputLayout* _pVertexLayout;
 				ID3D11PixelShader* _pPixelShaderTexture;
 				ID3D11PixelShader* _pPixelShaderPassthrough;
 				ID3D11RenderTargetView* _pRenderTargetView;
@@ -127,6 +127,7 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) const override;
 
 			private:
+				bool createInputLayout();
 				bool createShaders();
 				bool createConstantBuffer();
 				bool createSamplerState();
