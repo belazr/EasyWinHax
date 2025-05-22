@@ -74,7 +74,7 @@ namespace hax {
 					this->_pVertexDeclaration->Release();
 				}
 
-				for (size_t i = 0; i < this->_textures.size(); i++) {
+				for (size_t i = 0u; i < this->_textures.size(); i++) {
 					this->_textures[i]->Release();
 				}
 
@@ -93,15 +93,9 @@ namespace hax {
 			bool Backend::initialize() {
 
 				if (!this->_pVertexDeclaration) {
-					constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
-						{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0u },
-						{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
-						{ 0u, 12u, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0u },
-						D3DDECL_END()
-					};
-
-					if (FAILED(this->_pDevice->CreateVertexDeclaration(VERTEX_ELEMENTS, &this->_pVertexDeclaration))) return false;
-
+					
+					if (!this->createVertexDeclaration()) return false;
+				
 				}
 
 				if (!this->createShaders()) return false;
@@ -255,6 +249,18 @@ namespace hax {
 				*frameHeight = static_cast<float>(this->_viewport.Height);
 
 				return;
+			}
+
+
+			bool Backend::createVertexDeclaration() {
+				constexpr D3DVERTEXELEMENT9 VERTEX_ELEMENTS[]{
+					{ 0u, 0u,  D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0u },
+					{ 0u, 8u, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0u },
+					{ 0u, 12u, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0u },
+					D3DDECL_END()
+				};
+				
+				return SUCCEEDED(this->_pDevice->CreateVertexDeclaration(VERTEX_ELEMENTS, &this->_pVertexDeclaration));
 			}
 
 
