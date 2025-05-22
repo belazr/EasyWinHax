@@ -39,7 +39,7 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pVertexShader{}, _pVertexLayout{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
+				_pSwapChain{}, _pDevice{}, _pInputLayout{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
 				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _textureBufferBackend{}, _solidBufferBackend{} {}
 
 
@@ -68,12 +68,12 @@ namespace hax {
 					this->_pPixelShaderTexture->Release();
 				}
 
-				if (this->_pVertexLayout) {
-					this->_pVertexLayout->Release();
-				}
-
 				if (this->_pVertexShader) {
 					this->_pVertexShader->Release();
+				}
+
+				if (this->_pInputLayout) {
+					this->_pInputLayout->Release();
 				}
 
 				for (size_t i = 0; i < this->_textures.size(); i++) {
@@ -102,6 +102,12 @@ namespace hax {
 				if (!this->_pDevice) {
 
 					if (FAILED(this->_pSwapChain->GetDevice(IID_PPV_ARGS(&this->_pDevice)))) return false;
+				
+				}
+
+				if (!this->_pInputLayout) {
+					
+					if (!this->createInputLayout()) return false;
 				
 				}
 				
@@ -198,7 +204,7 @@ namespace hax {
 
 				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 				this->_pDevice->VSSetShader(this->_pVertexShader);
-				this->_pDevice->IASetInputLayout(this->_pVertexLayout);
+				this->_pDevice->IASetInputLayout(this->_pInputLayout);
 				this->_pDevice->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 				
 				constexpr float BLEND_FACTOR[] { 0.f, 0.f, 0.f, 0.f };
@@ -234,23 +240,22 @@ namespace hax {
 			}
 
 
-			bool Backend::createShaders() {
-
-				if (!this->_pVertexShader) {
-
-					if (FAILED(this->_pDevice->CreateVertexShader(VERTEX_SHADER, sizeof(VERTEX_SHADER), &this->_pVertexShader))) return false;
-
-				}
-
+			bool Backend::createInputLayout() {
 				constexpr D3D10_INPUT_ELEMENT_DESC INPUT_ELEMENT_DESC[]{
 					{"POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D10_INPUT_PER_VERTEX_DATA, 0u},
 					{"COLOR", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, D3D10_APPEND_ALIGNED_ELEMENT, D3D10_INPUT_PER_VERTEX_DATA, 0u},
 					{"TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, D3D10_APPEND_ALIGNED_ELEMENT, D3D10_INPUT_PER_VERTEX_DATA, 0u},
 				};
 
-				if (!this->_pVertexLayout) {
+				return SUCCEEDED(this->_pDevice->CreateInputLayout(INPUT_ELEMENT_DESC, _countof(INPUT_ELEMENT_DESC), VERTEX_SHADER, sizeof(VERTEX_SHADER), &this->_pInputLayout));
+			}
 
-					if (FAILED(this->_pDevice->CreateInputLayout(INPUT_ELEMENT_DESC, _countof(INPUT_ELEMENT_DESC), VERTEX_SHADER, sizeof(VERTEX_SHADER), &this->_pVertexLayout))) return false;
+
+			bool Backend::createShaders() {
+
+				if (!this->_pVertexShader) {
+
+					if (FAILED(this->_pDevice->CreateVertexShader(VERTEX_SHADER, sizeof(VERTEX_SHADER), &this->_pVertexShader))) return false;
 
 				}
 
