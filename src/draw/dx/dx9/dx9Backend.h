@@ -117,6 +117,7 @@ namespace hax {
 				virtual void getFrameResolution(float* frameWidth, float* frameHeight) const override;
 
 			private:
+				bool createVertexDeclaration();
 				bool createShaders();
 				void restoreState();
 				bool setVertexShaderConstant();
