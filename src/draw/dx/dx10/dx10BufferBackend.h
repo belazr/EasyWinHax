@@ -21,6 +21,14 @@ namespace hax {
 			public:
 				BufferBackend();
 
+				BufferBackend(BufferBackend&&) = delete;
+
+				BufferBackend(const BufferBackend&) = delete;
+
+				BufferBackend& operator=(BufferBackend&&) = delete;
+
+				BufferBackend& operator=(const BufferBackend&) = delete;
+
 				~BufferBackend();
 
 				// Initializes members.
