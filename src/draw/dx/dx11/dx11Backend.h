@@ -58,6 +58,14 @@ namespace hax {
 			public:
 				Backend();
 
+				Backend(Backend&&) = delete;
+
+				Backend(const Backend&) = delete;
+
+				Backend& operator=(Backend&&) = delete;
+
+				Backend& operator=(const Backend&) = delete;
+
 				~Backend();
 
 				// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
