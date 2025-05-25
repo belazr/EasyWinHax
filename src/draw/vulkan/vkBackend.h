@@ -59,6 +59,14 @@ namespace hax {
 			public:
 				Backend();
 
+				Backend(Backend&&) = delete;
+
+				Backend(const Backend&) = delete;
+
+				Backend& operator=(Backend&&) = delete;
+
+				Backend& operator=(const Backend&) = delete;
+
 				~Backend();
 
 				// Sets the arguments of the current call of the hooked function.
