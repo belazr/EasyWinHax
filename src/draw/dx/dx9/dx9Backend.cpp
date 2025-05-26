@@ -304,9 +304,11 @@ namespace hax {
 			}
 
 			bool Backend::setVertexShaderConstant() {
-				const float viewLeft = static_cast<float>(this->_viewport.X);
+				// adding .5f for mapping texels exactly to pixels
+				// https://learn.microsoft.com/en-us/windows/win32/direct3d9/directly-mapping-texels-to-pixels
+				const float viewLeft = static_cast<float>(this->_viewport.X) + .5f;
 				const float viewRight = static_cast<float>(this->_viewport.X + this->_viewport.Width);
-				const float viewTop = static_cast<float>(this->_viewport.Y);
+				const float viewTop = static_cast<float>(this->_viewport.Y) + .5f;
 				const float viewBottom = static_cast<float>(this->_viewport.Y + this->_viewport.Height);
 
 				const float ortho[]{
