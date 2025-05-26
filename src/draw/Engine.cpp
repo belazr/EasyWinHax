@@ -339,32 +339,35 @@ namespace hax {
 
 
 		Vector2 Engine::align(const Vector2* pos, Alignment alignment, float width, float height) {
-			
+			// cast as int to truncate float values
+			const uint32_t halfWidth = static_cast<int>(width) / 2u;
+			const uint32_t halfHeight = static_cast<int>(height) / 2u;
+
 			switch (alignment) {
 			case hax::draw::TOP_LEFT:
 
 				return *pos;
 			case hax::draw::TOP_CENTER:
 				
-				return { pos->x - width / 2.f, pos->y };
+				return { pos->x - halfWidth, pos->y };
 			case hax::draw::TOP_RIGHT:
 				
 				return { pos->x - width, pos->y };
 			case hax::draw::CENTER_LEFT:
 				
-				return { pos->x, pos->y - height / 2.f };
+				return { pos->x, pos->y - halfHeight };
 			case hax::draw::CENTER:
 				
-				return { pos->x - width / 2.f, pos->y - height / 2.f };
+				return { pos->x - halfWidth, pos->y - halfHeight };
 			case hax::draw::CENTER_RIGHT:
 				
-				return { pos->x - width, pos->y - height / 2.f };
+				return { pos->x - width, pos->y - halfHeight };
 			case hax::draw::BOTTOM_LEFT:
 				
 				return { pos->x, pos->y - height };
 			case hax::draw::BOTTOM_CENTER:
 				
-				return { pos->x - width / 2.f, pos->y - height };
+				return { pos->x - halfWidth, pos->y - height };
 			case hax::draw::BOTTOM_RIGHT:
 				
 				return { pos->x - width, pos->y - height };
