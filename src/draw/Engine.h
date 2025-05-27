@@ -40,6 +40,16 @@ namespace hax {
 			// Pointer to an appropriate IBackend interface to backend within a hook.
 			Engine(IBackend* pBackend, Font font);
 
+			Engine(Engine&&) = delete;
+
+			Engine(const Engine&) = delete;
+
+			Engine& operator=(Engine&&) = delete;
+
+			Engine& operator=(const Engine&) = delete;
+
+			~Engine() = default;
+
 			// Loads a texture into VRAM. Has to be called after beginFrame.
 			//
 			// Parameters:
