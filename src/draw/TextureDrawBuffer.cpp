@@ -4,6 +4,9 @@ namespace hax {
 
 	namespace draw {
 
+		TextureDrawBuffer::TextureDrawBuffer() : AbstractDrawBuffer(), _textures{} {}
+
+
 		void TextureDrawBuffer::append(const Vertex* data, uint32_t count, TextureId textureId) {
 			
 			if (!this->_pLocalVertexBuffer) return;
