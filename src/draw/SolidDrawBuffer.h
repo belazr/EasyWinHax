@@ -10,7 +10,15 @@ namespace hax {
 
 		class SolidDrawBuffer : public AbstractDrawBuffer {
 		public:
-			SolidDrawBuffer() : AbstractDrawBuffer() {}
+			SolidDrawBuffer();
+
+			SolidDrawBuffer(SolidDrawBuffer&&) = delete;
+
+			SolidDrawBuffer(const SolidDrawBuffer&) = delete;
+
+			SolidDrawBuffer& operator=(SolidDrawBuffer&&) = delete;
+
+			SolidDrawBuffer& operator=(const SolidDrawBuffer&) = delete;
 
 			// Appends vertices to the buffer. Has to be called between beginFrame and endFrame calls.
 			//

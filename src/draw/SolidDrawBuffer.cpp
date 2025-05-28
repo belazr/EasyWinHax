@@ -4,6 +4,9 @@ namespace hax {
 
 	namespace draw {
 
+		SolidDrawBuffer::SolidDrawBuffer() : AbstractDrawBuffer() {}
+
+
 		void SolidDrawBuffer::append(const Vertex* data, uint32_t count) {
 
 			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
