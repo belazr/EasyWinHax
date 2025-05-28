@@ -19,7 +19,15 @@ namespace hax {
 			Vector<TextureBatch> _textures;
 
 		public:
-			TextureDrawBuffer() : AbstractDrawBuffer(), _textures{} {}
+			TextureDrawBuffer();
+
+			TextureDrawBuffer(TextureDrawBuffer&&) = delete;
+
+			TextureDrawBuffer(const TextureDrawBuffer&) = delete;
+
+			TextureDrawBuffer& operator=(TextureDrawBuffer&&) = delete;
+
+			TextureDrawBuffer& operator=(const TextureDrawBuffer&) = delete;
 
 			// Appends vertices to the buffer.
 			//
