@@ -29,28 +29,6 @@ namespace hax {
 		}
 
 
-		void SolidDrawBuffer::append(const Vector2* data, uint32_t count, Color color, Vector2 offset) {
-
-			if (!this->_pLocalVertexBuffer || !this->_pLocalIndexBuffer) return;
-
-			const uint32_t newSize = this->_size + count;
-
-			if (newSize > this->_capacity) {
-
-				if (!this->reserve(newSize * 2u)) return;
-
-			}
-
-			for (uint32_t i = 0u; i < count; i++) {
-				this->_pLocalVertexBuffer[this->_size] = { { data[i].x + offset.x, data[i].y + offset.y }, color };
-				this->_pLocalIndexBuffer[this->_size] = this->_size;
-				this->_size++;
-			}
-
-			return;
-		}
-
-
 		void SolidDrawBuffer::endFrame() {
 			
 			if (!this->_pBufferBackend) return;
