@@ -24,6 +24,17 @@ namespace hax {
 		public:
 			AbstractDrawBuffer() : _pBufferBackend{}, _pLocalVertexBuffer{}, _pLocalIndexBuffer{}, _size{}, _capacity{} {}
 
+			
+			~AbstractDrawBuffer() {
+				
+				if (this->_pBufferBackend) {
+					this->_pBufferBackend->unmap();
+				}
+
+				return;
+			}
+
+
 			// Begins the frame for the buffer. Has to be called before any append calls.
 			//
 			// Parameters:
@@ -54,7 +65,7 @@ namespace hax {
 
 		protected:
 			void reset() {
-				this->_pBufferBackend = nullptr;
+				//this->_pBufferBackend = nullptr;
 				this->_pLocalVertexBuffer = nullptr;
 				this->_pLocalIndexBuffer = nullptr;
 				this->_size = 0u;
