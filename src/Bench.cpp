@@ -4,13 +4,8 @@
 
 namespace hax {
 	
-	Bench::Bench(const char* label, size_t runs): _label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _counter{} {
-		this->_durations = new double[this->_runs];
-	}
-
-
-	Bench::~Bench() {
-		delete[] this->_durations;
+	Bench::Bench(const char* label, size_t runs): _label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _measurements{} {
+		this->_measurements.reserve(this->_runs);
 	}
 
 
@@ -21,24 +16,22 @@ namespace hax {
 
 	void Bench::end() {
 		this->_endTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-		this->_durations[_counter] = this->_endTime - this->_startTime;
-		this->_counter++;
+		this->_measurements.append(this->_endTime - this->_startTime);
 	}
 
 
 	void Bench::printAvg() {
 		
-		if (this->_counter >= this->_runs) {
+		if (this->_measurements.size() >= this->_runs) {
 			double avg = 0.;
 
-			for (size_t i = 0u; i < this->_counter; i++) {
-				avg += this->_durations[i];
+			for (size_t i = 0u; i < this->_measurements.size(); i++) {
+				avg += this->_measurements[i];
 			}
 
-			avg /= this->_counter;
+			avg /= this->_measurements.size();
 			std::cout << "Average time " << this->_label << ": " << avg << std::endl;
-			
-			this->_counter = 0u;
+			this->_measurements.resize(0u);
 		}
 
 	}
