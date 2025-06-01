@@ -4,27 +4,21 @@
 namespace hax {
 	
 	FileLoader::FileLoader(const char* path):
-		_path{ path }, _pBytes{}, _size{}, _errno{}
+		_path{ path }, _bytes{}, _errno{}
 	{
 		FILE* pFile = nullptr;
-		this->_errno = fopen_s(&pFile,this->_path, "rb");
+		this->_errno = fopen_s(&pFile, this->_path, "rb");
 		
-		if (pFile && !this->_errno) {
-			this->_errno = fseek(pFile, 0, SEEK_END);
-			this->_size = ftell(pFile);
-			this->_pBytes = new BYTE[this->_size]{};
-			this->_errno = fclose(pFile);
-		}
+		if (this->_errno) return;
 
-	}
+		this->_errno = fseek(pFile, 0l, SEEK_END);
 
+		if (this->_errno) return;
 
-	FileLoader::~FileLoader() {
-		
-		if (this->_pBytes) {
-			delete[] this->_pBytes;
-		}
+		this->_bytes.resize(ftell(pFile));
+		this->_errno = fclose(pFile);
 
+		return;
 	}
 
 
@@ -34,39 +28,37 @@ namespace hax {
 		
 		if (this->_errno) return false;
 
-		const size_t read = fread_s(this->_pBytes, this->_size, sizeof(BYTE), this->_size, pFile);
+		fread_s(this->_bytes.data(), this->_bytes.size(), sizeof(BYTE), this->_bytes.size(), pFile);
+		
 		this->_errno = fclose(pFile);
 		
-		if (this->_errno || read != this->_size) {
-			
-			return false;
-		}
+		if (this->_errno) return false;
 
 		return true;
 	}
 
 
-	BYTE* FileLoader::getBytes() const {
+	BYTE* FileLoader::data() const {
 
-		return this->_pBytes;
+		return this->_bytes.data();
 	}
 
 
-	errno_t FileLoader::getErrno() const {
+	errno_t FileLoader::lastErrno() const {
 		
 		return this->_errno;
 	}
 
 
-	const char* FileLoader::getPath() const {
+	const char* FileLoader::path() const {
 		
 		return this->_path;
 	}
 
 
-	size_t FileLoader::getSize() const {
+	size_t FileLoader::size() const {
 		
-		return this->_size;
+		return this->_bytes.size();
 	}
 
 }
