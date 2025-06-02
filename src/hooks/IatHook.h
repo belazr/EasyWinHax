@@ -121,15 +121,20 @@ namespace hax {
 			// Address of the detour function within the virtual address space of the target process.
 			IatHook(HMODULE hImportMod, const char* funcName, const char* exportModName, const BYTE* detour);
 
+			IatHook(IatHook&&) = delete;
+
+			IatHook(const IatHook&) = delete;
+
+			IatHook& operator=(IatHook&&) = delete;
+
+			IatHook& operator=(const IatHook&) = delete;
 
 			~IatHook();
-
 
 			// Enables the hook. Execution of origin function is redirected after calling this method.
 			// 
 			// Return: True on success, false on failure
 			bool enable();
-
 
 			// Disables the hook. Execution of origin function is restored after calling this method.
 			// 
@@ -137,13 +142,11 @@ namespace hax {
 			// True on success, false on failure.
 			bool disable();
 
-
 			// Checks if the hook is currently installed.
 			// 
 			// Return:
 			// True if the hook is installed, false if it is not installed.
 			bool isHooked() const;
-
 
 			void* getDetour() const;
 			void* getOrigin() const;
