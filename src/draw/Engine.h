@@ -48,8 +48,6 @@ namespace hax {
 
 			Engine& operator=(const Engine&) = delete;
 
-			~Engine() = default;
-
 			// Loads a texture into VRAM. Has to be called after beginFrame.
 			//
 			// Parameters:
