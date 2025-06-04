@@ -102,7 +102,6 @@ namespace hax {
 				HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset = SIZE_MAX
 			);
 
-
 			TrampHook(TrampHook&&) = delete;
 
 			TrampHook(const TrampHook&) = delete;
@@ -208,6 +207,14 @@ namespace hax {
 			// It is necessary to look at the disassembly of the origin function to determine if there is a relative address in the first <size> bytes.
 			// If there is no relative address in the first <size> bytes of the origin function the default value of SIZE_MAX should be passed. This value will then be ignored.
 			TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size, size_t relativeAddressOffset = SIZE_MAX);
+
+			TrampHook(TrampHook&&) = delete;
+
+			TrampHook(const TrampHook&) = delete;
+
+			TrampHook& operator=(TrampHook&&) = delete;
+
+			TrampHook& operator=(const TrampHook&) = delete;
 
 			~TrampHook();
 
