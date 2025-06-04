@@ -102,6 +102,15 @@ namespace hax {
 				HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset = SIZE_MAX
 			);
 
+
+			TrampHook(TrampHook&&) = delete;
+
+			TrampHook(const TrampHook&) = delete;
+
+			TrampHook& operator=(TrampHook&&) = delete;
+
+			TrampHook& operator=(const TrampHook&) = delete;
+
 			~TrampHook();
 
 			// Enables the hook. Execution of origin function is redirected after calling this method.
