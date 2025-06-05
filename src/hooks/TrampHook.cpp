@@ -18,15 +18,14 @@ namespace hax {
 			
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(shell), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (this->_detour && shell) {
+			if (!this->_detour || !shell) return;
 
-				if (WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr)) {
-					// scan for the origin call in the shell code injected into the target
-					this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
-				}
+			if (!WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr)) return;
 
-			}
+			// scan for the origin call in the shell code injected into the target
+			this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
 
+			return;
 		}
 
 
@@ -45,21 +44,20 @@ namespace hax {
 			
 			const HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
 
-			if (hMod) {
-				this->_origin = proc::ex::getProcAddress(hProc, hMod, funcName);
-			}
+			if (!hMod) return;
+				
+			this->_origin = proc::ex::getProcAddress(hProc, hMod, funcName);
 
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (this->_detour && shell) {
+			if (!this->_detour || !shell) return;
 
-				if (WriteProcessMemory(this->_hProc, this->_detour, shell, shellSize, nullptr)) {
-					// scan for the origin call in the shell code injected into the target
-					this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
-				}
+			if (!WriteProcessMemory(this->_hProc, this->_detour, shell, shellSize, nullptr)) return;
+				
+			// scan for the origin call in the shell code injected into the target
+			this->_detourOriginCall = mem::ex::findSigAddress(hProc, this->_detour, shellSize, originCallPattern);
 
-			}
-
+			return;
 		}
 
 
