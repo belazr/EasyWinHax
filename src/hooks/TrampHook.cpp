@@ -172,10 +172,11 @@ namespace hax {
 			
 			const HMODULE hMod = proc::in::getModuleHandle(modName);
 
-			if (hMod) {
-				this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, funcName));
-			}
+			if (!hMod) return;
 
+			this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, funcName));
+
+			return;
 		}
 
 
