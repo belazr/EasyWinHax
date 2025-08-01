@@ -57,7 +57,7 @@ static VkResult VKAPI_CALL hkVkQueuePresentKHR(VkQueue hQueue, VkPresentInfoKHR*
 		loadTextureData();
 	}
 
-	bench.start();
+	bench.begin();
 
 	engine.beginFrame(pPresentInfo, initData.hDevice);
 

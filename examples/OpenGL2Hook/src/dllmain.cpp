@@ -47,7 +47,7 @@ static BOOL APIENTRY hkWglSwapBuffers(HDC hDc) {
 		loadTextureData();
 	}
 
-	bench.start();
+	bench.begin();
 
 	engine.beginFrame(hDc);
 
