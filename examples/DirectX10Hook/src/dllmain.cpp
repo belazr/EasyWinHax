@@ -47,7 +47,7 @@ static HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT syncInterval
 		loadTextureData();
 	}
 
-	bench.start();
+	bench.begin();
 
 	engine.beginFrame(pSwapChain);
 

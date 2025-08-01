@@ -1,26 +1,34 @@
 #include "Bench.h"
-#include <chrono>
-#include <iostream>
+#include <stdio.h>
+#include <Windows.h>
 
 namespace hax {
 	
-	Bench::Bench(const char* label, size_t runs): _label{ label }, _runs{ runs }, _startTime{}, _endTime{}, _measurements{} {
+	Bench::Bench(const char* label, size_t runs) : _label{ label }, _runs{ runs }, _freq{}, _beginTime {}, _endTime{}, _measurements{} {
 		this->_measurements.reserve(this->_runs);
+
+		LARGE_INTEGER freq{};
+		QueryPerformanceFrequency(&freq);
+		this->_freq = freq.QuadPart;
 
 		return;
 	}
 
 
-	void Bench::start() {
-		this->_startTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+	void Bench::begin() {
+		LARGE_INTEGER count{};
+		QueryPerformanceCounter(&count);
+		this->_beginTime = count.QuadPart;
 
 		return;
 	}
 
 
 	void Bench::end() {
-		this->_endTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-		this->_measurements.append(this->_endTime - this->_startTime);
+		LARGE_INTEGER count{};
+		QueryPerformanceCounter(&count);
+		this->_endTime = count.QuadPart;
+		this->_measurements.append(this->_endTime - this->_beginTime);
 
 		return;
 	}
@@ -28,17 +36,20 @@ namespace hax {
 
 	void Bench::printAvg() {
 		
-		if (this->_measurements.size() >= this->_runs) {
-			double avg = 0.;
+		if (this->_measurements.size() < this->_runs) return;
 
-			for (size_t i = 0u; i < this->_measurements.size(); i++) {
-				avg += this->_measurements[i];
-			}
+		long long sum = 0ll;
 
-			avg /= this->_measurements.size();
-			std::cout << "Average time " << this->_label << ": " << avg << std::endl;
-			this->_measurements.resize(0u);
+		for (size_t i = 0u; i < this->_measurements.size(); i++) {
+			sum += this->_measurements[i];
 		}
+
+		const double avg = static_cast<double>(sum) / this->_measurements.size();
+		const double avgSec = avg / this->_freq;
+
+		printf("Average time %s: %.7fs\n", this->_label, avgSec);
+
+		this->_measurements.resize(0u);
 
 		return;
 	}

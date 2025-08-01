@@ -10,9 +10,10 @@ namespace hax {
 	private:
 		const char* const _label;
 		const size_t _runs;
-		double _startTime;
-		double _endTime;
-		Vector<double> _measurements;
+		long long _freq;
+		long long _beginTime;
+		long long _endTime;
+		Vector<long long> _measurements;
 
 	public:
 		// Initializes members
@@ -26,13 +27,13 @@ namespace hax {
 		// How many times the code execution is meassured before the average is calculated and printed when calling printAvg.
 		Bench(const char* label, size_t runs);
 		
-		// Starts the meassurement.
-		void start();
+		// Begins the meassurement.
+		void begin();
 		
 		// Ends the meassurement.
 		void end();
 
-		// Writes the output to std out after the code inbetween start() and end() is executed the amount of times passed as runs to the constructor.
+		// Writes the output to std out after the code inbetween begin() and end() is executed the amount of times passed as runs to the constructor.
 		void printAvg();
 	};
 

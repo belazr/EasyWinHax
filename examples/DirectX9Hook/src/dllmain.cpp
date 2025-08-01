@@ -48,7 +48,7 @@ static void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 		loadTextureData();
 	}
 	
-	bench.start();
+	bench.begin();
 
 	engine.beginFrame(pDevice);
 
