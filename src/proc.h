@@ -268,7 +268,7 @@ namespace hax {
 			#endif // _WIN64
 
 			// Gets the address of the x86 process environment block within the virtual address space of an external target process.
-			// In x64 Windows only x86 processes have an x86 PEB. This is the PEB of within the WOW64 environment.
+			// In x64 Windows only x86 processes have an x86 PEB. This is the PEB within the WOW64 environment.
 			// 
 			// Parameters:
 			// 
@@ -370,6 +370,11 @@ namespace hax {
 			// Address of the process environment block. Gets the address of the PEB within the WOW64 evironment for x86 processes.
 			PEB* getPebAddress();
 
+			// Gets a window handle to the main window of the current process. It does not work with console processes.
+			//
+			// Return:
+			// Window handle to the main window of the current process or nullptr on failure.
+			HWND getMainWindowHandle();
 		}
 
 	}

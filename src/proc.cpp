@@ -979,6 +979,34 @@ namespace hax {
 				return pPeb;
 			}
 
+
+			static BOOL CALLBACK getMainWindowHandleCallback(HWND hWnd, LPARAM lParam);
+
+			HWND getMainWindowHandle() {
+				HWND hMainWnd = nullptr;
+				EnumWindows(getMainWindowHandleCallback, reinterpret_cast<LPARAM>(&hMainWnd));
+
+				return hMainWnd;
+			}
+
+
+			static BOOL CALLBACK getMainWindowHandleCallback(HWND hWnd, LPARAM lParam) {
+				DWORD procId = 0ul;
+				GetWindowThreadProcessId(hWnd, &procId);
+
+				if (!procId || GetCurrentProcessId() != procId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
+
+				char className[MAX_PATH]{};
+
+				if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
+
+				if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
+
+				*reinterpret_cast<HWND*>(lParam) = hWnd;
+
+				return FALSE;
+			}
+
 		}
 
 	}
