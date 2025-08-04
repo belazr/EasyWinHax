@@ -23,6 +23,8 @@ namespace hax {
 			if (!this->_init) {
 				this->_init = this->_pBackend->initialize();
 
+				if (!this->_init) return;
+
 				if (!_font.textureId) {
 					this->_font.textureId = this->_pBackend->loadTexture(this->_font.pTexture, this->_font.width, this->_font.height);
 				}
