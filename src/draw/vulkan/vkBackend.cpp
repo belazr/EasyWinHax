@@ -269,7 +269,7 @@ namespace hax {
 			}
 
 
-			void Backend::setHookArguments(void* pArg1, void* pArg2) {
+			void Backend::setHookParameters(void* pArg1, void* pArg2) {
 				this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg1);
 				this->_hDevice = reinterpret_cast<VkDevice>(pArg2);
 
