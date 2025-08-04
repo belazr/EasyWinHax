@@ -2,6 +2,7 @@
 #include "dx12Shaders.h"
 #include "..\..\..\hooks\TrampHook.h"
 #include "..\..\..\mem.h"
+#include "..\..\..\proc.h"
 
 namespace hax {
 
@@ -204,10 +205,8 @@ namespace hax {
             }
 
 
-            static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
-
             bool Backend::initialize() {
-                EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&this->_hMainWindow));
+                this->_hMainWindow = proc::in::getMainWindowHandle();
 
                 if (!this->_hMainWindow) return false;
 
@@ -730,24 +729,6 @@ namespace hax {
                 pViewport->MaxDepth = 1.f;
 
                 return true;
-            }
-
-
-            static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
-                DWORD processId = 0ul;
-                GetWindowThreadProcessId(hWnd, &processId);
-
-                if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
-
-                char className[MAX_PATH]{};
-
-                if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
-
-                if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
-
-                *reinterpret_cast<HWND*>(lParam) = hWnd;
-
-                return FALSE;
             }
 
         }
