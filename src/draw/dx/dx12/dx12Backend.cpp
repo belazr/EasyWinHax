@@ -197,7 +197,7 @@ namespace hax {
             }
 
 
-            void Backend::setHookArguments(void* pArg1, void* pArg2) {
+            void Backend::setHookParameters(void* pArg1, void* pArg2) {
                 this->_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pArg1);
                 this->_pCommandQueue = reinterpret_cast<ID3D12CommandQueue*>(pArg2);
 

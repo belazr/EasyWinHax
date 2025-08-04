@@ -81,7 +81,7 @@ namespace hax {
 			}
 
 
-			void Backend::setHookArguments(void* pArg1, void* pArg2) {
+			void Backend::setHookParameters(void* pArg1, void* pArg2) {
 				UNREFERENCED_PARAMETER(pArg2);
 
 				this->_pDevice = reinterpret_cast<IDirect3DDevice9*>(pArg1);

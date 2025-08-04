@@ -97,7 +97,7 @@ namespace hax {
 			}
 
 
-			void Backend::setHookArguments(void* pArg1, void* pArg2) {
+			void Backend::setHookParameters(void* pArg1, void* pArg2) {
 				UNREFERENCED_PARAMETER(pArg2);
 
 				this->_pSwapChain = reinterpret_cast<IDXGISwapChain*>(pArg1);

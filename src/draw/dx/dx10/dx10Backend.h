@@ -66,7 +66,7 @@ namespace hax {
 
 				~Backend();
 
-				// Initializes backend and starts a frame within a hook. Should be called by an Engine object.
+				// Sets the parameters of the current call of the hooked function.
 				//
 				// Parameters:
 				// 
@@ -75,7 +75,7 @@ namespace hax {
 				//
 				// [in] pArg2:
 				// Pass nothing
-				virtual void setHookArguments(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
+				virtual void setHookParameters(void* pArg1 = nullptr, void* pArg2 = nullptr) override;
 
 				// Initializes the backend. Should be called by an Engine object until success.
 				// 

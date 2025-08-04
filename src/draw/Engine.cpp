@@ -18,7 +18,7 @@ namespace hax {
 
 
 		void Engine::beginFrame(void* pArg1, void* pArg2) {
-			this->_pBackend->setHookArguments(pArg1, pArg2);
+			this->_pBackend->setHookParameters(pArg1, pArg2);
 
 			if (!this->_init) {
 				this->_init = this->_pBackend->initialize();
