@@ -1,5 +1,6 @@
 #include "dx10Backend.h"
 #include "dx10Shaders.h"
+#include "..\..\..\proc.h"
 
 namespace hax {
 	
@@ -314,8 +315,6 @@ namespace hax {
 			}
 
 
-			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam);
-
 			bool Backend::getCurrentViewport(D3D10_VIEWPORT* pViewport) const {
 				D3D10_VIEWPORT viewports[D3D10_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
 				UINT viewportCount = _countof(viewports);
@@ -325,9 +324,7 @@ namespace hax {
 				*pViewport = viewports[0];
 
 				if (!viewportCount || !pViewport->Width) {
-					HWND hMainWnd = nullptr;
-
-					EnumWindows(getMainWindowCallback, reinterpret_cast<LPARAM>(&hMainWnd));
+					HWND hMainWnd = proc::in::getMainWindowHandle();
 
 					if (!hMainWnd) return false;
 
@@ -370,24 +367,6 @@ namespace hax {
 				this->_pConstantBuffer->Unmap();
 
 				return true;
-			}
-
-
-			static BOOL CALLBACK getMainWindowCallback(HWND hWnd, LPARAM lParam) {
-				DWORD processId = 0ul;
-				GetWindowThreadProcessId(hWnd, &processId);
-
-				if (!processId || GetCurrentProcessId() != processId || GetWindow(hWnd, GW_OWNER) || !IsWindowVisible(hWnd)) return TRUE;
-
-				char className[MAX_PATH]{};
-
-				if (!GetClassNameA(hWnd, className, MAX_PATH)) return TRUE;
-
-				if (!strcmp(className, "ConsoleWindowClass")) return TRUE;
-
-				*reinterpret_cast<HWND*>(lParam) = hWnd;
-
-				return FALSE;
 			}
 
 		}
