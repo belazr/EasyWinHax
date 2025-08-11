@@ -80,6 +80,7 @@ Build the following projects:
 - VulkanHook
 
 and inject the built DLLs into a process that uses the respective graphics API.
+You can find a basic DLL injector built with this library here: https://github.com/belazr/JackieBlue.
 On process attach they start a thread that hooks the API and the hook then draws a demo to the screen.
 Press "END" to unhook and eject the DLL.
 ![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
