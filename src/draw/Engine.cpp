@@ -123,8 +123,8 @@ namespace hax {
 			// trigonometry black magic to calculate the corners of the line/parallelogram
 			const float omega = (pos2->x - pos1->x) / (pos1->y - pos2->y);
 			const float oSqrt = sqrtf(1.f + omega * omega);
-			const float cosAtan = width / 2 / oSqrt;
-			const float sinAtan = width / 2 * omega / oSqrt;
+			const float cosAtan = width / 2.f / oSqrt;
+			const float sinAtan = width / 2.f * omega / oSqrt;
 
 			// has to be drawn from bottom to top
 			if (pos1->y - pos2->y < 0.f) {
