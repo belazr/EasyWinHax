@@ -178,6 +178,18 @@ namespace hax {
 					return false;
 				}
 
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ZENABLE, FALSE))) {
+					this->restoreState();
+
+					return false;
+				}
+				
+				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE))) {
+					this->restoreState();
+
+					return false;
+				}
+
 				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE))) {
 					this->restoreState();
 
