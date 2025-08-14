@@ -42,7 +42,7 @@ The library provides basic vector types and functions, as well as world to scree
 #### Trampoline hook
 The library provides classes to install a trampoline hook in the beginning of a function.
 The internal TrampHook class hooks functions within the same process it is instantiated in. The function redirected to is usually defined in a DLL injected into the process.
-In the context of game hacking the class provides an easy way to hook graphics api functions (eg. EndScene or wglSwapBuffer) and draw to screen via dll injection.
+In the context of game hacking the class provides an easy way to hook graphics api functions and draw to screen via dll injection. See the examples for a detailed showcase.
 The external TrampHook class hooks functions in an external target process. The function redirected to is shell code the object injects into the process.
 Due to the limitations of shell code the use cases are limited.
 Though some fun can be had with it like hooking SystemQueryProcessInformation in a TaskManger.exe instance and hiding a process from it or hooking NtUserBeginPaint to launch shell code like the JackieBlue DLL injector does.
@@ -65,7 +65,7 @@ The library provides a simple file loader class to load files from disk into mem
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
 The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IBackend interfaces.
-Currently there are implementations of the IBackend interface for DirectX 10, DirectX 11 and DirectX 12 to draw from a Present hook, for DirectX 9 to draw from an EndScene hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
+Currently there are implementations of the IBackend interface for DirectX 9, DirectX 10, DirectX 11 and DirectX 12 to draw from a Present hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
 Text rendering is done via a font atlas texture.
 See the headers in the "draw" folder for further documentation.
 ### Examples
@@ -83,6 +83,8 @@ and inject the built DLLs into a process that uses the respective graphics API.
 You can find a basic DLL injector built with this library here: https://github.com/belazr/JackieBlue.
 On process attach they start a thread that hooks the API and the hook then draws a demo to the screen.
 Press "END" to unhook and eject the DLL.
+There might be some issues if another overlay (e.g. Steam, RivaTuner, Discord) has already hooked the api.
+In that case, inspect the beginning of the hooked function and adjust the parameters for the TrampHook in the dllmain.cpp of the example.
 ![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
 
 ## TODO

@@ -9,7 +9,7 @@
 // It is important to note that DirectX 9 uses ARGB as a color format.
 static HMODULE hModule;
 
-static hax::Bench bench("200 x hkEndScene", 200u);
+static hax::Bench bench("200 x hkPresent", 200u);
 
 static hax::draw::dx9::Backend backend;
 static hax::draw::Engine engine{ &backend, hax::draw::fonts::inconsolata };
@@ -19,7 +19,7 @@ static uint32_t textureWidth;
 static uint32_t textureHeight;
 
 static HANDLE hHookSemaphore;
-static hax::in::TrampHook* pEndSceneHook;
+static hax::in::TrampHook* pPresentHook;
 
 static void loadTextureData() {
 	const HRSRC hTextureRes = FindResourceA(hModule, MAKEINTRESOURCE(IDR_DEMO_TEXTURE), RT_RCDATA);
@@ -42,7 +42,7 @@ static void loadTextureData() {
 }
 
 
-static void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
+static HRESULT APIENTRY hkPresent(LPDIRECT3DDEVICE9 pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion) {
 	
 	if (!pTextureData) {
 		loadTextureData();
@@ -60,17 +60,15 @@ static void APIENTRY hkEndScene(LPDIRECT3DDEVICE9 pDevice) {
 	bench.printAvg();
 
 	if (GetAsyncKeyState(VK_END) & 1) {
-		pEndSceneHook->disable();
-		const hax::draw::dx9::tEndScene pEndScene = reinterpret_cast<hax::draw::dx9::tEndScene>(pEndSceneHook->getOrigin());
-		pEndScene(pDevice);
+		pPresentHook->disable();
+		const hax::draw::dx9::tPresent pPresent = reinterpret_cast<hax::draw::dx9::tPresent>(pPresentHook->getOrigin());
+		const HRESULT res = pPresent(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 		ReleaseSemaphore(hHookSemaphore, 1l, nullptr);
 
-		return;
+		return res;
 	}
 
-	reinterpret_cast<hax::draw::dx9::tEndScene>(pEndSceneHook->getGateway())(pDevice);
-
-	return;
+	return reinterpret_cast<hax::draw::dx9::tPresent>(pPresentHook->getGateway())(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);;
 }
 
 
@@ -105,7 +103,7 @@ static DWORD WINAPI haxThread() {
 	FILE* file = nullptr;
 
 	if (freopen_s(&file, "CONOUT$", "w", stdout) || !file) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
@@ -113,57 +111,48 @@ static DWORD WINAPI haxThread() {
 	hHookSemaphore = CreateSemaphoreA(nullptr, 0l, 1l, nullptr);
 
 	if (!hHookSemaphore) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	void* pD3d9DeviceVTable[43]{};
+	void* pD3d9DeviceVTable[18]{};
 
 	if (!hax::draw::dx9::getD3D9DeviceVTable(pD3d9DeviceVTable, sizeof(pD3d9DeviceVTable))) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	constexpr unsigned int END_SCENE_OFFSET = 42ul;
-	BYTE* const pEndScene = reinterpret_cast<BYTE*>(pD3d9DeviceVTable[END_SCENE_OFFSET]);
+	constexpr unsigned int PRESENT_OFFSET = 17ul;
+	BYTE* const pPresent = reinterpret_cast<BYTE*>(pD3d9DeviceVTable[PRESENT_OFFSET]);
 
-	if (!pEndScene) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+	if (!pPresent) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
-
-	#ifdef _WIN64
 
 	constexpr size_t HOOK_SIZE = 0x5u;
+	pPresentHook = new hax::in::TrampHook(pPresent, reinterpret_cast<BYTE*>(hkPresent), HOOK_SIZE);
 
-	#else
-
-	constexpr size_t HOOK_SIZE = 0x7u;
-
-	#endif
-
-	pEndSceneHook = new hax::in::TrampHook(pEndScene, reinterpret_cast<BYTE*>(hkEndScene), HOOK_SIZE);
-
-	if (!pEndSceneHook) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+	if (!pPresentHook) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	if (!pEndSceneHook->enable()) {
-		cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+	if (!pPresentHook->enable()) {
+		cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 		FreeLibraryAndExitThread(hModule, 0ul);
 	}
 
-	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pEndSceneHook->getOrigin()) << std::dec << std::endl;
+	std::cout << "Hooked at: 0x" << std::hex << reinterpret_cast<uintptr_t>(pPresentHook->getOrigin()) << std::dec << std::endl;
 
 	WaitForSingleObject(hHookSemaphore, INFINITE);
 
-	cleanup(hHookSemaphore, pEndSceneHook, file, wasConsoleAllocated);
+	cleanup(hHookSemaphore, pPresentHook, file, wasConsoleAllocated);
 
 	FreeLibraryAndExitThread(hModule, 0ul);
 }
