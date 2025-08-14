@@ -3,7 +3,7 @@
 #include "..\..\IBackend.h"
 #include "..\..\..\Vector.h"
 
-// Class for drawing within a DirectX 9 EndScene hook.
+// Class for drawing within a DirectX 9 Present hook.
 // All methods are intended to be called by an Engine object and not for direct calls.
 
 namespace hax {
@@ -12,14 +12,14 @@ namespace hax {
 
 		namespace dx9 {
 
-			typedef HRESULT(APIENTRY* tEndScene)(LPDIRECT3DDEVICE9 _pDevice);
+			typedef HRESULT(APIENTRY* tPresent)(LPDIRECT3DDEVICE9 pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion);
 
 			// Gets a copy of the vTable of the DirectX 9 device used by the caller process.
 			// 
 			// Parameter:
 			// 
 			// [out] pDeviceVTable:
-			// Contains the devices vTable on success. See the d3d9 header for the offset of the EndScene function (typically 42).
+			// Contains the devices vTable on success. See the d3d9 header for the offset of the Present function (typically 17).
 			// 
 			// [in] size:
 			// Size of the memory allocated at the address pointed to by pDeviceVTable.
