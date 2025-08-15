@@ -12,10 +12,10 @@ Build tested with:
 - Windows 11 64bit
 - Visual Studio 17
 - MSVC v143
-- Windows 11 SDK (10.0.22621)
+- Windows 11 SDK (10.0.26100)
 
 Usage tested with:
-- Windows 11 23H2 64bit
+- Windows 11 24H2 64bit
 
 ## Build
 Open the solution file (EasyWinHax.sln) with Visual Studio and run the desired builds from there.
