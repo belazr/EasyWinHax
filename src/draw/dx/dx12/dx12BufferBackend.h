@@ -15,7 +15,6 @@ namespace hax {
 				ID3D12PipelineState* _pPipelineState;
 				ID3D12Resource* _pVertexBufferResource;
 				ID3D12Resource* _pIndexBufferResource;
-				D3D_PRIMITIVE_TOPOLOGY _topology;
 
 				uint32_t _capacity;
 

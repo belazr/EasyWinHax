@@ -14,7 +14,6 @@ namespace hax {
 				IDirect3DPixelShader9* _pPixelShader;
 				IDirect3DVertexBuffer9* _pVertexBuffer;
 				IDirect3DIndexBuffer9* _pIndexBuffer;
-				D3DPRIMITIVETYPE _primitiveType;
 
 				uint32_t _capacity;
 

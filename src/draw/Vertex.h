@@ -8,7 +8,7 @@ namespace hax {
 
 	namespace draw {
 
-		struct Vertex {
+		class Vertex {
 		private:
 			Vector2 _coordinates;
 			Color _color;

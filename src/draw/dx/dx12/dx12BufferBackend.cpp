@@ -11,7 +11,7 @@ namespace hax {
 			
 			BufferBackend::BufferBackend(BufferBackend&& bb) noexcept :
 				_pDevice{ bb._pDevice }, _pCommandList{ bb._pCommandList }, _pPipelineState{ bb._pPipelineState }, _pVertexBufferResource{ bb._pVertexBufferResource },
-				_pIndexBufferResource{ bb._pIndexBufferResource }, _topology{ bb._topology }, _capacity{ bb._capacity } {
+				_pIndexBufferResource{ bb._pIndexBufferResource }, _capacity{ bb._capacity } {
 				bb._pVertexBufferResource = nullptr;
 				bb._pIndexBufferResource = nullptr;
 
