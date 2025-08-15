@@ -237,7 +237,6 @@ namespace hax {
 
 
 			void Backend::endFrame() {
-				this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
 				this->restoreState();
 
 				return;
@@ -302,6 +301,7 @@ namespace hax {
 			void Backend::restoreState() {
 
 				if (this->_pOriginalVertexDeclaration) {
+					this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
 					this->_pOriginalVertexDeclaration->Release();
 					this->_pOriginalVertexDeclaration = nullptr;
 				}
