@@ -88,6 +88,7 @@ In that case, inspect the beginning of the hooked function and adjust the parame
 ![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
 
 ## TODO
+- Backup and restore states in backends
 - Make IBackend interface compatible with ImGui frontend
 
 ## References
