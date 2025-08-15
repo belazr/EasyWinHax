@@ -65,7 +65,7 @@ namespace hax {
 
 		protected:
 			void reset() {
-				//this->_pBufferBackend = nullptr;
+				this->_pBufferBackend = nullptr;
 				this->_pLocalVertexBuffer = nullptr;
 				this->_pLocalIndexBuffer = nullptr;
 				this->_size = 0u;
