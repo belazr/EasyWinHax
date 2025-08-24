@@ -41,10 +41,11 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pInputLayout{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _textureBufferBackend{}, _solidBufferBackend{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _state{} {}
 
 
 			Backend::~Backend() {
+				this->releaseState();
 
 				if (this->_pBlendState) {
 					this->_pBlendState->Release();
@@ -203,9 +204,11 @@ namespace hax {
 					this->_viewport = curViewport;
 				}
 
-				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
-				this->_pDevice->VSSetShader(this->_pVertexShader);
+				this->saveState();
+				
 				this->_pDevice->IASetInputLayout(this->_pInputLayout);
+				this->_pDevice->VSSetShader(this->_pVertexShader);
+				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 				this->_pDevice->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 				
 				constexpr float BLEND_FACTOR[] { 0.f, 0.f, 0.f, 0.f };
@@ -216,6 +219,7 @@ namespace hax {
 
 
 			void Backend::endFrame() {
+				this->restoreState();
 
 				return;
 			}
@@ -367,6 +371,91 @@ namespace hax {
 				this->_pConstantBuffer->Unmap();
 
 				return true;
+			}
+
+
+			void Backend::saveState() {
+				this->_pDevice->IAGetInputLayout(&this->_state.pInputLayout);
+				this->_pDevice->VSGetShader(&this->_state.pVertexShader);
+				this->_pDevice->VSGetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
+				this->_pDevice->PSGetSamplers(0u, 1u, &this->_state.pSamplerState);
+				this->_pDevice->OMGetBlendState(&this->_state.pBlendState, this->_state.blendFactor, &this->_state.sampleMask);
+				this->_pDevice->IAGetPrimitiveTopology(&this->_state.topology);
+				this->_pDevice->PSGetShader(&this->_state.pPixelShader);
+				this->_pDevice->IAGetVertexBuffers(0u, 1u, &this->_state.pVertexBuffer, &this->_state.stride, &this->_state.offsetVtx);
+				this->_pDevice->IAGetIndexBuffer(&this->_state.pIndexBuffer, &this->_state.format, &this->_state.offsetIdx);
+				this->_pDevice->PSGetShaderResources(0u, 1u, &this->_state.pShaderResourceView);
+
+				return;
+			}
+
+
+			void Backend::restoreState() {
+				this->_pDevice->PSSetShaderResources(0u, 1u, &this->_state.pShaderResourceView);
+				this->_pDevice->IASetIndexBuffer(this->_state.pIndexBuffer, this->_state.format, this->_state.offsetIdx);
+				this->_pDevice->IASetVertexBuffers(0u, 1u, &this->_state.pVertexBuffer, &this->_state.stride, &this->_state.offsetVtx);
+				this->_pDevice->PSSetShader(this->_state.pPixelShader);
+				this->_pDevice->IASetPrimitiveTopology(this->_state.topology);
+				this->_pDevice->OMSetBlendState(this->_state.pBlendState, this->_state.blendFactor, this->_state.sampleMask);
+				this->_pDevice->PSSetSamplers(0u, 1u, &this->_state.pSamplerState);
+				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
+				this->_pDevice->VSSetShader(this->_state.pVertexShader);
+				this->_pDevice->IASetInputLayout(this->_state.pInputLayout);
+
+				this->releaseState();
+
+				return;
+			}
+
+
+			void Backend::releaseState() {
+
+				if (this->_state.pShaderResourceView) {
+					this->_state.pShaderResourceView->Release();
+					this->_state.pShaderResourceView = nullptr;
+				}
+
+				if (this->_state.pIndexBuffer) {
+					this->_state.pIndexBuffer->Release();
+					this->_state.pIndexBuffer = nullptr;
+				}
+
+				if (this->_state.pVertexBuffer) {
+					this->_state.pVertexBuffer->Release();
+					this->_state.pVertexBuffer = nullptr;
+				}
+
+				if (this->_state.pPixelShader) {
+					this->_state.pPixelShader->Release();
+					this->_state.pPixelShader = nullptr;
+				}
+
+				if (this->_state.pBlendState) {
+					this->_state.pBlendState->Release();
+					this->_state.pBlendState = nullptr;
+				}
+
+				if (this->_state.pSamplerState) {
+					this->_state.pSamplerState->Release();
+					this->_state.pSamplerState = nullptr;
+				}
+
+				if (this->_state.pConstantBuffer) {
+					this->_state.pConstantBuffer->Release();
+					this->_state.pConstantBuffer = nullptr;
+				}
+
+				if (this->_state.pVertexShader) {
+					this->_state.pVertexShader->Release();
+					this->_state.pVertexShader = nullptr;
+				}
+
+				if (this->_state.pInputLayout) {
+					this->_state.pInputLayout->Release();
+					this->_state.pInputLayout = nullptr;
+				}
+
+				return;
 			}
 
 		}

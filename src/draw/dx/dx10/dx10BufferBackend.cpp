@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx10 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _curTopology{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _capacity {} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -111,7 +111,6 @@ namespace hax {
 
 
 			bool BufferBackend::begin() {
-				this->_pDevice->IAGetPrimitiveTopology(&this->_curTopology);
 				this->_pDevice->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pDevice->PSSetShader(this->_pPixelShader);
 				
@@ -137,7 +136,6 @@ namespace hax {
 
 
 			void BufferBackend::end() const {
-				this->_pDevice->IASetPrimitiveTopology(this->_curTopology);
 
 				return;
 			}

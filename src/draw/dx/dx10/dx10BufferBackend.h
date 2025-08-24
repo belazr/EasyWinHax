@@ -14,7 +14,6 @@ namespace hax {
 				ID3D10PixelShader* _pPixelShader;
 				ID3D10Buffer* _pVertexBuffer;
 				ID3D10Buffer* _pIndexBuffer;
-				D3D10_PRIMITIVE_TOPOLOGY _curTopology;
 
 				uint32_t _capacity;
 
