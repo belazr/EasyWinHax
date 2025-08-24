@@ -31,6 +31,25 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				typedef struct State {
+					ID3D10InputLayout* pInputLayout;
+					ID3D10VertexShader* pVertexShader;
+					ID3D10Buffer* pConstantBuffer;
+					ID3D10SamplerState* pSamplerState;
+					ID3D10BlendState* pBlendState;
+					FLOAT blendFactor[4];
+					UINT sampleMask;
+					D3D10_PRIMITIVE_TOPOLOGY topology;
+					ID3D10PixelShader* pPixelShader;
+					ID3D10Buffer* pVertexBuffer;
+					UINT stride;
+					UINT offsetVtx;
+					ID3D10Buffer* pIndexBuffer;
+					DXGI_FORMAT format;
+					UINT offsetIdx;
+					ID3D10ShaderResourceView* pShaderResourceView;
+				}State;
+
 				typedef struct TextureData {
 					ID3D10Texture2D* pTexture;
 					ID3D10ShaderResourceView* pTextureView;
@@ -47,6 +66,8 @@ namespace hax {
 				ID3D10SamplerState* _pSamplerState;
 				ID3D10BlendState* _pBlendState;
 				D3D10_VIEWPORT _viewport;
+
+				State _state;
 
 				BufferBackend _textureBufferBackend;
 				BufferBackend _solidBufferBackend;
@@ -140,6 +161,9 @@ namespace hax {
 				bool createBlendState();
 				bool getCurrentViewport(D3D10_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer(D3D10_VIEWPORT viewport) const;
+				void saveState();
+				void restoreState();
+				void releaseState();
 			};
 
 		}
