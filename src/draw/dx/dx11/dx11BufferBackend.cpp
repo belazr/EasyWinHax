@@ -119,7 +119,6 @@ namespace hax {
 
 
 			bool BufferBackend::begin() {
-				this->_pContext->IAGetPrimitiveTopology(&this->_curTopology);
 				this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 
@@ -145,8 +144,7 @@ namespace hax {
 
 
 			void BufferBackend::end() const {
-				this->_pContext->IASetPrimitiveTopology(this->_curTopology);
-				
+
 				return;
 			}
 

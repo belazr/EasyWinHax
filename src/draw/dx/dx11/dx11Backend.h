@@ -31,6 +31,30 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				typedef struct State {
+					ID3D11InputLayout* pInputLayout;
+					ID3D11VertexShader* pVertexShader;
+					ID3D11ClassInstance* vsInstances[256];
+					UINT vsInstancesCount;
+					ID3D11Buffer* pConstantBuffer;
+					ID3D11SamplerState* pSamplerState;
+					ID3D11BlendState* pBlendState;
+					FLOAT blendFactor[4];
+					UINT sampleMask;
+					ID3D11RenderTargetView* pRenderTargetView;
+					D3D11_PRIMITIVE_TOPOLOGY topology;
+					ID3D11PixelShader* pPixelShader;
+					ID3D11ClassInstance* psInstances[256];
+					UINT psInstancesCount;
+					ID3D11Buffer* pVertexBuffer;
+					UINT stride;
+					UINT offsetVtx;
+					ID3D11Buffer* pIndexBuffer;
+					DXGI_FORMAT format;
+					UINT offsetIdx;
+					ID3D11ShaderResourceView* pShaderResourceView;
+				}State;
+
 				typedef struct TextureData {
 					ID3D11Texture2D* pTexture;
 					ID3D11ShaderResourceView* pTextureView;
@@ -44,11 +68,13 @@ namespace hax {
 				ID3D11VertexShader* _pVertexShader;
 				ID3D11PixelShader* _pPixelShaderTexture;
 				ID3D11PixelShader* _pPixelShaderPassthrough;
-				ID3D11RenderTargetView* _pRenderTargetView;
 				ID3D11Buffer* _pConstantBuffer;
 				ID3D11SamplerState* _pSamplerState;
 				ID3D11BlendState* _pBlendState;
 				D3D11_VIEWPORT _viewport;
+				ID3D11RenderTargetView* _pRenderTargetView;
+
+				State _state;
 				
 				BufferBackend _textureBufferBackend;
 				BufferBackend _solidBufferBackend;
@@ -142,6 +168,9 @@ namespace hax {
 				bool createBlendState();
 				bool getCurrentViewport(D3D11_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer(D3D11_VIEWPORT viewport) const;
+				void saveState();
+				void restoreState();
+				void releaseState();
 			};
 
 		}
