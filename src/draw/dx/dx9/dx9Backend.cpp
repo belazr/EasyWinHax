@@ -41,19 +41,11 @@ namespace hax {
 			}
 
 
-			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{}, _viewport{},
-				_pStateBlock{}, _pOriginalVertexDeclaration{}, _textureBufferBackend{}, _solidBufferBackend{} {}
+			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{}, _viewport{}, _state{} {}
 
 
 			Backend::~Backend() {
-
-				if (this->_pOriginalVertexDeclaration) {
-					this->_pOriginalVertexDeclaration->Release();
-				}
-				
-				if (this->_pStateBlock) {
-					this->_pStateBlock->Release();
-				}
+				this->releaseState();
 
 				this->_solidBufferBackend.destroy();
 				this->_textureBufferBackend.destroy();
@@ -158,25 +150,7 @@ namespace hax {
 
 				if (FAILED(this->_pDevice->GetViewport(&this->_viewport))) return false;
 
-				if (FAILED(this->_pDevice->CreateStateBlock(D3DSBT_ALL, &this->_pStateBlock))) return false;
-
-				if (FAILED(this->_pDevice->GetVertexDeclaration(&this->_pOriginalVertexDeclaration))) {
-					this->restoreState();
-
-					return false;
-				}
-
-				if (FAILED(this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration))) {
-					this->restoreState();
-
-					return false;
-				}
-
-				if (FAILED(this->_pDevice->SetVertexShader(this->_pVertexShader))) {
-					this->restoreState();
-
-					return false;
-				}
+				if (!this->saveState()) return false;
 
 				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ZENABLE, FALSE))) {
 					this->restoreState();
@@ -221,6 +195,18 @@ namespace hax {
 				}
 
 				if (FAILED(this->_pDevice->SetSamplerState(0u, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetVertexDeclaration(this->_pVertexDeclaration))) {
+					this->restoreState();
+
+					return false;
+				}
+
+				if (FAILED(this->_pDevice->SetVertexShader(this->_pVertexShader))) {
 					this->restoreState();
 
 					return false;
@@ -298,22 +284,82 @@ namespace hax {
 				return true;
 			}
 
-			void Backend::restoreState() {
 
-				if (this->_pOriginalVertexDeclaration) {
-					this->_pDevice->SetVertexDeclaration(this->_pOriginalVertexDeclaration);
-					this->_pOriginalVertexDeclaration->Release();
-					this->_pOriginalVertexDeclaration = nullptr;
+			bool Backend::saveState() {
+				
+				if (FAILED(this->_pDevice->CreateStateBlock(D3DSBT_ALL, &this->_state.pStateBlock))) return false;
+
+				if (FAILED(this->_pDevice->GetVertexDeclaration(&this->_state.pVertexDeclaration))) return false;
+
+				if (FAILED(this->_pDevice->GetVertexShader(&this->_state.pVertexShader))) return false;
+				
+				if (FAILED(this->_pDevice->GetPixelShader(&this->_state.pPixelShader))) return false;
+
+				if (FAILED(this->_pDevice->GetStreamSource(0u, &this->_state.pVertexBuffer, &this->_state.offset, &this->_state.stride))) return false;
+
+				if (FAILED(this->_pDevice->GetIndices(&this->_state.pIndexBuffer))) return false;
+
+				if (FAILED(this->_pDevice->GetTexture(0u, &this->_state.pBaseTexture))) return false;
+
+				return true;
+			}
+
+
+			void Backend::restoreState() {
+				this->_pDevice->SetTexture(0u, this->_state.pBaseTexture);
+				this->_pDevice->SetIndices(this->_state.pIndexBuffer);
+				this->_pDevice->SetStreamSource(0u, this->_state.pVertexBuffer, this->_state.offset, this->_state.stride);
+				this->_pDevice->SetPixelShader(this->_state.pPixelShader);
+				this->_pDevice->SetVertexShader(this->_state.pVertexShader);
+				this->_pDevice->SetVertexDeclaration(this->_state.pVertexDeclaration);
+				this->_state.pStateBlock->Apply();
+
+				this->releaseState();
+
+				return;
+			}
+
+
+			void Backend::releaseState() {
+
+				if (this->_state.pBaseTexture) {
+					this->_state.pBaseTexture->Release();
+					this->_state.pBaseTexture = nullptr;
 				}
 
-				if (this->_pStateBlock) {
-					this->_pStateBlock->Apply();
-					this->_pStateBlock->Release();
-					this->_pStateBlock = nullptr;
+				if (this->_state.pIndexBuffer) {
+					this->_state.pIndexBuffer->Release();
+					this->_state.pIndexBuffer = nullptr;
+				}
+
+				if (this->_state.pVertexBuffer) {
+					this->_state.pVertexBuffer->Release();
+					this->_state.pVertexBuffer = nullptr;
+				}
+
+				if (this->_state.pPixelShader) {
+					this->_state.pPixelShader->Release();
+					this->_state.pPixelShader = nullptr;
+				}
+
+				if (this->_state.pVertexShader) {
+					this->_state.pVertexShader->Release();
+					this->_state.pVertexShader = nullptr;
+				}
+
+				if (this->_state.pVertexDeclaration) {
+					this->_state.pVertexDeclaration->Release();
+					this->_state.pVertexDeclaration = nullptr;
+				}
+
+				if (this->_state.pStateBlock) {
+					this->_state.pStateBlock->Release();
+					this->_state.pStateBlock = nullptr;
 				}
 
 				return;
 			}
+
 
 			bool Backend::setVertexShaderConstant() {
 				// adding .5f for mapping texels exactly to pixels

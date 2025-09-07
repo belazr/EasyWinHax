@@ -31,14 +31,26 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
+				typedef struct State {
+					IDirect3DStateBlock9* pStateBlock;
+					IDirect3DVertexDeclaration9* pVertexDeclaration;
+					IDirect3DVertexShader9* pVertexShader;
+					IDirect3DPixelShader9* pPixelShader;
+					IDirect3DVertexBuffer9* pVertexBuffer;
+					UINT offset;
+					UINT stride;
+					IDirect3DIndexBuffer9* pIndexBuffer;
+					IDirect3DBaseTexture9* pBaseTexture;
+				}State;
+
 				IDirect3DDevice9* _pDevice;
 				IDirect3DVertexDeclaration9* _pVertexDeclaration;
 				IDirect3DVertexShader9* _pVertexShader;
 				IDirect3DPixelShader9* _pPixelShaderPassthrough;
 				IDirect3DPixelShader9* _pPixelShaderTexture;
 				D3DVIEWPORT9 _viewport;
-				IDirect3DStateBlock9* _pStateBlock;
-				IDirect3DVertexDeclaration9* _pOriginalVertexDeclaration;
+
+				State _state;
 
 				BufferBackend _textureBufferBackend;
 				BufferBackend _solidBufferBackend;
@@ -127,7 +139,9 @@ namespace hax {
 			private:
 				bool createVertexDeclaration();
 				bool createShaders();
+				bool saveState();
 				void restoreState();
+				void releaseState();
 				bool setVertexShaderConstant();
 
 			};
