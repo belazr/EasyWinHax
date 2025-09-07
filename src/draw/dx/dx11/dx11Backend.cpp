@@ -41,10 +41,11 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pContext{}, _pInputLayout{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _pRenderTargetView{}, _viewport{}, _textureBufferBackend{}, _solidBufferBackend{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _pRenderTargetView{}, _state{} {}
 
 
 			Backend::~Backend() {
+				this->releaseState();
 
 				if (this->_pRenderTargetView) {
 					this->_pRenderTargetView->Release();
@@ -231,11 +232,13 @@ namespace hax {
 				}
 
 				pBackBuffer->Release();
+				
+				this->saveState();
 
 				this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
-				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
-				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 				this->_pContext->IASetInputLayout(this->_pInputLayout);
+				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
+				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
 				this->_pContext->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 
 				constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
@@ -248,6 +251,8 @@ namespace hax {
 			void Backend::endFrame() {
 				this->_pRenderTargetView->Release();
 				this->_pRenderTargetView = nullptr;
+
+				this->restoreState();
 
 				return;
 			}
@@ -399,6 +404,114 @@ namespace hax {
 				this->_pContext->Unmap(this->_pConstantBuffer, 0u);
 
 				return true;
+			}
+
+
+			void Backend::saveState() {
+				this->_pContext->OMGetRenderTargets(1u, &this->_state.pRenderTargetView, nullptr);
+				this->_pContext->IAGetInputLayout(&this->_state.pInputLayout);
+				this->_state.vsInstancesCount = 256u;
+				this->_pContext->VSGetShader(&this->_state.pVertexShader, this->_state.vsInstances, &this->_state.vsInstancesCount);
+				this->_pContext->VSGetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
+				this->_pContext->PSGetSamplers(0u, 1u, &this->_state.pSamplerState);
+				this->_pContext->OMGetBlendState(&this->_state.pBlendState, this->_state.blendFactor, &this->_state.sampleMask);
+				this->_pContext->IAGetPrimitiveTopology(&this->_state.topology);
+				this->_state.psInstancesCount = 256u;
+				this->_pContext->PSGetShader(&this->_state.pPixelShader, this->_state.psInstances, &this->_state.psInstancesCount);
+				this->_pContext->IAGetVertexBuffers(0u, 1u, &this->_state.pVertexBuffer, &this->_state.stride, &this->_state.offsetVtx);
+				this->_pContext->IAGetIndexBuffer(&this->_state.pIndexBuffer, &this->_state.format, &this->_state.offsetIdx);
+				this->_pContext->PSGetShaderResources(0u, 1u, &this->_state.pShaderResourceView);
+
+				return;
+			}
+
+
+			void Backend::restoreState() {
+				this->_pContext->PSSetShaderResources(0u, 1u, &this->_state.pShaderResourceView);
+				this->_pContext->IASetIndexBuffer(this->_state.pIndexBuffer, this->_state.format, this->_state.offsetIdx);
+				this->_pContext->IASetVertexBuffers(0u, 1u, &this->_state.pVertexBuffer, &this->_state.stride, &this->_state.offsetVtx);
+				this->_pContext->PSSetShader(this->_state.pPixelShader, this->_state.psInstances, this->_state.psInstancesCount);
+				this->_pContext->IASetPrimitiveTopology(this->_state.topology);
+				this->_pContext->OMSetBlendState(this->_state.pBlendState, this->_state.blendFactor, this->_state.sampleMask);
+				this->_pContext->PSSetSamplers(0u, 1u, &this->_state.pSamplerState);
+				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
+				this->_pContext->VSSetShader(this->_state.pVertexShader, this->_state.vsInstances, this->_state.vsInstancesCount);
+				this->_pContext->IASetInputLayout(this->_state.pInputLayout);
+				this->_pContext->OMSetRenderTargets(1u, &this->_state.pRenderTargetView, nullptr);
+
+				this->releaseState();
+
+				return;
+			}
+
+
+			void Backend::releaseState() {
+
+				if (this->_state.pShaderResourceView) {
+					this->_state.pShaderResourceView->Release();
+					this->_state.pShaderResourceView = nullptr;
+				}
+
+				if (this->_state.pIndexBuffer) {
+					this->_state.pIndexBuffer->Release();
+					this->_state.pIndexBuffer = nullptr;
+				}
+
+				if (this->_state.pVertexBuffer) {
+					this->_state.pVertexBuffer->Release();
+					this->_state.pVertexBuffer = nullptr;
+				}
+
+				if (this->_state.pPixelShader) {
+
+					for (UINT i = 0u; i < this->_state.psInstancesCount; i++) {
+						this->_state.psInstances[i]->Release();
+						this->_state.psInstances[i] = nullptr;
+					}
+
+					this->_state.psInstancesCount = 0u;
+					this->_state.pPixelShader->Release();
+					this->_state.pPixelShader = nullptr;
+				}
+
+				if (this->_state.pBlendState) {
+					this->_state.pBlendState->Release();
+					this->_state.pBlendState = nullptr;
+				}
+
+				if (this->_state.pSamplerState) {
+					this->_state.pSamplerState->Release();
+					this->_state.pSamplerState = nullptr;
+				}
+
+				if (this->_state.pConstantBuffer) {
+					this->_state.pConstantBuffer->Release();
+					this->_state.pConstantBuffer = nullptr;
+				}
+
+				if (this->_state.pVertexShader) {
+
+					for (UINT i = 0u; i < this->_state.vsInstancesCount; i++) {
+						this->_state.vsInstances[i]->Release();
+						this->_state.vsInstances[i] = nullptr;
+					}
+
+					this->_state.vsInstancesCount = 0u;
+					this->_state.pVertexShader->Release();
+					this->_state.pVertexShader = nullptr;
+				}
+
+				if (this->_state.pInputLayout) {
+					this->_state.pInputLayout->Release();
+					this->_state.pInputLayout = nullptr;
+				}
+
+				if (this->_state.pRenderTargetView) {
+					this->_state.pRenderTargetView->Release();
+					this->_state.pRenderTargetView = nullptr;
+				}
+
+				return;
 			}
 
 		}
