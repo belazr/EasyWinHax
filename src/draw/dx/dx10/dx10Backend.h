@@ -32,6 +32,10 @@ namespace hax {
 			class Backend : public IBackend {
 			private:
 				typedef struct State {
+					D3D10_VIEWPORT viewports[D3D10_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+					UINT viewportCount;
+					ID3D10RenderTargetView* pRenderTargetView;
+					ID3D10DepthStencilView* pDepthStencilView;
 					ID3D10InputLayout* pInputLayout;
 					ID3D10VertexShader* pVertexShader;
 					ID3D10Buffer* pConstantBuffer;
@@ -66,6 +70,7 @@ namespace hax {
 				ID3D10SamplerState* _pSamplerState;
 				ID3D10BlendState* _pBlendState;
 				D3D10_VIEWPORT _viewport;
+				ID3D10RenderTargetView* _pRenderTargetView;
 
 				State _state;
 
@@ -159,8 +164,8 @@ namespace hax {
 				bool createConstantBuffer();
 				bool createSamplerState();
 				bool createBlendState();
-				bool getCurrentViewport(D3D10_VIEWPORT* pViewport) const;
-				bool updateConstantBuffer(D3D10_VIEWPORT viewport) const;
+				bool getViewport(D3D10_VIEWPORT* pViewport) const;
+				bool updateConstantBuffer() const;
 				void saveState();
 				void restoreState();
 				void releaseState();

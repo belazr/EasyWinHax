@@ -41,11 +41,15 @@ namespace hax {
 
 			Backend::Backend() :
 				_pSwapChain{}, _pDevice{}, _pInputLayout{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
-				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _state{} {}
+				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _pRenderTargetView{}, _state{} {}
 
 
 			Backend::~Backend() {
 				this->releaseState();
+
+				if (this->_pRenderTargetView) {
+					this->_pRenderTargetView->Release();
+				}
 
 				if (this->_pBlendState) {
 					this->_pBlendState->Release();
@@ -193,19 +197,36 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
-				D3D10_VIEWPORT curViewport{};
+				this->saveState();
 
-				if (!this->getCurrentViewport(&curViewport)) return false;
+				D3D10_VIEWPORT viewport{};
 
-				if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
+				if (!this->getViewport(&viewport)) return false;
 
-					if (!this->updateConstantBuffer(curViewport)) return false;
+				if (viewport.Width != this->_viewport.Width || viewport.Height != this->_viewport.Height) {
+					this->_viewport = viewport;
 
-					this->_viewport = curViewport;
+					if (!this->updateConstantBuffer()) return false;
+
 				}
 
-				this->saveState();
+				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
+				// so it has to be acquired every frame as well
+				// this is done so resolution changes do not break rendering
+				ID3D10Texture2D* pBackBuffer = nullptr;
+
+				if (FAILED(this->_pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return false;
+
+				if (FAILED(this->_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &this->_pRenderTargetView))) {
+					pBackBuffer->Release();
+
+					return false;
+				}
+
+				pBackBuffer->Release();
 				
+				this->_pDevice->RSSetViewports(1u, &this->_viewport);
+				this->_pDevice->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 				this->_pDevice->IASetInputLayout(this->_pInputLayout);
 				this->_pDevice->VSSetShader(this->_pVertexShader);
 				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
@@ -219,6 +240,9 @@ namespace hax {
 
 
 			void Backend::endFrame() {
+				this->_pRenderTargetView->Release();
+				this->_pRenderTargetView = nullptr;
+
 				this->restoreState();
 
 				return;
@@ -319,15 +343,12 @@ namespace hax {
 			}
 
 
-			bool Backend::getCurrentViewport(D3D10_VIEWPORT* pViewport) const {
-				D3D10_VIEWPORT viewports[D3D10_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
-				UINT viewportCount = _countof(viewports);
+			bool Backend::getViewport(D3D10_VIEWPORT* pViewport) const {
 
-				this->_pDevice->RSGetViewports(&viewportCount, viewports);
-
-				*pViewport = viewports[0];
-
-				if (!viewportCount || !pViewport->Width) {
+				if (this->_state.viewportCount) {
+					*pViewport = this->_state.viewports[0];
+				}
+				else {
 					HWND hMainWnd = proc::in::getMainWindowHandle();
 
 					if (!hMainWnd) return false;
@@ -336,24 +357,23 @@ namespace hax {
 
 					if (!GetClientRect(hMainWnd, &windowRect)) return false;
 
-					pViewport->Width = static_cast<UINT>(windowRect.right);
-					pViewport->Height = static_cast<UINT>(windowRect.bottom);
+					pViewport->Width = static_cast<UINT>(windowRect.right - windowRect.left);
+					pViewport->Height = static_cast<UINT>(windowRect.bottom - windowRect.top);
 					pViewport->TopLeftX = static_cast<UINT>(windowRect.left);
 					pViewport->TopLeftY = static_cast<UINT>(windowRect.top);
 					pViewport->MinDepth = 0.f;
 					pViewport->MaxDepth = 1.f;
-					this->_pDevice->RSSetViewports(1u, pViewport);
 				}
 
 				return true;
 			}
 
 
-			bool Backend::updateConstantBuffer(D3D10_VIEWPORT viewport) const {
-				const float viewLeft = static_cast<float>(viewport.TopLeftX);
-				const float viewRight = static_cast<float>(viewport.TopLeftX + viewport.Width);
-				const float viewTop = static_cast<float>(viewport.TopLeftY);
-				const float viewBottom = static_cast<float>(viewport.TopLeftY + viewport.Height);
+			bool Backend::updateConstantBuffer() const {
+				const float viewLeft = static_cast<float>(this->_viewport.TopLeftX);
+				const float viewRight = static_cast<float>(this->_viewport.TopLeftX + this->_viewport.Width);
+				const float viewTop = static_cast<float>(this->_viewport.TopLeftY);
+				const float viewBottom = static_cast<float>(this->_viewport.TopLeftY + this->_viewport.Height);
 
 				const float ortho[][4]{
 					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
@@ -375,6 +395,9 @@ namespace hax {
 
 
 			void Backend::saveState() {
+				this->_state.viewportCount = _countof(this->_state.viewports);
+				this->_pDevice->RSGetViewports(&this->_state.viewportCount, this->_state.viewports);
+				this->_pDevice->OMGetRenderTargets(1u, &this->_state.pRenderTargetView, &this->_state.pDepthStencilView);
 				this->_pDevice->IAGetInputLayout(&this->_state.pInputLayout);
 				this->_pDevice->VSGetShader(&this->_state.pVertexShader);
 				this->_pDevice->VSGetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
@@ -401,6 +424,8 @@ namespace hax {
 				this->_pDevice->VSSetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
 				this->_pDevice->VSSetShader(this->_state.pVertexShader);
 				this->_pDevice->IASetInputLayout(this->_state.pInputLayout);
+				this->_pDevice->OMSetRenderTargets(1u, &this->_state.pRenderTargetView, this->_state.pDepthStencilView);
+				this->_pDevice->RSSetViewports(this->_state.viewportCount, this->_state.viewports);
 
 				this->releaseState();
 
@@ -453,6 +478,16 @@ namespace hax {
 				if (this->_state.pInputLayout) {
 					this->_state.pInputLayout->Release();
 					this->_state.pInputLayout = nullptr;
+				}
+
+				if (this->_state.pRenderTargetView) {
+					this->_state.pRenderTargetView->Release();
+					this->_state.pRenderTargetView = nullptr;
+				}
+
+				if (this->_state.pDepthStencilView) {
+					this->_state.pDepthStencilView->Release();
+					this->_state.pDepthStencilView = nullptr;
 				}
 
 				return;
