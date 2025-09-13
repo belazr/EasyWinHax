@@ -147,10 +147,10 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
+				
+				if (!this->saveState()) return false;
 
 				if (FAILED(this->_pDevice->GetViewport(&this->_viewport))) return false;
-
-				if (!this->saveState()) return false;
 
 				if (FAILED(this->_pDevice->SetRenderState(D3DRS_ZENABLE, FALSE))) {
 					this->restoreState();
