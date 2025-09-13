@@ -32,6 +32,8 @@ namespace hax {
 			class Backend : public IBackend {
 			private:
 				typedef struct State {
+					ID3D11RenderTargetView* pRenderTargetView;
+					ID3D11DepthStencilView* pDepthStencilView;
 					ID3D11InputLayout* pInputLayout;
 					ID3D11VertexShader* pVertexShader;
 					ID3D11ClassInstance* vsInstances[256];
@@ -41,7 +43,6 @@ namespace hax {
 					ID3D11BlendState* pBlendState;
 					FLOAT blendFactor[4];
 					UINT sampleMask;
-					ID3D11RenderTargetView* pRenderTargetView;
 					D3D11_PRIMITIVE_TOPOLOGY topology;
 					ID3D11PixelShader* pPixelShader;
 					ID3D11ClassInstance* psInstances[256];
