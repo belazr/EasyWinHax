@@ -207,15 +207,17 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
-				D3D11_VIEWPORT curViewport{};
-				
-				if(!this->getCurrentViewport(&curViewport)) return false;
+				this->saveState();
 
-				if (curViewport.Width != this->_viewport.Width || curViewport.Height != this->_viewport.Height) {
-					
-					if (!this->updateConstantBuffer(curViewport)) return false;
+				D3D11_VIEWPORT viewport{};
 
-					this->_viewport = curViewport;
+				if (!this->getViewport(&viewport)) return false;
+
+				if (viewport.Width != this->_viewport.Width || viewport.Height != this->_viewport.Height) {
+					this->_viewport = viewport;
+
+					if (!this->updateConstantBuffer()) return false;
+
 				}
 
 				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
@@ -232,9 +234,8 @@ namespace hax {
 				}
 
 				pBackBuffer->Release();
-				
-				this->saveState();
 
+				this->_pContext->RSSetViewports(1u, &this->_viewport);
 				this->_pContext->OMSetRenderTargets(1u, &this->_pRenderTargetView, nullptr);
 				this->_pContext->IASetInputLayout(this->_pInputLayout);
 				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
@@ -352,15 +353,12 @@ namespace hax {
 			}
 
 
-			bool Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
-				D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
-				UINT viewportCount = _countof(viewports);
-
-				this->_pContext->RSGetViewports(&viewportCount, viewports);
-
-				*pViewport = viewports[0];
-
-				if (!viewportCount || !pViewport->Width) {
+			bool Backend::getViewport(D3D11_VIEWPORT* pViewport) const {
+				
+				if (this->_state.viewportCount) {
+					*pViewport = this->_state.viewports[0];
+				}
+				else {
 					HWND hMainWnd = proc::in::getMainWindowHandle();
 
 					if (!hMainWnd) return false;
@@ -369,24 +367,23 @@ namespace hax {
 
 					if (!GetClientRect(hMainWnd, &windowRect)) return false;
 
-					pViewport->Width = static_cast<FLOAT>(windowRect.right);
-					pViewport->Height = static_cast<FLOAT>(windowRect.bottom);
+					pViewport->Width = static_cast<FLOAT>(windowRect.right - windowRect.left);
+					pViewport->Height = static_cast<FLOAT>(windowRect.bottom - windowRect.top);
 					pViewport->TopLeftX = static_cast<FLOAT>(windowRect.left);
 					pViewport->TopLeftY = static_cast<FLOAT>(windowRect.top);
 					pViewport->MinDepth = 0.f;
 					pViewport->MaxDepth = 1.f;
-					this->_pContext->RSSetViewports(1u, pViewport);
 				}
 
 				return true;
 			}
 
 
-			bool Backend::updateConstantBuffer(D3D11_VIEWPORT viewport) const {
-				const float viewLeft = viewport.TopLeftX;
-				const float viewRight = viewport.TopLeftX + viewport.Width;
-				const float viewTop = viewport.TopLeftY;
-				const float viewBottom = viewport.TopLeftY + viewport.Height;
+			bool Backend::updateConstantBuffer() const {
+				const float viewLeft = this->_viewport.TopLeftX;
+				const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
+				const float viewTop = this->_viewport.TopLeftY;
+				const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
 
 				const float ortho[][4]{
 					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
@@ -408,15 +405,17 @@ namespace hax {
 
 
 			void Backend::saveState() {
+				this->_state.viewportCount = _countof(this->_state.viewports);
+				this->_pContext->RSGetViewports(&this->_state.viewportCount, this->_state.viewports);
 				this->_pContext->OMGetRenderTargets(1u, &this->_state.pRenderTargetView, &this->_state.pDepthStencilView);
 				this->_pContext->IAGetInputLayout(&this->_state.pInputLayout);
-				this->_state.vsInstancesCount = 256u;
+				this->_state.vsInstancesCount = _countof(this->_state.vsInstances);
 				this->_pContext->VSGetShader(&this->_state.pVertexShader, this->_state.vsInstances, &this->_state.vsInstancesCount);
 				this->_pContext->VSGetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
 				this->_pContext->PSGetSamplers(0u, 1u, &this->_state.pSamplerState);
 				this->_pContext->OMGetBlendState(&this->_state.pBlendState, this->_state.blendFactor, &this->_state.sampleMask);
 				this->_pContext->IAGetPrimitiveTopology(&this->_state.topology);
-				this->_state.psInstancesCount = 256u;
+				this->_state.psInstancesCount = _countof(this->_state.psInstances);
 				this->_pContext->PSGetShader(&this->_state.pPixelShader, this->_state.psInstances, &this->_state.psInstancesCount);
 				this->_pContext->IAGetVertexBuffers(0u, 1u, &this->_state.pVertexBuffer, &this->_state.stride, &this->_state.offsetVtx);
 				this->_pContext->IAGetIndexBuffer(&this->_state.pIndexBuffer, &this->_state.format, &this->_state.offsetIdx);
@@ -438,6 +437,7 @@ namespace hax {
 				this->_pContext->VSSetShader(this->_state.pVertexShader, this->_state.vsInstances, this->_state.vsInstancesCount);
 				this->_pContext->IASetInputLayout(this->_state.pInputLayout);
 				this->_pContext->OMSetRenderTargets(1u, &this->_state.pRenderTargetView, this->_state.pDepthStencilView);
+				this->_pContext->RSSetViewports(this->_state.viewportCount, this->_state.viewports);
 
 				this->releaseState();
 
