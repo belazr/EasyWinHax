@@ -408,7 +408,7 @@ namespace hax {
 
 
 			void Backend::saveState() {
-				this->_pContext->OMGetRenderTargets(1u, &this->_state.pRenderTargetView, nullptr);
+				this->_pContext->OMGetRenderTargets(1u, &this->_state.pRenderTargetView, &this->_state.pDepthStencilView);
 				this->_pContext->IAGetInputLayout(&this->_state.pInputLayout);
 				this->_state.vsInstancesCount = 256u;
 				this->_pContext->VSGetShader(&this->_state.pVertexShader, this->_state.vsInstances, &this->_state.vsInstancesCount);
@@ -437,7 +437,7 @@ namespace hax {
 				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_state.pConstantBuffer);
 				this->_pContext->VSSetShader(this->_state.pVertexShader, this->_state.vsInstances, this->_state.vsInstancesCount);
 				this->_pContext->IASetInputLayout(this->_state.pInputLayout);
-				this->_pContext->OMSetRenderTargets(1u, &this->_state.pRenderTargetView, nullptr);
+				this->_pContext->OMSetRenderTargets(1u, &this->_state.pRenderTargetView, this->_state.pDepthStencilView);
 
 				this->releaseState();
 
@@ -509,6 +509,11 @@ namespace hax {
 				if (this->_state.pRenderTargetView) {
 					this->_state.pRenderTargetView->Release();
 					this->_state.pRenderTargetView = nullptr;
+				}
+
+				if (this->_state.pDepthStencilView) {
+					this->_state.pDepthStencilView->Release();
+					this->_state.pDepthStencilView = nullptr;
 				}
 
 				return;
