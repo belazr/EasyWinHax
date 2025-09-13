@@ -264,7 +264,7 @@ namespace hax {
 			}
 
 
-			IBufferBackend* Backend::getSolidBufferBackend()  {
+			IBufferBackend* Backend::getSolidBufferBackend() {
 
 				return &this->_solidBufferBackend;
 			}
@@ -354,7 +354,7 @@ namespace hax {
 
 			bool Backend::getCurrentViewport(D3D11_VIEWPORT* pViewport) const {
 				D3D11_VIEWPORT viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
-				UINT viewportCount = sizeof(viewports) / sizeof(D3D11_VIEWPORT);
+				UINT viewportCount = _countof(viewports);
 
 				this->_pContext->RSGetViewports(&viewportCount, viewports);
 
