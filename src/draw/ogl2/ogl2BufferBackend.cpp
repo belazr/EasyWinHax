@@ -8,7 +8,7 @@ namespace hax {
 
 			BufferBackend::BufferBackend() :
 				_f{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
-				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _curShaderProgramId{ UINT_MAX }, _curVertexBufferId{ UINT_MAX }, _curIndexBufferId{ UINT_MAX }, _capacity{} {
+				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _capacity{} {
 			}
 
 
@@ -75,21 +75,29 @@ namespace hax {
 			void BufferBackend::destroy() {
 
 				if (this->_indexBufferId != UINT_MAX) {
-					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
+					GLuint curIndexBufferId = UINT_MAX;
+					glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curIndexBufferId));
+
 					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
+
 					this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 					this->_f.pGlDeleteBuffers(1, &this->_indexBufferId);
 					this->_indexBufferId = UINT_MAX;
-					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
+					
+					this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, curIndexBufferId);
 				}
 
 				if (this->_vertexBufferId != UINT_MAX) {
-					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
+					GLuint curVertexBufferId = UINT_MAX;
+					glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&curVertexBufferId));
+
 					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
+
 					this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
 					this->_f.pGlDeleteBuffers(1, &this->_vertexBufferId);
 					this->_vertexBufferId = UINT_MAX;
-					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
+					
+					this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, curVertexBufferId);
 				}
 
 				this->_capacity = 0u;
@@ -105,11 +113,8 @@ namespace hax {
 
 
 			bool BufferBackend::map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) {
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
-
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
 				*ppLocalVertexBuffer = reinterpret_cast<Vertex*>(this->_f.pGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
 
 				if (!(*ppLocalVertexBuffer)) {
 					this->unmap();
@@ -117,11 +122,8 @@ namespace hax {
 					return false;
 				}
 
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
-
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
 				*ppLocalIndexBuffer = reinterpret_cast<uint32_t*>(this->_f.pGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
 
 				if (!(*ppLocalIndexBuffer)) {
 					this->unmap();
@@ -134,25 +136,17 @@ namespace hax {
 
 
 			void BufferBackend::unmap() {
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_indexBufferId);
 				this->_f.pGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
 
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
 				this->_f.pGlUnmapBuffer(GL_ARRAY_BUFFER);
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
 
 				return;
 			}
 
 
 			bool BufferBackend::begin() {
-				glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&this->_curShaderProgramId));
-				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curVertexBufferId));
-				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_curIndexBufferId));
-				
 				this->_f.pGlUseProgram(this->_shaderProgramId);
 				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
 
@@ -186,13 +180,6 @@ namespace hax {
 
 
 			void BufferBackend::end() const {
-				this->_f.pGlDisableVertexAttribArray(this->_uvIndex);
-				this->_f.pGlDisableVertexAttribArray(this->_colIndex);
-				this->_f.pGlDisableVertexAttribArray(this->_posIndex);
-				
-				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_curIndexBufferId);
-				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_curVertexBufferId);
-				this->_f.pGlUseProgram(this->_curShaderProgramId);
 
 				return;
 			}
@@ -200,15 +187,14 @@ namespace hax {
 
 			bool BufferBackend::createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const {
 				this->_f.pGlGenBuffers(1, pId);
-
-				if (*pId == UINT_MAX) return false;
-
+				
 				GLuint curBufferId = UINT_MAX;
 				glGetIntegerv(binding, reinterpret_cast<GLint*>(&curBufferId));
 
 				this->_f.pGlBindBuffer(target, *pId);
+				
 				this->_f.pGlBufferData(target, size, nullptr, GL_DYNAMIC_DRAW);
-
+				
 				this->_f.pGlBindBuffer(target, curBufferId);
 
 				return true;

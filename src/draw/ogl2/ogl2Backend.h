@@ -15,19 +15,23 @@ namespace hax {
 
 			class Backend : public IBackend {
 			private:
-
 				union {
 					Functions _f;
 					void* _fPtrs[sizeof(Functions) / sizeof(void*)];
 				};
 
+				typedef struct State {
+					GLuint vertexBufferId;
+					GLuint indexBufferId;
+					GLuint shaderProgramId;
+					GLuint textureId;
+				}State;
+
 				GLuint _shaderProgramTextureId;
 				GLuint _shaderProgramPassthroughId;
 				GLint _viewport[4];
-				GLenum _depthFunc;
-				GLboolean _blendEnabled;
-				GLenum _srcAlphaBlendFunc;
-				GLenum _dstAlphaBlendFunc;
+
+				State _state;
 
 				BufferBackend _textureBufferBackend;
 				BufferBackend _solidBufferBackend;
@@ -116,7 +120,10 @@ namespace hax {
 			private:
 				bool getProcAddresses();
 				void createShaders();
+				void destroyShaders();
 				bool viewportChanged(const GLint* pViewport) const;
+				void saveState();
+				void restoreState() const;
 			};
 
 		}

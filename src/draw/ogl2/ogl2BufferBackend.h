@@ -19,9 +19,6 @@ namespace hax {
 				GLuint _uvIndex;
 				GLuint _vertexBufferId;
 				GLuint _indexBufferId;
-				GLuint _curShaderProgramId;
-				GLuint _curVertexBufferId;
-				GLuint _curIndexBufferId;
 
 				uint32_t _capacity;
 
