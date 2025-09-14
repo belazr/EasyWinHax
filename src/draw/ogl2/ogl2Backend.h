@@ -116,6 +116,7 @@ namespace hax {
 			private:
 				bool getProcAddresses();
 				void createShaders();
+				bool viewportChanged(const GLint* pViewport) const;
 			};
 
 		}
