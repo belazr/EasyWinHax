@@ -165,6 +165,7 @@ namespace hax {
 				bool createSamplerState();
 				bool createBlendState();
 				bool getViewport(D3D10_VIEWPORT* pViewport) const;
+				bool viewportChanged(const D3D10_VIEWPORT* pViewport) const;
 				bool updateConstantBuffer() const;
 				void saveState();
 				void restoreState();
