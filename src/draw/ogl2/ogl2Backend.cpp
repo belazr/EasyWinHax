@@ -8,19 +8,13 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramTextureId{}, _shaderProgramPassthroughId{}, _viewport{}, _depthFunc{},
-				_blendEnabled{}, _srcAlphaBlendFunc{}, _dstAlphaBlendFunc{}, _textureBufferBackend{}, _solidBufferBackend{} {}
+				_f{}, _shaderProgramTextureId{ UINT_MAX }, _shaderProgramPassthroughId{ UINT_MAX }, _viewport{}, _state{} {}
 
 
 			Backend::~Backend() {
 				this->_solidBufferBackend.destroy();
 				this->_textureBufferBackend.destroy();
-				
-				if (this->_f.pGlDeleteProgram) {
-					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
-					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
-				}
-
+				this->destroyShaders();
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
 			}
 
@@ -44,8 +38,8 @@ namespace hax {
 
 
             TextureId Backend::loadTexture(const Color* data, uint32_t width, uint32_t height) {
-				GLint curTexture = 0;
-				glGetIntegerv(GL_TEXTURE_BINDING_2D, &curTexture);
+				GLint curTextureId = 0;
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &curTextureId);
 
 				GLuint textureId = 0u;
 				glGenTextures(1, &textureId);
@@ -55,7 +49,7 @@ namespace hax {
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 				
-				glBindTexture(GL_TEXTURE_2D, curTexture);
+				glBindTexture(GL_TEXTURE_2D, curTextureId);
 
 				this->_textures.append(textureId);
 
@@ -64,12 +58,14 @@ namespace hax {
 
 
 			bool Backend::beginFrame() {
+				this->saveState();
+				
 				GLint viewport[4]{};
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (this->viewportChanged(viewport)) {
 					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
-					
+
 					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
 					this->_textureBufferBackend.initialize(this->_f, this->_viewport, this->_shaderProgramTextureId);
@@ -90,18 +86,8 @@ namespace hax {
 
 				}
 
-				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
 				glDepthFunc(GL_ALWAYS);
-
-				this->_blendEnabled = glIsEnabled(GL_BLEND);
-
-				if (!this->_blendEnabled) {
-					glEnable(GL_BLEND);
-				}
-
-				glGetIntegerv(GL_BLEND_SRC_ALPHA, reinterpret_cast<GLint*>(&this->_srcAlphaBlendFunc));
-				glGetIntegerv(GL_BLEND_DST_ALPHA, reinterpret_cast<GLint*>(&this->_dstAlphaBlendFunc));
-				
+				glEnable(GL_BLEND);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 				return true;
@@ -109,13 +95,7 @@ namespace hax {
 
 
 			void Backend::endFrame() {
-				glBlendFunc(this->_srcAlphaBlendFunc, this->_dstAlphaBlendFunc);
-
-				if (!this->_blendEnabled) {
-					glDisable(GL_BLEND);
-				}
-
-				glDepthFunc(this->_depthFunc);
+				this->restoreState();
 
 				return;
 			}
@@ -217,11 +197,52 @@ namespace hax {
 			}
 
 
+			void Backend::destroyShaders() {
+				if (!this->_f.pGlDeleteProgram) return;
+
+				if (this->_shaderProgramPassthroughId != UINT_MAX) {
+					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
+					this->_shaderProgramPassthroughId = UINT_MAX;
+				}
+
+				if (this->_shaderProgramTextureId != UINT_MAX) {
+					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
+					this->_shaderProgramTextureId = UINT_MAX;
+				}
+
+				return;
+			}
+
+
 			bool Backend::viewportChanged(const GLint* pViewport) const {
 				bool topLeftChanged = pViewport[0] != this->_viewport[0] || pViewport[1] != this->_viewport[1];
 				bool dimensionChanged = pViewport[2] != this->_viewport[2] || pViewport[3] != this->_viewport[3];
 				
 				return topLeftChanged || dimensionChanged;
+			}
+
+
+			void Backend::saveState() {
+				glPushAttrib(GL_ALL_ATTRIB_BITS);
+				glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_state.vertexBufferId));
+				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_state.indexBufferId));
+				glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&this->_state.shaderProgramId));
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&this->_state.textureId));
+
+				return;
+			}
+
+
+			void Backend::restoreState() const {
+				glBindTexture(GL_TEXTURE_2D, this->_state.textureId);
+				this->_f.pGlUseProgram(this->_state.shaderProgramId);
+				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_state.indexBufferId);
+				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_state.vertexBufferId);
+				glPopClientAttrib();
+				glPopAttrib();
+
+				return;
 			}
 
 		}
