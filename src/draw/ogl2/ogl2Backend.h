@@ -21,9 +21,9 @@ namespace hax {
 				};
 
 				typedef struct State {
+					GLuint shaderProgramId;
 					GLuint vertexBufferId;
 					GLuint indexBufferId;
-					GLuint shaderProgramId;
 					GLuint textureId;
 				}State;
 
@@ -119,8 +119,10 @@ namespace hax {
 
 			private:
 				bool getProcAddresses();
-				void createShaders();
-				void destroyShaders();
+				void createShaderPrograms();
+				GLuint createShader(GLenum type, const GLchar* pShader) const;
+				GLuint createShaderProgram(GLuint vertexShaderId, GLuint fragmentShaderId) const;
+				void destroyShaderPrograms();
 				bool viewportChanged(const GLint* pViewport) const;
 				void saveState();
 				void restoreState() const;

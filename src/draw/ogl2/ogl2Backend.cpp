@@ -14,7 +14,7 @@ namespace hax {
 			Backend::~Backend() {
 				this->_solidBufferBackend.destroy();
 				this->_textureBufferBackend.destroy();
-				this->destroyShaders();
+				this->destroyShaderPrograms();
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
 			}
 
@@ -31,7 +31,7 @@ namespace hax {
 
 				if (!this->getProcAddresses()) return false;
 
-				this->createShaders();
+				this->createShaderPrograms();
 
 				return true;
 			}
@@ -159,45 +159,44 @@ namespace hax {
 			#undef ASSIGN_PROC_ADDRESS
 
 
-			void Backend::createShaders() {
-				const GLuint vertexShader = this->_f.pGlCreateShader(GL_VERTEX_SHADER);
-				this->_f.pGlShaderSource(vertexShader, 1, &VERTEX_SHADER, nullptr);
-				this->_f.pGlCompileShader(vertexShader);
+			void Backend::createShaderPrograms() {
+				const GLuint vertexShaderId = this->createShader(GL_VERTEX_SHADER, VERTEX_SHADER);
+				const GLuint fragmentShaderTextureId = this->createShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_TEXTURE);
+				const GLuint fragmentShaderPassthroughId = this->createShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_PASSTHROUGH);
+				
+				this->_shaderProgramTextureId = this->createShaderProgram(vertexShaderId, fragmentShaderTextureId);
+				this->_shaderProgramPassthroughId = this->createShaderProgram(vertexShaderId, fragmentShaderPassthroughId);
 
-				const GLuint fragmentShaderTexture = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
-				this->_f.pGlShaderSource(fragmentShaderTexture, 1, &FRAGMENT_SHADER_TEXTURE, nullptr);
-				this->_f.pGlCompileShader(fragmentShaderTexture);
-
-				this->_shaderProgramTextureId = this->_f.pGlCreateProgram();
-				this->_f.pGlAttachShader(this->_shaderProgramTextureId, vertexShader);
-				this->_f.pGlAttachShader(this->_shaderProgramTextureId, fragmentShaderTexture);
-				this->_f.pGlLinkProgram(this->_shaderProgramTextureId);
-
-				this->_f.pGlDetachShader(this->_shaderProgramTextureId, vertexShader);
-				this->_f.pGlDetachShader(this->_shaderProgramTextureId, fragmentShaderTexture);
-
-				this->_f.pGlDeleteShader(fragmentShaderTexture);
-
-				const GLuint fragmentShaderPassthrough = this->_f.pGlCreateShader(GL_FRAGMENT_SHADER);
-				this->_f.pGlShaderSource(fragmentShaderPassthrough, 1, &FRAGMENT_SHADER_PASSTHROUGH, nullptr);
-				this->_f.pGlCompileShader(fragmentShaderPassthrough);
-
-				this->_shaderProgramPassthroughId = this->_f.pGlCreateProgram();
-				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, vertexShader);
-				this->_f.pGlAttachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
-				this->_f.pGlLinkProgram(this->_shaderProgramPassthroughId);
-
-				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, vertexShader);
-				this->_f.pGlDetachShader(this->_shaderProgramPassthroughId, fragmentShaderPassthrough);
-
-				this->_f.pGlDeleteShader(fragmentShaderPassthrough);
-				this->_f.pGlDeleteShader(vertexShader);
+				this->_f.pGlDeleteShader(fragmentShaderPassthroughId);
+				this->_f.pGlDeleteShader(fragmentShaderTextureId);
+				this->_f.pGlDeleteShader(vertexShaderId);
 
 				return;
 			}
 
 
-			void Backend::destroyShaders() {
+			GLuint Backend::createShader(GLenum type, const GLchar* pShader) const {
+				const GLuint shaderId = this->_f.pGlCreateShader(type);
+				this->_f.pGlShaderSource(shaderId, 1, &pShader, nullptr);
+				this->_f.pGlCompileShader(shaderId);
+
+				return shaderId;
+			}
+
+
+			GLuint Backend::createShaderProgram(GLuint vertexShaderId, GLuint fragmentShaderId) const {
+				const GLuint programId = this->_f.pGlCreateProgram();
+				this->_f.pGlAttachShader(programId, vertexShaderId);
+				this->_f.pGlAttachShader(programId, fragmentShaderId);
+				this->_f.pGlLinkProgram(programId);
+				this->_f.pGlDetachShader(programId, fragmentShaderId);
+				this->_f.pGlDetachShader(programId, vertexShaderId);
+
+				return programId;
+			}
+
+
+			void Backend::destroyShaderPrograms() {
 				if (!this->_f.pGlDeleteProgram) return;
 
 				if (this->_shaderProgramPassthroughId != UINT_MAX) {
@@ -225,9 +224,9 @@ namespace hax {
 			void Backend::saveState() {
 				glPushAttrib(GL_ALL_ATTRIB_BITS);
 				glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+				glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&this->_state.shaderProgramId));
 				glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_state.vertexBufferId));
 				glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&this->_state.indexBufferId));
-				glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&this->_state.shaderProgramId));
 				glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&this->_state.textureId));
 
 				return;
@@ -236,9 +235,9 @@ namespace hax {
 
 			void Backend::restoreState() const {
 				glBindTexture(GL_TEXTURE_2D, this->_state.textureId);
-				this->_f.pGlUseProgram(this->_state.shaderProgramId);
 				this->_f.pGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->_state.indexBufferId);
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_state.vertexBufferId);
+				this->_f.pGlUseProgram(this->_state.shaderProgramId);
 				glPopClientAttrib();
 				glPopAttrib();
 
