@@ -203,7 +203,7 @@ namespace hax {
 
 				if (!this->getViewport(&viewport)) return false;
 
-				if (viewport.Width != this->_viewport.Width || viewport.Height != this->_viewport.Height) {
+				if (this->viewportChanged(&viewport)) {
 					this->_viewport = viewport;
 
 					if (!this->updateConstantBuffer()) return false;
@@ -366,6 +366,14 @@ namespace hax {
 				}
 
 				return true;
+			}
+
+
+			bool Backend::viewportChanged(const D3D10_VIEWPORT* pViewport) const {
+				const bool topLeftChanged = pViewport->TopLeftX != this->_viewport.TopLeftX || pViewport->TopLeftY != this->_viewport.TopLeftY;
+				const bool dimensionChanged = pViewport->Width != this->_viewport.Width || pViewport->Height != this->_viewport.Height;
+
+				return topLeftChanged || dimensionChanged;
 			}
 
 
