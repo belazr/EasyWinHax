@@ -67,10 +67,12 @@ namespace hax {
 				GLint viewport[4]{};
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
-				if (viewport[2] != this->_viewport[2] || viewport[3] != this->_viewport[3]) {
+				if (this->viewportChanged(viewport)) {
+					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
+					
 					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-					this->_textureBufferBackend.initialize(this->_f, viewport, this->_shaderProgramTextureId);
+					this->_textureBufferBackend.initialize(this->_f, this->_viewport, this->_shaderProgramTextureId);
 
 					if (!this->_textureBufferBackend.capacity()) {
 
@@ -78,7 +80,7 @@ namespace hax {
 
 					}
 
-					this->_solidBufferBackend.initialize(this->_f, viewport, this->_shaderProgramPassthroughId);
+					this->_solidBufferBackend.initialize(this->_f, this->_viewport, this->_shaderProgramPassthroughId);
 
 					if (!this->_solidBufferBackend.capacity()) {
 
@@ -86,7 +88,6 @@ namespace hax {
 
 					}
 
-					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
 				}
 
 				glGetIntegerv(GL_DEPTH_FUNC, reinterpret_cast<GLint*>(&this->_depthFunc));
@@ -213,6 +214,14 @@ namespace hax {
 				this->_f.pGlDeleteShader(vertexShader);
 
 				return;
+			}
+
+
+			bool Backend::viewportChanged(const GLint* pViewport) const {
+				bool topLeftChanged = pViewport[0] != this->_viewport[0] || pViewport[1] != this->_viewport[1];
+				bool dimensionChanged = pViewport[2] != this->_viewport[2] || pViewport[3] != this->_viewport[3];
+				
+				return topLeftChanged || dimensionChanged;
 			}
 
 		}
