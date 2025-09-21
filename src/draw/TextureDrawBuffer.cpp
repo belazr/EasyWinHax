@@ -66,7 +66,7 @@ namespace hax {
 			this->_pLocalIndexBuffer = nullptr;
 			this->_pLocalVertexBuffer = nullptr;
 
-			if (!this->_pBufferBackend->begin()) {
+			if (!this->_pBufferBackend->prepare()) {
 				this->reset();
 				
 				return;
@@ -81,7 +81,6 @@ namespace hax {
 				index += count;
 			}
 
-			this->_pBufferBackend->end();
 			this->reset();
 			
 			return;

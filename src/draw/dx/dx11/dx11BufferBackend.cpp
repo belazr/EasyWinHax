@@ -118,7 +118,7 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::begin() {
+			bool BufferBackend::prepare() {
 				this->_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 
@@ -138,12 +138,6 @@ namespace hax {
 				}
 
 				this->_pContext->DrawIndexed(count, index, 0u);
-
-				return;
-			}
-
-
-			void BufferBackend::end() const {
 
 				return;
 			}

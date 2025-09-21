@@ -38,14 +38,13 @@ namespace hax {
 			this->_pLocalIndexBuffer = nullptr;
 			this->_pLocalVertexBuffer = nullptr;
 
-			if (!this->_pBufferBackend->begin()) {
+			if (!this->_pBufferBackend->prepare()) {
 				this->reset();
 				
 				return;
 			}
 		
 			this->_pBufferBackend->draw(0ull, 0u, this->_size);
-			this->_pBufferBackend->end();
 			this->reset();
 
 			return;

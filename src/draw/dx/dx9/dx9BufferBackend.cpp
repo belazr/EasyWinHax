@@ -101,7 +101,7 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::begin() {
+			bool BufferBackend::prepare() {
 				
 				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) return false;
 
@@ -121,12 +121,6 @@ namespace hax {
 
 				const UINT primitiveCount = count / 3u;
 				this->_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0u, 0u, count, index, primitiveCount);
-
-				return;
-			}
-
-
-			void BufferBackend::end() const {
 
 				return;
 			}
