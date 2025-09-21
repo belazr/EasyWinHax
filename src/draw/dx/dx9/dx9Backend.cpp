@@ -212,7 +212,7 @@ namespace hax {
 					return false;
 				}
 
-				if (!this->setVertexShaderConstant()) {
+				if (!this->setVertexShaderConstants()) {
 					this->restoreState();
 
 					return false;
@@ -361,19 +361,19 @@ namespace hax {
 			}
 
 
-			bool Backend::setVertexShaderConstant() {
+			bool Backend::setVertexShaderConstants() {
 				// adding .5f for mapping texels exactly to pixels
 				// https://learn.microsoft.com/en-us/windows/win32/direct3d9/directly-mapping-texels-to-pixels
-				const float viewLeft = static_cast<float>(this->_viewport.X) + .5f;
-				const float viewRight = static_cast<float>(this->_viewport.X + this->_viewport.Width);
-				const float viewTop = static_cast<float>(this->_viewport.Y) + .5f;
-				const float viewBottom = static_cast<float>(this->_viewport.Y + this->_viewport.Height);
+				const float left = static_cast<float>(this->_viewport.X) + .5f;
+				const float right = static_cast<float>(this->_viewport.X + this->_viewport.Width);
+				const float top = static_cast<float>(this->_viewport.Y) + .5f;
+				const float bottom = static_cast<float>(this->_viewport.Y + this->_viewport.Height);
 
 				const float ortho[]{
-					2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f,
-					0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f,
+					2.f / (right - left), 0.f, 0.f, 0.f,
+					0.f, 2.f / (top - bottom), 0.f, 0.f,
 					0.f, 0.f, .5f, 0.f,
-					(viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f
+					(left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f
 				};
 
 				return SUCCEEDED(this->_pDevice->SetVertexShaderConstantF(0u, ortho, 4u));

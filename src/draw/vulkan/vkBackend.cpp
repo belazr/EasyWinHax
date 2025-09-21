@@ -505,11 +505,7 @@ namespace hax {
 				const VkRect2D scissor{ { static_cast<int32_t>(this->_viewport.x), static_cast<int32_t>(this->_viewport.y) }, { static_cast<uint32_t>(this->_viewport.width), static_cast<uint32_t>(this->_viewport.height) } };
 				this->_f.pVkCmdSetScissor(this->_pCurFrameData->hCommandBuffer, 0u, 1u, &scissor);
 
-				const float scale[]{ 2.f / this->_viewport.width, 2.f / this->_viewport.height };
-				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
-
-				const float translate[]{ -1.f, -1.f };
-				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
+				this->setVertexShaderConstants();
 
 				return true;
 			}
@@ -1202,6 +1198,17 @@ namespace hax {
 				renderPassBeginInfo.renderArea.extent.width = static_cast<uint32_t>(this->_viewport.width);
 				renderPassBeginInfo.renderArea.extent.height = static_cast<uint32_t>(this->_viewport.height);
 				this->_f.pVkCmdBeginRenderPass(hCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+				return;
+			}
+
+
+			void Backend::setVertexShaderConstants() const {
+				const float scale[]{ 2.f / this->_viewport.width, 2.f / this->_viewport.height };
+				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(scale), scale);
+
+				const float translate[]{ -1.f, -1.f };
+				this->_f.pVkCmdPushConstants(this->_pCurFrameData->hCommandBuffer, this->_hPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(scale), sizeof(translate), translate);
 
 				return;
 			}

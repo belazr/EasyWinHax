@@ -386,7 +386,6 @@ namespace hax {
 
                 this->_pCommandList->ResourceBarrier(1u, &resourceBarrier);
                 this->_pCommandList->OMSetRenderTargets(1u, &this->_hRtvHeapStartDescriptor, FALSE, nullptr);
-                
                 this->_pCommandList->RSSetViewports(1u, &this->_viewport);
                 
                 const float left = this->_viewport.TopLeftX;
@@ -398,15 +397,7 @@ namespace hax {
                 this->_pCommandList->RSSetScissorRects(1u, &rect);
 
                 this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
-
-                const float ortho[]{
-                    2.f / (right - left), 0.f, 0.f, 0.f,
-                    0.f, 2.f / (top - bottom), 0.f, 0.f,
-                    0.f, 0.f, .5f, 0.f,
-                    (left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f
-                };
-
-                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, _countof(ortho), &ortho, 0u);
+                this->setVertexShaderConstants();
 
                 return true;
             }
@@ -729,6 +720,25 @@ namespace hax {
                 pViewport->MaxDepth = 1.f;
 
                 return true;
+            }
+
+
+            void Backend::setVertexShaderConstants() const {
+                const float left = this->_viewport.TopLeftX;
+                const float top = this->_viewport.TopLeftY;
+                const float right = this->_viewport.TopLeftX + this->_viewport.Width;
+                const float bottom = this->_viewport.TopLeftY + this->_viewport.Height;
+                
+                const float ortho[]{
+                    2.f / (right - left), 0.f, 0.f, 0.f,
+                    0.f, 2.f / (top - bottom), 0.f, 0.f,
+                    0.f, 0.f, .5f, 0.f,
+                    (left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f
+                };
+
+                this->_pCommandList->SetGraphicsRoot32BitConstants(0u, _countof(ortho), &ortho, 0u);
+
+                return;
             }
 
         }

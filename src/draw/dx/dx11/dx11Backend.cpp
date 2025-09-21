@@ -216,7 +216,7 @@ namespace hax {
 				if (this->viewportChanged(&viewport)) {
 					this->_viewport = viewport;
 
-					if (!this->updateConstantBuffer()) return false;
+					if (!this->setVertexShaderConstants()) return false;
 
 				}
 
@@ -386,17 +386,17 @@ namespace hax {
 			}
 
 
-			bool Backend::updateConstantBuffer() const {
-				const float viewLeft = this->_viewport.TopLeftX;
-				const float viewRight = this->_viewport.TopLeftX + this->_viewport.Width;
-				const float viewTop = this->_viewport.TopLeftY;
-				const float viewBottom = this->_viewport.TopLeftY + this->_viewport.Height;
+			bool Backend::setVertexShaderConstants() const {
+				const float left = this->_viewport.TopLeftX;
+				const float top = this->_viewport.TopLeftY;
+				const float right = this->_viewport.TopLeftX + this->_viewport.Width;
+				const float bottom = this->_viewport.TopLeftY + this->_viewport.Height;
 
-				const float ortho[][4]{
-					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
-					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
-					{ 0.f, 0.f, .5f, 0.f },
-					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+				const float ortho[]{
+					2.f / (right - left), 0.f, 0.f, 0.f,
+					0.f, 2.f / (top - bottom), 0.f, 0.f,
+					0.f, 0.f, .5f, 0.f,
+					(left + right) / (left - right), (top + bottom) / (bottom - top), .5f, 1.f
 				};
 
 				D3D11_MAPPED_SUBRESOURCE subresource{};
