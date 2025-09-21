@@ -113,7 +113,7 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::begin() {
+			bool BufferBackend::prepare() {
 				this->_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 
@@ -141,12 +141,6 @@ namespace hax {
 				}
 				
 				this->_pCommandList->DrawIndexedInstanced(count, 1u, index, 0, 0u);
-
-				return;
-			}
-
-
-			void BufferBackend::end() const {
 
 				return;
 			}

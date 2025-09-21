@@ -87,11 +87,11 @@ namespace hax {
 				// Unmaps the allocated VRAM from the address space of the current process.
 				virtual void unmap() override;
 
-				// Begins drawing of the content of the buffer. Has to be called before any draw calls.
+				// Prepares the buffer backend for drawing. Has to be called before any draw calls.
 				//
 				// Return:
 				// True on success, false on failure.
-				virtual bool begin() override;
+				virtual bool prepare() override;
 
 				// Draws a batch.
 				// 
@@ -107,12 +107,6 @@ namespace hax {
 				// [in] count:
 				// Vertex count in the batch.
 				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) const override;
-
-				// Ends drawing of the content of the buffer. Has to be called after any draw calls.
-				//
-				// Return:
-				// True on success, false on failure.
-				virtual void end() const override;
 
 			private:
 				bool createBuffer(GLenum target, GLenum binding, uint32_t size, GLuint* pId) const;

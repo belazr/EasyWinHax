@@ -146,7 +146,7 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::begin() {
+			bool BufferBackend::prepare() {
 				this->_f.pGlUseProgram(this->_shaderProgramId);
 				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
 
@@ -174,12 +174,6 @@ namespace hax {
 				}
 					
 				glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(index * sizeof(uint32_t)));
-
-				return;
-			}
-
-
-			void BufferBackend::end() const {
 
 				return;
 			}

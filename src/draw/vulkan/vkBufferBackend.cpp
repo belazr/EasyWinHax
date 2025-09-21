@@ -145,7 +145,7 @@ namespace hax {
 			}
 
 
-			bool BufferBackend::begin() {
+			bool BufferBackend::prepare() {
 				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 
 				constexpr VkDeviceSize OFFSET = 0ull;
@@ -163,12 +163,6 @@ namespace hax {
 				}
 				
 				this->_f.pVkCmdDrawIndexed(this->_hCommandBuffer, count, 1u, index, 0u, 0u);
-
-				return;
-			}
-
-
-			void BufferBackend::end() const {
 
 				return;
 			}
