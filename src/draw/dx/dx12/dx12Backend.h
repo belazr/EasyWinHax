@@ -152,6 +152,7 @@ namespace hax {
 				bool resizeFrameDataVector(UINT size);
 				bool createRenderTargetView(DXGI_FORMAT format);
 				bool getCurrentViewport(D3D12_VIEWPORT* pViewport) const;
+				void setVertexShaderConstants() const;
 			};
 
 		}

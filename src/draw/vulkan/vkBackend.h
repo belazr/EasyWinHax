@@ -158,6 +158,7 @@ namespace hax {
 				bool getCurrentViewport(VkViewport* pViewport) const;
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
+				void setVertexShaderConstants() const;
 			};
 
 		}

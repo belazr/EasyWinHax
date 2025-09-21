@@ -142,7 +142,7 @@ namespace hax {
 				bool saveState();
 				void restoreState();
 				void releaseState();
-				bool setVertexShaderConstant();
+				bool setVertexShaderConstants();
 
 			};
 

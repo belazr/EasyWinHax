@@ -166,7 +166,7 @@ namespace hax {
 				bool createBlendState();
 				bool getViewport(D3D10_VIEWPORT* pViewport) const;
 				bool viewportChanged(const D3D10_VIEWPORT* pViewport) const;
-				bool updateConstantBuffer() const;
+				bool setVertexShaderConstants() const;
 				void saveState();
 				void restoreState();
 				void releaseState();
