@@ -3,6 +3,7 @@
 #include "IBackend.h"
 #include "SolidDrawBuffer.h"
 #include "TextureDrawBuffer.h"
+//#include "..\..\..\Samples\ImGui\imgui.h"
 
 // Class for drawing within a graphics API hook.
 
@@ -262,6 +263,65 @@ namespace hax {
 			// [in] color:
 			// Line color. Color format: DirectX 9 -> argb, DirectX 11 -> abgr, OpenGL 2 -> abgr, Vulkan: application dependent
 			void draw3DBox(const Vector2 bot[4], const Vector2 top[4], float width, Color color);
+
+			
+			// Draws ImGui draw data to render an ImGui overlay.
+			// ImGui has to be set up properly in the hook.
+			// See demo.h for an example how to get a minimal setup working.
+			//
+			// Parameters:
+			//
+			// [in] pDrawData:
+			// Pointer to the ImGui draw data struct that has been filled with the vertex/index info of the overlay.
+			#ifdef IMGUI_VERSION
+
+			void drawImGuiDrawData(const ImDrawData* pDrawData) {
+
+				if (!this->_frame) return;
+				
+				for (int i = 0; i < pDrawData->Textures->size(); i++) {
+					ImTextureData* const pTexData = (*pDrawData->Textures)[i];
+
+					if (!pTexData->GetTexID()) {
+						const TextureId texId = this->_pBackend->loadTexture(reinterpret_cast<Color*>(pTexData->Pixels), pTexData->Width, pTexData->Height);
+
+						if (!texId) return;
+
+						pTexData->SetTexID(static_cast<ImTextureID>(texId));
+						pTexData->SetStatus(ImTextureStatus_OK);
+					}
+
+				}
+
+				for (int i = 0; i < pDrawData->CmdLists.size(); i++) {
+					const ImDrawList* const pList = pDrawData->CmdLists[i];
+
+					for (int j = 0; j < pList->CmdBuffer.size(); j++) {
+						const ImDrawCmd* const pCmd = &pList->CmdBuffer[j];
+						Vector<Vertex> vertices(pCmd->ElemCount);
+
+						for (unsigned int k = 0; k < pCmd->ElemCount; k++) {
+							// forcing a one-to-one correspondence between vertices and indices
+							// this is suboptimal since vertices might be duplicated but works with the draw buffer append function
+							const ImWchar index = pList->IdxBuffer[k + pCmd->IdxOffset];
+							vertices.append(
+								Vertex{
+									Vector2{pList->VtxBuffer[index].pos.x, pList->VtxBuffer[index].pos.y},
+									Color{pList->VtxBuffer[index].col},
+									Vector2{pList->VtxBuffer[index].uv.x, pList->VtxBuffer[index].uv.y}
+								}
+							);
+						}
+
+						this->_textureDrawBuffer.append(vertices.data(), static_cast<uint32_t>(vertices.size()), pCmd->GetTexID());
+					}
+
+				}
+
+				return;
+			}
+
+			#endif // IMGUI_VERSION
 
 			private:
 				Vector2 align(const Vector2* pos, Alignment alignment, float width, float height);
