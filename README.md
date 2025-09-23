@@ -64,10 +64,18 @@ The library provides a simple file loader class to load files from disk into mem
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
-The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IBackend interfaces.
+The library provides an Engine class that can be used to draw geometric shapes and text within a graphics API hook via the IBackend implementations.
 Currently there are implementations of the IBackend interface for DirectX 9, DirectX 10, DirectX 11 and DirectX 12 to draw from a Present hook, for OpenGL 2 to draw from a wglSwapBuffers hook and for Vulkan to draw from a vkQueuePresentKHR hook.
 Text rendering is done via a font atlas texture.
 See the headers in the "draw" folder for further documentation.
+#### Drawing ImGui overlays
+The Engine class also supports drawing of ImGui draw data via the Engine::drawImGuiDrawData function.
+The funtion only compiles if the ImGui header imgui.h is included before the Engine.h header. This is best achieved by including it before the hax.h in the source file that calls the function.
+The ImGui source files:
+imconfig.h, imgui.cpp, imgui.h, imgui_demo.cpp, imgui_draw.cpp, imgui_internal.h, imgui_tables.cpp, imgui_widgets.cpp
+also have to be included in the project to use ImGui.
+First ImGui has to be set up properly in the hook and then it can be used as in a normal application loop (ImGui::NewFrame() -> ImGui windows and widgets -> ImGui::EndFrame() -> ImGui::Render()).
+See the examples\demo.h header for a full example of drawing the ImGui demo window with the Engine class.
 ### Examples
 There are example projects that showcase the drawing engine and the tramp hook class. They can be found in the examples folder.
 Build the following projects:
@@ -83,13 +91,12 @@ and inject the built DLLs into a process that uses the respective graphics API.
 You can find a basic DLL injector built with this library here: https://github.com/belazr/JackieBlue.
 On process attach they start a thread that hooks the API and the hook then draws a demo to the screen.
 Press "END" to unhook and eject the DLL.
-There might be some issues if another overlay (e.g. Steam, RivaTuner, Discord) has already hooked the api.
+There might be some issues if another overlay (e.g. Steam, RivaTuner, Discord) has already hooked the API.
 In that case, inspect the beginning of the hooked function and adjust the parameters for the TrampHook in the dllmain.cpp of the example.
 ![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
 
 ## TODO
 - Backup and restore states in backends
-- Make IBackend interface compatible with ImGui frontend
 
 ## References
 - https://guidedhacking.com/
@@ -102,5 +109,6 @@ In that case, inspect the beginning of the hooked function and adjust the parame
 - https://www.codeproject.com/tips/139349/getting-the-address-of-a-function-in-a-dll-loaded
 
 ## Resources
+- https://github.com/ocornut/imgui (usage of types in the Engine class to draw ImGui overlays)
 - https://assault.cubers.net/ (game on screenshot)
 - https://pixabay.com/illustrations/wallpaper-black-design-background-967837/ (demo texture)
