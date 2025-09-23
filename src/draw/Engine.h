@@ -266,13 +266,14 @@ namespace hax {
 
 			
 			// Draws ImGui draw data to render an ImGui overlay.
-			// ImGui has to be set up properly in the hook.
+			// ImGui has to be set up properly before calling this function.
+			// Always include imgui.h before this file is included if this function should be called (e.g. by including imgui.h before hax.h).
 			// See demo.h for an example how to get a minimal setup working.
 			//
 			// Parameters:
 			//
 			// [in] pDrawData:
-			// Pointer to the ImGui draw data struct that has been filled with the vertex/index info of the overlay.
+			// Pointer to the ImGui draw data struct that has been filled with vertex/index data.
 			#ifdef IMGUI_VERSION
 
 			void drawImGuiDrawData(const ImDrawData* pDrawData) {
