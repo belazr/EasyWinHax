@@ -96,7 +96,7 @@ In that case, inspect the beginning of the hooked function and adjust the parame
 ![ewh_demo](https://github.com/user-attachments/assets/22807273-ed45-43bb-b9d4-6f8d12818eaa)
 
 ## TODO
-- Backup and restore states in backends
+- Nothing at the moment. Issues or requests are more than welcome!
 
 ## References
 - https://guidedhacking.com/
