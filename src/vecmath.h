@@ -47,6 +47,24 @@ namespace hax {
 
 	namespace vecmath {
 
+		// Rounds the components of the vector to the nearest intergert
+		// Only use with positive components.
+		//
+		// Parameters:
+		//
+		// [in] in:
+		// Vector to round.
+		//
+		// Return:
+		// Rounded vector.
+		constexpr Vector2 round(Vector2 in) {
+
+			return {
+				static_cast<float>(static_cast<int>(in.x + .5f)),
+				static_cast<float>(static_cast<int>(in.y + .5f))
+			};
+		}
+
 		// Adds one two dimensional vector to another.
 		// 
 		// Parameters:
@@ -144,6 +162,25 @@ namespace hax {
 		inline float magnitude(Vector2 vec) {
 
 			return sqrtf(dotProd(vec, vec));
+		}
+
+		// Rounds the components of the vector to the nearest intergert
+		// Only use with positive components.
+		//
+		// Parameters:
+		//
+		// [in] in:
+		// Vector to round.
+		//
+		// Return:
+		// Rounded vector.
+		constexpr Vector3 round(Vector3 in) {
+
+			return {
+				static_cast<float>(static_cast<int>(in.x + .5f)),
+				static_cast<float>(static_cast<int>(in.y + .5f)),
+				static_cast<float>(static_cast<int>(in.z + .5f))
+			};
 		}
 
 		// Adds one three dimensional vector to another.
