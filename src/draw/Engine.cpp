@@ -342,37 +342,37 @@ namespace hax {
 
 		Vector2 Engine::align(const Vector2* pos, Alignment alignment, float width, float height) {
 			// cast as int to truncate float values
-			const uint32_t halfWidth = static_cast<int>(width) / 2u;
-			const uint32_t halfHeight = static_cast<int>(height) / 2u;
+			const float halfWidth = width / 2.f;
+			const float halfHeight = height / 2.f;
 
 			switch (alignment) {
 			case hax::draw::TOP_LEFT:
 
-				return *pos;
+				return vecmath::round(*pos);
 			case hax::draw::TOP_CENTER:
 				
-				return { pos->x - halfWidth, pos->y };
+				return vecmath::round(Vector2{ pos->x - halfWidth, pos->y });
 			case hax::draw::TOP_RIGHT:
 				
-				return { pos->x - width, pos->y };
+				return vecmath::round(Vector2{ pos->x - width, pos->y });
 			case hax::draw::CENTER_LEFT:
 				
-				return { pos->x, pos->y - halfHeight };
+				return vecmath::round(Vector2{ pos->x, pos->y - halfHeight });
 			case hax::draw::CENTER:
 				
-				return { pos->x - halfWidth, pos->y - halfHeight };
+				return vecmath::round(Vector2{ pos->x - halfWidth, pos->y - halfHeight });
 			case hax::draw::CENTER_RIGHT:
 				
-				return { pos->x - width, pos->y - halfHeight };
+				return vecmath::round(Vector2{ pos->x - width, pos->y - halfHeight });
 			case hax::draw::BOTTOM_LEFT:
 				
-				return { pos->x, pos->y - height };
+				return vecmath::round(Vector2{ pos->x, pos->y - height });
 			case hax::draw::BOTTOM_CENTER:
 				
-				return { pos->x - halfWidth, pos->y - height };
+				return vecmath::round(Vector2{ pos->x - halfWidth, pos->y - height });
 			case hax::draw::BOTTOM_RIGHT:
 				
-				return { pos->x - width, pos->y - height };
+				return vecmath::round(Vector2{ pos->x - width, pos->y - height });
 			default:
 
 				return *pos;
