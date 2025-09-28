@@ -208,7 +208,7 @@ namespace hax {
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 0.f}
 					},
 					{
-						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y },
+						{ topLeft.x + (i + 1u) * this->_font.charWidth * sizeFactor, topLeft.y },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
 					},
@@ -218,7 +218,7 @@ namespace hax {
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
 					},
 					{
-						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y + this->_font.height * sizeFactor },
+						{ topLeft.x + (i + 1u) * this->_font.charWidth * sizeFactor, topLeft.y + this->_font.height * sizeFactor },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 1.f }
 					},
@@ -228,7 +228,7 @@ namespace hax {
 						{ this->_font.charWidth * curCharIndex / static_cast<float>(this->_font.width), 1.f }
 					},
 					{
-						{ topLeft.x + i * this->_font.charWidth * sizeFactor + this->_font.charWidth * sizeFactor, topLeft.y },
+						{ topLeft.x + (i + 1u) * this->_font.charWidth * sizeFactor, topLeft.y },
 						color,
 						{ this->_font.charWidth * (curCharIndex + 1u) / static_cast<float>(this->_font.width), 0.f }
 					}
