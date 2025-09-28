@@ -3,7 +3,6 @@
 #include "IBackend.h"
 #include "SolidDrawBuffer.h"
 #include "TextureDrawBuffer.h"
-//#include "..\..\..\Samples\ImGui\imgui.h"
 
 // Class for drawing within a graphics API hook.
 
