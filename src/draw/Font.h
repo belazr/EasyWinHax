@@ -1,6 +1,7 @@
 #pragma once
 #include "Color.h"
 #include "IBufferBackend.h"
+#include "..\vecmath.h"
 
 namespace hax {
 
@@ -12,6 +13,7 @@ namespace hax {
 			const uint32_t height;
 			const uint32_t charWidth;
 			TextureId textureId;
+			Vector2 uvWhiteTexel;
 		};
 
 		namespace fonts {
