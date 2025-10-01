@@ -11,7 +11,6 @@ namespace hax {
 			class BufferBackend : public IBufferBackend {
 			private:
 				ID3D10Device* _pDevice;
-				ID3D10PixelShader* _pPixelShader;
 				ID3D10Buffer* _pVertexBuffer;
 				ID3D10Buffer* _pIndexBuffer;
 
@@ -36,10 +35,7 @@ namespace hax {
 				// 
 				// [in] pDevice:
 				// Device of the backend.
-				//
-				// [in] pPixelShader:
-				// Pixel shader for drawing the vertices.
-				void initialize(ID3D10Device* pDevice, ID3D10PixelShader* pPixelShader);
+				void initialize(ID3D10Device* pDevice);
 
 				// Creates internal resources.
 				//
