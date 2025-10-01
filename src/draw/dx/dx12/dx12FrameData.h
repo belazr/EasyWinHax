@@ -9,13 +9,12 @@ namespace hax {
 
 			struct FrameData {
 				ID3D12CommandAllocator* pCommandAllocator;
-				BufferBackend textureBufferBackend;
-				BufferBackend solidBufferBackend;
+				BufferBackend bufferBackend;
 				HANDLE hEvent;
 
 				FrameData();
 
-				FrameData(FrameData&& fd) noexcept;
+				FrameData(FrameData&& fd) noexcept = default;
 
 				FrameData(const FrameData&) = delete;
 				FrameData& operator=(FrameData&&) = delete;
@@ -33,15 +32,9 @@ namespace hax {
 				// [in] pCommandList:
 				// Command list of the backend.
 				//
-				// [in] pPipelineStateTexture:
-				// Pipeline state with primitive topology for triangles and a texture pixel shader.
-				//
-				// [in] pPipelineStatePassthrough:
-				// Pipeline state with primitive topology for triangles and a passthrough pixel shader.
-				//
 				// Return:
 				// True on success, false on failure.
-				bool create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineStateTexture, ID3D12PipelineState* pPipelineStatePassthrough);
+				bool create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList);
 
 
 				// Destroys all internal resources.
