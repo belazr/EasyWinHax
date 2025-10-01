@@ -38,7 +38,7 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_textureDrawBuffer.beginFrame(this->_pBackend->getTextureBufferBackend())) {
+			if (!this->_drawBuffer.beginFrame(this->_pBackend->getTextureBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
@@ -54,7 +54,7 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
-			this->_textureDrawBuffer.endFrame();
+			this->_drawBuffer.endFrame();
 			this->_pBackend->endFrame();
 
 			this->_frame = false;
@@ -102,7 +102,7 @@ namespace hax {
 				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
+			this->_drawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
@@ -135,7 +135,7 @@ namespace hax {
 				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
+			this->_drawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
@@ -154,7 +154,7 @@ namespace hax {
 				{ { topLeft.x + width, topLeft.y }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
+			this->_drawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
@@ -173,7 +173,7 @@ namespace hax {
 				{ { topLeft.x + width, topLeft.y }, abgr::WHITE, { 1.f, 0.f }  }
 			};
 
-			this->_textureDrawBuffer.append(corners, _countof(corners), textureId);
+			this->_drawBuffer.append(corners, _countof(corners), textureId);
 
 			return;
 		}
@@ -227,7 +227,7 @@ namespace hax {
 					}
 				};
 
-				this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
+				this->_drawBuffer.append(corners, _countof(corners), this->_font.textureId);
 			}
 
 			return;

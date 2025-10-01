@@ -1,7 +1,7 @@
 #pragma once
 #include "Font.h"
 #include "IBackend.h"
-#include "TextureDrawBuffer.h"
+#include "DrawBuffer.h"
 
 // Class for drawing within a graphics API hook.
 
@@ -19,7 +19,7 @@ namespace hax {
 		private:
 			IBackend* const _pBackend;
 			
-			TextureDrawBuffer _textureDrawBuffer;
+			DrawBuffer _drawBuffer;
 			Font _font;
 
 			bool _init;
@@ -310,7 +310,7 @@ namespace hax {
 							);
 						}
 
-						this->_textureDrawBuffer.append(vertices.data(), static_cast<uint32_t>(vertices.size()), pCmd->GetTexID());
+						this->_drawBuffer.append(vertices.data(), static_cast<uint32_t>(vertices.size()), pCmd->GetTexID());
 					}
 
 				}

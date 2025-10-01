@@ -22,7 +22,6 @@
     <ClInclude Include="src\draw\dx\dx10\dx10Shaders.h" />
     <ClInclude Include="src\draw\dx\dx11\dx11Shaders.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12FrameData.h" />
-    <ClInclude Include="src\draw\SolidDrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12Shaders.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9Shaders.h" />
     <ClInclude Include="src\draw\Font.h" />
@@ -31,7 +30,6 @@
     <ClInclude Include="src\draw\dx\dx11\dx11BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx10\dx10BufferBackend.h" />
     <ClInclude Include="src\draw\dx\dx9\dx9BufferBackend.h" />
-    <ClInclude Include="src\draw\AbstractDrawBuffer.h" />
     <ClInclude Include="src\draw\dx\dx10\dx10Backend.h" />
     <ClInclude Include="src\draw\dx\dx12\dx12Backend.h" />
     <ClInclude Include="src\draw\IBufferBackend.h" />
@@ -43,7 +41,7 @@
     <ClInclude Include="src\draw\ogl2\ogl2Backend.h" />
     <ClInclude Include="src\draw\Color.h" />
     <ClInclude Include="src\draw\ogl2\ogl2Shaders.h" />
-    <ClInclude Include="src\draw\TextureDrawBuffer.h" />
+    <ClInclude Include="src\draw\DrawBuffer.h" />
     <ClInclude Include="src\draw\Vertex.h" />
     <ClInclude Include="src\draw\vulkan\include\vk_platform.h" />
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />
@@ -66,7 +64,6 @@
     <ClInclude Include="src\draw\vulkan\vkFrameData.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\draw\SolidDrawBuffer.cpp" />
     <ClCompile Include="src\draw\dx\dx12\dx12FrameData.cpp" />
     <ClCompile Include="src\draw\fonts\inconsolata.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2BufferBackend.cpp" />
@@ -80,7 +77,7 @@
     <ClCompile Include="src\draw\Engine.cpp" />
     <ClCompile Include="src\draw\dx\dx9\dx9Backend.cpp" />
     <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp" />
-    <ClCompile Include="src\draw\TextureDrawBuffer.cpp" />
+    <ClCompile Include="src\draw\DrawBuffer.cpp" />
     <ClCompile Include="src\draw\vulkan\vkFrameData.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />

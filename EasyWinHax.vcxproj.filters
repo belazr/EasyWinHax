@@ -96,9 +96,6 @@
     <ClInclude Include="src\draw\IBufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\draw\AbstractDrawBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\draw\dx\dx9\dx9BufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -117,10 +114,7 @@
     <ClInclude Include="src\draw\vulkan\vkBufferBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\draw\TextureDrawBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\draw\SolidDrawBuffer.h">
+    <ClInclude Include="src\draw\DrawBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\draw\dx\dx12\dx12FrameData.h">
@@ -215,10 +209,7 @@
     <ClCompile Include="src\draw\vulkan\vkBufferBackend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\draw\TextureDrawBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\draw\SolidDrawBuffer.cpp">
+    <ClCompile Include="src\draw\DrawBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\draw\vulkan\vkFrameData.cpp">
