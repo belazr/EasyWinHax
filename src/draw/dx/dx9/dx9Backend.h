@@ -46,14 +46,12 @@ namespace hax {
 				IDirect3DDevice9* _pDevice;
 				IDirect3DVertexDeclaration9* _pVertexDeclaration;
 				IDirect3DVertexShader9* _pVertexShader;
-				IDirect3DPixelShader9* _pPixelShaderPassthrough;
-				IDirect3DPixelShader9* _pPixelShaderTexture;
+				IDirect3DPixelShader9* _pPixelShader;
 				D3DVIEWPORT9 _viewport;
 
 				State _state;
 
-				BufferBackend _textureBufferBackend;
-				BufferBackend _solidBufferBackend;
+				BufferBackend _bufferBackend;
 
 				Vector<IDirect3DTexture9*> _textures;
 
