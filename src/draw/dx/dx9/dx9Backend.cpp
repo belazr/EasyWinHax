@@ -41,21 +41,16 @@ namespace hax {
 			}
 
 
-			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{}, _viewport{}, _state{} {}
+			Backend::Backend() : _pDevice{}, _pVertexDeclaration{}, _pVertexShader{}, _pPixelShader{}, _viewport{}, _state{} {}
 
 
 			Backend::~Backend() {
 				this->releaseState();
 
-				this->_solidBufferBackend.destroy();
-				this->_textureBufferBackend.destroy();
+				this->_bufferBackend.destroy();
 
-				if (this->_pPixelShaderPassthrough) {
-					this->_pPixelShaderPassthrough->Release();
-				}
-
-				if (this->_pPixelShaderTexture) {
-					this->_pPixelShaderTexture->Release();
+				if (this->_pPixelShader) {
+					this->_pPixelShader->Release();
 				}
 
 				if (this->_pVertexShader) {
@@ -94,19 +89,11 @@ namespace hax {
 
 				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->_textureBufferBackend.initialize(this->_pDevice, this->_pPixelShaderTexture);
+				this->_bufferBackend.initialize(this->_pDevice);
 
-				if (!this->_textureBufferBackend.capacity()) {
+				if (!this->_bufferBackend.capacity()) {
 
-					if (!this->_textureBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
-
-				}
-
-				this->_solidBufferBackend.initialize(this->_pDevice, this->_pPixelShaderPassthrough);
-
-				if (!this->_solidBufferBackend.capacity()) {
-
-					if (!this->_solidBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
+					if (!this->_bufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
@@ -212,6 +199,12 @@ namespace hax {
 					return false;
 				}
 
+				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) {
+					this->restoreState();
+
+					return false;
+				}
+
 				if (!this->setVertexShaderConstants()) {
 					this->restoreState();
 
@@ -263,15 +256,9 @@ namespace hax {
 
 				}
 
-				if (!this->_pPixelShaderTexture) {
+				if (!this->_pPixelShader) {
 
-					if (FAILED(this->_pDevice->CreatePixelShader(reinterpret_cast<const DWORD*>(PIXEL_SHADER_TEXTURE), &this->_pPixelShaderTexture))) return false;
-
-				}
-				
-				if (!this->_pPixelShaderPassthrough) {
-
-					if (FAILED(this->_pDevice->CreatePixelShader(reinterpret_cast<const DWORD*>(PIXEL_SHADER_PASSTHROUGH), &this->_pPixelShaderPassthrough))) return false;
+					if (FAILED(this->_pDevice->CreatePixelShader(reinterpret_cast<const DWORD*>(PIXEL_SHADER), &this->_pPixelShader))) return false;
 
 				}
 

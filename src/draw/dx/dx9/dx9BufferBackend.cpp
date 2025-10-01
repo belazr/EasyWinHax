@@ -6,7 +6,7 @@ namespace hax {
 
 		namespace dx9 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pPixelShader{}, _pVertexBuffer{}, _pIndexBuffer{}, _capacity{} {}
+			BufferBackend::BufferBackend() : _pDevice{}, _pVertexBuffer{}, _pIndexBuffer{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -16,9 +16,8 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(IDirect3DDevice9* pDevice, IDirect3DPixelShader9* pPixelShader) {
+			void BufferBackend::initialize(IDirect3DDevice9* pDevice) {
 				this->_pDevice = pDevice;
-				this->_pPixelShader = pPixelShader;
 
 				return;
 			}
@@ -103,8 +102,6 @@ namespace hax {
 
 			bool BufferBackend::prepare() {
 				
-				if (FAILED(this->_pDevice->SetPixelShader(this->_pPixelShader))) return false;
-
 				if (FAILED(this->_pDevice->SetStreamSource(0u, this->_pVertexBuffer, 0u, sizeof(Vertex)))) return false;
 
 				if (FAILED(this->_pDevice->SetIndices(this->_pIndexBuffer))) return false;
