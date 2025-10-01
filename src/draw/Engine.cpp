@@ -12,7 +12,7 @@ namespace hax {
 		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
 
 			if (!this->_init) return 0ull;
-			
+
 			return this->_pBackend->loadTexture(data, width, height);
 		}
 
@@ -101,15 +101,15 @@ namespace hax {
 			}
 
 			const Vertex corners[]{
-				{ { pos1->x - cosAtan, pos1->y - sinAtan }, color },
-				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color },
-				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color },
-				{ { pos2->x + cosAtan, pos2->y + sinAtan }, color },
-				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color },
-				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color }
+				{ { pos1->x - cosAtan, pos1->y - sinAtan }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color, this->_font.uvWhiteTexel },
+				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x + cosAtan, pos2->y + sinAtan }, color, this->_font.uvWhiteTexel },
+				{ { pos1->x + cosAtan, pos1->y + sinAtan }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x - cosAtan, pos2->y - sinAtan }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_solidDrawBuffer.append(corners, _countof(corners));
+			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
@@ -134,15 +134,15 @@ namespace hax {
 			}
 
 			const Vertex corners[]{
-				{ { pos1->x - cosAtan - omega * sinAtan, pos1->y }, color },
-				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color },
-				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color },
-				{ { pos2->x + cosAtan + omega * sinAtan, pos2->y }, color },
-				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color },
-				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color }
+				{ { pos1->x - cosAtan - omega * sinAtan, pos1->y }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color, this->_font.uvWhiteTexel },
+				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x + cosAtan + omega * sinAtan, pos2->y }, color, this->_font.uvWhiteTexel },
+				{ { pos1->x + cosAtan + omega * sinAtan, pos1->y }, color, this->_font.uvWhiteTexel },
+				{ { pos2->x - cosAtan - omega * sinAtan, pos2->y }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_solidDrawBuffer.append(corners, _countof(corners));
+			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
@@ -153,15 +153,15 @@ namespace hax {
 			const Vector2 topLeft = this->align(pos, alignment, width, height);
 
 			const Vertex corners[]{
-				{ { topLeft.x, topLeft.y }, color },
-				{ { topLeft.x + width, topLeft.y }, color },
-				{ { topLeft.x, topLeft.y + height }, color },
-				{ { topLeft.x + width, topLeft.y + height }, color },
-				{ { topLeft.x, topLeft.y + height }, color },
-				{ { topLeft.x + width, topLeft.y }, color }
+				{ { topLeft.x, topLeft.y }, color, this->_font.uvWhiteTexel },
+				{ { topLeft.x + width, topLeft.y }, color, this->_font.uvWhiteTexel },
+				{ { topLeft.x, topLeft.y + height }, color, this->_font.uvWhiteTexel },
+				{ { topLeft.x + width, topLeft.y + height }, color, this->_font.uvWhiteTexel },
+				{ { topLeft.x, topLeft.y + height }, color, this->_font.uvWhiteTexel },
+				{ { topLeft.x + width, topLeft.y }, color, this->_font.uvWhiteTexel }
 			};
 
-			this->_solidDrawBuffer.append(corners, _countof(corners));
+			this->_textureDrawBuffer.append(corners, _countof(corners), this->_font.textureId);
 		}
 
 
