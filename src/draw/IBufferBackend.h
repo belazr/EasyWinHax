@@ -2,9 +2,9 @@
 #include "Vertex.h"
 #include <stdint.h>
 
-// Interface the SolidDrawBuffer and TextureDrawBuffer classes use for drawing the buffer content.
-// The appropriate implementation is instantiated by the Backend and passed to a SolidDrawBuffer or TextureDrawBuffer object by the Engine object.
-// All methods are intended to be called by a SolidDrawBuffer or TextureDrawBuffer object and not for direct calls.
+// Interface the DrawBuffer class uses for drawing the buffer content.
+// The appropriate implementation is instantiated by the Backend and passed to a DrawBuffer object by the Engine object.
+// All methods are intended to be called by a DrawBuffer object and not for direct calls.
 
 namespace hax {
 

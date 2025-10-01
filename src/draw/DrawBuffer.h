@@ -1,5 +1,7 @@
 #pragma once
-#include "AbstractDrawBuffer.h"
+#include "IBufferBackend.h"
+#include "Vertex.h"
+
 #include "..\Vector.h"
 
 // Class for draw buffers that draw with textures. It keeps track of the indices per texture and rearranges them for one draw call per texture.
@@ -9,7 +11,7 @@ namespace hax {
 
 	namespace draw {
 	
-		class TextureDrawBuffer : public AbstractDrawBuffer {
+		class DrawBuffer {
 		private:
 			typedef struct TextureBatch {
 				TextureId id;
@@ -18,16 +20,36 @@ namespace hax {
 
 			Vector<TextureBatch> _textures;
 
+			IBufferBackend* _pBufferBackend;
+			Vertex* _pLocalVertexBuffer;
+			uint32_t* _pLocalIndexBuffer;
+
+			uint32_t _size;
+			uint32_t _capacity;
+
 		public:
-			TextureDrawBuffer();
+			DrawBuffer();
 
-			TextureDrawBuffer(TextureDrawBuffer&&) = delete;
+			~DrawBuffer();
 
-			TextureDrawBuffer(const TextureDrawBuffer&) = delete;
+			DrawBuffer(DrawBuffer&&) = delete;
 
-			TextureDrawBuffer& operator=(TextureDrawBuffer&&) = delete;
+			DrawBuffer(const DrawBuffer&) = delete;
 
-			TextureDrawBuffer& operator=(const TextureDrawBuffer&) = delete;
+			DrawBuffer& operator=(DrawBuffer&&) = delete;
+
+			DrawBuffer& operator=(const DrawBuffer&) = delete;
+
+			// Begins the frame for the buffer. Has to be called before any append calls.
+			//
+			// Parameters:
+			// 
+			// [in] pBufferBackend:
+			// Backend for the buffer retrieved from the engine backend.
+			//
+			// Return:
+			// True on success, false on failure.
+			bool beginFrame(IBufferBackend* pBufferBackend);
 
 			// Appends vertices to the buffer.
 			//
@@ -47,8 +69,11 @@ namespace hax {
 			void append(const Vertex* data, uint32_t count, TextureId textureId);
 
 			// Ends the frame for the buffer and draws the contents. Has to be called after any append calls.
-			void endFrame() override;
+			void endFrame();
 
+		private:
+			void reset();
+			bool reserve(uint32_t capacity);
 		};
 
 	}
