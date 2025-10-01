@@ -6,7 +6,7 @@ namespace hax {
 	namespace draw {
 
 		Engine::Engine(IBackend* pBackend, Font font) :
-			_textureDrawBuffer{}, _solidDrawBuffer{}, _font{ font }, _pBackend{ pBackend }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
+			_pBackend{ pBackend }, _font{ font }, _init{}, _frame{}, frameWidth {}, frameHeight{} {}
 
 
 		TextureId Engine::loadTexture(const Color* data, uint32_t width, uint32_t height) {
@@ -44,12 +44,6 @@ namespace hax {
 				return;
 			}
 
-			if (!this->_solidDrawBuffer.beginFrame(this->_pBackend->getSolidBufferBackend())) {
-				this->_pBackend->endFrame();
-
-				return;
-			}
-
 			this->_frame = true;
 			
 			return;
@@ -60,7 +54,6 @@ namespace hax {
 			
 			if (!this->_frame) return;
 			
-			this->_solidDrawBuffer.endFrame();
 			this->_textureDrawBuffer.endFrame();
 			this->_pBackend->endFrame();
 
