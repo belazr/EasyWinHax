@@ -135,17 +135,11 @@ namespace hax {
 				// Ends the current frame within a hook. Should be called by an Engine object every frame at the end of the hook.
 				virtual void endFrame() override;
 
-				// Gets a reference to the texture buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
+				// Gets a pointer to the buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
 				// 
 				// Return:
-				// Pointer to the texture buffer backend.
-				virtual IBufferBackend* getTextureBufferBackend()  override;
-
-				// Gets a reference to the solid buffer backend. It is the responsibility of the backend to dispose of the buffer backend properly.
-				// 
-				// Return:
-				// Pointer to the solid buffer backend.
-				virtual IBufferBackend* getSolidBufferBackend()  override;
+				// Pointer to the buffer backend.
+				virtual IBufferBackend* getBufferBackend()  override;
 
 				// Gets the resolution of the current frame. Should be called by an Engine object.
 				//
