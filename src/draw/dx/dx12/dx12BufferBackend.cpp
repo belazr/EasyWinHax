@@ -6,17 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			BufferBackend::BufferBackend() : _pDevice{}, _pCommandList{}, _pPipelineState{}, _pVertexBufferResource{}, _pIndexBufferResource{}, _capacity{} {}
-
-			
-			BufferBackend::BufferBackend(BufferBackend&& bb) noexcept :
-				_pDevice{ bb._pDevice }, _pCommandList{ bb._pCommandList }, _pPipelineState{ bb._pPipelineState }, _pVertexBufferResource{ bb._pVertexBufferResource },
-				_pIndexBufferResource{ bb._pIndexBufferResource }, _capacity{ bb._capacity } {
-				bb._pVertexBufferResource = nullptr;
-				bb._pIndexBufferResource = nullptr;
-
-				return;
-			}
+			BufferBackend::BufferBackend() : _pDevice{}, _pCommandList{}, _pVertexBufferResource{}, _pIndexBufferResource{}, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -26,10 +16,9 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState) {
+			void BufferBackend::initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList) {
 				this->_pDevice = pDevice;
 				this->_pCommandList = pCommandList;
-				this->_pPipelineState = pPipelineState;
 
 				return;
 			}
@@ -115,7 +104,6 @@ namespace hax {
 
 			bool BufferBackend::prepare() {
 				this->_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				this->_pCommandList->SetPipelineState(this->_pPipelineState);
 
 				D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 				vertexBufferView.BufferLocation = this->_pVertexBufferResource->GetGPUVirtualAddress();

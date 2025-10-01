@@ -140,8 +140,8 @@ namespace hax {
             Backend::Backend() :
                 _pSwapChain{}, _pCommandQueue{}, _hMainWindow{}, _pDevice{}, _pTextureCommandAllocator{}, _pTextureCommandList{}, _pCommandList{},
                 _pRtvDescriptorHeap{}, _hRtvHeapStartDescriptor{}, _pSrvDescriptorHeap{}, _hSrvHeapStartCpuDescriptor{}, _hSrvHeapStartGpuDescriptor{},
-                _srvHeapDescriptorIncrementSize{}, _pRootSignature{}, _pPipelineStateTexture{}, _pPipelineStatePassthrough {},
-				_pFence{}, _viewport{}, _pRtvResource{}, _frameDataVector{}, _curBackBufferIndex{}, _pCurFrameData{}, _textures{} {}
+                _srvHeapDescriptorIncrementSize{}, _pRootSignature{}, _pPipelineState{}, _pFence{}, _viewport{}, _pRtvResource{},
+                _frameDataVector{}, _curBackBufferIndex{}, _pCurFrameData{} {}
 
 
             Backend::~Backend() {
@@ -154,12 +154,8 @@ namespace hax {
                     this->_pFence->Release();
                 }
 
-                if (this->_pPipelineStatePassthrough) {
-                    this->_pPipelineStatePassthrough->Release();
-                }
-
-                if (this->_pPipelineStateTexture) {
-                    this->_pPipelineStateTexture->Release();
+                if (this->_pPipelineState) {
+                    this->_pPipelineState->Release();
                 }
 
                 if (this->_pRootSignature) {
@@ -242,21 +238,11 @@ namespace hax {
 
                 }
 
-                if (!this->_pPipelineStateTexture) {
+                if (!this->_pPipelineState) {
 
-                    this->_pPipelineStateTexture = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE) });
+                    if (!this->createPipelineState()) return true;;
 
                 }
-
-                if (!this->_pPipelineStateTexture) return false;
-
-                if (!this->_pPipelineStatePassthrough) {
-                    
-					this->_pPipelineStatePassthrough = this->createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, { PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH) });
-                    
-                }
-
-                if (!this->_pPipelineStatePassthrough) return false;
 
                 if (!this->_pFence) {
                     
@@ -397,6 +383,7 @@ namespace hax {
                 this->_pCommandList->RSSetScissorRects(1u, &rect);
 
                 this->_pCommandList->SetGraphicsRootSignature(this->_pRootSignature);
+                this->_pCommandList->SetPipelineState(this->_pPipelineState);
                 this->setVertexShaderConstants();
 
                 return true;
@@ -430,7 +417,7 @@ namespace hax {
 
             IBufferBackend* Backend::getBufferBackend() {
 
-                return &this->_pCurFrameData->textureBufferBackend;
+                return &this->_pCurFrameData->bufferBackend;
             }
 
 
@@ -548,10 +535,10 @@ namespace hax {
             }
             
             
-            ID3D12PipelineState* Backend::createPipelineState(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology, D3D12_SHADER_BYTECODE pixelShader) const {
+            bool Backend::createPipelineState() {
                 DXGI_SWAP_CHAIN_DESC swapchainDesc{};
 
-                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return nullptr;
+                if (FAILED(this->_pSwapChain->GetDesc(&swapchainDesc))) return false;
 
                 constexpr D3D12_INPUT_ELEMENT_DESC INPUT_LAYOUT[]{
                     { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0u },
@@ -586,8 +573,8 @@ namespace hax {
 
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
                 pipelineStateDesc.VS = { VERTEX_SHADER, sizeof(VERTEX_SHADER) };
-                pipelineStateDesc.PS = pixelShader;
-                pipelineStateDesc.PrimitiveTopologyType = topology;
+                pipelineStateDesc.PS = { PIXEL_SHADER, sizeof(PIXEL_SHADER) };
+                pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
                 pipelineStateDesc.pRootSignature = this->_pRootSignature;
                 pipelineStateDesc.SampleMask = UINT_MAX;
                 pipelineStateDesc.NumRenderTargets = 1u;
@@ -597,12 +584,8 @@ namespace hax {
                 pipelineStateDesc.BlendState = blendDesc;
                 pipelineStateDesc.RasterizerState = rasterizerDesc;
                 pipelineStateDesc.DepthStencilState = depthStencilDesc;
-
-                ID3D12PipelineState* pPipelineState = nullptr;
-
-                if (FAILED(this->_pDevice->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pPipelineState)))) return nullptr;
                 
-                return pPipelineState;
+                return SUCCEEDED(this->_pDevice->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&this->_pPipelineState)));
             }
 
 
@@ -676,7 +659,7 @@ namespace hax {
 
                 for (UINT i = 0u; i < size; i++) {
                     
-                    if (!this->_frameDataVector[i].create(this->_pDevice, this->_pCommandList, this->_pPipelineStateTexture, this->_pPipelineStatePassthrough)) {
+                    if (!this->_frameDataVector[i].create(this->_pDevice, this->_pCommandList)) {
                         this->_frameDataVector.resize(0u);
 
                         return false;

@@ -6,15 +6,7 @@ namespace hax {
 
 		namespace dx12 {
 
-			FrameData::FrameData() : pCommandAllocator{}, textureBufferBackend{}, solidBufferBackend{}, hEvent{} {}
-
-
-			FrameData::FrameData(FrameData&& fd) noexcept :
-				pCommandAllocator{ fd.pCommandAllocator }, textureBufferBackend{ static_cast<BufferBackend&&>(fd.textureBufferBackend) },
-				solidBufferBackend{ static_cast<BufferBackend&&>(fd.solidBufferBackend) }, hEvent{ fd.hEvent } {
-				fd.pCommandAllocator = nullptr;
-				fd.hEvent = nullptr;
-			};
+			FrameData::FrameData() : pCommandAllocator{}, bufferBackend{}, hEvent{} {}
 
 
 			FrameData::~FrameData() {
@@ -24,7 +16,7 @@ namespace hax {
 			}
 
 
-			bool FrameData::create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineStateTexture, ID3D12PipelineState* pPipelineStatePassthrough) {
+			bool FrameData::create(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList) {
 				
 				if (FAILED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&this->pCommandAllocator)))) {
 					this->destroy();
@@ -34,17 +26,9 @@ namespace hax {
 
 				constexpr size_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->textureBufferBackend.initialize(pDevice, pCommandList, pPipelineStateTexture);
+				this->bufferBackend.initialize(pDevice, pCommandList);
 
-				if (!this->textureBufferBackend.create(INITIAL_BUFFER_SIZE)) {
-					this->destroy();
-
-					return false;
-				}
-
-				this->solidBufferBackend.initialize(pDevice, pCommandList, pPipelineStatePassthrough);
-
-				if (!this->solidBufferBackend.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->bufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
@@ -70,8 +54,7 @@ namespace hax {
 					this->hEvent = nullptr;
 				}
 
-				this->solidBufferBackend.destroy();
-				this->textureBufferBackend.destroy();
+				this->bufferBackend.destroy();
 
 				if (this->pCommandAllocator) {
 					this->pCommandAllocator->Release();

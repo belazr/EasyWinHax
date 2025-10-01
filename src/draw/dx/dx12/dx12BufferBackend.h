@@ -12,7 +12,6 @@ namespace hax {
 			private:
 				ID3D12Device* _pDevice;
 				ID3D12GraphicsCommandList* _pCommandList;
-				ID3D12PipelineState* _pPipelineState;
 				ID3D12Resource* _pVertexBufferResource;
 				ID3D12Resource* _pIndexBufferResource;
 
@@ -21,7 +20,7 @@ namespace hax {
 			public:
 				BufferBackend();
 
-				BufferBackend(BufferBackend&& bb) noexcept;
+				BufferBackend(BufferBackend&& bb) noexcept = default;
 
 				BufferBackend(const BufferBackend&) = delete;
 
@@ -40,10 +39,7 @@ namespace hax {
 				//
 				// [in] pCommandList:
 				// Command list of the backend.
-				//
-				// [in] pPipelineState:
-				// Pipeline state of the backend.
-				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList, ID3D12PipelineState* pPipelineState);
+				void initialize(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList);
 
 				// Creates internal resources.
 				//
@@ -63,7 +59,7 @@ namespace hax {
 				//
 				// Return:
 				// The current capacity of the buffer in vertices.
-				virtual uint32_t capacity() const override;
+				uint32_t capacity() const override;
 
 				// Maps the allocated VRAM into the address space of the current process.
 				// 
@@ -81,13 +77,13 @@ namespace hax {
 				bool map(Vertex** ppLocalVertexBuffer, uint32_t** ppLocalIndexBuffer) override;
 
 				// Unmaps the allocated VRAM from the address space of the current process.
-				virtual void unmap() override;
+				void unmap() override;
 
 				// Prepares the buffer backend for drawing. Has to be called before any draw calls.
 				//
 				// Return:
 				// True on success, false on failure.
-				virtual bool prepare() override;
+				bool prepare() override;
 
 				// Draws a batch.
 				// 
@@ -102,7 +98,7 @@ namespace hax {
 				// 
 				// [in] count:
 				// Vertex count in the batch.
-				virtual void draw(TextureId textureId, uint32_t index, uint32_t count) const override;
+				void draw(TextureId textureId, uint32_t index, uint32_t count) const override;
 
 			private:
 				bool createBuffer(ID3D12Resource** ppBufferResource, uint32_t size) const;
