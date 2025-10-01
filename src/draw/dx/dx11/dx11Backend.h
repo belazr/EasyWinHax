@@ -69,8 +69,7 @@ namespace hax {
 				ID3D11DeviceContext* _pContext;
 				ID3D11InputLayout* _pInputLayout;
 				ID3D11VertexShader* _pVertexShader;
-				ID3D11PixelShader* _pPixelShaderTexture;
-				ID3D11PixelShader* _pPixelShaderPassthrough;
+				ID3D11PixelShader* _pPixelShader;
 				ID3D11Buffer* _pConstantBuffer;
 				ID3D11SamplerState* _pSamplerState;
 				ID3D11BlendState* _pBlendState;
@@ -79,8 +78,7 @@ namespace hax {
 
 				State _state;
 				
-				BufferBackend _textureBufferBackend;
-				BufferBackend _solidBufferBackend;
+				BufferBackend _bufferBackend;
 
 				Vector<TextureData> _textures;
 
