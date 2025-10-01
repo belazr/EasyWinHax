@@ -101,15 +101,9 @@ namespace hax {
 			}
 
 
-			IBufferBackend* Backend::getTextureBufferBackend() {
+			IBufferBackend* Backend::getBufferBackend() {
 
 				return &this->_textureBufferBackend;
-			}
-
-
-			IBufferBackend* Backend::getSolidBufferBackend()  {
-
-				return &this->_solidBufferBackend;
 			}
 
 

@@ -38,7 +38,7 @@ namespace hax {
 
 			this->_pBackend->getFrameResolution(&this->frameWidth, &this->frameHeight);
 
-			if (!this->_drawBuffer.beginFrame(this->_pBackend->getTextureBufferBackend())) {
+			if (!this->_drawBuffer.beginFrame(this->_pBackend->getBufferBackend())) {
 				this->_pBackend->endFrame();
 
 				return;
