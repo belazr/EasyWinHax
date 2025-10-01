@@ -12,10 +12,8 @@ namespace hax {
 			private:
 				ID3D11Device* _pDevice;
 				ID3D11DeviceContext* _pContext;
-				ID3D11PixelShader* _pPixelShader;
 				ID3D11Buffer* _pVertexBuffer;
 				ID3D11Buffer* _pIndexBuffer;
-				D3D11_PRIMITIVE_TOPOLOGY _curTopology;
 
 				uint32_t _capacity;
 
@@ -41,10 +39,7 @@ namespace hax {
 				// 
 				// [in] pContext:
 				// Context of the backend.
-				//
-				// [in] pPixelShader:
-				// Pixel shader for drawing the vertices.
-				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, ID3D11PixelShader* pPixelShader);
+				void initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext);
 
 				// Creates internal resources.
 				//

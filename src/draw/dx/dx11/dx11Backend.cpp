@@ -40,7 +40,7 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_pSwapChain{}, _pDevice{}, _pContext{}, _pInputLayout{}, _pVertexShader{}, _pPixelShaderTexture{}, _pPixelShaderPassthrough{},
+				_pSwapChain{}, _pDevice{}, _pContext{}, _pInputLayout{}, _pVertexShader{}, _pPixelShader{},
 				_pConstantBuffer{}, _pSamplerState{}, _pBlendState{}, _viewport{}, _pRenderTargetView{}, _state{} {}
 
 
@@ -63,15 +63,10 @@ namespace hax {
 					this->_pConstantBuffer->Release();
 				}
 
-				this->_solidBufferBackend.destroy();
-				this->_textureBufferBackend.destroy();
+				this->_bufferBackend.destroy();
 
-				if (this->_pPixelShaderPassthrough) {
-					this->_pPixelShaderPassthrough->Release();
-				}
-
-				if (this->_pPixelShaderTexture) {
-					this->_pPixelShaderTexture->Release();
+				if (this->_pPixelShader) {
+					this->_pPixelShader->Release();
 				}
 
 				if (this->_pVertexShader) {
@@ -131,19 +126,11 @@ namespace hax {
 
 				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->_textureBufferBackend.initialize(this->_pDevice, this->_pContext, this->_pPixelShaderTexture);
+				this->_bufferBackend.initialize(this->_pDevice, this->_pContext);
 
-				if (!this->_textureBufferBackend.capacity()) {
+				if (!this->_bufferBackend.capacity()) {
 
-					if (!this->_textureBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
-
-				}
-
-				this->_solidBufferBackend.initialize(this->_pDevice, this->_pContext, this->_pPixelShaderPassthrough);
-				
-				if (!this->_solidBufferBackend.capacity()) {
-
-					if (!this->_solidBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
+					if (!this->_bufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
 
 				}
 
@@ -240,6 +227,7 @@ namespace hax {
 				this->_pContext->IASetInputLayout(this->_pInputLayout);
 				this->_pContext->VSSetShader(this->_pVertexShader, nullptr, 0u);
 				this->_pContext->VSSetConstantBuffers(0u, 1u, &this->_pConstantBuffer);
+				this->_pContext->PSSetShader(this->_pPixelShader, nullptr, 0u);
 				this->_pContext->PSSetSamplers(0u, 1u, &this->_pSamplerState);
 
 				constexpr float BLEND_FACTOR[]{ 0.f, 0.f, 0.f, 0.f };
@@ -261,7 +249,7 @@ namespace hax {
 
 			IBufferBackend* Backend::getBufferBackend() {
 
-				return &this->_textureBufferBackend;
+				return &this->_bufferBackend;
 			}
 
 
@@ -292,15 +280,9 @@ namespace hax {
 
 				}
 
-				if (!this->_pPixelShaderTexture) {
+				if (!this->_pPixelShader) {
 
-					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_TEXTURE, sizeof(PIXEL_SHADER_TEXTURE), nullptr, &this->_pPixelShaderTexture))) return false;
-
-				}
-
-				if (!this->_pPixelShaderPassthrough) {
-
-					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER_PASSTHROUGH, sizeof(PIXEL_SHADER_PASSTHROUGH), nullptr, &this->_pPixelShaderPassthrough))) return false;
+					if (FAILED(this->_pDevice->CreatePixelShader(PIXEL_SHADER, sizeof(PIXEL_SHADER), nullptr, &this->_pPixelShader))) return false;
 
 				}
 
