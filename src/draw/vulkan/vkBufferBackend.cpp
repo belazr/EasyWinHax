@@ -26,6 +26,9 @@ namespace hax {
 
 
 			BufferBackend::~BufferBackend() {
+
+				if (!this->_f.pVkUnmapMemory || !this->_f.pVkFreeMemory || !this->_f.pVkDestroyBuffer) return;
+
 				this->destroy();
 
 				return;
@@ -34,14 +37,13 @@ namespace hax {
 
 			void BufferBackend::initialize(
 				Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer,
-				VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipeline
+				VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout
 			) {
 				this->_f = f;
 				this->_hDevice = hDevice;
 				this->_hCommandBuffer = hCommandBuffer;
 				this->_memoryProperties = memoryProperties;
 				this->_hPipelineLayout = hPipelineLayout;
-				this->_hPipeline = hPipeline;
 
 				return;
 			}
@@ -146,8 +148,6 @@ namespace hax {
 
 
 			bool BufferBackend::prepare() {
-				this->_f.pVkCmdBindPipeline(this->_hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
-
 				constexpr VkDeviceSize OFFSET = 0ull;
 				this->_f.pVkCmdBindVertexBuffers(this->_hCommandBuffer, 0u, 1u, &this->_hVertexBuffer, &OFFSET);
 				this->_f.pVkCmdBindIndexBuffer(this->_hCommandBuffer, this->_hIndexBuffer, 0ull, VK_INDEX_TYPE_UINT32);

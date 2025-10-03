@@ -7,13 +7,12 @@ namespace hax {
 		namespace vk {
 
 			FrameData::FrameData() :
-				f{}, hDevice {}, hCommandPool{}, hCommandBuffer{}, hImageView{}, hFrameBuffer{},
-				textureBufferBackend{}, solidBufferBackend{}, hFence{} {}
+				f{}, hDevice {}, hCommandPool{}, hCommandBuffer{}, hImageView{}, hFrameBuffer{}, hFence{} {}
 
 
 			FrameData::FrameData(FrameData&& fd) noexcept :
-				f{ fd.f }, hDevice{ fd.hDevice }, hCommandPool{ fd.hCommandPool }, hCommandBuffer{ fd.hCommandBuffer }, hImageView{ fd.hImageView }, hFrameBuffer{ fd.hFrameBuffer },
-				textureBufferBackend{ static_cast<BufferBackend&&>(fd.textureBufferBackend) }, solidBufferBackend{ static_cast<BufferBackend&&>(fd.solidBufferBackend) }, hFence{ fd.hFence } {
+				f{ fd.f }, hDevice{ fd.hDevice }, hCommandPool{ fd.hCommandPool }, hCommandBuffer{ fd.hCommandBuffer },hImageView{ fd.hImageView },
+				hFrameBuffer{ fd.hFrameBuffer }, bufferBackend{ static_cast<BufferBackend&&>(fd.bufferBackend) }, hFence{ fd.hFence } {
 				fd.hCommandBuffer = VK_NULL_HANDLE;
 				fd.hImageView = VK_NULL_HANDLE;
 				fd.hFrameBuffer = VK_NULL_HANDLE;
@@ -26,21 +25,20 @@ namespace hax {
 			FrameData::~FrameData() {
 				
 				if (
-					this->f.pVkFreeCommandBuffers && this->f.pVkDestroyFramebuffer && this->f.pVkDestroyImageView &&
-					this->f.pVkWaitForFences && this->f.pVkDestroyFence &&
-					this->f.pVkUnmapMemory && this->f.pVkFreeMemory && this->f.pVkDestroyBuffer
-				) {
-					this->destroy();
-				}
+					!this->f.pVkFreeCommandBuffers || !this->f.pVkDestroyFramebuffer || !this->f.pVkDestroyImageView ||
+					!this->f.pVkWaitForFences || !this->f.pVkDestroyFence ||
+					!this->f.pVkUnmapMemory || !this->f.pVkFreeMemory || !this->f.pVkDestroyBuffer
+				) return;
 				
+				this->destroy();
+
 				return;
 			}
 
 
-
 			bool FrameData::create(
 				Functions fn, VkDevice hDev, VkCommandPool hCmdPool, VkImage hImage, VkRenderPass hRenderPass, uint32_t width, uint32_t height,
-				VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipelineTexture, VkPipeline hPipelinePassthrough
+				VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout
 			) {
 				this->f = fn;
 				this->hDevice = hDev;
@@ -92,17 +90,9 @@ namespace hax {
 
 				constexpr size_t INITIAL_BUFFER_SIZE = 100u;
 
-				this->textureBufferBackend.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelineTexture);
+				this->bufferBackend.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout);
 
-				if (!this->textureBufferBackend.create(INITIAL_BUFFER_SIZE)) {
-					this->destroy();
-
-					return false;
-				}
-
-				this->solidBufferBackend.initialize(this->f, this->hDevice, this->hCommandBuffer, memoryProperties, hPipelineLayout, hPipelinePassthrough);
-
-				if (!this->solidBufferBackend.create(INITIAL_BUFFER_SIZE)) {
+				if (!this->bufferBackend.create(INITIAL_BUFFER_SIZE)) {
 					this->destroy();
 
 					return false;
@@ -140,8 +130,7 @@ namespace hax {
 					this->hImageView = VK_NULL_HANDLE;
 				}
 
-				this->solidBufferBackend.destroy();
-				this->textureBufferBackend.destroy();
+				this->bufferBackend.destroy();
 
 				if (this->hDevice != VK_NULL_HANDLE && this->hCommandPool != VK_NULL_HANDLE && this->hCommandBuffer != VK_NULL_HANDLE) {
 					this->f.pVkFreeCommandBuffers(this->hDevice, this->hCommandPool, 1u, &this->hCommandBuffer);

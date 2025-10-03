@@ -26,7 +26,7 @@ namespace hax {
 					VkDescriptorSet hDescriptorSet;
 				}TextureData;
 
-				const VkPresentInfoKHR* _phPresentInfo;
+				const VkPresentInfoKHR* _pPresentInfo;
 				VkDevice _hDevice;
 
 				HMODULE _hVulkan;
@@ -46,8 +46,7 @@ namespace hax {
 				VkDescriptorPool _hDescriptorPool;
 				VkDescriptorSetLayout _hDescriptorSetLayout;
 				VkPipelineLayout _hPipelineLayout;
-				VkPipeline _hPipelineTexture;
-				VkPipeline _hPipelinePassthrough;
+				VkPipeline _hPipeline;
 				VkQueue _hFirstGraphicsQueue;
 				VkViewport _viewport;
 
@@ -139,7 +138,7 @@ namespace hax {
 				bool createDescriptorPool();
 				bool createDescriptorSetLayout();
 				bool createPipelineLayout();
-				VkPipeline createPipeline(const unsigned char* pFragmentShader, size_t fragmentShaderSize) const;
+				bool createPipeline();
 				VkShaderModule createShaderModule(const unsigned char* pShader, size_t size) const;
 				VkImage createImage(uint32_t width, uint32_t height) const;
 				void destroyTextureData(TextureData* pTextureData) const;

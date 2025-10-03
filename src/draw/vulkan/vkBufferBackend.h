@@ -51,16 +51,13 @@ namespace hax {
 				// Command buffer of the image the buffer belongs to.
 				//
 				// [in] memoryProperties:
-				// Memory properties of the physical device of the backend.
+				// Memory properties of the physical device.
 				//
 				// [in] hPipelineLayout:
 				// The pipeline layout of the backend.
-				// 
-				// [in] hPipeline:
-				// Pipeline with the appropriate primitive topology.
 				void initialize(
 					Functions f, VkDevice hDevice, VkCommandBuffer hCommandBuffer,
-					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipeline
+					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout
 				);
 
 				// Creates internal resources.
