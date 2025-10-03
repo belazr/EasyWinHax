@@ -11,6 +11,9 @@ namespace hax {
 
 
 			BufferBackend::~BufferBackend() {
+
+				if (!this->_f.pGlBindBuffer || !this->_f.pGlUnmapBuffer || !this->_f.pGlDeleteBuffers) return;
+				
 				this->destroy();
 
 				return;
