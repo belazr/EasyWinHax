@@ -20,7 +20,7 @@ namespace hax {
 			public:
 				BufferBackend();
 
-				BufferBackend(BufferBackend&& bb) noexcept = default;
+				BufferBackend(BufferBackend&& bb) noexcept;
 
 				BufferBackend(const BufferBackend&) = delete;
 

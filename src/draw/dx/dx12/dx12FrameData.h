@@ -14,7 +14,7 @@ namespace hax {
 
 				FrameData();
 
-				FrameData(FrameData&& fd) noexcept = default;
+				FrameData(FrameData&& fd) noexcept;
 
 				FrameData(const FrameData&) = delete;
 				FrameData& operator=(FrameData&&) = delete;

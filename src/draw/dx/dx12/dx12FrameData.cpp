@@ -9,6 +9,13 @@ namespace hax {
 			FrameData::FrameData() : pCommandAllocator{}, bufferBackend{}, hEvent{} {}
 
 
+			FrameData::FrameData(FrameData&& fd) noexcept :
+				pCommandAllocator{ fd.pCommandAllocator }, bufferBackend{ static_cast<BufferBackend&&>(fd.bufferBackend) }, hEvent{ fd.hEvent } {
+				fd.pCommandAllocator = nullptr;
+				fd.hEvent = nullptr;
+			};
+
+
 			FrameData::~FrameData() {
 				this->destroy();
 
