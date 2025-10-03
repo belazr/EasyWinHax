@@ -7,9 +7,7 @@ namespace hax {
 		namespace ogl2 {
 
 			BufferBackend::BufferBackend() :
-				_f{}, _shaderProgramId{ UINT_MAX }, _projectionMatrix{}, _projectionMatrixIndex{}, _posIndex{}, _colIndex{}, _uvIndex{},
-				_vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _capacity{} {
-			}
+				_f{}, _posIndex{}, _colIndex{}, _uvIndex{}, _vertexBufferId{ UINT_MAX }, _indexBufferId{ UINT_MAX }, _capacity{} {}
 
 
 			BufferBackend::~BufferBackend() {
@@ -19,28 +17,12 @@ namespace hax {
 			}
 
 
-			void BufferBackend::initialize(Functions f, GLint* viewport, GLuint shaderProgramId) {
+			void BufferBackend::initialize(Functions f, GLuint shaderProgramId) {
 				this->_f = f;
-				this->_shaderProgramId = shaderProgramId;
 
-				const GLfloat viewLeft = static_cast<GLfloat>(viewport[0]);
-				const GLfloat viewRight = static_cast<GLfloat>(viewport[0] + viewport[2]);
-				const GLfloat viewTop = static_cast<GLfloat>(viewport[1]);
-				const GLfloat viewBottom = static_cast<GLfloat>(viewport[1] + viewport[3]);
-
-				const GLfloat ortho[][4]{
-					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
-					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
-					{ 0.f, 0.f, .5f, 0.f },
-					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
-				};
-
-				memcpy(this->_projectionMatrix, ortho, sizeof(this->_projectionMatrix));
-
-				this->_projectionMatrixIndex = this->_f.pGlGetUniformLocation(this->_shaderProgramId, "projectionMatrix");
-				this->_posIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "pos");
-				this->_colIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "col");
-				this->_uvIndex = this->_f.pGlGetAttribLocation(this->_shaderProgramId, "uv");
+				this->_posIndex = this->_f.pGlGetAttribLocation(shaderProgramId, "pos");
+				this->_colIndex = this->_f.pGlGetAttribLocation(shaderProgramId, "col");
+				this->_uvIndex = this->_f.pGlGetAttribLocation(shaderProgramId, "uv");
 
 				return;
 			}
@@ -147,9 +129,6 @@ namespace hax {
 
 
 			bool BufferBackend::prepare() {
-				this->_f.pGlUseProgram(this->_shaderProgramId);
-				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &this->_projectionMatrix[0][0]);
-
 				this->_f.pGlBindBuffer(GL_ARRAY_BUFFER, this->_vertexBufferId);
 
 				this->_f.pGlEnableVertexAttribArray(this->_posIndex);

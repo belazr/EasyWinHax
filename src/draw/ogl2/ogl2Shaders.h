@@ -25,7 +25,7 @@ namespace hax {
 				"    gl_Position = projectionMatrix * vec4(pos.xy,0,1);\n"
 				"}\n";
 
-			constexpr const GLchar* FRAGMENT_SHADER_TEXTURE =
+			constexpr const GLchar* FRAGMENT_SHADER =
 				"#version 120\n"
 
 				"uniform sampler2D texSampler;\n"
@@ -35,15 +35,6 @@ namespace hax {
 
 				"void main() {\n"
 				"    gl_FragColor = colOut * texture2D(texSampler, uvOut);\n"
-				"}\n";
-
-			constexpr const GLchar* FRAGMENT_SHADER_PASSTHROUGH =
-				"#version 120\n"
-
-				"varying vec4 colOut;\n"
-
-				"void main() {\n"
-				"    gl_FragColor = colOut;\n"
 				"}\n";
 		}
 

@@ -8,14 +8,20 @@ namespace hax {
 		namespace ogl2 {
 
 			Backend::Backend() :
-				_f{}, _shaderProgramTextureId{ UINT_MAX }, _shaderProgramPassthroughId{ UINT_MAX }, _viewport{}, _state{} {}
+				_f{}, _shaderProgramId{ UINT_MAX }, _projectionMatrixIndex{}, _viewport {}, _state{} {}
 
 
 			Backend::~Backend() {
-				this->_solidBufferBackend.destroy();
-				this->_textureBufferBackend.destroy();
-				this->destroyShaderPrograms();
+				this->_bufferBackend.destroy();
 				glDeleteTextures(static_cast<GLsizei>(this->_textures.size()), this->_textures.data());
+
+				if (!this->_f.pGlDeleteProgram) return;
+
+				if (this->_shaderProgramId != UINT_MAX) {
+					this->_f.pGlDeleteProgram(this->_shaderProgramId);
+				}
+
+				return;
 			}
 
 
@@ -32,6 +38,16 @@ namespace hax {
 				if (!this->getProcAddresses()) return false;
 
 				this->createShaderPrograms();
+				
+				constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
+
+				this->_bufferBackend.initialize(this->_f, this->_shaderProgramId);
+
+				if (!this->_bufferBackend.capacity()) {
+
+					if (!this->_bufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
+
+				}
 
 				return true;
 			}
@@ -59,31 +75,15 @@ namespace hax {
 
 			bool Backend::beginFrame() {
 				this->saveState();
+
+				this->_f.pGlUseProgram(this->_shaderProgramId);
 				
 				GLint viewport[4]{};
 				glGetIntegerv(GL_VIEWPORT, viewport);
 
 				if (this->viewportChanged(viewport)) {
 					memcpy(this->_viewport, viewport, sizeof(this->_viewport));
-
-					constexpr uint32_t INITIAL_BUFFER_SIZE = 100u;
-
-					this->_textureBufferBackend.initialize(this->_f, this->_viewport, this->_shaderProgramTextureId);
-
-					if (!this->_textureBufferBackend.capacity()) {
-
-						if (!this->_textureBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
-
-					}
-
-					this->_solidBufferBackend.initialize(this->_f, this->_viewport, this->_shaderProgramPassthroughId);
-
-					if (!this->_solidBufferBackend.capacity()) {
-
-						if (!this->_solidBufferBackend.create(INITIAL_BUFFER_SIZE)) return false;
-
-					}
-
+					this->setVertexShaderConstants();
 				}
 
 				glDepthFunc(GL_ALWAYS);
@@ -103,7 +103,7 @@ namespace hax {
 
 			IBufferBackend* Backend::getBufferBackend() {
 
-				return &this->_textureBufferBackend;
+				return &this->_bufferBackend;
 			}
 
 
@@ -155,15 +155,14 @@ namespace hax {
 
 			void Backend::createShaderPrograms() {
 				const GLuint vertexShaderId = this->createShader(GL_VERTEX_SHADER, VERTEX_SHADER);
-				const GLuint fragmentShaderTextureId = this->createShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_TEXTURE);
-				const GLuint fragmentShaderPassthroughId = this->createShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_PASSTHROUGH);
+				const GLuint fragmentShaderId = this->createShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
 				
-				this->_shaderProgramTextureId = this->createShaderProgram(vertexShaderId, fragmentShaderTextureId);
-				this->_shaderProgramPassthroughId = this->createShaderProgram(vertexShaderId, fragmentShaderPassthroughId);
+				this->_shaderProgramId = this->createShaderProgram(vertexShaderId, fragmentShaderId);
 
-				this->_f.pGlDeleteShader(fragmentShaderPassthroughId);
-				this->_f.pGlDeleteShader(fragmentShaderTextureId);
+				this->_f.pGlDeleteShader(fragmentShaderId);
 				this->_f.pGlDeleteShader(vertexShaderId);
+
+				this->_projectionMatrixIndex = this->_f.pGlGetUniformLocation(this->_shaderProgramId, "projectionMatrix");
 
 				return;
 			}
@@ -190,28 +189,30 @@ namespace hax {
 			}
 
 
-			void Backend::destroyShaderPrograms() {
-				if (!this->_f.pGlDeleteProgram) return;
-
-				if (this->_shaderProgramPassthroughId != UINT_MAX) {
-					this->_f.pGlDeleteProgram(this->_shaderProgramPassthroughId);
-					this->_shaderProgramPassthroughId = UINT_MAX;
-				}
-
-				if (this->_shaderProgramTextureId != UINT_MAX) {
-					this->_f.pGlDeleteProgram(this->_shaderProgramTextureId);
-					this->_shaderProgramTextureId = UINT_MAX;
-				}
-
-				return;
-			}
-
-
 			bool Backend::viewportChanged(const GLint* pViewport) const {
 				bool topLeftChanged = pViewport[0] != this->_viewport[0] || pViewport[1] != this->_viewport[1];
 				bool dimensionChanged = pViewport[2] != this->_viewport[2] || pViewport[3] != this->_viewport[3];
 				
 				return topLeftChanged || dimensionChanged;
+			}
+
+
+			void Backend::setVertexShaderConstants() const {
+				const GLfloat viewLeft = static_cast<GLfloat>(this->_viewport[0]);
+				const GLfloat viewRight = static_cast<GLfloat>(this->_viewport[0] + this->_viewport[2]);
+				const GLfloat viewTop = static_cast<GLfloat>(this->_viewport[1]);
+				const GLfloat viewBottom = static_cast<GLfloat>(this->_viewport[1] + this->_viewport[3]);
+
+				const GLfloat ortho[][4]{
+					{ 2.f / (viewRight - viewLeft), 0.f, 0.f, 0.f  },
+					{ 0.f, 2.f / (viewTop - viewBottom), 0.f, 0.f },
+					{ 0.f, 0.f, .5f, 0.f },
+					{ (viewLeft + viewRight) / (viewLeft - viewRight), (viewTop + viewBottom) / (viewBottom - viewTop), .5f, 1.f }
+				};
+
+				this->_f.pGlUniformMatrix4fv(this->_projectionMatrixIndex, 1, GL_FALSE, &ortho[0][0]);
+
+				return;
 			}
 
 
