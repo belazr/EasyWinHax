@@ -27,14 +27,12 @@ namespace hax {
 					GLuint textureId;
 				}State;
 
-				GLuint _shaderProgramTextureId;
-				GLuint _shaderProgramPassthroughId;
+				GLuint _shaderProgramId;
+				GLuint _projectionMatrixIndex;
+				BufferBackend _bufferBackend;
 				GLint _viewport[4];
 
 				State _state;
-
-				BufferBackend _textureBufferBackend;
-				BufferBackend _solidBufferBackend;
 
 				Vector<GLuint> _textures;
 
@@ -116,8 +114,8 @@ namespace hax {
 				void createShaderPrograms();
 				GLuint createShader(GLenum type, const GLchar* pShader) const;
 				GLuint createShaderProgram(GLuint vertexShaderId, GLuint fragmentShaderId) const;
-				void destroyShaderPrograms();
 				bool viewportChanged(const GLint* pViewport) const;
+				void setVertexShaderConstants() const;
 				void saveState();
 				void restoreState() const;
 			};
