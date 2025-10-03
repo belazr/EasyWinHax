@@ -14,8 +14,7 @@ namespace hax {
 				VkCommandBuffer hCommandBuffer;
 				VkImageView hImageView;
 				VkFramebuffer hFrameBuffer;
-				BufferBackend textureBufferBackend;
-				BufferBackend solidBufferBackend;
+				BufferBackend bufferBackend;
 				VkFence hFence;
 
 				FrameData();
@@ -31,24 +30,39 @@ namespace hax {
 				// Creates internal resources.
 				//
 				// Parameters:
+				// 
+				// [in] fn
+				// Function pointers to the Vulkan functions.
 				//
 				// [in] pDevice:
 				// Logical device of the backend.
 				//
-				// [in] pCommandList:
-				// Command list of the backend.
-				//
-				// [in] hPipelineTexture:
-				// Pipeline with a texture pixel shader.
-				//
-				// [in] hPipelinePassthrough:
-				// Pipeline with a passthrough pixel shader.
+				// [in] hCmdPool:
+				// Command pool of the backend.
+				// 
+				// [in] hImage:
+				// Image of the swapchain.
+				// 
+				// [in] hRenderPasst:
+				// Current render pass of the backend.
+				// 
+				// [in] width:
+				// Width of the current viewport.
+				// 
+				// [in] height:
+				// Heigth of the current viewport.
+				// 
+				// [in] memoryProperties:
+				// Memory properties of the physical device.
+				// 
+				// [in] hPipelineLayout:
+				// Pipeline layout of the backend.
 				//
 				// Return:
 				// True on success, false on failure.
 				bool create(
 					Functions fn, VkDevice hDev, VkCommandPool hCmdPool, VkImage hImage, VkRenderPass hRenderPass, uint32_t width, uint32_t height,
-					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout, VkPipeline hPipelineTexture, VkPipeline hPipelinePassthrough
+					VkPhysicalDeviceMemoryProperties memoryProperties, VkPipelineLayout hPipelineLayout
 				);
 
 				// Destroys all internal resources.

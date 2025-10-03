@@ -215,9 +215,9 @@ namespace hax {
 
 
 			Backend::Backend() :
-				_phPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{}, _hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{},
+				_pPresentInfo{}, _hDevice{}, _hVulkan {}, _hMainWindow{}, _f{}, _hRenderPass{}, _graphicsQueueFamilyIndex{ UINT32_MAX }, _memoryProperties{},
 				_hCommandPool{}, _hTextureCommandBuffer{}, _hTextureSampler{}, _hDescriptorPool{}, _hDescriptorSetLayout{},
-				_hPipelineLayout{}, _hPipelineTexture{}, _hPipelinePassthrough{}, _hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
+				_hPipelineLayout{}, _hPipeline{}, _hFirstGraphicsQueue{}, _viewport{}, _frameDataVector{}, _pCurFrameData{} {}
 
 
 			Backend::~Backend() {
@@ -226,16 +226,8 @@ namespace hax {
 
 				this->_frameDataVector.resize(0u);
 
-				if (this->_f.pVkDestroyPipeline) {
-
-					if (this->_hPipelinePassthrough != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelinePassthrough, nullptr);
-					}
-
-					if (this->_hPipelineTexture != VK_NULL_HANDLE) {
-						this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipelineTexture, nullptr);
-					}
-
+				if (this->_f.pVkDestroyPipeline && this->_hPipeline != VK_NULL_HANDLE) {
+					this->_f.pVkDestroyPipeline(this->_hDevice, this->_hPipeline, nullptr);
 				}
 
 				if (this->_f.pVkDestroyPipelineLayout && this->_hPipelineLayout != VK_NULL_HANDLE) {
@@ -270,7 +262,7 @@ namespace hax {
 
 
 			void Backend::setHookParameters(void* pArg1, void* pArg2) {
-				this->_phPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg1);
+				this->_pPresentInfo = reinterpret_cast<const VkPresentInfoKHR*>(pArg1);
 				this->_hDevice = reinterpret_cast<VkDevice>(pArg2);
 
 				return;
@@ -328,21 +320,15 @@ namespace hax {
 
 				if (this->_hPipelineLayout == VK_NULL_HANDLE) {
 
-					if (!this->createPipelineLayout()) return VK_NULL_HANDLE;
+					if (!this->createPipelineLayout()) return false;
 
 				}
 
-				if (this->_hPipelineTexture == VK_NULL_HANDLE) {
-					this->_hPipelineTexture = this->createPipeline(FRAGMENT_SHADER_TEXTURE, sizeof(FRAGMENT_SHADER_TEXTURE));
+				if (this->_hPipeline == VK_NULL_HANDLE) {
+					
+					if (!this->createPipeline()) return false;
+
 				}
-
-				if (this->_hPipelineTexture == VK_NULL_HANDLE) return false;
-
-				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) {
-					this->_hPipelinePassthrough = this->createPipeline(FRAGMENT_SHADER_PASSTHROUGH, sizeof(FRAGMENT_SHADER_PASSTHROUGH));
-				}
-
-				if (this->_hPipelinePassthrough == VK_NULL_HANDLE) return false;
 
 				this->_f.pVkGetDeviceQueue(this->_hDevice, this->_graphicsQueueFamilyIndex, 0u, &this->_hFirstGraphicsQueue);
 
@@ -476,7 +462,7 @@ namespace hax {
 			bool Backend::beginFrame() {
 				uint32_t imageCount = 0u;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &imageCount, nullptr) != VK_SUCCESS) return false;
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_pPresentInfo->pSwapchains[0], &imageCount, nullptr) != VK_SUCCESS) return false;
 
 				if (!imageCount) return false;
 
@@ -491,7 +477,7 @@ namespace hax {
 					this->_viewport = viewport;
 				}
 
-				this->_pCurFrameData = this->_frameDataVector + this->_phPresentInfo->pImageIndices[0];
+				this->_pCurFrameData = this->_frameDataVector + this->_pPresentInfo->pImageIndices[0];
 
 				this->_f.pVkWaitForFences(this->_hDevice, 1u, &this->_pCurFrameData->hFence, VK_TRUE, UINT64_MAX);
 				this->_f.pVkResetFences(this->_hDevice, 1u, &this->_pCurFrameData->hFence);
@@ -505,6 +491,7 @@ namespace hax {
 				const VkRect2D scissor{ { static_cast<int32_t>(this->_viewport.x), static_cast<int32_t>(this->_viewport.y) }, { static_cast<uint32_t>(this->_viewport.width), static_cast<uint32_t>(this->_viewport.height) } };
 				this->_f.pVkCmdSetScissor(this->_pCurFrameData->hCommandBuffer, 0u, 1u, &scissor);
 
+				this->_f.pVkCmdBindPipeline(this->_pCurFrameData->hCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_hPipeline);
 				this->setVertexShaderConstants();
 
 				return true;
@@ -515,9 +502,9 @@ namespace hax {
 				this->_f.pVkCmdEndRenderPass(this->_pCurFrameData->hCommandBuffer);
 				this->_f.pVkEndCommandBuffer(this->_pCurFrameData->hCommandBuffer);
 
-				VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_phPresentInfo->waitSemaphoreCount];
+				VkPipelineStageFlags* const pStageMask = new VkPipelineStageFlags[this->_pPresentInfo->waitSemaphoreCount];
 				
-				for (uint32_t i = 0u; i < this->_phPresentInfo->waitSemaphoreCount; i++) {
+				for (uint32_t i = 0u; i < this->_pPresentInfo->waitSemaphoreCount; i++) {
 					pStageMask[i] = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				}
 			
@@ -526,10 +513,10 @@ namespace hax {
 				submitInfo.pWaitDstStageMask = pStageMask;
 				submitInfo.commandBufferCount = 1u;
 				submitInfo.pCommandBuffers = &this->_pCurFrameData->hCommandBuffer;
-				submitInfo.pWaitSemaphores = this->_phPresentInfo->pWaitSemaphores;
-				submitInfo.waitSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
-				submitInfo.pSignalSemaphores = this->_phPresentInfo->pWaitSemaphores;
-				submitInfo.signalSemaphoreCount = this->_phPresentInfo->waitSemaphoreCount;
+				submitInfo.pWaitSemaphores = this->_pPresentInfo->pWaitSemaphores;
+				submitInfo.waitSemaphoreCount = this->_pPresentInfo->waitSemaphoreCount;
+				submitInfo.pSignalSemaphores = this->_pPresentInfo->pWaitSemaphores;
+				submitInfo.signalSemaphoreCount = this->_pPresentInfo->waitSemaphoreCount;
 
 				this->_f.pVkQueueSubmit(this->_hFirstGraphicsQueue, 1u, &submitInfo, this->_pCurFrameData->hFence);
 
@@ -541,7 +528,7 @@ namespace hax {
 
 			IBufferBackend* Backend::getBufferBackend() {
 
-				return &this->_pCurFrameData->textureBufferBackend;
+				return &this->_pCurFrameData->bufferBackend;
 			}
 
 
@@ -797,12 +784,12 @@ namespace hax {
 			}
 
 
-			VkPipeline Backend::createPipeline(const unsigned char* pFragmentShader, size_t fragmentShaderSize) const {
+			bool Backend::createPipeline() {
 				const VkShaderModule hShaderModuleVert = this->createShaderModule(VERTEX_SHADER, sizeof(VERTEX_SHADER));
 
 				if (hShaderModuleVert == VK_NULL_HANDLE) return VK_NULL_HANDLE;
 
-				const VkShaderModule hShaderModuleFrag = this->createShaderModule(pFragmentShader, fragmentShaderSize);
+				const VkShaderModule hShaderModuleFrag = this->createShaderModule(FRAGMENT_SHADER, sizeof(FRAGMENT_SHADER));
 				
 				if (hShaderModuleFrag == VK_NULL_HANDLE) {
 					this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
@@ -904,14 +891,17 @@ namespace hax {
 				pipelineCreateInfo.renderPass = this->_hRenderPass;
 				pipelineCreateInfo.subpass = 0u;
 
-				VkPipeline hPipeline = VK_NULL_HANDLE;
+				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &this->_hPipeline) != VK_SUCCESS) {
+					this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleFrag, nullptr);
+					this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
 
-				if (this->_f.pVkCreateGraphicsPipelines(this->_hDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &hPipeline) != VK_SUCCESS) return VK_NULL_HANDLE;
+					return false;
+				}
 
 				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleFrag, nullptr);
 				this->_f.pVkDestroyShaderModule(this->_hDevice, hShaderModuleVert, nullptr);
 
-				return hPipeline;
+				return true;
 			}
 
 
@@ -1129,7 +1119,7 @@ namespace hax {
 				VkImage* const pImages = new VkImage[size]{};
 				uint32_t tmpSize = size;
 
-				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_phPresentInfo->pSwapchains[0], &tmpSize, pImages) != VK_SUCCESS || tmpSize != size) {
+				if (this->_f.pVkGetSwapchainImagesKHR(this->_hDevice, this->_pPresentInfo->pSwapchains[0], &tmpSize, pImages) != VK_SUCCESS || tmpSize != size) {
 					delete[] pImages;
 					this->_frameDataVector.resize(0u);
 
@@ -1139,8 +1129,9 @@ namespace hax {
 				for (uint32_t i = 0u; i < size; i++) {
 					
 					if (!this->_frameDataVector[i].create(
-						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass, static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
-						this->_memoryProperties, this->_hPipelineLayout, this->_hPipelineTexture, this->_hPipelinePassthrough
+						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass,
+						static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
+						this->_memoryProperties, this->_hPipelineLayout
 					)) {
 						delete[] pImages;
 						this->_frameDataVector.resize(0u);
