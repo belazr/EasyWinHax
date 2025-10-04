@@ -147,8 +147,9 @@ namespace hax {
 				VkDescriptorSet createDescriptorSet(VkImageView hImageView) const;
 				VkBuffer createBuffer(VkDeviceSize size) const;
 				bool uploadImage(VkImage hImage, VkBuffer hBuffer, uint32_t width, uint32_t height) const;
-				bool resizeFrameDataVector(uint32_t size, VkViewport viewport);
 				bool getCurrentViewport(VkViewport* pViewport) const;
+				bool viewportChanged(const VkViewport* pViewport) const ;
+				bool resizeFrameDataVector(uint32_t size, VkViewport viewport);
 				bool beginCommandBuffer(VkCommandBuffer hCommandBuffer) const;
 				void beginRenderPass(VkCommandBuffer hCommandBuffer, VkFramebuffer hFramebuffer) const;
 				void setVertexShaderConstants() const;

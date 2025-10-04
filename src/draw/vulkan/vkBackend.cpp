@@ -470,7 +470,7 @@ namespace hax {
 
 				if (!this->getCurrentViewport(&viewport)) return false;
 
-				if (this->_frameDataVector.size() != imageCount || this->_viewport.width != viewport.width || this->_viewport.height != viewport.height) {
+				if (this->_frameDataVector.size() != imageCount || this->viewportChanged(&viewport)) {
 
 					if (!this->resizeFrameDataVector(imageCount, viewport)) return false;
 
@@ -1111,11 +1111,35 @@ namespace hax {
 			}
 
 
+			bool Backend::getCurrentViewport(VkViewport* pViewport) const {
+				RECT clientRect{};
+
+				if (!GetClientRect(this->_hMainWindow, &clientRect)) return false;
+
+				pViewport->x = static_cast<float>(clientRect.left);
+				pViewport->y = static_cast<float>(clientRect.top);
+				pViewport->width = static_cast<float>(clientRect.right - clientRect.left);
+				pViewport->height = static_cast<float>(clientRect.bottom - clientRect.top);
+				pViewport->minDepth = 0.f;
+				pViewport->maxDepth = 1.f;
+
+				return true;
+			}
+
+
+			bool Backend::viewportChanged(const VkViewport* pViewport) const {
+				const bool topLeftChanged = pViewport->x != this->_viewport.x || pViewport->y != this->_viewport.y;
+				const bool dimensionChanged = pViewport->width != this->_viewport.width || pViewport->height != this->_viewport.height;
+
+				return topLeftChanged || dimensionChanged;
+			}
+
+
 			bool Backend::resizeFrameDataVector(uint32_t size, VkViewport viewport) {
 				// destroy old frame data to be safe
 				this->_frameDataVector.resize(0u);
 				this->_frameDataVector.resize(size);
-				
+
 				VkImage* const pImages = new VkImage[size]{};
 				uint32_t tmpSize = size;
 
@@ -1127,7 +1151,7 @@ namespace hax {
 				}
 
 				for (uint32_t i = 0u; i < size; i++) {
-					
+
 					if (!this->_frameDataVector[i].create(
 						this->_f, this->_hDevice, this->_hCommandPool, pImages[i], this->_hRenderPass,
 						static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height),
@@ -1142,22 +1166,6 @@ namespace hax {
 				}
 
 				delete[] pImages;
-
-				return true;
-			}
-
-
-			bool Backend::getCurrentViewport(VkViewport* pViewport) const {
-				RECT clientRect{};
-
-				if (!GetClientRect(this->_hMainWindow, &clientRect)) return false;
-
-				pViewport->x = static_cast<float>(clientRect.left);
-				pViewport->y = static_cast<float>(clientRect.top);
-				pViewport->width = static_cast<float>(clientRect.right - clientRect.left);
-				pViewport->height = static_cast<float>(clientRect.bottom - clientRect.top);
-				pViewport->minDepth = 0.f;
-				pViewport->maxDepth = 1.f;
 
 				return true;
 			}
