@@ -197,9 +197,11 @@ namespace hax {
 
 				}
 
-				// the render target view is released every frame in endFrame() and there is no leftover reference to the backbuffer
-				// so it has to be acquired every frame as well
-				// this is done so resolution changes do not break rendering
+				// Performance-wise, creating a new RTV every frame is not ideal, but it has to be done since it must be released after rendering.
+				// Otherwise, when the hooked application calls IDXGISwapChain::ResizeBuffers (e.g., when the resolution changes),
+				// the call fails because the RTV still holds a reference to the back buffer.
+				// This could be avoided by hooking IDXGISwapChain::ResizeBuffers and releasing the RTV only then,
+				// but for the sake of keeping this a self-contained, one-hook solution, wasting a bit of performance is preferred.
 				ID3D10Texture2D* pBackBuffer = nullptr;
 
 				if (FAILED(this->_pSwapChain->GetBuffer(0u, IID_PPV_ARGS(&pBackBuffer)))) return false;
