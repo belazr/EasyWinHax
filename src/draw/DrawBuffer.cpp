@@ -9,9 +9,9 @@ namespace hax {
 
 		DrawBuffer::~DrawBuffer() {
 
-			if (this->_pBufferBackend) {
-				this->_pBufferBackend->unmap();
-			}
+			if (!this->_pBufferBackend) return;
+
+			this->_pBufferBackend->unmap();
 
 			return;
 		}
@@ -159,7 +159,8 @@ namespace hax {
 			this->_pBufferBackend->destroy();
 			this->_pLocalIndexBuffer = nullptr;
 			this->_pLocalVertexBuffer = nullptr;
-			this->_capacity = this->_pBufferBackend->capacity();
+			this->_size = 0u;
+			this->_capacity = 0u;
 
 			if (!this->_pBufferBackend->create(capacity)) {
 				free(pTmpVertexBuffer);
@@ -182,7 +183,10 @@ namespace hax {
 			if (this->_pLocalVertexBuffer && this->_pLocalIndexBuffer) {
 				memcpy(this->_pLocalVertexBuffer, pTmpVertexBuffer, oldSize * sizeof(Vertex));
 				memcpy(this->_pLocalIndexBuffer, pTmpIndexBuffer, oldSize * sizeof(uint32_t));
+				this->_size = oldSize;
 			}
+
+			
 
 			free(pTmpVertexBuffer);
 			free(pTmpIndexBuffer);
