@@ -1,0 +1,25 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="EasyWinHax.vcxproj" Id="3e5db86d-1911-4ca7-ab29-b9e2c01dc291" />
+  <Project Path="examples/DirectX10Hook/DirectX10Hook.vcxproj" Id="11ff60a1-5a83-44be-aac6-70876bdc4d1e">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+  <Project Path="examples/DirectX11Hook/DirectX11Hook.vcxproj" Id="1ceb5ece-7a05-4a88-9fdb-2ca17519a9e8">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+  <Project Path="examples/DirectX12Hook/DirectX12Hook.vcxproj" Id="13e31923-0114-42e9-aaa8-799311e8cef3">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+  <Project Path="examples/DirectX9Hook/DirectX9Hook.vcxproj" Id="6095a0d0-b2b2-4fe7-87f6-2fda1bbd17a3">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+  <Project Path="examples/OpenGL2Hook/OpenGL2Hook.vcxproj" Id="22384cdc-3575-44db-922a-c8a76cd052d9">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+  <Project Path="examples/VulkanHook/VulkanHook.vcxproj" Id="36a9f558-8fba-4554-86c6-3a9440ec44ed">
+    <BuildDependency Project="EasyWinHax.vcxproj" />
+  </Project>
+</Solution>
