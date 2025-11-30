@@ -18,9 +18,6 @@
     <ClInclude Include="src\Bench.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\FileLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\hax.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -144,12 +141,12 @@
     <ClInclude Include="src\draw\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\FileMapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bench.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\FileLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mem.cpp">
@@ -219,6 +216,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\draw\fonts\inconsolata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FileMapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

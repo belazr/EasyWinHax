@@ -2,7 +2,7 @@
 
 // Headers for functionallity not related to graphics apis
 #include "Bench.h"
-#include "FileLoader.h"
+#include "FileMapper.h"
 #include "launch.h"
 #include "mem.h"
 #include "proc.h"
