@@ -3,7 +3,7 @@
 
 // Class to map files from disk continuously into memory.
 
-namespace blue {
+namespace hax {
 
 	class FileMapper {
 	private:
