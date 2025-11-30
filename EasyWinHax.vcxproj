@@ -47,9 +47,9 @@
     <ClInclude Include="src\draw\vulkan\include\vulkan.h" />
     <ClInclude Include="src\draw\vulkan\vkDefs.h" />
     <ClInclude Include="src\draw\vulkan\vkShaders.h" />
+    <ClInclude Include="src\FileMapper.h" />
     <ClInclude Include="src\launch.h" />
     <ClInclude Include="src\Bench.h" />
-    <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\hax.h" />
     <ClInclude Include="src\hooks\IatHook.h" />
     <ClInclude Include="src\hooks\TrampHook.h" />
@@ -79,9 +79,9 @@
     <ClCompile Include="src\draw\ogl2\ogl2Backend.cpp" />
     <ClCompile Include="src\draw\DrawBuffer.cpp" />
     <ClCompile Include="src\draw\vulkan\vkFrameData.cpp" />
+    <ClCompile Include="src\FileMapper.cpp" />
     <ClCompile Include="src\launch.cpp" />
     <ClCompile Include="src\Bench.cpp" />
-    <ClCompile Include="src\FileLoader.cpp" />
     <ClCompile Include="src\hooks\IatHook.cpp" />
     <ClCompile Include="src\hooks\TrampHook.cpp" />
     <ClCompile Include="src\mem.cpp" />
