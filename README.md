@@ -60,7 +60,7 @@ The library provides a simple benchmarking class to benchmark code execution. It
 ### Vector
 The library provides a simple and low-overhead vector class inspired by the STL implementation. See the "Vector.h" header for further documentation.
 ### Loading files
-The library provides a simple file loader class to load files from disk into memory. See the "FileLoader.h" header for further documentation.
+The library provides a simple file mapper class to map files from disk into memory. See the "FileMapper.h" header for further documentation.
 ### Undocumented windows structures and function types
 The library provides a collection of structures and function types used by the windows operating system that are not or just partially declared in the "Windows.h" header. See the "undocWinTypes.h" header.
 ### Drawing from hooks
