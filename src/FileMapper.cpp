@@ -1,7 +1,7 @@
 #include "FileMapper.h"
 #include <Windows.h>
 
-namespace blue {
+namespace hax {
 	
 	FileMapper::FileMapper(const char* path) : _path{ path }, _data{}, _size{} {
 		const size_t length = strlen(path);
