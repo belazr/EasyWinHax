@@ -395,16 +395,17 @@ namespace hax {
 			bool unlinkListEntry(HANDLE hProc, LE listEntry) {
 
 				if (!listEntry.Flink || !listEntry.Blink) {
+					
 					return false;
 				}
 
-				LE* flink = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Flink));
+				LE* pNext = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Flink));
 
-				if (!WriteProcessMemory(hProc, &flink->Blink, &listEntry.Blink, sizeof(listEntry.Blink), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, &pNext->Blink, &listEntry.Blink, sizeof(listEntry.Blink), nullptr)) return false;
 
-				LE* blink = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Blink));
+				LE* pPrev = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Blink));
 
-				if (!WriteProcessMemory(hProc, &blink->Flink, &listEntry.Flink, sizeof(listEntry.Flink), nullptr)) return false;
+				if (!WriteProcessMemory(hProc, &pPrev->Flink, &listEntry.Flink, sizeof(listEntry.Flink), nullptr)) return false;
 
 				return true;
 			}
@@ -676,16 +677,15 @@ namespace hax {
 			bool unlinkListEntry(LE listEntry) {
 
 				if (!listEntry.Flink || !listEntry.Blink) {
+					
 					return false;
 				}
 
-				LE* flink = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Flink));
+				LE* pNext = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Flink));
+				pNext->Blink = listEntry.Blink;
 
-				if (memcpy_s(&flink->Blink, sizeof(flink->Blink), &listEntry.Blink, sizeof(listEntry.Blink))) return false;
-
-				LE* blink = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Blink));
-
-				if (memcpy_s(&blink->Flink, sizeof(blink->Flink), &listEntry.Flink, sizeof(listEntry.Flink))) return false;
+				LE* pPrev = reinterpret_cast<LE*>(static_cast<uintptr_t>(listEntry.Blink));
+				pPrev->Flink = listEntry.Flink;
 
 				return true;
 			}
