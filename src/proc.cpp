@@ -20,25 +20,33 @@ namespace hax {
 			wchar_t wProcessName[MAX_PATH]{};
 			MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, processName, -1, wProcessName, MAX_PATH);
 
-			const size_t bufferSize = *pSize;
+			const size_t bufferSize = pIds ? *pSize : 0u;
 			*pSize = 0u;
 
 			for (
 				const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-				pCurSysProcInfo->NextEntryOffset;
+				true;
 				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset)
 			) {
 			
-				if (!pCurSysProcInfo->ImageName.Buffer || _wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName)) continue;
-
-				if (pIds) {
+				if (pCurSysProcInfo->ImageName.Buffer && _wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName) == 0) {
 					
-					if (*pSize + 1 > bufferSize) return false;
+					if (pIds) {
 
-					pIds[*pSize] = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+						if (*pSize >= bufferSize) {
+							delete[] pSysProcInfoBuffer;
+							
+							return false;
+						}
+
+						pIds[*pSize] = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+					}
+
+					(*pSize)++;
 				}
 
-				(*pSize)++;
+				if (!pCurSysProcInfo->NextEntryOffset) break;
+
 			}
 
 			delete[] pSysProcInfoBuffer;
