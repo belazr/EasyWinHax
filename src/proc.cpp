@@ -56,31 +56,45 @@ namespace hax {
 
 
 		bool getProcessEntry(DWORD processId, ProcessEntry* pProcessEntry) {
+			
+			if (!pProcessEntry) return false;
+			
 			const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
 			if (!pSysProcInfoBuffer) return false;
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+			bool done = false;
 			bool found = false;
 
-			do {
+			for (const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+				!done && !found;
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset)
+			) {
+				done = pCurSysProcInfo->NextEntryOffset == 0;
 
-				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
-					pProcessEntry->threadCount = pCurSysProcInfo->NumberOfThreads;
-					pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
-					pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
-					pProcessEntry->basePriority = pCurSysProcInfo->BasePriority;
+				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) != processId) continue;
 
-					if (pCurSysProcInfo->ImageName.Buffer) {
-						WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, pCurSysProcInfo->ImageName.Length, pProcessEntry->exeFile, MAX_PATH, nullptr, nullptr);
+				found = true;
+
+				pProcessEntry->threadCount = pCurSysProcInfo->NumberOfThreads;
+				pProcessEntry->processId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
+				pProcessEntry->parentProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->InheritedFromUniqueProcessId));
+				pProcessEntry->basePriority = pCurSysProcInfo->BasePriority;
+				
+				if (pCurSysProcInfo->ImageName.Buffer) {
+					const int chars = pCurSysProcInfo->ImageName.Length / sizeof(WCHAR);
+					const int written = WideCharToMultiByte(CP_ACP, 0, pCurSysProcInfo->ImageName.Buffer, chars, pProcessEntry->exeFile, MAX_PATH - 1, nullptr, nullptr);
+					
+					if (written < MAX_PATH) {
+						pProcessEntry->exeFile[written] = '\0';
 					}
-
-					found = true;
+					else {
+						pProcessEntry->exeFile[MAX_PATH - 1] = '\0';
+					}
+						
 				}
-
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!found && pCurSysProcInfo->NextEntryOffset);
+				
+			}
 
 			delete[] pSysProcInfoBuffer;
 
@@ -89,32 +103,37 @@ namespace hax {
 
 
 		bool getProcessThreadEntries(DWORD processId, ThreadEntry* pThreadEntries, size_t size) {
+			
+			if (!pThreadEntries) return false;
+			
 			const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
 			if (!pSysProcInfoBuffer) return false;
 
-			const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+			bool done = false;
 			bool found = false;
 			bool fitted = false;
 
-			do {
+			for (const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
+				!done && !found;
+				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset)
+			) {
+				done = pCurSysProcInfo->NextEntryOffset == 0;
 
-				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) == processId) {
+				if (static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId)) != processId) continue;
 
-					for (ULONG i = 0ul; i < pCurSysProcInfo->NumberOfThreads && i < size; i++) {
-						pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
-						pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
-						pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
-						pThreadEntries[i].waitReason = pCurSysProcInfo->Threads[i].WaitReason;
-					}
+				found = true;
+				fitted = pCurSysProcInfo->NumberOfThreads <= size;
 
-					found = true;
-					fitted = pCurSysProcInfo->NumberOfThreads <= size;
+				if (!fitted) break;
+
+				for (ULONG i = 0ul; i < pCurSysProcInfo->NumberOfThreads && i < size; i++) {
+					pThreadEntries[i].ownerProcessId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueProcess));
+					pThreadEntries[i].threadId = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->Threads[i].ClientId.UniqueThread));
+					pThreadEntries[i].threadState = pCurSysProcInfo->Threads[i].ThreadState;
+					pThreadEntries[i].waitReason = pCurSysProcInfo->Threads[i].WaitReason;
 				}
-
-				// NextEntryOffset is null for last entry
-				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset);
-			} while (!found && pCurSysProcInfo->NextEntryOffset);
+			}
 
 			delete[] pSysProcInfoBuffer;
 
@@ -660,7 +679,7 @@ namespace hax {
 				if (!NtQueryInformationProcess) return nullptr;
 
 				PEB32* pPeb = nullptr;
-				// returns the x86 process envrionment block for an x86 process running in the WOW64 envrionment
+				// returns the x86 process environment block for an x86 process running in the WOW64 envrionment
 				NtQueryInformationProcess(hProc, ProcessWow64Information, &pPeb, sizeof(pPeb), nullptr);
 
 				return pPeb;
