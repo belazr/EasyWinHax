@@ -11,7 +11,7 @@ namespace hax {
 
 		bool getProcessIds(const char* processName, DWORD* pIds, size_t* pSize) {
 			
-			if (!pSize) return false;
+			if (!processName || !pSize) return false;
 
 			const SYSTEM_PROCESS_INFORMATION* const pSysProcInfoBuffer = getSystemInformation<SYSTEM_PROCESS_INFORMATION>(SystemProcessInformation);
 
@@ -22,36 +22,32 @@ namespace hax {
 
 			const size_t bufferSize = pIds ? *pSize : 0u;
 			*pSize = 0u;
+			bool done = false;
+			bool fitted = true;
 
 			for (
 				const SYSTEM_PROCESS_INFORMATION* pCurSysProcInfo = pSysProcInfoBuffer;
-				true;
+				!done;
 				pCurSysProcInfo = reinterpret_cast<const SYSTEM_PROCESS_INFORMATION*>(reinterpret_cast<const BYTE*>(pCurSysProcInfo) + pCurSysProcInfo->NextEntryOffset)
 			) {
-			
-				if (pCurSysProcInfo->ImageName.Buffer && _wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName) == 0) {
-					
-					if (pIds) {
+				done = pCurSysProcInfo->NextEntryOffset == 0;
 
-						if (*pSize >= bufferSize) {
-							delete[] pSysProcInfoBuffer;
-							
-							return false;
-						}
+				if (!pCurSysProcInfo->ImageName.Buffer || _wcsicmp(pCurSysProcInfo->ImageName.Buffer, wProcessName) != 0) continue;
 
-						pIds[*pSize] = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
-					}
+				(*pSize)++;
 
-					(*pSize)++;
-				}
+				if (!pIds) continue;
 
-				if (!pCurSysProcInfo->NextEntryOffset) break;
+				fitted = *pSize <= bufferSize;
 
+				if (!fitted) break;
+
+				pIds[*pSize - 1] = static_cast<DWORD>(reinterpret_cast<uintptr_t>(pCurSysProcInfo->UniqueProcessId));
 			}
 
 			delete[] pSysProcInfoBuffer;
 
-			return true;
+			return fitted;
 		}
 
 
