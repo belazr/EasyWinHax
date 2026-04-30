@@ -84,8 +84,8 @@ namespace hax {
 			const Vector3 ndc = divide(clip3d, clip->w);
 
 			// transform to window coordinates
-			screen->x = (screenWidth / 2.f * ndc.x) + (ndc.x + screenWidth / 2.f);
-			screen->y = -(screenHeight / 2.f * ndc.y) + (ndc.y + screenHeight / 2.f);
+			screen->x = (ndc.x + 1.f) * .5f * screenWidth;
+			screen->y = (1.f - ndc.y) * .5f * screenHeight;
 
 			// check if is on screen
 			if (screen->x > screenWidth || screen->x < 0.f || screen->y > screenHeight || screen->y < 0.f) return false;
