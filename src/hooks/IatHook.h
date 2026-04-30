@@ -33,11 +33,11 @@ namespace hax {
 			// [in] hImportMod:
 			// Handle/Base address of the module which IAT should be hooked.
 			// 
-			// [in] funcName:
-			// Export name of the function whos IAT entry should be replaced in the importing module.
-			// 
 			// [in] exportModName:
 			// Name of the module that exports the function whos IAT entry should be replaced in the importing module.
+			// 
+			// [in] funcName:
+			// Export name of the function whos IAT entry should be replaced in the importing module.
 			// 
 			// [in] shell:
 			// Address of the shell code that should be injected and executed on a call of the origin function.
@@ -50,7 +50,7 @@ namespace hax {
 			// "EF BE DA DE". "??" can be used as wildcards. Mind the endianness!
 			// Can be nullptr if there is no call to the origin function in the shell code.
 			IatHook(
-				HANDLE hProc, HMODULE hImportMod, const char* funcName, const char* exportModName, const BYTE* shell, size_t shellSize, const char* originCallPattern
+				HANDLE hProc, HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern
 			);
 
 			IatHook(IatHook&&) = delete;
@@ -111,15 +111,15 @@ namespace hax {
 			// [in] hImportMod:
 			// Handle/Base address of the module which IAT should be hooked.
 			// 
-			// [in] funcName:
-			// Export name of the function whos IAT entry should be replaced in the importing module.
-			// 
 			// [in] exportModName:
 			// Name of the module that exports the function whos IAT entry should be replaced in the importing module.
 			// 
+			// [in] funcName:
+			// Export name of the function whos IAT entry should be replaced in the importing module.
+			// 
 			// [in] detour:
 			// Address of the detour function within the virtual address space of the target process.
-			IatHook(HMODULE hImportMod, const char* funcName, const char* exportModName, const BYTE* detour);
+			IatHook(HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* detour);
 
 			IatHook(IatHook&&) = delete;
 
