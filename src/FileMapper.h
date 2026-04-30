@@ -19,6 +19,15 @@ namespace hax {
 		// [in] path:
 		// Path of the file to be mapped.
 		FileMapper(const char* path);
+		
+		FileMapper(FileMapper&&) = delete;
+
+		FileMapper(const FileMapper&) = delete;
+
+		FileMapper& operator=(FileMapper&&) = delete;
+
+		FileMapper& operator=(const FileMapper&) = delete;
+		
 		~FileMapper();
 
 		// Maps the file into memory.
