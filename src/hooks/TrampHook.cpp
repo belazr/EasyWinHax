@@ -33,20 +33,18 @@ namespace hax {
 			HANDLE hProc, const char* modName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern, size_t size, size_t relativeAddressOffset
 		) : _hProc(hProc), _size(size), _origin{}, _detour{}, _detourOriginCall{}, _gateway{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{}, _hooked{}
 		{
-			const BYTE* const pRelativeAddress = reinterpret_cast<BYTE*>(this->_origin) + this->_relativeAddressOffset;
-
-			// save the original relative address to patch it back later
-			if (this->_relativeAddressOffset != SIZE_MAX && pRelativeAddress) {
-
-				if (!ReadProcessMemory(hProc, pRelativeAddress, &this->_relativeAddress, sizeof(this->_relativeAddress), nullptr)) return;
-
-			}
-			
 			const HMODULE hMod = proc::ex::getModuleHandle(hProc, modName);
 
 			if (!hMod) return;
-				
+
 			this->_origin = proc::ex::getProcAddress(hProc, hMod, funcName);
+
+			// save the original relative address to patch it back later
+			if (this->_relativeAddressOffset != SIZE_MAX) {
+				
+				if (!ReadProcessMemory(hProc, reinterpret_cast<BYTE*>(this->_origin) + this->_relativeAddressOffset, &this->_relativeAddress, sizeof(this->_relativeAddress), nullptr)) return;
+
+			}
 
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
