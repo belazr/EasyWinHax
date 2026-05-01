@@ -35,8 +35,10 @@ namespace hax {
 		LARGE_INTEGER size{};
 		
 		if (!GetFileSizeEx(hFile, &size)) {
+			const DWORD error = GetLastError();
+			CloseHandle(hFile);
 
-			return GetLastError();
+			return error;
 		}
 
 		this->_size = static_cast<size_t>(size.QuadPart);
