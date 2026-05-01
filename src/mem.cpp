@@ -747,10 +747,11 @@ namespace hax {
 
 
 			void* findSignature(const void* base, size_t size, const int* signature, size_t sigSize) {
-				BYTE* address = nullptr;
+				
+				if (size < sigSize) return nullptr;
 
 				// loop over the memory to be searched
-				for (size_t i = 0u; i < size - sigSize; i++) {
+				for (size_t i = 0u; i <= size - sigSize; i++) {
 					bool found = true;
 
 					// loop over signature at every position in memory to be searched
@@ -765,13 +766,13 @@ namespace hax {
 					}
 
 					if (found) {
-						address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i);
-						break;
+						
+						return const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i);
 					}
 
 				}
 
-				return address;
+				return nullptr;
 			}
 
 		}
