@@ -142,7 +142,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool absJmp64(HANDLE hProc, void* origin, const void* detour, size_t size);
+			bool absJmpX64(HANDLE hProc, void* origin, const void* detour, size_t size);
 
 			#endif
 
@@ -395,7 +395,7 @@ namespace hax {
 			// 
 			// Return:
 			// True on success, false on failure.
-			bool absJmp64(void* origin, const void* detour, size_t size);
+			bool absJmpX64(void* origin, const void* detour, size_t size);
 
 			#endif
 

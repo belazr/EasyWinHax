@@ -157,7 +157,7 @@ namespace hax {
 					void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 					// absolute jump from the relay to the detour function
-					if (!absJmp64(hProc, relay, detour, sizeof(X64_JUMP))) {
+					if (!absJmpX64(hProc, relay, detour, sizeof(X64_JUMP))) {
 						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
@@ -247,7 +247,7 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			bool absJmp64(HANDLE hProc, void* origin, const void* detour, size_t size) {
+			bool absJmpX64(HANDLE hProc, void* origin, const void* detour, size_t size) {
 
 				if (size < sizeof(X64_JUMP)) return false;
 
@@ -487,7 +487,7 @@ namespace hax {
 				void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 				// absolute jump from the relay to the detour function
-				if (!absJmp64(relay, detour, sizeof(X64_JUMP))) {
+				if (!absJmpX64(relay, detour, sizeof(X64_JUMP))) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -584,7 +584,7 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			bool absJmp64(void* origin, const void* detour, size_t size) {
+			bool absJmpX64(void* origin, const void* detour, size_t size) {
 				
 				if (size < sizeof(X64_JUMP)) return false;
 
