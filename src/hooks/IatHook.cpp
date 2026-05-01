@@ -8,14 +8,17 @@ namespace hax {
 	namespace ex {
 
 		IatHook::IatHook(HANDLE hProc, HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern) :
-			_hProc{ hProc }, _origin{}, _detour{}, _pIatEntry{}, _hooked{}, _isWow64Proc{}
+			_hProc{ hProc }, _origin{}, _detour{}, _pIatEntry{}, _hooked{}, _arch{}
 		{
-			IsWow64Process(this->_hProc, &this->_isWow64Proc);
+			_arch = proc::ex::getProcessArch(this->_hProc);
+
+			if (_arch == proc::ex::PROC_ARCH_UNKNOWN) return;
+
 			this->_pIatEntry = proc::ex::getIatEntryAddress(this->_hProc, hImportMod, exportModName, funcName);
 
 			if (this->_pIatEntry) {
 
-				if (this->_isWow64Proc) {
+				if (_arch == proc::ex::PROC_ARCH_X86) {
 					// saves original IAT entry
 					ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
 				}
@@ -38,7 +41,7 @@ namespace hax {
 
 				if (shellOriginCall) {
 					
-					if (this->_isWow64Proc) {
+					if (_arch == proc::ex::PROC_ARCH_X86) {
 						memcpy_s(shellOriginCall, sizeof(uint32_t), &this->_origin, sizeof(uint32_t));
 					}
 					else {
@@ -78,7 +81,7 @@ namespace hax {
 
 			if (this->_hooked || !this->_pIatEntry || !this->_detour) return false;
 
-			if (this->_isWow64Proc) {
+			if (_arch == proc::ex::PROC_ARCH_X86) {
 				
 				// overwrites the IAT entry in the process
 				if (!mem::ex::patch(this->_hProc, this->_pIatEntry, reinterpret_cast<const BYTE*>(&this->_detour), sizeof(uint32_t))) return false;
@@ -110,7 +113,7 @@ namespace hax {
 
 			if (!this->_hooked || !this->_pIatEntry || !this->_origin) return false;
 
-			if (this->_isWow64Proc) {
+			if (_arch == proc::ex::PROC_ARCH_X86) {
 				
 				// restores the IAT entry in the process
 				if (!mem::ex::patch(this->_hProc, this->_pIatEntry, reinterpret_cast<const BYTE*>(&this->_origin), sizeof(uint32_t))) return false;

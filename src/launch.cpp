@@ -63,16 +63,15 @@ namespace hax {
 			const tNtCreateThreadEx pNtCreateThreadEx = reinterpret_cast<tNtCreateThreadEx>(proc::in::getProcAddress(hNtdll, "NtCreateThreadEx"));
 
 			if (!pNtCreateThreadEx) return Status::ERR_GET_PROC_ADDR;
+			
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
 
-			BOOL isWow64 = FALSE;
-			IsWow64Process(hProc, &isWow64);
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return Status::ERR_GET_PROCESS_ARCH;
 
 			Status status = Status::SUCCESS;
 
-			if (isWow64) {
-
+			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::createThread(hProc, pNtCreateThreadEx, pFunc, pArg, pRet);
-
 			}
 			else {
 
@@ -127,15 +126,14 @@ namespace hax {
 				return Status::ERR_MEM_ALLOC;
 			}
 
-			BOOL isWow64 = FALSE;
-			IsWow64Process(hProc, &isWow64);
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return Status::ERR_GET_PROCESS_ARCH;
 
 			Status status = Status::SUCCESS;
 
-			if (isWow64) {
-
+			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
-
 			}
 			else {
 
@@ -187,13 +185,14 @@ namespace hax {
 			hookData.pHookFunc = reinterpret_cast<HOOKPROC>(pShellCode);
 			hookData.pCallNextHookEx = pCallNextHookEx;
 
-			BOOL isWow64 = FALSE;
-			IsWow64Process(hProc, &isWow64);
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return Status::ERR_GET_PROCESS_ARCH;
 
 			Status status = Status::SUCCESS;
 
 			// installing hook only possible from process with matching architechture
-			if (isWow64) {
+			if (arch == proc::ex::PROC_ARCH_X86) {
 
 				#ifndef _WIN64
 
@@ -235,15 +234,14 @@ namespace hax {
 
 			if (!pShellCode) return Status::ERR_MEM_ALLOC;
 
-			BOOL isWow64 = FALSE;
-			IsWow64Process(hProc, &isWow64);
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return Status::ERR_GET_PROCESS_ARCH;
 
 			Status status = Status::SUCCESS;
 
-			if (isWow64) {
-
+			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
-
 			}
 			else {
 
@@ -314,18 +312,17 @@ namespace hax {
 				return Status::ERR_MEM_ALLOC;
 			}
 
-			BOOL isWow64 = FALSE;
-			IsWow64Process(hProc, &isWow64);
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return Status::ERR_GET_PROCESS_ARCH;
 
 			Status status = Status::SUCCESS;
 
-			if (isWow64) {
-
+			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
-
 			}
 			else {
-
+				
 				// x64 targets only feasable for x64 compilations
 				#ifdef _WIN64
 

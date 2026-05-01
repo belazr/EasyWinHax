@@ -1,5 +1,6 @@
 #pragma once
 #include "IHook.h"
+#include "..\proc.h"
 
 namespace hax {
 
@@ -23,7 +24,7 @@ namespace hax {
 			void* _detour;
 			void* _pIatEntry;
 			bool _hooked;
-			BOOL _isWow64Proc;
+			proc::ex::ProcessArch _arch;
 
 		public:
 			// Initializes members.

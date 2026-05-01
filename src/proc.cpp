@@ -234,6 +234,31 @@ namespace hax {
 
 		namespace ex {
 
+			ProcessArch getProcessArch(HANDLE hProc) {
+				USHORT processMachine = IMAGE_FILE_MACHINE_UNKNOWN;
+				USHORT nativeMachine = IMAGE_FILE_MACHINE_UNKNOWN;
+
+				if (!IsWow64Process2(hProc, &processMachine, &nativeMachine)) {
+
+					return PROC_ARCH_UNKNOWN;
+				}
+				
+				const USHORT machine = (processMachine == IMAGE_FILE_MACHINE_UNKNOWN) ? nativeMachine : processMachine;
+
+				switch (machine) {
+				case IMAGE_FILE_MACHINE_I386:
+					
+					return PROC_ARCH_X86;
+				case IMAGE_FILE_MACHINE_AMD64:
+					
+					return PROC_ARCH_X64;
+				default:
+					return PROC_ARCH_UNKNOWN;
+				}
+
+			}
+
+
 			static bool getDataDirFromPeHeaders(HANDLE hProc, const PeHeaders* pPeHeaders, IMAGE_DATA_DIRECTORY* pDataDir, char index);
 
 			FARPROC getProcAddress(HANDLE hProc, HMODULE hMod, const char* funcName) {
@@ -503,10 +528,11 @@ namespace hax {
 			HMODULE getModuleHandle(HANDLE hProc, const char* modName) {
 				uintptr_t modBase = 0u;
 
-				BOOL isWow64 = FALSE;
-				IsWow64Process(hProc, &isWow64);
+				const ProcessArch arch = proc::ex::getProcessArch(hProc);
 
-				if (isWow64) {
+				if (arch == PROC_ARCH_UNKNOWN) return nullptr;
+
+				if (arch == PROC_ARCH_X86) {
 					// if the target is x86 (running in the WOW64 evironment on x64 Windows) search in the x86 loader data table
 					const LDR_DATA_TABLE_ENTRY32* const pLdrEntry32 = getLdrDataTableEntry32Address(hProc, modName);
 

@@ -116,6 +116,21 @@ namespace hax {
 		// Compiled as x86 interacting with x64 processes is neihter supported nor feasable.
 		namespace ex {
 
+			typedef enum ProcessArch { PROC_ARCH_UNKNOWN, PROC_ARCH_X86, PROC_ARCH_X64 }ProcessArch;
+			
+			// Gets the architecture of the target process. This library only supports x86 and x64.
+			// 
+			// Parameters:
+			// 
+			// [in] hProc:
+			// Handle to the target process.
+			// Needs at least PROCESS_QUERY_LIMITED_INFORMATION access rights.
+			// 
+			// Return:
+			// The process architecture or PROC_ARCH_UNKNWON on failure.
+			ProcessArch getProcessArch(HANDLE hProc);
+
+
 			// Gets the address of a function/procedure exported by a module of an external target process within the virtual address space this process.
 			// Works like an external version of GetProcAddress of the Win32 API.
 			// Uses only calls to ReadProcessMemory and NtQueryInformationProcess (for forwared functions) of the Win32 API.

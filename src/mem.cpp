@@ -1,5 +1,6 @@
 #pragma once
 #include "mem.h"
+#include "proc.h"
 #include <stdint.h>
 
 namespace hax {
@@ -44,10 +45,11 @@ namespace hax {
 				void* gateway = nullptr;
 				size_t targetPtrSize = 0u;
 
-				BOOL isWow64 = false;
-				IsWow64Process(hProc, &isWow64);
+				const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
 
-				if (isWow64) {
+				if (arch == proc::ex::PROC_ARCH_UNKNOWN) return nullptr;
+
+				if (arch == proc::ex::PROC_ARCH_X86) {
 					// allocate enough memory for the relative jump (gateway to origin)
 					// VirtualAllocEx can be used for x86 targets since in x86 every address is reachable by a relative jump and the relay is not neccessary
 					gateway = VirtualAllocEx(hProc, nullptr, size + sizeof(X86_JUMP), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -135,7 +137,7 @@ namespace hax {
 					return nullptr;
 				}
 
-				if (isWow64) {
+				if (arch == proc::ex::PROC_ARCH_X86) {
 
 					// relative jump directly from origin to detour (will always be reachable in x86 targets)
 					if (!relJmp(hProc, origin, detour, size)) {
