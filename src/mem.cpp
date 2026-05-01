@@ -322,7 +322,7 @@ namespace hax {
 			}
 
 
-			void* findSigAddress(HANDLE hProc, const void* base, size_t size, const char* signature) {
+			void* findSigAddress(HANDLE hProc, const void* base, size_t size, const char* signature) {				
 				// size of byte string signature of format "DE AD"
 				const size_t sigSize = (strlen(signature) + 1u) / 3u;
 				int* const sig = new int[sigSize] {};
@@ -333,41 +333,46 @@ namespace hax {
 					return nullptr;
 				}
 
-				BYTE* address = nullptr;
-				MEMORY_BASIC_INFORMATION mbi{};
+				void* address = nullptr;
+				uintptr_t current = reinterpret_cast<uintptr_t>(base);
+				const uintptr_t end = current + size;
 
 				// scan each memory region at a time
-				for (size_t i = 0u; i < size; i += mbi.RegionSize) {
-
+				while (current < end) {
+					MEMORY_BASIC_INFORMATION mbi{};
 					// scan only if commited and accessable
-					if (!VirtualQueryEx(hProc, reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
+					if (!VirtualQueryEx(hProc, reinterpret_cast<void*>(current), &mbi, sizeof(mbi)) || !mbi.RegionSize) break;
 
-					DWORD oldProtect = 0ul;
+					current = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
 
-					if (!VirtualProtectEx(hProc, mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &oldProtect)) continue;
+					if (mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS || mbi.Protect & PAGE_GUARD) continue;
+
+					const uintptr_t regionStart = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
+					const uintptr_t regionEnd = regionStart + mbi.RegionSize;
+					const uintptr_t scanStart = max(regionStart, reinterpret_cast<uintptr_t>(base));
+					const uintptr_t scanEnd = min(regionEnd, end);
+
+					if (scanEnd <= scanStart || scanEnd - scanStart < sigSize) continue;
+
+					const size_t scanSize = scanEnd - scanStart;
 
 					// heap buffer to scan
-					BYTE* const buffer = new BYTE[mbi.RegionSize];
+					BYTE* const buffer = new BYTE[scanSize];
 
-					if (!ReadProcessMemory(hProc, mbi.BaseAddress, buffer, mbi.RegionSize, nullptr)) {
-						delete[] buffer;
-
-						continue;
-					}
-
-					if (!VirtualProtectEx(hProc, mbi.BaseAddress, mbi.RegionSize, oldProtect, &oldProtect)) {
+					if (!ReadProcessMemory(hProc, reinterpret_cast<void*>(scanStart), buffer, scanSize, nullptr)) {
 						delete[] buffer;
 
 						continue;
 					}
 
 					// address of found signature within heap buffer
-					const void* const inBufferAddress = helper::findSignature(buffer, mbi.RegionSize, sig, sigSize);
+					const void* const inBufferAddress = helper::findSignature(buffer, scanSize, sig, sigSize);
 
 					if (inBufferAddress) {
-						address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i) + (reinterpret_cast<const BYTE*>(inBufferAddress) - buffer);
+						address = reinterpret_cast<void*>(scanStart + (reinterpret_cast<uintptr_t>(inBufferAddress) - reinterpret_cast<uintptr_t>(buffer)));
+
 						delete[] buffer;
-						
+
 						break;
 					}
 
@@ -658,15 +663,34 @@ namespace hax {
 				}
 
 				void* address = nullptr;
-				MEMORY_BASIC_INFORMATION mbi{};
+				uintptr_t current = reinterpret_cast<uintptr_t>(base);
+				const uintptr_t end = current + size;
 
 				// scan each memory region at a time
-				for (size_t i = 0u; i < size; i += mbi.RegionSize) {
-
+				while (current < end) {
+					MEMORY_BASIC_INFORMATION mbi{};
 					// scan only if commited and accessable
-					if (!VirtualQuery(reinterpret_cast<const BYTE*>(base) + i, &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS) continue;
+					if (!VirtualQuery(reinterpret_cast<void*>(current), &mbi, sizeof(mbi)) || !mbi.RegionSize) {
+						delete[] sig;
 
-					address = helper::findSignature(reinterpret_cast<const BYTE*>(base) + i, mbi.RegionSize, sig, sigSize);
+						return nullptr;
+					}
+
+					current = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+
+					if (mbi.State != MEM_COMMIT || mbi.Protect == PAGE_NOACCESS || mbi.Protect & PAGE_GUARD) continue;
+
+					const uintptr_t regionStart = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
+					const uintptr_t regionEnd = regionStart + mbi.RegionSize;
+					const uintptr_t scanStart = max(regionStart, reinterpret_cast<uintptr_t>(base));
+					const uintptr_t scanEnd = min(regionEnd, end);
+
+					if (scanEnd <= scanStart || scanEnd - scanStart < sigSize) continue;
+
+					const size_t scanSize = scanEnd - scanStart;
+
+					// address of found signature within heap buffer
+					address = helper::findSignature(reinterpret_cast<void*>(scanStart), scanSize, sig, sigSize);
 
 					if (address) break;
 
