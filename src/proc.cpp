@@ -490,7 +490,13 @@ namespace hax {
 			HMODULE getModuleHandle(DWORD processId, const char* modName) {
 				const HANDLE hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
 
-				return getModuleHandle(hProc, modName);
+				if (!hProc) return nullptr;
+
+				const HMODULE hMod = getModuleHandle(hProc, modName);
+
+				CloseHandle(hProc);
+
+				return hMod;
 			}
 
 
