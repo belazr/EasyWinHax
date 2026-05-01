@@ -141,8 +141,8 @@ namespace hax {
 			// It is necessary to look at the disassembly at the origin address to find out when the first complete instruction finishes after the first 13 bytes.
 			// 
 			// Return:
-			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			void* absJumpX64(HANDLE hProc, void* origin, const void* detour, size_t size);
+			// True on success, false on failure.
+			bool absJmp64(HANDLE hProc, void* origin, const void* detour, size_t size);
 
 			#endif
 
@@ -394,8 +394,8 @@ namespace hax {
 			// It is necessary to look at the disassembly at the origin address to find out when the first complete instruction finishes after the first 13 bytes.
 			// 
 			// Return:
-			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			void* absJumpX64(void* origin, const void* detour, size_t size);
+			// True on success, false on failure.
+			bool absJmp64(void* origin, const void* detour, size_t size);
 
 			#endif
 

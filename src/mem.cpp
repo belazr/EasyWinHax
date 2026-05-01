@@ -155,7 +155,7 @@ namespace hax {
 					void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 					// absolute jump from the relay to the detour function
-					if (!absJumpX64(hProc, relay, detour, sizeof(X64_JUMP))) {
+					if (!absJmp64(hProc, relay, detour, sizeof(X64_JUMP))) {
 						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
@@ -245,21 +245,22 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			void* absJumpX64(HANDLE hProc, void* origin, const void* detour, size_t size) {
-				if (size < sizeof(X64_JUMP)) return nullptr;
+			bool absJmp64(HANDLE hProc, void* origin, const void* detour, size_t size) {
 
-				if (!nop(hProc, origin, size)) return nullptr;
+				if (size < sizeof(X64_JUMP)) return false;
 
 				BYTE jump[sizeof(X64_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return nullptr;
+				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return false;
 
-				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
+				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
+				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return false;
 
-				if (!patch(hProc, origin, jump, sizeof(jump))) return nullptr;
+				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
-				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
+				nop(hProc, reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X64_JUMP)), size - sizeof(X64_JUMP));
+
+				return true;
 			}
 
 			#endif
@@ -476,7 +477,7 @@ namespace hax {
 				void* const relay = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size + sizeof(X86_JUMP));
 
 				// absolute jump from the relay to the detour function
-				if (!absJumpX64(relay, detour, sizeof(X64_JUMP))) {
+				if (!absJmp64(relay, detour, sizeof(X64_JUMP))) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -573,21 +574,22 @@ namespace hax {
 
 			#ifdef _WIN64
 
-			void* absJumpX64(void* origin, const void* detour, size_t size) {
-				if (size < sizeof(X64_JUMP)) return nullptr;
-
-				if (!nop(origin, size)) return nullptr;
+			bool absJmp64(void* origin, const void* detour, size_t size) {
+				
+				if (size < sizeof(X64_JUMP)) return false;
 
 				BYTE jump[sizeof(X64_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return nullptr;
+				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return false;
 
-				// copies the jump offset to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return nullptr;
+				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
+				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return false;
 
-				if (!patch(origin, jump, sizeof(jump))) return nullptr;
+				if (!patch(origin, jump, sizeof(jump))) return false;
 
-				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
+				nop(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X64_JUMP)), size - sizeof(X64_JUMP));
+
+				return true;
 			}
 
 			#endif
