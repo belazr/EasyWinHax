@@ -281,11 +281,11 @@ namespace hax {
 
 				if (!VirtualProtectEx(hProc, dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
-				if (!WriteProcessMemory(hProc, dst, src, size, nullptr)) return false;
+				bool success = WriteProcessMemory(hProc, dst, src, size, nullptr);
 
-				if (!VirtualProtectEx(hProc, dst, size, protect, &protect)) return false;
+				VirtualProtectEx(hProc, dst, size, protect, &protect);
 
-				return true;
+				return success;
 			}
 
 
@@ -610,11 +610,11 @@ namespace hax {
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
-				if (memcpy_s(dst, size, src, size)) return false;
+				bool success = memcpy_s(dst, size, src, size) == 0;
 
-				if (!VirtualProtect(dst, size, protect, &protect)) return false;
+				VirtualProtect(dst, size, protect, &protect);
 
-				return true;
+				return success;
 			}
 
 
