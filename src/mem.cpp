@@ -215,32 +215,31 @@ namespace hax {
 			#endif // _WIN64
 
 
-			void* relJmp(HANDLE hProc, void* origin, const void* detour, size_t size) {
+			bool relJmp(HANDLE hProc, void* origin, const void* detour, size_t size) {
+				
+				if (size < sizeof(X86_JUMP)) return false;
+				
+				const intptr_t offset = reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin) - static_cast<intptr_t>(sizeof(X86_JUMP));
+
 				#ifdef _WIN64
 
-				const uint64_t distance = abs(reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin));
-
 				// checks if detour is reachable from origin by a relative jump
-				if (distance != (distance & UINT32_MAX)) return nullptr;
+				if (offset > INT32_MAX || offset < INT32_MIN) return false;
 
 				#endif // _WIN64
 
-				if (size < sizeof(X86_JUMP)) return nullptr;
-
-				if (!nop(hProc, origin, size)) return nullptr;
-
 				BYTE jump[sizeof(X86_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
-				
-				const uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(detour) - reinterpret_cast<uintptr_t>(origin) - sizeof(jump));
+				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return false;
 
-				// copies the jump offset to after the relative jump op code in the stack buffer
-				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
+				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
+				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return false;
 
-				if (!patch(hProc, origin, jump, sizeof(jump))) return nullptr;
+				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
-				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
+				nop(hProc, reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X86_JUMP)), size - sizeof(X86_JUMP));
+
+				return true;
 			}
 
 
@@ -544,32 +543,31 @@ namespace hax {
 			#endif // _WIN64
 
 
-			void* relJmp(void* origin, const void* detour, size_t size) {
+			bool relJmp(void* origin, const void* detour, size_t size) {
+
+				if (size < sizeof(X86_JUMP)) return false;
+
+				const intptr_t offset = reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin) - static_cast<intptr_t>(sizeof(X86_JUMP));
+
 				#ifdef _WIN64
 
-				const uint64_t distance = abs(reinterpret_cast<intptr_t>(detour) - reinterpret_cast<intptr_t>(origin));
-
 				// checks if detour is reachable from origin by a relative jump
-				if (distance != (distance & UINT32_MAX)) return nullptr;
+				if (offset > INT32_MAX || offset < INT32_MIN) return false;
 
 				#endif // _WIN64
 
-				if (size < sizeof(X86_JUMP)) return nullptr;
-
-				if (!nop(origin, size)) return nullptr;
-
 				BYTE jump[sizeof(X86_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return nullptr;
+				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return false;
 
-				const uint32_t offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(detour) - reinterpret_cast<uintptr_t>(origin) - sizeof(jump));
+				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
+				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return false;
 
-				// copies the jump offset after the relative jump op code in the stack buffer
-				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return nullptr;
+				if (!patch(origin, jump, sizeof(jump))) return false;
 
-				if (!patch(origin, jump, sizeof(jump))) return nullptr;
+				nop(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + sizeof(X86_JUMP)), size - sizeof(X86_JUMP));
 
-				return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(origin) + size);
+				return true;
 			}
 
 

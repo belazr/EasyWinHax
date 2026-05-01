@@ -116,8 +116,8 @@ namespace hax {
 			// It is necessary to look at the disassembly at the origin address to find out when the first complete instruction finishes after the first five bytes.
 			// 
 			// Return:
-			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			void* relJmp(HANDLE hProc, void* origin, const void* detour, size_t size);
+			// True on success, false on failure.
+			bool relJmp(HANDLE hProc, void* origin, const void* detour, size_t size);
 
 			#ifdef _WIN64
 
@@ -373,8 +373,8 @@ namespace hax {
 			// It is necessary to look at the disassembly at the origin address to find out when the first complete instruction finishes after the first five bytes.
 			// 
 			// Return:
-			// Pointer to the first bytes after the origin address that have not been patched by the jump or nullpointer on failure.
-			void* relJmp(void* origin, const void* detour, size_t size);
+			// True on success, false on failure.
+			bool relJmp(void* origin, const void* detour, size_t size);
 
 			#ifdef _WIN64
 
