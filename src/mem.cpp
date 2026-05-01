@@ -366,6 +366,9 @@ namespace hax {
 
 					if (inBufferAddress) {
 						address = const_cast<BYTE*>(reinterpret_cast<const BYTE*>(base) + i) + (reinterpret_cast<const BYTE*>(inBufferAddress) - buffer);
+						delete[] buffer;
+						
+						break;
 					}
 
 					delete[] buffer;

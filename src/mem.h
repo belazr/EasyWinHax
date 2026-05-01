@@ -225,7 +225,7 @@ namespace hax {
 			// Example: *(*(*(base + offset[0]) + offset[1]) + offset[2])
 			void* getMultiLevelPointer(HANDLE hProc, const void* base, const size_t* offsets, size_t size);
 
-			// Finds the address of a byte signature within the virtual address space of an external process.
+			// Finds the address of the first occurrence of a byte signature within the virtual address space of an external process.
 			// 
 			// Parameters:
 			// 
@@ -462,7 +462,7 @@ namespace hax {
 			// Example: *(*(*(base + offset[0]) + offset[1]) + offset[2])
 			void* getMultiLevelPointer(const void* base, const size_t* offsets, size_t size);
 
-			// Finds the address of a byte signature within the virtual address space of the caller process.
+			// Finds the address of the first occurrence of a byte signature within the virtual address space of the caller process.
 			// 
 			// Parameters:
 			// 
