@@ -142,9 +142,14 @@ namespace hax {
 		// 
 		// [in] capacity:
 		// The desired capacity.
+		//
+		// Return:
+		// True on success, false on failure.
 		bool reserve(size_t capacity) {
 			
 			if (capacity <= this->_capacity) return true;
+
+			if (capacity > SIZE_MAX / sizeof(T)) return false;
 
 			T* data = static_cast<T*>(malloc(capacity * sizeof(T)));
 
@@ -200,11 +205,16 @@ namespace hax {
 		void append(R&& t) {
 
 			if (this->_size == this->_capacity) {
+
+				if (this->_capacity > SIZE_MAX / 2) return;
+
 				const size_t capacity = this->_capacity ? 2 * this->_capacity : 8u;
-				this->reserve(capacity);
+				
+				if (!this->reserve(capacity)) return;
+
 			}
 			
-			// inplace construction to avoid assignment operator calls
+			// construct in place because the slot is uninitialized storage 
 			new(&this->_data[this->_size]) T(static_cast<R&&>(t));
 			this->_size++;
 
