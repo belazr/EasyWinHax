@@ -513,24 +513,44 @@ namespace hax {
 		// Helper function that are called both by the internal and external functions.
 		namespace helper {
 
-			// Converts a byte signature provided by characters in a string to a siganture of integers as used by findSignature.
+			// Converts a string that represents bytes base 16 to an array of integers.
 			// 
 			// Parameters:
 			// 
 			// [in] charSig:
-			// The byte signature base hex that should be looked for as null terminated string.
+			// A null-terminated string representing bytes base 16.
 			// Bytes have to be two characters and separeted by spaces. "??" can be used as wildcards and will be converted to -1.
 			// Example: "DE AD ?? EF"
 			// 
 			// [out] intSig:
-			// Buffer for the integer signature. Enough memory has to be allocted to hold all the bytes from the charSig.
+			// Buffer for the integer array. Enough memory has to be allocted to hold all the bytes from the charSig.
 			// 
 			// [in] size:
-			// Size of the buffer for the integer signature.
+			// Size of the buffer for the integer array.
 			// 
 			// Return:
 			// True on success, false if the buffer has an invalid size.
-			bool bytestringToInt(const char* charSig, int* intSig, size_t size);
+			bool byteStringToInt(const char* charSig, int* intSig, size_t size);
+
+			// An array of integers representing bytes to a string that represents bytes base 16.
+			// 
+			// Parameters:
+			//
+			// [in] byteSig:
+			// Array of integers that represent bytes. Each integer has to be a value between -1 and 255. -1 can be used as wildcards an will be converted to "??".
+			// 
+			// [in] count:
+			// Count of the integers in the array.
+			// 
+			// [out] charSig:
+			// Buffer for the null-terminated string. The buffer has to have a size of at least count * 3.
+			// 
+			// [in] size:
+			// Size of the buffer for the null-terminated string.
+			// 
+			// Return:
+			// True on success, on failure.
+			bool intToByteString(const int* intSig, size_t count, char* charSig, size_t size);
 
 			// Finds the address of a byte signature within a single memory region of the caller process.
 			// Do not use across multiple memory regions. Use findSignatureAddress instead.

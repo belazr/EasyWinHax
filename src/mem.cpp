@@ -327,7 +327,7 @@ namespace hax {
 				const size_t sigSize = (strlen(signature) + 1u) / 3u;
 				int* const sig = new int[sigSize] {};
 
-				if (!helper::bytestringToInt(signature, sig, sigSize)) {
+				if (!helper::byteStringToInt(signature, sig, sigSize)) {
 					delete[] sig;
 
 					return nullptr;
@@ -656,7 +656,7 @@ namespace hax {
 				const size_t sigSize = (strlen(signature) + 1) / 3;
 				int* const sig = new int[sigSize] {};
 
-				if (!helper::bytestringToInt(signature, sig, sigSize)) {
+				if (!helper::byteStringToInt(signature, sig, sigSize)) {
 					delete[] sig;
 
 					return nullptr;
@@ -747,28 +747,75 @@ namespace hax {
 
 		namespace helper {
 
-			bool bytestringToInt(const char* charSig, int* intSig, size_t sigSize) {
+			bool byteStringToInt(const char* charSig, int* intSig, size_t size) {
+				const size_t charSigLen = strlen(charSig);
 
 				// checks for format "DE AD" by character count and asserts the correct size
-				if (!((strlen(charSig) + 1) % 3 == 0) || ((strlen(charSig) + 1) / 3 != sigSize)) return false;
+				if (!((charSigLen + 1) % 3 == 0) || ((charSigLen + 1) / 3 != size)) return false;
 
 				const char* cur = charSig;
 
-				for (size_t i = 0u; i < sigSize; i++) {
+				for (size_t i = 0u; i < size; i++) {
 
 					if (*cur == '?') {
-						// wildcard gets converted to -1
+
+						if (*(cur + 1) != '?') return false;
+
 						intSig[i] = -1;
 						cur += 3;
 					}
 					else {
-						const int BASE = 0x10;
-						intSig[i] = strtoul(cur, const_cast<char**>(&cur), BASE);
+						const char* prev = cur;
+						intSig[i] = strtoul(cur, const_cast<char**>(&cur), 16);
+
+						if (cur - prev != 2) return false;
+
 						cur++;
 					}
 
 				}
 
+				return true;
+			}
+
+
+			bool intToByteString(const int* intSig, size_t count, char* charSig, size_t size)
+			{
+				if (count == 0 || size < count * 3) return false;
+
+				for (size_t i = 0u; i < count; i++) {
+
+					if (intSig[i] < - 1 || intSig[i] >  255) {
+
+						return false;
+					}
+					else if (intSig[i] == -1) {
+						charSig[i * 3] = '?';
+						charSig[i * 3 + 1] = '?';
+						charSig[i * 3 + 2] = ' ';
+					}
+					else if (intSig[i] < 16) {
+						char tmp[2];
+						_itoa_s(intSig[i], tmp, 16);
+						charSig[i * 3] = '0';
+						charSig[i * 3 + 1] = static_cast<char>(toupper(tmp[0]));
+						charSig[i * 3 + 2] = ' ';
+					}
+					else {
+						char tmp[3];
+						_itoa_s(intSig[i], tmp, 16);
+						charSig[i * 3] = static_cast<char>(toupper(tmp[0]));
+						charSig[i * 3 + 1] = static_cast<char>(toupper(tmp[1]));
+						charSig[i * 3 + 2] = ' ';
+					}
+
+					if (i == count - 1)
+					{
+						charSig[i * 3 + 2] = '\0';
+					}
+
+				}
+				
 				return true;
 			}
 
