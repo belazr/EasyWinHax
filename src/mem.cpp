@@ -824,11 +824,9 @@ namespace hax {
 				
 				if (size < sigSize) return nullptr;
 
-				// loop over the memory to be searched
 				for (size_t i = 0u; i <= size - sigSize; i++) {
 					bool found = true;
 
-					// loop over signature at every position in memory to be searched
 					for (size_t j = 0u; j < sigSize; j++) {
 
 						// -1 acts as wildcard
