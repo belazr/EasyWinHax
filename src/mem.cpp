@@ -113,6 +113,7 @@ namespace hax {
 					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
 
 					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
+						VirtualFreeEx(hProc, gateway, 0, MEM_RELEASE);
 
 						return nullptr;
 					}
@@ -462,6 +463,7 @@ namespace hax {
 					const int32_t correctedRelativeAddress = static_cast<int32_t>(oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway));
 
 					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
+						VirtualFree(gateway, 0, MEM_RELEASE);
 
 						return nullptr;
 					}
