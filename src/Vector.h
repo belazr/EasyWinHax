@@ -142,25 +142,28 @@ namespace hax {
 		// 
 		// [in] capacity:
 		// The desired capacity.
-		void reserve(size_t capacity) {
+		bool reserve(size_t capacity) {
+			
+			if (capacity <= this->_capacity) return true;
 
-			if (capacity <= this->_capacity) return;
+			T* data = static_cast<T*>(malloc(capacity * sizeof(T)));
 
-			T* data = nullptr;
+			if (!data) return false;
 
-			if (this->_data) {
-				data = reinterpret_cast<T*>(realloc(this->_data, capacity * sizeof(T)));
-			}
-			else {
-				data = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
-			}
-
-			if (data) {
-				this->_data = data;
-				this->_capacity = capacity;
+			for (size_t i = 0u; i < this->_size; i++) {
+				new(&data[i]) T(static_cast<T&&>(this->_data[i]));
 			}
 
-			return;
+			for (size_t i = 0u; i < this->_size; i++) {
+				this->_data[i].~T();
+			}
+
+			free(this->_data);
+
+			this->_data = data;
+			this->_capacity = capacity;
+
+			return true;
 		}
 
 
