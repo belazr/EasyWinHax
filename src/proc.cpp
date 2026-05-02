@@ -379,7 +379,7 @@ namespace hax {
 
 					// check if exported by ordinal and looking for the forwarded funcion in the module it was forwarded to
 					if (forwardFuncName[0] == '#') {
-						char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(forwardFuncName++)));
+						char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(++forwardFuncName)));
 						procAddress = getProcAddress(hProc, hForwardMod, forwardFuncOrdinal);
 					}
 					else {
@@ -856,7 +856,7 @@ namespace hax {
 
 					// check if exported by ordinal and looking for the forwarded funcion in the module it was forwarded to
 					if (forwardFuncName[0] == '#') {
-						char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(forwardFuncName++)));
+						char* forwardFuncOrdinal = reinterpret_cast<char*>(static_cast<uintptr_t>(atoi(++forwardFuncName)));
 						procAddress = getProcAddress(hForwardMod, forwardFuncOrdinal);
 					}
 					else {
