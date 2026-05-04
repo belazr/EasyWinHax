@@ -10,28 +10,29 @@ namespace hax {
 		IatHook::IatHook(HANDLE hProc, HMODULE hImportMod, const char* exportModName, const char* funcName, const BYTE* shell, size_t shellSize, const char* originCallPattern) :
 			_hProc{ hProc }, _origin{}, _detour{}, _pIatEntry{}, _hooked{}, _arch{}
 		{
+			
+			if (!shell) return;
+			
+			this->_pIatEntry = proc::ex::getIatEntryAddress(this->_hProc, hImportMod, exportModName, funcName);
+
+			if (!this->_pIatEntry) return;
+
 			_arch = proc::ex::getProcessArch(this->_hProc);
 
 			if (_arch == proc::ex::PROC_ARCH_UNKNOWN) return;
 
-			this->_pIatEntry = proc::ex::getIatEntryAddress(this->_hProc, hImportMod, exportModName, funcName);
+			if (_arch == proc::ex::PROC_ARCH_X86) {
+				// saves original IAT entry
+				ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
+			}
+			else {
 
-			if (this->_pIatEntry) {
+				#ifdef _WIN64
 
-				if (_arch == proc::ex::PROC_ARCH_X86) {
-					// saves original IAT entry
-					ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
-				}
-				else {
+				// saves original IAT entry
+				ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint64_t), nullptr);
 
-					#ifdef _WIN64
-
-					// saves original IAT entry
-					ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint64_t), nullptr);
-					
-					#endif // _WIN64
-
-				}
+				#endif // _WIN64
 
 			}
 
@@ -60,10 +61,11 @@ namespace hax {
 
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(this->_hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
-			if (this->_detour && shell) {
-				WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr);
-			}
+			if (!this->_detour) return;
 
+			WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr);
+
+			return;
 		}
 
 
@@ -74,6 +76,7 @@ namespace hax {
 				VirtualFreeEx(this->_hProc, this->_detour, 0, MEM_RELEASE);
 			}
 
+			return;
 		}
 
 
@@ -174,16 +177,18 @@ namespace hax {
 		{
 			this->_pIatEntry = proc::in::getIatEntryAddress(hImportMod, exportModName, funcName);
 
-			if (this->_pIatEntry) {
-				// saves original IAT entry
-				this->_origin = *reinterpret_cast<BYTE**>(this->_pIatEntry);
-			}
+			if (!this->_pIatEntry) return;
 
+			this->_origin = *reinterpret_cast<BYTE**>(this->_pIatEntry);
+
+			return;
 		}
 
 
 		IatHook::~IatHook() {
 			this->disable();
+
+			return;
 		}
 
 
