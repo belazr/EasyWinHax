@@ -17,11 +17,11 @@ namespace hax {
 
 			if (!this->_pIatEntry) return;
 
-			_arch = proc::ex::getProcessArch(this->_hProc);
+			this->_arch = proc::ex::getProcessArch(this->_hProc);
 
-			if (_arch == proc::ex::PROC_ARCH_UNKNOWN) return;
+			if (this->_arch == proc::ex::PROC_ARCH_UNKNOWN) return;
 
-			if (_arch == proc::ex::PROC_ARCH_X86) {
+			if (this->_arch == proc::ex::PROC_ARCH_X86) {
 				// saves original IAT entry
 				ReadProcessMemory(this->_hProc, this->_pIatEntry, &this->_origin, sizeof(uint32_t), nullptr);
 			}
@@ -36,34 +36,31 @@ namespace hax {
 
 			}
 
-			if (originCallPattern) {
-				// scan for the origin call in the shell code
-				void* const shellOriginCall = mem::in::findSigAddress(shell, shellSize, originCallPattern);
-
-				if (shellOriginCall) {
-					
-					if (_arch == proc::ex::PROC_ARCH_X86) {
-						memcpy_s(shellOriginCall, sizeof(uint32_t), &this->_origin, sizeof(uint32_t));
-					}
-					else {
-
-						#ifdef _WIN64
-
-						memcpy_s(shellOriginCall, sizeof(uint64_t), &this->_origin, sizeof(uint64_t));
-
-						#endif // _WIN64
-
-					}
-				
-				}
-
-			}
-
 			this->_detour = static_cast<BYTE*>(VirtualAllocEx(this->_hProc, nullptr, shellSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!this->_detour) return;
 
 			WriteProcessMemory(hProc, this->_detour, shell, shellSize, nullptr);
+
+			if (originCallPattern) {
+				void* const detourOriginCall = mem::ex::findSigAddress(this->_hProc, this->_detour, shellSize, originCallPattern);
+
+				if (!detourOriginCall) return;
+
+				if (_arch == proc::ex::PROC_ARCH_X86) {
+					WriteProcessMemory(this->_hProc, detourOriginCall, &this->_origin, sizeof(uint32_t), nullptr);
+				}
+				else {
+
+					#ifdef _WIN64
+
+					WriteProcessMemory(this->_hProc, detourOriginCall, &this->_origin, sizeof(uint64_t), nullptr);
+
+					#endif // _WIN64
+
+				}
+
+			}
 
 			return;
 		}
