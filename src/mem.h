@@ -47,7 +47,7 @@ namespace hax {
 			// Address of the function that should be executed on a call of the origin function within the virtual address space of the target process.
 			// Has to use the same calling convention as the origin function for uninterrupted process execution.
 			// 
-			// [in] originCall:
+			// [in] originCallOffset:
 			// Offset of the call of the origin function call within the detour function. The call should be of the same calling convention as the origin function.
 			// Can be null if there is no call to the origin function in the detour.
 			// 
