@@ -100,7 +100,7 @@ namespace hax {
 			}
 
 			// patch the saved relative address back
-			if (this->_relativeAddress) {
+			if (this->_relativeAddressOffset != SIZE_MAX) {
 				*reinterpret_cast<uint32_t*>(stolen + this->_relativeAddressOffset) = this->_relativeAddress;
 			}
 
@@ -210,7 +210,7 @@ namespace hax {
 			}
 
 			// patch the saved relative address back
-			if (this->_relativeAddress) {
+			if (this->_relativeAddressOffset != SIZE_MAX) {
 				*reinterpret_cast<uint32_t*>(stolen + this->_relativeAddressOffset) = this->_relativeAddress;
 			}
 
