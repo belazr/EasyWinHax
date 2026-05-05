@@ -148,11 +148,7 @@ namespace hax {
 
 			const SYSTEM_HANDLE_INFORMATION* const pSysHandleInfoBuffer = getSystemInformation<SYSTEM_HANDLE_INFORMATION>(SystemHandleInformation);
 
-			if (!pSysHandleInfoBuffer) {
-				CloseHandle(hCallerProc);
-
-				return nullptr;
-			}
+			if (!pSysHandleInfoBuffer) return nullptr;
 
 			HANDLE hProc = nullptr;
 
