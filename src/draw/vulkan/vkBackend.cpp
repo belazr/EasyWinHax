@@ -124,9 +124,17 @@ namespace hax {
 				const uint32_t gpuCount = tmpGpuCount;
 				VkPhysicalDevice* const pPhysicalDeviceArray = new VkPhysicalDevice[gpuCount]{};
 
-				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, pPhysicalDeviceArray) != VK_SUCCESS) return VK_NULL_HANDLE;
+				if (pVkEnumeratePhysicalDevices(hInstance, &tmpGpuCount, pPhysicalDeviceArray) != VK_SUCCESS) {
+					delete[] pPhysicalDeviceArray;
+					
+					return VK_NULL_HANDLE;
+				}
 
-				if (tmpGpuCount != gpuCount) return VK_NULL_HANDLE;
+				if (tmpGpuCount != gpuCount) {
+					delete[] pPhysicalDeviceArray;
+
+					return VK_NULL_HANDLE;
+				}
 
 				VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE;
 
