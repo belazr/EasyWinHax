@@ -563,14 +563,17 @@ namespace hax {
 			}
 
 
+			template<typename LDTE>
+			static bool isMatchingLdrDataTableEntry(HANDLE hProc, const LDTE* pLdrDataTableEntry, const wchar_t* pModName);
+
 			// will not work when compiled to x86 because there is no way to retrieve the x64 process environment block from x86
 			#ifdef _WIN64
 
-			LDR_DATA_TABLE_ENTRY64* getLdrDataTableEntry64Address(HANDLE hProc, const char* modName) {
+			LDR_DATA_TABLE_ENTRY64* getLdrDataTableEntry64Address(HANDLE hProc, const char* pModName) {
 				
-				if (!modName) return nullptr;
+				if (!pModName) return nullptr;
 				
-				const PEB64* const pPeb64 = proc::ex::getPeb64Address(hProc);
+				const PEB64* const pPeb64 = getPeb64Address(hProc);
 
 				if (!pPeb64) return nullptr;
 
@@ -583,11 +586,11 @@ namespace hax {
 
 				if (!ReadProcessMemory(hProc, pPebLdrData64, &pebLdrData64, sizeof(PEB_LDR_DATA64), nullptr)) return nullptr;
 
-				size_t size = strlen(modName) + 1u;
-				wchar_t* pModName = new wchar_t[size] {};
+				size_t size = strlen(pModName) + 1u;
+				wchar_t* pWideModName = new wchar_t[size] {};
 				
-				if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, pModName, static_cast<int>(size))) {
-					delete[] pModName;
+				if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, pModName, -1, pWideModName, static_cast<int>(size))) {
+					delete[] pWideModName;
 
 					return nullptr;
 				}
@@ -597,36 +600,18 @@ namespace hax {
 
 				while (pNextEntry != &pPebLdrData64->InMemoryOrderModuleList) {
 					LDR_DATA_TABLE_ENTRY64* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY64, InMemoryOrderLinks);
-					LDR_DATA_TABLE_ENTRY64 ldrTableEntry{};
-
-					if (!ReadProcessMemory(hProc, pCurLdrTableEntry, &ldrTableEntry, sizeof(LDR_DATA_TABLE_ENTRY64), nullptr)) break;
-
-					if (!ldrTableEntry.BaseDllName.Buffer) continue;
-
-					const wchar_t* const pRemoteCurModName = reinterpret_cast<wchar_t*>(static_cast<uintptr_t>(ldrTableEntry.BaseDllName.Buffer));
-					const size_t curSize = ldrTableEntry.BaseDllName.Length / sizeof(wchar_t) + 1;
-					wchar_t* pCurModName = new wchar_t[curSize]{};
-
-					if (!ReadProcessMemory(hProc, pRemoteCurModName, pCurModName, ldrTableEntry.BaseDllName.Length, nullptr)) {
-						delete[] pCurModName;
-						
-						break;
-					}					
-
-					if (!_wcsicmp(pModName, pCurModName)) {
-						delete[] pCurModName;
+					
+					if (isMatchingLdrDataTableEntry(hProc, pCurLdrTableEntry, pWideModName)) {
 						pLdrTableEntry = pCurLdrTableEntry;
 
 						break;
 					}
 
-					delete[] pCurModName;
-
 					if (!ReadProcessMemory(hProc, &pNextEntry->Flink, &pNextEntry, sizeof(ULONGLONG), nullptr)) break;
 
 				}
 
-				delete[] pModName;
+				delete[] pWideModName;
 
 				return pLdrTableEntry;
 			}
@@ -634,9 +619,12 @@ namespace hax {
 			#endif // _WIN64
 
 
-			LDR_DATA_TABLE_ENTRY32* getLdrDataTableEntry32Address(HANDLE hProc, const char* modName) {
+			LDR_DATA_TABLE_ENTRY32* getLdrDataTableEntry32Address(HANDLE hProc, const char* pModName) {
+				
+				if (!pModName) return nullptr;
+				
 				// x86 loader data table pointer is stored in x86 process envrionment block
-				const PEB32* const pPeb32 = proc::ex::getPeb32Address(hProc);
+				const PEB32* const pPeb32 = getPeb32Address(hProc);
 
 				if (!pPeb32) return nullptr;
 
@@ -649,10 +637,13 @@ namespace hax {
 
 				if (!ReadProcessMemory(hProc, pPebLdrData32, &pebLdrData, sizeof(PEB_LDR_DATA32), nullptr)) return nullptr;
 
-				wchar_t wModName[MAX_PATH]{};
+				size_t size = strlen(pModName) + 1u;
+				wchar_t* pWideModName = new wchar_t[size] {};
 
-				if (modName) {
-					MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+				if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, pModName, -1, pWideModName, static_cast<int>(size))) {
+					delete[] pWideModName;
+
+					return nullptr;
 				}
 
 				LDR_DATA_TABLE_ENTRY32* pLdrTableEntry = nullptr;
@@ -661,20 +652,10 @@ namespace hax {
 
 				// walk the linked list until back at the beginning
 				while (pNextEntry != &pPebLdrData32->InMemoryOrderModuleList) {
-					const LDR_DATA_TABLE_ENTRY32* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY32, InMemoryOrderLinks);
-					LDR_DATA_TABLE_ENTRY32 curDataTableEntry{};
-
-					if (!ReadProcessMemory(hProc, pCurLdrTableEntry, &curDataTableEntry, sizeof(LDR_DATA_TABLE_ENTRY32), nullptr)) break;
-
-					if (!curDataTableEntry.BaseDllName.Buffer) break;
-
-					const wchar_t* const wRemoteCurModName = reinterpret_cast<wchar_t*>(static_cast<uintptr_t>(curDataTableEntry.BaseDllName.Buffer));
-					wchar_t wCurModName[MAX_PATH]{};
-
-					if (!ReadProcessMemory(hProc, wRemoteCurModName, wCurModName, curDataTableEntry.BaseDllName.Length, nullptr)) break;
-
-					if (!_wcsicmp(wModName, wCurModName) || !modName) {
-						pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY32* const>(pCurLdrTableEntry);
+					LDR_DATA_TABLE_ENTRY32* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY32, InMemoryOrderLinks);
+					
+					if (isMatchingLdrDataTableEntry(hProc, pCurLdrTableEntry, pWideModName)) {
+						pLdrTableEntry = pCurLdrTableEntry;
 
 						break;
 					}
@@ -682,6 +663,8 @@ namespace hax {
 					if (!ReadProcessMemory(hProc, &pNextEntry->Flink, &pNextEntry, sizeof(DWORD), nullptr)) break;
 
 				}
+
+				delete[] pWideModName;
 
 				return pLdrTableEntry;
 			}
@@ -784,6 +767,36 @@ namespace hax {
 				}
 
 				return pIatEntry;
+			}
+
+
+			template<typename LDTE>
+			static bool isMatchingLdrDataTableEntry(HANDLE hProc, const LDTE* pLdrDataTableEntry, const wchar_t* pModName) {
+				LDTE ldrTableEntry{};
+
+				if (!ReadProcessMemory(hProc, pLdrDataTableEntry, &ldrTableEntry, sizeof(LDTE), nullptr)) return false;
+
+				if (!ldrTableEntry.BaseDllName.Buffer) return false;
+
+				const wchar_t* const pRemoteCurModName = reinterpret_cast<wchar_t*>(static_cast<uintptr_t>(ldrTableEntry.BaseDllName.Buffer));
+				const size_t curSize = ldrTableEntry.BaseDllName.Length / sizeof(wchar_t) + 1;
+				wchar_t* pCurModName = new wchar_t[curSize] {};
+
+				if (!ReadProcessMemory(hProc, pRemoteCurModName, pCurModName, ldrTableEntry.BaseDllName.Length, nullptr)) {
+					delete[] pCurModName;
+
+					return false;
+				}
+
+				if (_wcsicmp(pModName, pCurModName)) {
+					delete[] pCurModName;
+
+					return false;
+				}
+
+				delete[] pCurModName;
+
+				return true;
 			}
 
 		}
