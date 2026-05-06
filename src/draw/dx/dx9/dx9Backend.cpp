@@ -27,7 +27,7 @@ namespace hax {
 					return false;
 				}
 
-				if (memcpy_s(pDeviceVTable, size, *reinterpret_cast<void**>(pDirect3D9Device), size)) {
+				if (memcpy(pDeviceVTable, *reinterpret_cast<void**>(pDirect3D9Device), size)) {
 					pDirect3D9Device->Release();
 					pDirect3D9->Release();
 

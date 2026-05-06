@@ -713,14 +713,14 @@ namespace hax {
 
 					if (!ReadProcessMemory(hProc, pPeHeaders->pOptHeader64, &optHeader64, sizeof(IMAGE_OPTIONAL_HEADER64), nullptr)) return false;
 
-					if (memcpy_s(pDataDir, sizeof(IMAGE_DATA_DIRECTORY), &optHeader64.DataDirectory[index], sizeof(IMAGE_DATA_DIRECTORY))) return false;
+					if (memcpy(pDataDir, &optHeader64.DataDirectory[index], sizeof(IMAGE_DATA_DIRECTORY))) return false;
 				}
 				else if (pPeHeaders->pOptHeader32) {
 					IMAGE_OPTIONAL_HEADER32 optHeader32{};
 
 					if (!ReadProcessMemory(hProc, pPeHeaders->pOptHeader32, &optHeader32, sizeof(IMAGE_OPTIONAL_HEADER32), nullptr)) return false;
 
-					if (memcpy_s(pDataDir, sizeof(IMAGE_DATA_DIRECTORY), &optHeader32.DataDirectory[index], sizeof(IMAGE_DATA_DIRECTORY))) return false;
+					if (memcpy(pDataDir, &optHeader32.DataDirectory[index], sizeof(IMAGE_DATA_DIRECTORY))) return false;
 				}
 				else {
 					return false;

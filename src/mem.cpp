@@ -233,10 +233,10 @@ namespace hax {
 
 				BYTE jump[sizeof(X86_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return false;
+				if (memcpy(jump, X86_JUMP, sizeof(X86_JUMP))) return false;
 
 				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
-				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return false;
+				if (memcpy(jump + 0x1, &offset, sizeof(uint32_t))) return false;
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
@@ -254,10 +254,10 @@ namespace hax {
 
 				BYTE jump[sizeof(X64_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return false;
+				if (memcpy(jump, X64_JUMP, sizeof(X64_JUMP))) return false;
 
 				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return false;
+				if (memcpy(jump + 0x6, &detour, sizeof(uint64_t))) return false;
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
@@ -450,7 +450,7 @@ namespace hax {
 				if (!gateway) return nullptr;
 
 				// write the overwritten bytes of the origin to the gateway
-				if (memcpy_s(gateway, size, origin, size)) {
+				if (memcpy(gateway, origin, size)) {
 					VirtualFree(gateway, 0, MEM_RELEASE);
 
 					return nullptr;
@@ -571,10 +571,10 @@ namespace hax {
 
 				BYTE jump[sizeof(X86_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X86_JUMP, sizeof(X86_JUMP))) return false;
+				if (memcpy(jump, X86_JUMP, sizeof(X86_JUMP))) return false;
 
 				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
-				if (memcpy_s(jump + 0x1, sizeof(uint32_t), &offset, sizeof(uint32_t))) return false;
+				if (memcpy(jump + 0x1, &offset, sizeof(uint32_t))) return false;
 
 				if (!patch(origin, jump, sizeof(jump))) return false;
 
@@ -592,10 +592,10 @@ namespace hax {
 
 				BYTE jump[sizeof(X64_JUMP)]{};
 
-				if (memcpy_s(jump, sizeof(jump), X64_JUMP, sizeof(X64_JUMP))) return false;
+				if (memcpy(jump, X64_JUMP, sizeof(X64_JUMP))) return false;
 
 				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy_s(jump + 0x6, sizeof(uint64_t), &detour, sizeof(uint64_t))) return false;
+				if (memcpy(jump + 0x6, &detour, sizeof(uint64_t))) return false;
 
 				if (!patch(origin, jump, sizeof(jump))) return false;
 
@@ -622,7 +622,7 @@ namespace hax {
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
-				bool success = memcpy_s(dst, size, src, size) == 0;
+				bool success = memcpy(dst, src, size) == 0;
 
 				VirtualProtect(dst, size, protect, &protect);
 

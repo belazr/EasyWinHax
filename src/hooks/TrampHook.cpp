@@ -203,7 +203,7 @@ namespace hax {
 			BYTE* const stolen = new BYTE[this->_size]{};
 
 			// read the stolen bytes from the gateway
-			if (memcpy_s(stolen, this->_size, this->_gateway, this->_size)) {
+			if (memcpy(stolen, this->_gateway, this->_size)) {
 				delete[] stolen;
 
 				return false;

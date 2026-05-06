@@ -25,7 +25,7 @@ namespace hax {
 
 				if (FAILED(hResult)) return false;
 
-				if (memcpy_s(pSwapChainVTable, size, *reinterpret_cast<void**>(pSwapChain), size)) {
+				if (memcpy(pSwapChainVTable, *reinterpret_cast<void**>(pSwapChain), size)) {
 					pDevice->Release();
 					pSwapChain->Release();
 
