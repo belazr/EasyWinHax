@@ -563,10 +563,13 @@ namespace hax {
 			}
 
 
-			// will not work compiled in x86 because there is no way to retrieve the x64 process environment block from x86
+			// will not work when compiled to x86 because there is no way to retrieve the x64 process environment block from x86
 			#ifdef _WIN64
 
 			LDR_DATA_TABLE_ENTRY64* getLdrDataTableEntry64Address(HANDLE hProc, const char* modName) {
+				
+				if (!modName) return nullptr;
+				
 				const PEB64* const pPeb64 = proc::ex::getPeb64Address(hProc);
 
 				if (!pPeb64) return nullptr;
@@ -580,39 +583,50 @@ namespace hax {
 
 				if (!ReadProcessMemory(hProc, pPebLdrData64, &pebLdrData64, sizeof(PEB_LDR_DATA64), nullptr)) return nullptr;
 
-				wchar_t wModName[MAX_PATH]{};
+				size_t size = strlen(modName) + 1u;
+				wchar_t* pModName = new wchar_t[size] {};
+				
+				if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, pModName, static_cast<int>(size))) {
+					delete[] pModName;
 
-				if (modName) {
-					MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+					return nullptr;
 				}
 
-				LDR_DATA_TABLE_ENTRY64* pLdrTableEntry = nullptr;
 				const LIST_ENTRY64* pNextEntry = reinterpret_cast<LIST_ENTRY64*>(pebLdrData64.InMemoryOrderModuleList.Flink);
+				LDR_DATA_TABLE_ENTRY64* pLdrTableEntry = nullptr;
 
-				// walk the linked list until back at the beginning
 				while (pNextEntry != &pPebLdrData64->InMemoryOrderModuleList) {
-					const LDR_DATA_TABLE_ENTRY64* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY64, InMemoryOrderLinks);
+					LDR_DATA_TABLE_ENTRY64* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY64, InMemoryOrderLinks);
+					LDR_DATA_TABLE_ENTRY64 ldrTableEntry{};
 
-					LDR_DATA_TABLE_ENTRY64 curDataTableEntry{};
+					if (!ReadProcessMemory(hProc, pCurLdrTableEntry, &ldrTableEntry, sizeof(LDR_DATA_TABLE_ENTRY64), nullptr)) break;
 
-					if (!ReadProcessMemory(hProc, pCurLdrTableEntry, &curDataTableEntry, sizeof(LDR_DATA_TABLE_ENTRY64), nullptr)) break;
+					if (!ldrTableEntry.BaseDllName.Buffer) continue;
 
-					if (!curDataTableEntry.BaseDllName.Buffer) break;
+					const wchar_t* const pRemoteCurModName = reinterpret_cast<wchar_t*>(static_cast<uintptr_t>(ldrTableEntry.BaseDllName.Buffer));
+					const size_t curSize = ldrTableEntry.BaseDllName.Length / sizeof(wchar_t) + 1;
+					wchar_t* pCurModName = new wchar_t[curSize]{};
 
-					const wchar_t* const wRemoteCurModName = reinterpret_cast<wchar_t*>(static_cast<uintptr_t>(curDataTableEntry.BaseDllName.Buffer));
-					wchar_t wCurModName[MAX_PATH]{};
+					if (!ReadProcessMemory(hProc, pRemoteCurModName, pCurModName, ldrTableEntry.BaseDllName.Length, nullptr)) {
+						delete[] pCurModName;
+						
+						break;
+					}					
 
-					if (!ReadProcessMemory(hProc, wRemoteCurModName, wCurModName, curDataTableEntry.BaseDllName.Length, nullptr)) break;
-
-					if (!_wcsicmp(wModName, wCurModName) || !modName) {
-						pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY64* const>(pCurLdrTableEntry);
+					if (!_wcsicmp(pModName, pCurModName)) {
+						delete[] pCurModName;
+						pLdrTableEntry = pCurLdrTableEntry;
 
 						break;
 					}
 
+					delete[] pCurModName;
+
 					if (!ReadProcessMemory(hProc, &pNextEntry->Flink, &pNextEntry, sizeof(ULONGLONG), nullptr)) break;
 
 				}
+
+				delete[] pModName;
 
 				return pLdrTableEntry;
 			}
