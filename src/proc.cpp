@@ -999,31 +999,46 @@ namespace hax {
 
 
 			LDR_DATA_TABLE_ENTRY* getLdrDataTableEntryAddress(const char* modName) {
-				wchar_t wModName[MAX_PATH]{};
+				
+				if (!modName) return nullptr;
+				
+				size_t size = strlen(modName) + 1u;
+				wchar_t* pModName = new wchar_t[size] {};
 
-				if (modName) {
-					MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, wModName, MAX_PATH);
+				if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modName, -1, pModName, static_cast<int>(size))) {
+					delete[] pModName;
+
+					return nullptr;
 				}
 
 				const PEB* const pPeb = getPebAddress();
-
-				LDR_DATA_TABLE_ENTRY* pLdrTableEntry = nullptr;
 				LIST_ENTRY* pNextEntry = pPeb->Ldr->InMemoryOrderModuleList.Flink;
+				LDR_DATA_TABLE_ENTRY* pLdrTableEntry = nullptr;
 
 				// walk the linked list until back at the beginning
 				while (pNextEntry != &pPeb->Ldr->InMemoryOrderModuleList) {
 
-					const LDR_DATA_TABLE_ENTRY* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+					LDR_DATA_TABLE_ENTRY* const pCurLdrTableEntry = CONTAINING_RECORD(pNextEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+					pNextEntry = pNextEntry->Flink;
 
-					if (!_wcsicmp(wModName, pCurLdrTableEntry->BaseDllName.Buffer) || !modName) {
-						pLdrTableEntry = const_cast<LDR_DATA_TABLE_ENTRY* const>(pCurLdrTableEntry);
+					if (!pCurLdrTableEntry->BaseDllName.Buffer) continue;
+
+					const size_t curSize = pCurLdrTableEntry->BaseDllName.Length / sizeof(wchar_t) + 1;
+					wchar_t* pCurModName = new wchar_t[curSize] {};
+
+					memcpy(pCurModName, pCurLdrTableEntry->BaseDllName.Buffer, pCurLdrTableEntry->BaseDllName.Length);
+
+					if (!_wcsicmp(pModName, pCurModName)) {
+						delete[] pCurModName;
+						pLdrTableEntry = pCurLdrTableEntry;
 
 						break;
 					}
 
-					pNextEntry = pNextEntry->Flink;
-
+					delete[] pCurModName;
 				}
+
+				delete[] pModName;
 
 				return pLdrTableEntry;
 			}
