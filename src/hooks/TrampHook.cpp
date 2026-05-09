@@ -201,13 +201,7 @@ namespace hax {
 
 			// overwritten/stolen bytes
 			BYTE* const stolen = new BYTE[this->_size]{};
-
-			// read the stolen bytes from the gateway
-			if (memcpy(stolen, this->_gateway, this->_size)) {
-				delete[] stolen;
-
-				return false;
-			}
+			memcpy(stolen, this->_gateway, this->_size);
 
 			// patch the saved relative address back
 			if (this->_relativeAddressOffset != SIZE_MAX) {

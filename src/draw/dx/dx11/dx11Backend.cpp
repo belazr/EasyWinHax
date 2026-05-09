@@ -25,13 +25,7 @@ namespace hax {
 
 				if (FAILED(hResult)) return false;
 
-				if (memcpy(pSwapChainVTable, *reinterpret_cast<void**>(pSwapChain), size)) {
-					pDevice->Release();
-					pSwapChain->Release();
-
-					return false;
-				}
-
+				memcpy(pSwapChainVTable, *reinterpret_cast<void**>(pSwapChain), size);
 				pDevice->Release();
 				pSwapChain->Release();
 
@@ -382,7 +376,6 @@ namespace hax {
 				if (FAILED(this->_pContext->Map(this->_pConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &subresource))) return false;
 
 				memcpy(subresource.pData, ortho, sizeof(ortho));
-
 				this->_pContext->Unmap(this->_pConstantBuffer, 0u);
 
 				return true;

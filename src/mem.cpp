@@ -232,11 +232,9 @@ namespace hax {
 				#endif // _WIN64
 
 				BYTE jump[sizeof(X86_JUMP)]{};
-
-				if (memcpy(jump, X86_JUMP, sizeof(X86_JUMP))) return false;
-
+				memcpy(jump, X86_JUMP, sizeof(X86_JUMP));
 				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
-				if (memcpy(jump + 0x1, &offset, sizeof(uint32_t))) return false;
+				memcpy(jump + 0x1, &offset, sizeof(uint32_t));
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
@@ -253,11 +251,9 @@ namespace hax {
 				if (size < sizeof(X64_JUMP)) return false;
 
 				BYTE jump[sizeof(X64_JUMP)]{};
-
-				if (memcpy(jump, X64_JUMP, sizeof(X64_JUMP))) return false;
-
+				memcpy(jump, X64_JUMP, sizeof(X64_JUMP));
 				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy(jump + 0x6, &detour, sizeof(uint64_t))) return false;
+				memcpy(jump + 0x6, &detour, sizeof(uint64_t));
 
 				if (!patch(hProc, origin, jump, sizeof(jump))) return false;
 
@@ -450,11 +446,7 @@ namespace hax {
 				if (!gateway) return nullptr;
 
 				// write the overwritten bytes of the origin to the gateway
-				if (memcpy(gateway, origin, size)) {
-					VirtualFree(gateway, 0, MEM_RELEASE);
-
-					return nullptr;
-				}
+				memcpy(gateway, origin, size);
 
 				// correct the relative address
 				if (relativeAddressOffset != SIZE_MAX) {
@@ -570,11 +562,9 @@ namespace hax {
 				#endif // _WIN64
 
 				BYTE jump[sizeof(X86_JUMP)]{};
-
-				if (memcpy(jump, X86_JUMP, sizeof(X86_JUMP))) return false;
-
+				memcpy(jump, X86_JUMP, sizeof(X86_JUMP));
 				// offset is intptr_t (eight bytes on x64) only to validate the distance on x64, relative jump only takes four bytes as offset so sizeof(uint32_t) is fine here
-				if (memcpy(jump + 0x1, &offset, sizeof(uint32_t))) return false;
+				memcpy(jump + 0x1, &offset, sizeof(uint32_t));
 
 				if (!patch(origin, jump, sizeof(jump))) return false;
 
@@ -591,11 +581,9 @@ namespace hax {
 				if (size < sizeof(X64_JUMP)) return false;
 
 				BYTE jump[sizeof(X64_JUMP)]{};
-
-				if (memcpy(jump, X64_JUMP, sizeof(X64_JUMP))) return false;
-
+				memcpy(jump, X64_JUMP, sizeof(X64_JUMP));
 				// copies the jump target to after the jmp QWORD PTR [rip+x] op code in the stack buffer
-				if (memcpy(jump + 0x6, &detour, sizeof(uint64_t))) return false;
+				memcpy(jump + 0x6, &detour, sizeof(uint64_t));
 
 				if (!patch(origin, jump, sizeof(jump))) return false;
 
@@ -622,11 +610,10 @@ namespace hax {
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
-				bool success = memcpy(dst, src, size) == 0;
-
+				memcpy(dst, src, size);;
 				VirtualProtect(dst, size, protect, &protect);
 
-				return success;
+				return true;
 			}
 
 

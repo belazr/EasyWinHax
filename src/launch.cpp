@@ -423,8 +423,7 @@ namespace hax {
 				}
 
 				BYTE localShell[sizeof(HIJACK_THREAD_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -508,8 +507,7 @@ namespace hax {
 
 			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(WINDOWS_HOOK_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -563,8 +561,7 @@ namespace hax {
 
 			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(HOOK_BEGIN_PAINT_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -636,8 +633,7 @@ namespace hax {
 
 			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(QUEUE_USER_APC_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -695,8 +691,7 @@ namespace hax {
 
 			static Status createThread(HANDLE hProc, tNtCreateThreadEx pNtCreateThreadEx, BYTE* pShellCode, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(CREATE_THREAD_SHELL) + sizeof(LaunchData)]{};
-
-				if (memcpy(localShell, CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, CREATE_THREAD_SHELL, sizeof(CREATE_THREAD_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -773,8 +768,7 @@ namespace hax {
 				}
 
 				BYTE localShell[sizeof(HIJACK_THREAD_SHELL) + sizeof(LaunchData)]{};
-
-				if (memcpy(localShell, HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, HIJACK_THREAD_SHELL, sizeof(HIJACK_THREAD_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -860,8 +854,7 @@ namespace hax {
 
 			static Status setWindowsHook(HANDLE hProc, BYTE* pShellCode, HookData* pHookData, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(WINDOWS_HOOK_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, WINDOWS_HOOK_SHELL, sizeof(WINDOWS_HOOK_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -916,8 +909,7 @@ namespace hax {
 
 			static Status hookBeginPaint(HANDLE hProc, BYTE* pShellCode, BYTE* pNtUserBeginPaint, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(HOOK_BEGIN_PAINT_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, HOOK_BEGIN_PAINT_SHELL, sizeof(HOOK_BEGIN_PAINT_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
@@ -989,8 +981,7 @@ namespace hax {
 
 			static Status queueUserApc(HANDLE hProc, BYTE* pShellCode, HANDLE hThread, tLaunchableFunc pFunc, void* pArg, void* pRet) {
 				BYTE localShell[sizeof(QUEUE_USER_APC_SHELL) + sizeof(LaunchData)]{};
-				
-				if (memcpy(localShell, QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL))) return ERR_MEM_CPY;
+				memcpy(localShell, QUEUE_USER_APC_SHELL, sizeof(QUEUE_USER_APC_SHELL));
 				
 				constexpr ptrdiff_t LAUNCH_DATA_OFFSET = sizeof(localShell) - sizeof(LaunchData);
 				LaunchData* const pLaunchData = reinterpret_cast<LaunchData*>(localShell + LAUNCH_DATA_OFFSET);
