@@ -450,9 +450,8 @@ namespace hax {
 
 				// correct the relative address
 				if (relativeAddressOffset != SIZE_MAX) {
-
 					const int32_t oldRelativeAddress = *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(origin) + relativeAddressOffset);
-					const int32_t correctedRelativeAddress = static_cast<int32_t>(oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway));
+					const ptrdiff_t correctedRelativeAddress = oldRelativeAddress + reinterpret_cast<uintptr_t>(origin) - reinterpret_cast<uintptr_t>(gateway);
 
 					if (correctedRelativeAddress < INT32_MIN || correctedRelativeAddress > INT32_MAX) {
 						VirtualFree(gateway, 0, MEM_RELEASE);
@@ -460,8 +459,7 @@ namespace hax {
 						return nullptr;
 					}
 
-					*reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(gateway) + relativeAddressOffset) = correctedRelativeAddress;
-
+					*reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(gateway) + relativeAddressOffset) = static_cast<uint32_t>(correctedRelativeAddress);
 				}
 
 				void* const pGatewayJump = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(gateway) + size);
