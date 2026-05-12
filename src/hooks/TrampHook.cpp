@@ -158,20 +158,19 @@ namespace hax {
 
 
 		TrampHook::TrampHook(const char* modName, const char* funcName, const BYTE* detour, size_t size, size_t relativeAddressOffset) :
-			_origin{}, _detour(detour), _size(size), _gateway{}, _hooked{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{}
-		{
+			_origin{}, _detour(detour), _size(size), _gateway{}, _hooked{}, _relativeAddressOffset(relativeAddressOffset), _relativeAddress{} {
+			const HMODULE hMod = proc::in::getModuleHandle(modName);
+
+			if (!hMod) return;
+
+			this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, funcName));
+			
 			const int32_t* const pRelativeAddress = reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this->_origin) + this->_relativeAddressOffset);
 			
 			if (this->_relativeAddressOffset != SIZE_MAX && pRelativeAddress) {
 				this->_relativeAddress = *pRelativeAddress;
 			}
 			
-			const HMODULE hMod = proc::in::getModuleHandle(modName);
-
-			if (!hMod) return;
-
-			this->_origin = reinterpret_cast<BYTE*>(proc::in::getProcAddress(hMod, funcName));
-
 			return;
 		}
 
