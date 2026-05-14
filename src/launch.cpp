@@ -157,6 +157,10 @@ namespace hax {
 			const DWORD processId = GetProcessId(hProc);
 
 			if (!processId) return ERR_GET_PROC_ID;
+			
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			// arbitrary but has to be loaded in both caller and target process
 			const HMODULE hHookedMod = proc::in::getModuleHandle("Kernel32.dll");
@@ -184,10 +188,6 @@ namespace hax {
 			hookData.hModule = hHookedMod;
 			hookData.pHookFunc = reinterpret_cast<HOOKPROC>(pShellCode);
 			hookData.pCallNextHookEx = pCallNextHookEx;
-
-			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
-
-			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			Status status = SUCCESS;
 
