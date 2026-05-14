@@ -218,6 +218,10 @@ namespace hax {
 
 
 		Status hookBeginPaint(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
+			
 			const HMODULE hNtdll = proc::ex::getModuleHandle(hProc, "win32u.dll");
 
 			if (!hNtdll) return ERR_GET_MOD_HANDLE;
@@ -233,10 +237,6 @@ namespace hax {
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) return ERR_MEM_ALLOC;
-
-			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
-
-			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			Status status = SUCCESS;
 
