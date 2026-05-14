@@ -105,6 +105,14 @@ namespace hax {
 
 			if (!processId) return ERR_GET_PROC_ID;
 
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
+
+			const DWORD pageSize = getPageSize();
+
+			if (!pageSize) return ERR_GET_PAGE_SIZE;
+
 			// get the first/main thread entry
 			proc::ThreadEntry threadEntry{};
 			
@@ -114,10 +122,6 @@ namespace hax {
 
 			if (!hThread) return ERR_OPEN_THREAD;
 
-			const DWORD pageSize = getPageSize();
-
-			if (!pageSize) return ERR_GET_PAGE_SIZE;
-
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) {
@@ -125,10 +129,6 @@ namespace hax {
 
 				return ERR_MEM_ALLOC;
 			}
-
-			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
-
-			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			Status status = SUCCESS;
 
