@@ -56,6 +56,10 @@ namespace hax {
 
 
 		Status createThread(HANDLE hProc, tLaunchableFunc pFunc, void* pArg, void* pRet) {
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
+
 			const HMODULE hNtdll = proc::in::getModuleHandle("Ntdll.dll");
 
 			if (!hNtdll) return ERR_GET_MOD_HANDLE;
@@ -63,10 +67,6 @@ namespace hax {
 			const tNtCreateThreadEx pNtCreateThreadEx = reinterpret_cast<tNtCreateThreadEx>(proc::in::getProcAddress(hNtdll, "NtCreateThreadEx"));
 
 			if (!pNtCreateThreadEx) return ERR_GET_PROC_ADDR;
-			
-			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
-
-			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			Status status = SUCCESS;
 
@@ -162,6 +162,10 @@ namespace hax {
 
 			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
+			const DWORD pageSize = getPageSize();
+
+			if (!pageSize) return ERR_GET_PAGE_SIZE;
+
 			// arbitrary but has to be loaded in both caller and target process
 			const HMODULE hHookedMod = proc::in::getModuleHandle("Kernel32.dll");
 
@@ -174,10 +178,6 @@ namespace hax {
 			const FARPROC pCallNextHookEx = proc::ex::getProcAddress(hProc, hUser32, "CallNextHookEx");
 
 			if (!pCallNextHookEx) return ERR_GET_PROC_ADDR;
-
-			const DWORD pageSize = getPageSize();
-
-			if (!pageSize) return ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
@@ -221,6 +221,10 @@ namespace hax {
 			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
 
 			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
+
+			const DWORD pageSize = getPageSize();
+
+			if (!pageSize) return ERR_GET_PAGE_SIZE;
 			
 			const HMODULE hNtdll = proc::ex::getModuleHandle(hProc, "win32u.dll");
 
@@ -229,10 +233,6 @@ namespace hax {
 			BYTE* const pNtUserBeginPaint = reinterpret_cast<BYTE*>(proc::ex::getProcAddress(hProc, hNtdll, "NtUserBeginPaint"));
 
 			if (!pNtUserBeginPaint) return ERR_GET_PROC_ADDR;
-
-			const DWORD pageSize = getPageSize();
-
-			if (!pageSize) return ERR_GET_PAGE_SIZE;
 
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
@@ -264,6 +264,14 @@ namespace hax {
 			const DWORD processId = GetProcessId(hProc);
 
 			if (!processId) return ERR_GET_PROC_ID;
+
+			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
+
+			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
+
+			const DWORD pageSize = getPageSize();
+
+			if (!pageSize) return ERR_GET_PAGE_SIZE;
 
 			proc::ProcessEntry procEntry{};
 
@@ -300,10 +308,6 @@ namespace hax {
 
 			if (!hThread) return ERR_OPEN_THREAD;
 
-			const DWORD pageSize = getPageSize();
-
-			if (!pageSize) return ERR_GET_PAGE_SIZE;
-
 			BYTE* const pShellCode = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pageSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 			if (!pShellCode) {
@@ -311,10 +315,6 @@ namespace hax {
 
 				return ERR_MEM_ALLOC;
 			}
-
-			const proc::ex::ProcessArch arch = proc::ex::getProcessArch(hProc);
-
-			if (arch == proc::ex::PROC_ARCH_UNKNOWN) return ERR_GET_PROCESS_ARCH;
 
 			Status status = SUCCESS;
 
