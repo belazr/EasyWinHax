@@ -173,7 +173,7 @@ namespace hax {
 
 			const HMODULE hUser32 = proc::ex::getModuleHandle(hProc, "User32.dll");
 
-			if (!hUser32) return ERR_GET_MOD_HANDLE;;
+			if (!hUser32) return ERR_GET_MOD_HANDLE;
 
 			const FARPROC pCallNextHookEx = proc::ex::getProcAddress(hProc, hUser32, "CallNextHookEx");
 

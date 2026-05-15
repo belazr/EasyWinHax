@@ -608,7 +608,7 @@ namespace hax {
 
 				if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &protect)) return false;
 
-				memcpy(dst, src, size);;
+				memcpy(dst, src, size);
 				VirtualProtect(dst, size, protect, &protect);
 
 				return true;

@@ -68,7 +68,7 @@ static HRESULT APIENTRY hkPresent(LPDIRECT3DDEVICE9 pDevice, const RECT* pSource
 		return res;
 	}
 
-	return reinterpret_cast<hax::draw::dx9::tPresent>(pPresentHook->getGateway())(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);;
+	return reinterpret_cast<hax::draw::dx9::tPresent>(pPresentHook->getGateway())(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 }
 
 

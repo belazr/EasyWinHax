@@ -130,7 +130,7 @@ namespace hax {
 		// Fraction.
 		constexpr Vector2 divide(Vector2 divd, float sDivs) {
 
-			return { divd.x / sDivs, divd.y / sDivs };;
+			return { divd.x / sDivs, divd.y / sDivs };
 		}
 
 		// Calculates the dot product of two two dimensional vectors.
@@ -248,7 +248,7 @@ namespace hax {
 		// Fraction.
 		constexpr Vector3 divide(Vector3 divd, float sDivs) {
 
-			return { divd.x / sDivs, divd.y / sDivs, divd.z / sDivs };;
+			return { divd.x / sDivs, divd.y / sDivs, divd.z / sDivs };
 		}
 
 

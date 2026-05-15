@@ -240,7 +240,7 @@ namespace hax {
 
                 if (!this->_pPipelineState) {
 
-                    if (!this->createPipelineState()) return true;;
+                    if (!this->createPipelineState()) return true;
 
                 }
 
