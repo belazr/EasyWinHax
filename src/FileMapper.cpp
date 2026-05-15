@@ -25,6 +25,8 @@ namespace hax {
 
 
 	DWORD FileMapper::map(bool image) {
+		this->unmap();
+		
 		const HANDLE hFile = CreateFileA(_path, GENERIC_READ | GENERIC_EXECUTE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 		if (hFile == INVALID_HANDLE_VALUE) {
