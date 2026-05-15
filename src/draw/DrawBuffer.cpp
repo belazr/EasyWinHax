@@ -48,20 +48,17 @@ namespace hax {
 
 			TextureBatch* pTextureBatch = nullptr;
 
-			bool found = false;
-
 			for (size_t i = 0u; i < this->_textures.size(); i++) {
-				pTextureBatch = this->_textures + i;
 
-				if (pTextureBatch->id == textureId) {
-					found = true;
+				if ((this->_textures + i)->id == textureId) {
+					pTextureBatch = this->_textures + i;
 
 					break;
 				}
 
 			}
 
-			if (!found) {
+			if (!pTextureBatch) {
 				const TextureBatch batch{ textureId, {} };
 				this->_textures.append(batch);
 				pTextureBatch = this->_textures + this->_textures.size() - 1u;
@@ -104,7 +101,6 @@ namespace hax {
 			for (size_t i = 0u; i < this->_textures.size(); i++) {
 				const uint32_t count = static_cast<uint32_t>(this->_textures[i].indices.size());
 				this->_pBufferBackend->draw(this->_textures[i].id, index, count);
-				this->_textures[i].indices.resize(0u);
 				index += count;
 			}
 
@@ -120,6 +116,10 @@ namespace hax {
 			this->_pLocalIndexBuffer = nullptr;
 			this->_size = 0u;
 			this->_capacity = 0u;
+
+			for (size_t i = 0u; i < this->_textures.size(); i++) {
+				this->_textures[i].indices.resize(0u);
+			}
 		}
 
 
