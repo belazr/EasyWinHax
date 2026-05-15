@@ -916,11 +916,7 @@ namespace hax {
 				pLaunchData->pArg = reinterpret_cast<uint64_t>(pArg);
 				pLaunchData->pFunc = reinterpret_cast<uint64_t>(pFunc);
 
-				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) {
-					VirtualFreeEx(hProc, pShellCode, 0, MEM_RELEASE);
-
-					return ERR_WRITE_PROC_MEM;
-				}
+				if (!WriteProcessMemory(hProc, pShellCode, localShell, sizeof(localShell), nullptr)) return ERR_WRITE_PROC_MEM;
 
 				constexpr size_t LEN_STOLEN = 8;
 				void* const pGateway = mem::ex::trampHook(hProc, pNtUserBeginPaint, pShellCode, 0x32, LEN_STOLEN);
