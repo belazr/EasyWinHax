@@ -39,7 +39,7 @@ namespace hax {
 
 
 		Vector3 shiftByAngle(Vector3 origin, float pitch, float yaw, float distance) {
-			const Vector3 factors{ cosf(degToRad(yaw)), sinf(degToRad(yaw)), sinf(degToRad(pitch)) };
+			const Vector3 factors{ cosf(degToRad(pitch)) * cosf(degToRad(yaw)), cosf(degToRad(pitch)) * sinf(degToRad(yaw)), sinf(degToRad(pitch)) };
 			const Vector3 shifts = multiply(factors, distance);
 
 			return add(origin, shifts);
