@@ -267,6 +267,8 @@ namespace hax {
 
 				if (!getDataDirFromPeHeaders(hProc, &peHeaders, &dirEntryExport, IMAGE_DIRECTORY_ENTRY_EXPORT)) return nullptr;
 
+				if (!dirEntryExport.VirtualAddress || !dirEntryExport.Size) return nullptr;
+
 				IMAGE_EXPORT_DIRECTORY exportDir{};
 
 				if (!ReadProcessMemory(hProc, pBase + dirEntryExport.VirtualAddress, &exportDir, sizeof(IMAGE_EXPORT_DIRECTORY), nullptr)) return nullptr;
@@ -810,9 +812,11 @@ namespace hax {
 
 				if (!getPeHeaders(hMod, &peHeaders) || !peHeaders.pOptHeader) return nullptr;
 
-				const IMAGE_DATA_DIRECTORY dirEntryExport = peHeaders.pOptHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+				const IMAGE_DATA_DIRECTORY* const pDirEntryExport = &peHeaders.pOptHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
 
-				const IMAGE_EXPORT_DIRECTORY* const pExportDir = reinterpret_cast<const IMAGE_EXPORT_DIRECTORY*>(pBase + dirEntryExport.VirtualAddress);
+				if (!pDirEntryExport->VirtualAddress || !pDirEntryExport->Size) return nullptr;
+
+				const IMAGE_EXPORT_DIRECTORY* const pExportDir = reinterpret_cast<const IMAGE_EXPORT_DIRECTORY*>(pBase + pDirEntryExport->VirtualAddress);
 
 				if (!pExportDir) return nullptr;
 
@@ -855,7 +859,7 @@ namespace hax {
 				if (!funcRva) return nullptr;
 
 				FARPROC procAddress = nullptr;
-				const bool forwarded = funcRva >= dirEntryExport.VirtualAddress && funcRva <= dirEntryExport.VirtualAddress + dirEntryExport.Size;
+				const bool forwarded = funcRva >= pDirEntryExport->VirtualAddress && funcRva <= pDirEntryExport->VirtualAddress + pDirEntryExport->Size;
 
 				if (forwarded) {
 					// forward has the format "module.function"
