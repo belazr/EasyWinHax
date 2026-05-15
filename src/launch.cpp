@@ -68,7 +68,7 @@ namespace hax {
 
 			if (!pNtCreateThreadEx) return ERR_GET_PROC_ADDR;
 
-			Status status = SUCCESS;
+			Status status = ERR_UNSUPPORTED_ARCH;
 
 			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::createThread(hProc, pNtCreateThreadEx, pFunc, pArg, pRet);
@@ -130,7 +130,7 @@ namespace hax {
 				return ERR_MEM_ALLOC;
 			}
 
-			Status status = SUCCESS;
+			Status status = ERR_UNSUPPORTED_ARCH;
 
 			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::hijackThread(hProc, pShellCode, hThread, threadEntry.threadId, pFunc, pArg, pRet);
@@ -189,7 +189,7 @@ namespace hax {
 			hookData.pHookFunc = reinterpret_cast<HOOKPROC>(pShellCode);
 			hookData.pCallNextHookEx = pCallNextHookEx;
 
-			Status status = SUCCESS;
+			Status status = ERR_UNSUPPORTED_ARCH;
 
 			// installing hook only possible from process with matching architechture
 			if (arch == proc::ex::PROC_ARCH_X86) {
@@ -238,7 +238,7 @@ namespace hax {
 
 			if (!pShellCode) return ERR_MEM_ALLOC;
 
-			Status status = SUCCESS;
+			Status status = ERR_UNSUPPORTED_ARCH;
 
 			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::hookBeginPaint(hProc, pShellCode, pNtUserBeginPaint, pFunc, pArg, pRet);
@@ -316,7 +316,7 @@ namespace hax {
 				return ERR_MEM_ALLOC;
 			}
 
-			Status status = SUCCESS;
+			Status status = ERR_UNSUPPORTED_ARCH;
 
 			if (arch == proc::ex::PROC_ARCH_X86) {
 				status = x86::queueUserApc(hProc, pShellCode, hThread, pFunc, pArg, pRet);
